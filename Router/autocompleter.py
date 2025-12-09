@@ -4,7 +4,7 @@ import requests
 import threading
 import tkinter as tk
 
-from SpanshRouter.placeholder import Placeholder
+from .placeholder import Placeholder
 
 from .context import Context, catch_exceptions
 

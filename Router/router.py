@@ -15,7 +15,6 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 from .strings import hdrs, lbls
-#if TYPE_CHECKING:
 from .context import Context, Debug
 
 

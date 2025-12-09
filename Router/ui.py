@@ -6,7 +6,7 @@ from config import appname  # type: ignore
 
 from .strings import lbls, btns
 #if TYPE_CHECKING:
-from SpanshRouter.context import Context, Debug, catch_exceptions
+from Router.context import Context, Debug, catch_exceptions
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder
 from .Tooltip import ToolTip

@@ -7,9 +7,9 @@ from semantic_version import Version #type: ignore
 
 from config import appname  # type: ignore
 
-from SpanshRouter.context import Context, Debug
-from SpanshRouter.router import Router
-from SpanshRouter.ui import UI
+from Router.context import Context, Debug
+from Router.router import Router
+from Router.ui import UI
 
 NAME="SpanshRouterRedux"
 

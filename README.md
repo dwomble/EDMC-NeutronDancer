@@ -1,4 +1,4 @@
-# SpanshRouter Redux
+# Navl's Neutron Dance
 
 This plugin's purpose is to make neutron jumping easier by automatically copying the next waypoint on a route you planned using [Spansh](https://www.spansh.co.uk/plotter).
 

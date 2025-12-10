@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
 from typing import TYPE_CHECKING
+import re
 
 from config import appname, config # type: ignore
 
@@ -184,11 +185,12 @@ class UI():
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:Placeholder = Placeholder(plot_fr, round(Context.router.range, 2), width=10)
+        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=10)
         self.range_entry.grid(row=row, column=col)
         ToolTip(self.range_entry, lbls["range_tooltip"])
         # Check if we're having a valid range on the fly
         self.range_entry.var.trace_add('write', self.check_range)
+        if Context.router.range > 0: self.range_entry.var.set(str(Context.router.range))
 
         row += 1; col = 0
         self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30)
@@ -304,16 +306,32 @@ class UI():
         self.parent.update()
 
 
-    def check_range(self, name, index, mode):
-        value = self.range_entry.var.get()
-        if len(value) > 0 and value != self.range_entry.placeholder:
-            try:
-                float(value)
-                self.range_entry.set_error_style(False)
-                self.hide_error()
-            except ValueError:
-                Context.ui.set_error("Invalid range")
-                self.range_entry.set_error_style()
+    @catch_exceptions
+    def check_range(self, one, two, three) -> None:
+        """ Validate the range entry"""
+        Context.ui.hide_error()
+        self.range_entry.set_default_style()
+
+        value:str = self.range_entry.var.get()
+        if value == '' or value == self.range_entry.placeholder:
+            return
+
+        if not re.match(r"^\d+(\.\d+)?$", value):
+            Debug.logger.debug(f"Invalid range entry {value}")
+            self.range_entry.set_error_style()
+            return
+
+        ship:str = str(Context.router.ship)
+        if ship not in Context.router.ships:
+            Debug.logger.debug(f"No ship selected or ship {Context.router.ship} not in ships list")
+            return
+
+        diff:int = abs(float(value) - Context.router.ships[ship])
+        Debug.logger.debug(f"Range {value} Ly for ship {Context.router.ship} {diff}")
+        # if the entered value is within 10% of the current ships range we assume it's accurate for this ship
+        if abs(float(value) - Context.router.ships[ship]) < (Context.router.ships[ship] / 7):
+            Debug.logger.debug(f"Setting range to {value} Ly for ship {ship}")
+            Context.router.ships[ship] = float(value)
 
 
 
@@ -331,7 +349,7 @@ class RouteWindow:
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
-        self.root = root
+        self.root:tk.Tk|tk.Toplevel = root
         self.window:tk.Toplevel|None = None
         self.frame:tk.Frame|None = None
         self.scale:float = 1.0
@@ -353,7 +371,7 @@ class RouteWindow:
         self.window = tk.Toplevel(self.root)
         self.window.title()
         #self.window.iconphoto(False, 32x32, 16x16)
-        self.window.geometry(f"{int(400*self.scale)}x{int(300*self.scale)}")
+        self.window.geometry(f"{int(600*self.scale)}x{int(300*self.scale)}")
 
         self.frame = tk.Frame(self.window, borderwidth=2)
         self.frame.pack(fill=tk.BOTH, expand=True)
@@ -374,10 +392,8 @@ class RouteWindow:
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         for hdr in Context.router.headers:
-            Debug.logger.debug(f"{hdr.replace(' ', '')} {hdr}")
-        for hdr in Context.router.headers:
             tree.heading(hdr, text=hdr, anchor=tk.W)
-            tree.column(hdr, anchor=tk.W, stretch=tk.YES, width=200)
+            tree.column(hdr, anchor=tk.W, stretch=tk.NO, width=int(120*self.scale))
 
         for row in Context.router.route:
             tree.insert("", 'end', values=row)

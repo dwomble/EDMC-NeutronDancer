@@ -50,7 +50,7 @@ class Router():
 
         self.src:str = ""
         self.dest:str = ""
-        self.ship:str = ''
+        self.ship:str = ""
         self.range:float = 32.0
         self.efficiency:int = 60
         self.supercharge_mult:int = 4
@@ -62,11 +62,24 @@ class Router():
         self._initialized = True
 
 
-    def update_ships(self, ship_id:str, max_jump_range:float) -> None:
-        if ship_id == '': return
+    def set_ship(self, ship_id:str) -> None:
+        Debug.logger.debug(f"Setting current ship to {ship_id}")
+        ship:str = str(ship_id)
+        self.ship = ship
+        if ship in self.ships:
+            self.range = self.ships[ship]
+            Debug.logger.debug(f"Set range to {self.range} Ly for ship {ship}")
+            Context.ui.range_entry.var.set(str(self.range))
 
-        self.ships[ship_id] = round(max_jump_range * 0.95, 2)
-        Debug.logger.debug(f"Updated ship {ship_id} with max jump range {max_jump_range * 0.95} LY")
+
+    def update_ships(self, ship_id:str, max_jump_range:float) -> None:
+        ship:str = str(ship_id)
+        if ship == '': return
+
+        if ship not in self.ships:
+            self.ships[ship] = round(max_jump_range * 0.95, 2)
+            Debug.logger.debug(f"Updated ship {ship} with max jump range {round(max_jump_range * 0.95, 2)} Ly")
+
         self.save()
 
 
@@ -182,7 +195,9 @@ class Router():
                         if col in ["body_name", "body_subtype"]:
                             r.append(ast.literal_eval(row[col]))
                             continue
-                        r.append(round(row[col], 2) if re.match(r"\d+.\d+", row[col]) else row[col])
+                        m = re.match(r"^\d+(\.\d+)?$", row[col])
+                        Debug.logger.debug(f"Row {row[col]} {m}")
+                        r.append(row[col] if not re.match(r"^\d+(\.\d+)?$", row[col]) else round(float(row[col]), 2))
                 route.append(r)
 
             self.fleetcarrier = True if "Fuel Used" in hdrs else False
@@ -242,7 +257,7 @@ class Router():
             for waypoint in route:
                 r:list = []
                 for c in cols:
-                    r.append(waypoint[c])
+                    r.append(waypoint[c] if not re.match(r"^\d+\.(\d+)?$", str(waypoint[c])) else round(float(waypoint[c]), 2))
                 rte.append(r)
 
             self.clear_route()
@@ -449,6 +464,7 @@ class Router():
             'next_stop': self.next_stop,
             'headers': self.headers,
             'route': self.route,
+            'ship': str(self.ship),
             'ships': self.ships
             }
 
@@ -465,4 +481,5 @@ class Router():
         self.next_stop = dict.get('next_stop', "")
         self.headers = dict.get('headers', [])
         self.route = dict.get('route', [])
+        self.ship = dict.get('ship', '')
         self.ships = dict.get('ships', {})

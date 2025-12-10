@@ -18,3 +18,5 @@ __pycache__/
 test*.*
 deploy.sh
 data/route.json
+
+*/.DS_Store

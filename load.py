@@ -39,8 +39,8 @@ def plugin_stop() -> None:
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     sys:str = entry.get('StarSystem', system)
-    if sys == Context.system or sys == '': return
 
+    #Debug.logger.debug(f"Journal entry received: {entry} {system}")
     match entry['event']:
         case 'FSDJump' | 'Location' | 'SupercruiseEntry' | 'SupercruiseExit':
             Debug.logger.debug(f"Current system changed: {Context.system} -> {sys}")
@@ -58,10 +58,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.router.update_ships(ship.get('ShipID', ''), ship.get('MaxJumpRange', 0.0))
 
         case 'Loadout':
+            Context.router.set_ship(entry.get('ShipID', ''))
             Context.router.update_ships(entry.get('ShipID', ''), entry.get('MaxJumpRange', 0.0))
-            Context.router.ship = entry.get('ShipID', '')
-            Context.router.range = entry.get('MaxJumpRange', 0.0) * 0.95
-            Context.router.save()
 
 
 def ask_for_update() -> None:

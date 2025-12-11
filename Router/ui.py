@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -129,7 +131,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
         Debug.logger.debug(f"waypoint_prev_btn created {self.waypoint_prev_btn}")
         col += 1
-        self.waypoint_btn = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: Context.router.copy_waypoint())
+        self.waypoint_btn = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc())
         ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
         Debug.logger.debug(f"waypoint_btn created {self.waypoint_btn}")
@@ -331,9 +333,23 @@ class UI():
             elem.update_idletasks()
 
 
-    def ctc(self, text:str) -> None:
+    def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
         if self.parent == None:
+            return
+        if text == '': text = Context.router.next_stop
+
+        if Context.router.next_stop == lbls['route_complete']:
+            Debug.logger.debug("No next stop to copy")
+            Context.router.clear_route()
+            self.show_frame('Plot')
+            self.enable_plot_gui(True)
+            return
+
+        if sys.platform == "linux" or sys.platform == "linux2":
+            command = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
+            subprocess.Popen(["xclip", "-selection", "c"], stdin=command.stdout)
+            self.parent.update()
             return
 
         self.parent.clipboard_clear()

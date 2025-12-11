@@ -6,8 +6,6 @@ from os import path
 import re
 import requests
 from requests import Response
-import subprocess
-import sys
 import tkinter.filedialog as filedialog
 import webbrowser
 from pathlib import Path
@@ -87,17 +85,6 @@ class Router():
         self.save()
 
 
-    def copy_waypoint(self) -> None:
-        if sys.platform == "linux" or sys.platform == "linux2":
-            command = subprocess.Popen(["echo", "-n", self.next_stop], stdout=subprocess.PIPE)
-            subprocess.Popen(["xclip", "-selection", "c"], stdin=command.stdout)
-        else:
-            if not Context.ui.parent:
-                Debug.logger.error("UI isn't initialized yet")
-                return
-            Context.ui.ctc(self.next_stop)
-
-
     def goto_next_waypoint(self) -> None:
         if self.offset < len(self.route) - 1:
             self.update_route(1)
@@ -155,9 +142,9 @@ class Router():
 
         if self.offset + direction < 0 or self.offset + direction >= len(self.route):
             if direction > 0:
-                self.next_stop = "End of the road!"
+                self.next_stop = lbls['route_complete']
                 self._store_history()
-            Context.ui.update_display()
+            Context.ui.update_display(True)
             return
 
         Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
@@ -165,7 +152,6 @@ class Router():
         self.next_stop = self.route[self.offset][c]
 
         Context.ui.update_display()
-        self.copy_waypoint()
 
 
     def goto_changelog_page(self) -> None:
@@ -292,7 +278,7 @@ class Router():
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
             self.jumps_left = sum([j[cols.index('jumps')] for j in self.route]) if 'Jumps' in hdrs else 0
             self.next_stop = self.route[self.offset][self._syscol()]
-            self.copy_waypoint()
+            Context.ui.update_display(True)
             self.save()
             return True
 

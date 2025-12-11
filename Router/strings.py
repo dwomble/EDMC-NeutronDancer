@@ -5,7 +5,6 @@ hdrs:dict = {
     "system_name": "System Name",
     "body_subtype": "Body Subtype",
     "body_name": "Body Name",
-
 }
 
 # Text labels
@@ -22,7 +21,8 @@ lbls:dict = {
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
-    "clear_route_yesno": "Are you sure you want to clear the current route?"
+    "clear_route_yesno": "Are you sure you want to clear the current route?",
+    "route_complete": "End of the road!",
 }
 
 # Tooltips

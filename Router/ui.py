@@ -56,13 +56,8 @@ class UI():
             return
 
         self.show_frame('Route')
-        self.waypoint_btn.configure(text=Context.router.next_stop)
-        if Context.router.jumps_left > 0:
-            ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
-        self.waypoint_prev_btn.config(state=tk.DISABLED if Context.router.offset == 0 else tk.NORMAL)
-        self.waypoint_next_btn.config(state=tk.DISABLED if Context.router.offset == len(Context.router.route) - 1 else tk.NORMAL)
 
-        if Context.updater.update_available:
+        if Context.updater and Context.updater.update_available:
             update:tk.Label = tk.Label(self.frame, text=lbls["update_available"], justify=tk.CENTER, anchor=tk.CENTER, font=("Helvetica", 9, "bold"))
             update.bind("<Button-1>", partial(self.cancel_update))
             update.pack(anchor=tk.S)
@@ -82,6 +77,7 @@ class UI():
             case 'Route':
                 if self.route_fr == None:
                     self.route_fr = self._create_route_fr()
+                self._update_waypoint()
                 self.route_fr.grid()
                 if self.plot_fr != None: self.plot_fr.grid_forget()
                 if self.title_fr != None: self.title_fr.grid_forget()
@@ -185,6 +181,20 @@ class UI():
         return plot_fr
 
 
+    def _update_waypoint(self) -> None:
+        if Context.router.route == []:
+            return
+        self.waypoint_prev_btn.config(state=tk.DISABLED if Context.router.offset == 0 else tk.NORMAL)
+        self.waypoint_next_btn.config(state=tk.DISABLED if Context.router.offset >= len(Context.router.route) -1 else tk.NORMAL)
+        wp:str = Context.router.next_stop
+        if Context.router.jumps != 0:
+            wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
+        self.waypoint_btn.configure(text=wp)
+        if Context.router.jumps_left > 0:
+            ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
+        self.ctc(Context.router.next_stop)
+
+
     def _create_route_fr(self) -> tk.Frame:
         """ Create the route display frame """
         Debug.logger.debug(f"Creating route frame")
@@ -201,7 +211,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
         Debug.logger.debug(f"waypoint_prev_btn created {self.waypoint_prev_btn}")
         col += 1
-        self.waypoint_btn = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc())
+        self.waypoint_btn = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
         ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
         Debug.logger.debug(f"waypoint_btn created {self.waypoint_btn}")
@@ -254,13 +264,20 @@ class UI():
     def set_source_ac(self, text: str) -> None:
         """ Set the start system display """
         if self.source_ac == None: return
-        self.source_ac.set_text(str(range), False)
+        #self.source_ac.set_text(str(range), False)
+        self.source_ac.delete(0, tk.END)
+        self.source_ac.insert(0, text)
+        self.source_ac.set_default_style()
 
 
     def set_dest_ac(self, text: str) -> None:
         """ Set the destination system display """
         if self.dest_ac == None: return
-        self.dest_ac.set_text(str(range), False)
+        #self.dest_ac.set_text(str(range), False)
+        self.dest_ac.delete(0, tk.END)
+        self.dest_ac.insert(0, text)
+        self.dest_ac.set_default_style()
+
 
 
     def set_range(self, range:float, supercharge_mult:int) -> None:
@@ -311,6 +328,7 @@ class UI():
         res:bool = Context.router.plot_route(src, dest, eff, range, supercharge_mult)
         Debug.logger.debug(f"Route plotted {res}")
         if res == True:
+            self.ctc(Context.router.next_stop)
             self.show_frame('Route')
             return
         self.enable_plot_gui(True)

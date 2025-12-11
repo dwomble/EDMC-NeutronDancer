@@ -51,7 +51,9 @@ lbls:dict = {
     "install_instructions": "If you choose to install it, you will have to restart EDMC for it to take effect.",
     "install": "Install?",
     "update_confirm": "The update will be installed when you quit EDMC.",
-    "update_available": "Update will be installed on restart, click to cancel"
+    "update_available": "Update will be installed on restart, click to cancel",
+    "jump": "jump",
+    "jumps": "jumps"
 }
 
 # Tooltips

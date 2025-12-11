@@ -27,8 +27,8 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_version = Version(version_file.read_text())
     Context.plugin_useragent = f"{GIT_PROJECT}-{Context.plugin_version}"
 
-    Context.updater = Updater(str(Context.plugin_version), str(Context.plugin_dir))
-    Context.updater.check_for_update()
+    #Context.updater = Updater(str(Context.plugin_version), str(Context.plugin_dir))
+    #Context.updater.check_for_update()
 
     return NAME
 
@@ -42,8 +42,7 @@ def plugin_start(plugin_dir: str) -> None:
 @catch_exceptions
 def plugin_stop() -> None:
     Context.router.save()
-    if Context.updater.update_available:
-        Updater().install_update()
+    #if Context.updater.update_available: Context.updater.install_update()
 
 
 @catch_exceptions
@@ -78,5 +77,5 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.router = Router()
     Context.ui = UI(parent)
 
-    parent.master.after_idle(ask_for_update)
+    #parent.master.after_idle(ask_for_update)
     return Context.ui.frame

@@ -45,6 +45,7 @@ class Router():
         self.offset:int = 0
         self.jumps_left:int = 0
         self.next_stop:str = ""
+        self.jumps:int = 0
 
         self._load()
         self._initialized = True
@@ -98,6 +99,10 @@ class Router():
         if self.dest != '':
             self.history.insert(0, self.dest)
         self.history = self.history[:10]  # Keep only last 10 entries
+        self.ship['range'] = self.range
+        self.ship['type'] = self.ship.get('type', '')
+        self.ship['name'] = self.ship.get('name', )
+        Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
         self.ships[self.ship_id] = self.ship
         self.save()
 
@@ -110,34 +115,34 @@ class Router():
         """
         Debug.logger.debug(f"Updating route by {direction} {self.system}")
         if self.route == []: return
-
         c:int = self._syscol()
         if direction == 0: # Figure out if we're on the route
-            for r in self.route[self.offset:]:
+            for i, r in enumerate(self.route):
                 if r[c] == self.system:
                     Debug.logger.debug(f"Found system {self.offset} {direction}")
-                    self.offset = direction
-                    direction = 1
+                    self.offset = i
                     break
-                direction += 1
 
             # We aren't on the route so just return
             if self.route[self.offset][c] != self.system:
                 Debug.logger.debug(f"We aren't on the route")
                 return
+            direction = 1  # Default to moving forwards
             Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][c]}")
 
         # Are we at one end or the other?
         if self.offset + direction < 0 or self.offset + direction >= len(self.route):
-            if direction > 0:
+            if direction >= 0:
                 self.next_stop = lbls['route_complete']
+                self.jumps = 0
                 self._store_history()
-            Context.ui.show_frame('Default')
+            Context.ui.show_frame('Route')
             return
 
         Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
         self.offset += direction
         self.next_stop = self.route[self.offset][c]
+        self.jumps = self.route[self.offset][self._syscol('Jumps')] if 'Jumps' in self.headers else 0
         Context.ui.show_frame('Route')
 
 
@@ -156,6 +161,7 @@ class Router():
 
             tries = 0
             while tries < 20:
+                Debug.logger.debug(f"Checking for route results, try {tries + 1}")
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
 
@@ -198,6 +204,7 @@ class Router():
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
             self.jumps_left = sum([j[cols.index('jumps')] for j in self.route]) if 'Jumps' in hdrs else 0
             self.next_stop = self.route[self.offset][self._syscol()]
+            self.jumps = self.route[self.offset][cols.index('jumps')] if 'Jumps' in hdrs else 0
             self.save()
             return True
 

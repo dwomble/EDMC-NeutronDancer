@@ -1,7 +1,6 @@
 # Route files
 *.csv
 data/
-data/*
 
 # Python cache/compiled files
 *.pyo
@@ -17,6 +16,7 @@ __pycache__/
 # Development garbage
 test*.*
 deploy.sh
-data/route.json
 
 */.DS_Store
+
+data/route.json

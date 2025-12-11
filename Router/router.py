@@ -46,6 +46,7 @@ class Router():
         self.headers:list = []
         self.route:list = []
         self.ships:dict = {}
+        self.history:list = []
         self.bodies:str = ""
 
         self.src:str = ""
@@ -62,25 +63,22 @@ class Router():
         self._initialized = True
 
 
-    def set_ship(self, ship_id:str) -> None:
-        Debug.logger.debug(f"Setting current ship to {ship_id}")
+    def set_ship(self, ship_id:str, range:str, name:str, type:str) -> None:
+        Debug.logger.debug(f"Setting current ship to {ship_id} {name} {type}")
         ship:str = str(ship_id)
         self.ship = ship
+        self.range = round(float(range) * 0.95, 2)
+        self.supercharge_mult = 6 if type in ('explorer_nx') else 4
+        if ship not in self.ships: # Temporarily. In future move this to end of a route
+            self.ships[ship] = {'range': range, 'name': name, 'type': type, 'supercharge_mult': self.supercharge_mult}
+
         if ship in self.ships:
-            self.range = self.ships[ship]
-            Debug.logger.debug(f"Set range to {self.range} Ly for ship {ship}")
-            Context.ui.range_entry.var.set(str(self.range))
+            self.ship_name = self.ships[ship].get('name', name)
+            self.range = self.ships[ship].get('range', range)
+            self.supercharge_mult = self.supercharge_mult
 
-
-    def update_ships(self, ship_id:str, max_jump_range:float) -> None:
-        ship:str = str(ship_id)
-        if ship == '': return
-
-        if ship not in self.ships:
-            self.ships[ship] = round(max_jump_range * 0.95, 2)
-            Debug.logger.debug(f"Updated ship {ship} with max jump range {round(max_jump_range * 0.95, 2)} Ly")
-
-        self.save()
+        Context.ui.range_entry.var.set(str(self.range))
+        Context.ui.multiplier.set(self.supercharge_mult)
 
 
     def copy_waypoint(self) -> None:
@@ -120,6 +118,7 @@ class Router():
     def update_route(self, direction:int = 0) -> None:
         """ Step forwards or backwards through the route """
         c:int = self._syscol()
+        if self.route == []: return
 
         if direction == 0: # Figure out if we're on the route
             for r in self.route:
@@ -236,7 +235,7 @@ class Router():
 
             if not route_response:
                 Debug.logger.error("Query to Spansh timed out")
-                Context.ui.set_error("The query to Spansh was too long and timed out, please try again.")
+                Context.ui.show_error("The query to Spansh was too long and timed out, please try again.")
 
             if route_response.status_code != 200:
                 self.plot_error(route_response)
@@ -278,7 +277,7 @@ class Router():
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
             Context.ui.enable_plot_gui(True)
-            Context.ui.set_error(lbls["plot_error"])
+            Context.ui.show_error(lbls["plot_error"])
         Debug.logger.debug(f"Done")
         return False
 
@@ -289,13 +288,13 @@ class Router():
         failure:dict = json.loads(response.content)
 
         if response.status_code == 400 and "error" in failure:
-            Context.ui.set_error(failure["error"])
+            Context.ui.show_error(failure["error"])
             if "starting system" in failure["error"]:
                 Context.ui.source_ac["fg"] = "red"
             if "finishing system" in failure["error"]:
                 Context.ui.dest_ac["fg"] = "red"
         else:
-            Context.ui.set_error(lbls["plot_error"])
+            Context.ui.show_error(lbls["plot_error"])
         return
 
 
@@ -322,7 +321,7 @@ class Router():
         except Exception as e:
             Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
             Context.ui.enable_plot_gui(True)
-            Context.ui.set_error("An error occured while reading the file.")
+            Context.ui.show_error("An error occured while reading the file.")
 
 
     def clear_route(self) -> None:
@@ -333,8 +332,6 @@ class Router():
         self.jumps_left = 0
         self.roadtoriches = False
         self.fleetcarrier = False
-
-        Context.ui.update_display()
         self.save()
 
 
@@ -465,7 +462,8 @@ class Router():
             'headers': self.headers,
             'route': self.route,
             'ship': str(self.ship),
-            'ships': self.ships
+            'ships': self.ships,
+            'history': self.history
             }
 
 
@@ -483,3 +481,4 @@ class Router():
         self.route = dict.get('route', [])
         self.ship = dict.get('ship', '')
         self.ships = dict.get('ships', {})
+        self.history = dict.get('history', [])

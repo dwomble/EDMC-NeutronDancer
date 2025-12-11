@@ -43,23 +43,20 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     #Debug.logger.debug(f"Journal entry received: {entry} {system}")
     match entry['event']:
         case 'FSDJump' | 'Location' | 'SupercruiseEntry' | 'SupercruiseExit':
+            if Context.system == sys: return
             Debug.logger.debug(f"Current system changed: {Context.system} -> {sys}")
             Context.system = sys
             Context.router.update_route()
             Context.ui.set_source_ac(sys)
 
         case 'FSSDiscoveryScan':
+            if Context.system == sys: return
             Debug.logger.debug(f"Current system changed: {Context.system} -> {sys}")
             Context.system = sys
             Context.router.update_route()
 
-        case 'StoredShips':
-            for ship in entry.get('ShipsHere', []) + entry.get('ShipsRemote', []):
-                Context.router.update_ships(ship.get('ShipID', ''), ship.get('MaxJumpRange', 0.0))
-
         case 'Loadout':
-            Context.router.set_ship(entry.get('ShipID', ''))
-            Context.router.update_ships(entry.get('ShipID', ''), entry.get('MaxJumpRange', 0.0))
+            Context.router.set_ship(entry.get('ShipID', ''), entry.get('MaxJumpRange', 0.0), entry.get('ShipName', ''), entry.get('ShipType', ''))
 
 
 def ask_for_update() -> None:
@@ -79,6 +76,7 @@ def ask_for_update() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.router = Router()
     Context.ui = UI(parent)
+    Context.ui.update_display(True)
 
     Debug.logger.debug(f"Parent: [{parent}] [{Context.ui}] [{Context.ui.parent}]")
     parent.master.after_idle(ask_for_update)

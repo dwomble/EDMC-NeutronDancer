@@ -39,6 +39,7 @@ def plugin_start(plugin_dir: str) -> None:
     raise EnvironmentError(errs["required_version"])
 
 
+
 @catch_exceptions
 def plugin_stop() -> None:
     Context.router.save()
@@ -48,7 +49,7 @@ def plugin_stop() -> None:
 @catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     sys:str = entry.get('StarSystem', system)
-    Debug.logger.debug(f"Journal Entry: {entry['event']} in {sys} ({Context.router.system}")
+    #Debug.logger.debug(f"Journal Entry: {entry['event']} in {sys} ({Context.router.system}")
     if sys != Context.router.system:
         Context.router.system = sys
         Context.router.update_route()

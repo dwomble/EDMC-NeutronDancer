@@ -360,7 +360,7 @@ class UI():
         if Context.router.next_stop == lbls['route_complete']:
             Debug.logger.debug("No next stop to copy, clearing route")
             Context.router.clear_route()
-            self.show_frame('Plot')
+            self.show_frame('None')
             return
 
         if sys.platform == "linux" or sys.platform == "linux2":

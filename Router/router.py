@@ -94,11 +94,12 @@ class Router():
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
-        if self.src != '':
+        if self.src != '' and self.src:
             self.history.insert(0, self.src)
-        if self.dest != '':
+        if self.dest != '' and self.dest not in self.history:
             self.history.insert(0, self.dest)
-        self.history = self.history[:10]  # Keep only last 10 entries
+        self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
+
         self.ship['range'] = self.range
         self.ship['type'] = self.ship.get('type', '')
         self.ship['name'] = self.ship.get('name', )

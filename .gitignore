@@ -1,6 +1,5 @@
 # Route files
 *.csv
-data/
 
 # Python cache/compiled files
 *.pyo
@@ -20,3 +19,4 @@ deploy.sh
 */.DS_Store
 
 data/route.json
+

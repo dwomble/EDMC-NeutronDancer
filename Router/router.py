@@ -114,8 +114,8 @@ class Router():
         Step forwards or backwards through the route.
         If no direction is given pickup from wherever we are on the route
         """
-        Debug.logger.debug(f"Updating route by {direction} {self.system}")
         if self.route == []: return
+        Debug.logger.debug(f"Updating route by {direction} {self.system}")
         c:int = self._syscol()
         if direction == 0: # Figure out if we're on the route
             for i, r in enumerate(self.route):

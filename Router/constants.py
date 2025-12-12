@@ -16,9 +16,9 @@ DATA_DIR = 'data'
 
 # Map from returned data to our header names
 HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Remaining": "distance_left",
-               "Jumps": "jumps", "Neutron Star": "neutron_star"}
+               "Jumps": "jumps", "Neutron": "neutron_star"}
 # Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Neutron Star", "Body Name", "Body Subtype",
+HEADERS:list = ["System Name", "Jumps", "Neutron", "Body Name", "Body Subtype",
                 "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
                 "Distance", "Distance Jumped", "Distance Remaining", "Fuel Used", "Icy Ring", "Pristine", "Restock Tritium"]
 

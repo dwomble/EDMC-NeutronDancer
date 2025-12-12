@@ -450,9 +450,16 @@ class RouteWindow:
         tree.configure(yscrollcommand=sb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        for hdr in Context.router.headers:
-            tree.heading(hdr, text=hdr, anchor=tk.W)
-            tree.column(hdr, anchor=tk.W, stretch=tk.NO, width=int(120*self.scale))
+        widths:list = [len(w)+1 for w in Context.router.headers]
+        for r in Context.router.route:
+            widths = [max(widths[i], len(str(w))+1) for i, w in enumerate(r)]
+
+        for i, hdr in enumerate(Context.router.headers):
+            tree.heading(hdr, text=hdr, anchor=tk.W if i == 0 else tk.E)
+            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*self.scale), anchor=tk.W if i == 0 else tk.E)
 
         for row in Context.router.route:
             tree.insert("", 'end', values=row)
+
+        w:int = sum([int(widths[i]*8*self.scale) for i in range(len(widths))]) + 30
+        self.window.geometry(f"{int(w)}x{int(300*self.scale)}")

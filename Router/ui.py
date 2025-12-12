@@ -42,12 +42,12 @@ class UI():
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
         self.frame:tk.Frame = tk.Frame(parent, borderwidth=2)
-        self.frame.pack(fill=tk.BOTH, expand=True)
+        self.frame.pack(fill=tk.BOTH, expand=True, anchor=tk.CENTER)
         self.title_fr = None
         self.route_fr = None
         self.plot_fr = None
 
-        self.error_lbl = ttk.Label(self.frame, textvariable=self.error_txt)
+        self.error_lbl = self._label(self.frame, textvariable=self.error_txt)
         self.error_lbl.pack()
 
         self.hide_error()
@@ -79,18 +79,24 @@ class UI():
                     self.route_fr = self._create_route_fr()
                 self._update_waypoint()
                 self.route_fr.grid()
-                if self.plot_fr != None: self.plot_fr.grid_forget()
-                if self.title_fr != None: self.title_fr.grid_forget()
+                if self.plot_fr != None: self.plot_fr.grid_remove()
+                self.plot_fr = None
+                if self.title_fr != None: self.title_fr.grid_remove()
+                self.title_fr = None
             case 'Plot':
-                if self.route_fr != None: self.route_fr.grid_forget()
+                if self.route_fr != None: self.route_fr.grid_remove()
+                self.route_fr = None
                 if self.plot_fr == None:
                     self.plot_fr = self._create_plot_fr()
                 self.plot_fr.grid()
                 self.enable_plot_gui(True)
-                if self.title_fr != None: self.title_fr.grid_forget()
+                if self.title_fr != None: self.title_fr.grid_remove()
+                self.title_fr = None
             case _:
-                if self.route_fr != None: self.route_fr.grid_forget()
-                if self.plot_fr != None: self.plot_fr.grid_forget()
+                if self.route_fr != None: self.route_fr.grid_remove()
+                self.route_fr = None
+                if self.plot_fr != None: self.plot_fr.grid_remove()
+                self.plot_fr = None
                 if self.title_fr == None:
                     self.title_fr = self._create_title_fr()
                 self.title_fr.grid()
@@ -99,9 +105,10 @@ class UI():
     def _create_title_fr(self) -> tk.Frame:
         """ Create the base/title frame """
         title_fr:tk.Frame = tk.Frame(self.frame)
+        if config.get_int('theme') == 1: title_fr.config(bg='black')
         title_fr.grid(row=0, column=0)
         col:int = 0; row:int = 0
-        self.lbl = ttk.Label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
+        self.lbl = self._label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
         self.plot_gui_btn = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
@@ -114,6 +121,7 @@ class UI():
         """ Create the route plotting frame """
         Debug.logger.debug(f"Creating plot frame")
         plot_fr:tk.Frame = tk.Frame(self.frame)
+        if config.get_int('theme') == 1: plot_fr.config(bg='black')
         row:int = 0
         col:int = 0
 
@@ -160,7 +168,7 @@ class UI():
         self.multiplier.set(Context.router.supercharge_mult)  # Set default value
 
         # Create radio buttons
-        l1 = ttk.Label(plot_fr, text=lbls["supercharge_label"])
+        l1 = self._label(plot_fr, text=lbls["supercharge_label"])
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
         r1 = tk.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
@@ -199,7 +207,9 @@ class UI():
         """ Create the route display frame """
         Debug.logger.debug(f"Creating route frame")
         route_fr:tk.Frame = tk.Frame(self.frame)
+        if config.get_int('theme') == 1: route_fr.config(bg='black')
         fr1:tk.Frame = tk.Frame(route_fr)
+        if config.get_int('theme') == 1: fr1.config(bg='black')
         fr1.grid_columnconfigure(0, weight=0)
         fr1.grid_columnconfigure(1, weight=1)
         fr1.grid_columnconfigure(2, weight=0)
@@ -221,10 +231,11 @@ class UI():
         Debug.logger.debug(f"waypoint_next_btn created {self.waypoint_next_btn}")
         #row +=1
         #col -= 1
-        #self.jumpcounttxt_lbl = ttk.Label(fr1, text=lbls["jumps_remaining"] + " " + str(Context.router.jumps_left))
+        #self.jumpcounttxt_lbl = self._label(fr1, text=lbls["jumps_remaining"] + " " + str(Context.router.jumps_left))
         #self.jumpcounttxt_lbl.grid(row=row, column=col, padx=5, pady=5)
 
         fr2:tk.Frame = tk.Frame(route_fr)
+        if config.get_int('theme') == 1: fr2.config(bg='black')
         fr2.grid_columnconfigure(0, weight=0)
         fr2.grid_columnconfigure(1, weight=0)
         fr2.grid(row=1, column=0, sticky=tk.W)
@@ -257,7 +268,7 @@ class UI():
                     if ship.get('name', '') == param:
                         Debug.logger.debug(f"Range set to {param} {ship.get('range', '0.0')}")
                         self.range_entry.set_text(str(ship.get('range', '0.0')), False)
-                        self.multiplier.set(int(ship.get('supercharge_mult', 4)))
+                        self.multiplier.set(6 if ship.get('type', '') in ('explorer_nx') else 4)
                         return
 
 
@@ -379,6 +390,13 @@ class UI():
         if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
 
         return tk.Button(fr, **kw, fg=config.get_str('dark_text'), bg='black', activebackground='black')
+
+
+    def _label(self, fr:tk.Frame, **kw) -> tk.Label|ttk.Label:
+        """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
+        if config.get_int('theme') == 0: return ttk.Label(fr, **kw)
+
+        return tk.Label(fr, **kw, fg=config.get_str('dark_text'), bg='black')
 
 
     @catch_exceptions

@@ -6,7 +6,7 @@ import webbrowser
 from semantic_version import Version # type: ignore
 
 from .constants import GIT_PROJECT, GIT_DOWNLOAD, GIT_CHANGELOG_LIST, GIT_CHANGELOG, GIT_VERSION
-from utils.Debug import Debug
+from utils.Debug import Debug, catch_exceptions
 from .context import Context
 
 class Updater():
@@ -82,14 +82,17 @@ class Updater():
         return changelogs
 
 
+    @catch_exceptions
     def check_for_update(self) -> None:
         try:
-            response = requests.get(GIT_VERSION, timeout=2)
+            Debug.logger.debug(f"Checking for update")
+            response:requests.Response = requests.get(GIT_VERSION, timeout=2)
             if response.status_code != 200:
                 Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
                 return
-
-            if Context.plugin_version != Version(response.text):
+            Debug.logger.debug(f"response {response.text}")
+            if Context.plugin_version != Version.coerce(response.text):
+                Debug.logger.debug('Update available')
                 self.update_available = True
 
         except Exception as e:

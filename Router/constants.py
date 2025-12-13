@@ -2,14 +2,14 @@ NAME="Navl's Neutron Dancer"
 
 GIT_USER="dwomble"
 GIT_PROJECT="EDMC-NeutronDancer"
-GIT_DOWNLOAD=f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/download"
-GIT_VERSION=f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
-GIT_CHANGELOG_LIST=f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_CHANGELOG=f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CHANGELOG.md#"
+GIT_DOWNLOAD:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/download"
+GIT_VERSION:str = f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
+GIT_CHANGELOG_LIST:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
+GIT_CHANGELOG:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CHANGELOG.md#"
 
-SPANSH_API = "https://spansh.co.uk/api"
-SPANSH_ROUTE = f"{SPANSH_API}/route"
-SPANSH_RESULTS = f"{SPANSH_API}/results"
+SPANSH_API:str = "https://spansh.co.uk/api"
+SPANSH_ROUTE:str = f"{SPANSH_API}/route"
+SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 
 # Directory we store our save data in
 DATA_DIR = 'data'

@@ -27,8 +27,9 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_version = Version(version_file.read_text())
     Context.plugin_useragent = f"{GIT_PROJECT}-{Context.plugin_version}"
 
-    #Context.updater = Updater(str(Context.plugin_version), str(Context.plugin_dir))
-    #Context.updater.check_for_update()
+    Debug.logger.debug(f"Calling check for update")
+    Context.updater = Updater(str(Context.plugin_version), str(Context.plugin_dir))
+    Context.updater.check_for_update()
 
     return NAME
 
@@ -48,13 +49,10 @@ def plugin_stop() -> None:
 
 @catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
-    sys:str = entry.get('StarSystem', system)
-    #Debug.logger.debug(f"Journal Entry: {entry['event']} in {sys} ({Context.router.system}")
-    if sys != Context.router.system:
-        Context.router.system = sys
-        Context.router.update_route()
-
     match entry['event']:
+        case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
+            Context.router.system = entry.get('StarSystem', system)
+            Context.router.update_route()
         case 'StoredShips':
             Context.router.shipyard = entry.get('ShipsHere', []) + entry.get('ShipsRemote', [])
         case 'Loadout':
@@ -66,9 +64,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
 @catch_exceptions
 def ask_for_update() -> None:
     if Context.updater.update_available:
-        update_txt = f"{lbls['update_available']}\n{lbls['install_instructions']}\n\n" + \
+        update_txt:str = f"{lbls['update_available']}\n{lbls['install_instructions']}\n\n" + \
                     f"{Context.plugin_changelogs}\n\n{lbls['install']}"
-        install_update = confirmDialog.askyesno(GIT_PROJECT, update_txt)
+        install_update:bool = confirmDialog.askyesno(GIT_PROJECT, update_txt)
 
         if install_update:
             confirmDialog.showinfo(GIT_PROJECT, lbls['update_confirm'])
@@ -82,5 +80,6 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.router = Router()
     Context.ui = UI(parent)
 
+    Debug.logger.debug(f"Plugin_app")
     #parent.master.after_idle(ask_for_update)
     return Context.ui.frame

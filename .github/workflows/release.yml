@@ -20,7 +20,7 @@ jobs:
           echo "${{ env.VERSION }}" > version
   
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" "requirements*.txt" ".editorconfig" ".isort.cfg"
+      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*"
 
     - name: Release
       uses: softprops/action-gh-release@v1

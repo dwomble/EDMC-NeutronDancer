@@ -102,13 +102,14 @@ class Updater():
             if response.status_code != 200:
                 Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
                 return
-            Debug.logger.debug(f"response {Version.coerce(response.text)}")
+
+            Debug.logger.debug(f"version: {self.version} response {Version.coerce(response.text)}")
             if self.version == Version.coerce(response.text):
                 return
             Debug.logger.debug('Update available')
             self.update_available = True
             self.install_update = True
-            self.update_version:Version = Version.coerce(response.text)
+            self.update_version = Version.coerce(response.text)
 
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)

@@ -17,7 +17,7 @@ jobs:
     - name: Update release file
       run: |
           # Overwrite the file 'release' with the tag name
-          echo "${{ env.VERSION }}" > version
+          echo "${{ env.VERSION }}" | sed 's/^v//' > version
   
     - name: Zip Folder
       run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*"

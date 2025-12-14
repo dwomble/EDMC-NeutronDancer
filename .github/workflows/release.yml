@@ -8,10 +8,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
+    - name: Get the Release Tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+    - name: Update release file
+      run: |
+          # Overwrite the file 'release' with the tag name
+          echo "${{ env.VERSION }}" > version
+  
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".editorconfig"
+      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" "requirements*.txt" ".editorconfig" ".isort.cfg"
 
     - name: Release
       uses: softprops/action-gh-release@v1

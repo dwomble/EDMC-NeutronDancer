@@ -1,5 +1,13 @@
 # EDMC-NeutronDancer Change Log
 
+## v0.3.0 - 2025-12-?
+
+## Changes
+* Manual updater implemented
+* Added current system to source menu list
+* Update source system after jump onboard a carrier
+* Added jumps remaining to the route view
+
 ## v0.2.0 - 2025-12-12
 
 ### Changes

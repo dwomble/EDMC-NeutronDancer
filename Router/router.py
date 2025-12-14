@@ -157,6 +157,7 @@ class Router():
         if self.offset + direction < 0 or self.offset + direction >= len(self.route):
             if direction >= 0:
                 self.next_stop = lbls['route_complete']
+                self.jumps_left = 0
                 self.jumps = 0
                 self._store_history()
             Context.ui.show_frame('Route')
@@ -166,6 +167,8 @@ class Router():
         self.offset += direction
         self.next_stop = self.route[self.offset][c]
         self.jumps = self.route[self.offset][self._syscol('Jumps')] if 'Jumps' in self.headers else 0
+        self.jumps_left = sum([j[self._syscol('Jumps')] for j in self.route[self.offset:]]) if 'Jumps' in self.headers else 0
+
         Context.ui.show_frame('Route')
 
 
@@ -207,12 +210,18 @@ class Router():
                 if HEADER_MAP.get(h, '') in route[0].keys():
                     hdrs.append(h)
                     cols.append(HEADER_MAP.get(h, ''))
+                if h == "Jumps Rem":
+                    hdrs.append(h)
+                    cols.append('jumps_remaining')
 
             Debug.logger.debug(f"Cols: {cols} hdrs: {hdrs}")
             rte:list = []
-            for waypoint in route:
+            for i, waypoint in enumerate(route):
                 r:list = []
                 for c in cols:
+                    if c == 'jumps_remaining':
+                        r.append(sum([j['jumps'] for j in route[i:]]))
+                        continue
                     r.append(waypoint[c] if not re.match(r"^\d+\.(\d+)?$", str(waypoint[c])) else round(float(waypoint[c]), 2))
                 rte.append(r)
 

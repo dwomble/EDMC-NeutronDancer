@@ -134,9 +134,13 @@ class UI():
         srcmenu:dict = {}
         destmenu:dict = {}
         shipmenu:dict = {}
+        if Context.router.system != '':
+            srcmenu[Context.router.system] = [self.menu_callback, 'src']
         for sys in Context.router.history:
-            srcmenu[sys] = [self.menu_callback, 'src']
-            destmenu[sys] = [self.menu_callback, 'dest']
+            if sys not in srcmenu:
+                srcmenu[sys] = [self.menu_callback, 'src']
+            if sys not in destmenu:
+                destmenu[sys] = [self.menu_callback, 'dest']
 
         for id, ship in Context.router.ships.items():
             shipmenu[ship.get('name')] = [self.menu_callback, 'ship']

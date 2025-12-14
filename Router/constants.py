@@ -16,12 +16,12 @@ SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 DATA_DIR = 'data'
 
 # Map from returned data to our header names
-HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Remaining": "distance_left",
-               "Jumps": "jumps", "Neutron": "neutron_star"}
+HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
+                "Jumps": "jumps", "Neutron": "neutron_star"}
 # Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Neutron", "Body Name", "Body Subtype",
+HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Body Subtype",
                 "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Remaining", "Fuel Used", "Icy Ring", "Pristine", "Restock Tritium"]
+                "Distance", "Distance Jumped", "Distance Rem", "Fuel Used", "Icy Ring", "Pristine", "Restock Tritium"]
 
 # Headers
 hdrs:dict = {

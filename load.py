@@ -54,6 +54,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.system = entry.get('StarSystem', system)
             Context.router.update_route()
+        case 'CarrierJump' if entry.get('Docked', True) == True:
+            Context.router.system = entry.get('StarSystem', system)
+            Context.router.update_route()
         case 'StoredShips':
             Context.router.shipyard = entry.get('ShipsHere', []) + entry.get('ShipsRemote', [])
         case 'Loadout':

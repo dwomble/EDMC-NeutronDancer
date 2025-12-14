@@ -21,23 +21,24 @@ class Updater():
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, version:Version|None = None, plugin_dir:str='') -> None:
+
+    def __init__(self, plugin_dir:str='') -> None:
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
-        if version != None: self.version:Version = version
         if plugin_dir != '': self.plugin_dir:str = plugin_dir
 
         self.update_available:bool = False
         self.install_update:bool = False
-        self.update_version:Version
+        self.update_version:str
 
         self.download_url:str = ""
         self.zip_downloaded:str = ""
 
         # Make sure we're actually initialized
-        if self.version != None and self.plugin_dir != '':
+        if self.plugin_dir != '':
             self._initialized = True
+
 
     def download_zip(self) -> bool:
         """ Download the zipfile of the latest version """
@@ -49,9 +50,9 @@ class Updater():
             Debug.logger.error(f"Failed to download {GIT_PROJECT} update (status code {r.status_code}).)")
             return False
 
-        zip_path:str = os.path.join(self.plugin_dir, "updates")
-        os.makedirs(zip_path, exist_ok=True)
-        zip_file:str = os.path.join(zip_path, f"{GIT_PROJECT}-{self.update_version}.zip")
+        self.zip_path:str = os.path.join(self.plugin_dir, "updates")
+        os.makedirs(self.zip_path, exist_ok=True)
+        zip_file:str = os.path.join(self.zip_path, f"{GIT_PROJECT}-{self.update_version}.zip")
         with open(zip_file, 'wb') as f:
             Debug.logger.info(f"Downloading {GIT_PROJECT} to " + zip_file)
             #f.write(os.path.join(r.content))
@@ -60,21 +61,22 @@ class Updater():
         self.zip_downloaded = zip_file
         return True
 
-    def install(self) -> None:
-        if not self.get_changelogs():
-            return
 
-        if not self.download_zip():
+    def install(self) -> None:
+        """ Download the latest zip file and install it """
+        if self.install_update != True or not self.get_changelogs() or not self.download_zip():
             return
         try:
-            Debug.logger.debug(f"Extracting zipfile to {self.plugin_dir}")
+            Debug.logger.debug(f"Extracting zipfile to {self.zip_path}")
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
-            #os.remove(self.zip_path)
+            #os.remove(self.zip_downloaded)
         except Exception as e:
             Debug.logger.error("Failed to install update, exception info:", exc_info=e)
 
+
     def get_changelogs(self) -> bool:
+        """ Mostly only used to get the download_url """
         try:
             Debug.logger.debug(f"Requesting {GIT_CHANGELOG_LIST}")
             r:requests.Response = requests.get(GIT_CHANGELOG_LIST, timeout=2)
@@ -84,32 +86,32 @@ class Updater():
             self.install_update = False
             return False
 
-        Debug.logger.debug(f"{json.loads(r.content)}")
         # Get the changelog and replace all breaklines with simple ones
         changelogs:str = json.loads(r.content).get('body', '')
         self.changelogs = "\n".join(changelogs.splitlines())
         self.download_url = json.loads(r.content).get('zipball_url', '')
-        Debug.logger.debug(f"{changelogs}")
 
         return True
 
 
     @catch_exceptions
-    def check_for_update(self) -> None:
+    def check_for_update(self, version:str) -> None:
+        """ Compare the current version file with github version """
         try:
             Debug.logger.debug(f"Checking for update")
+
             response:requests.Response = requests.get(GIT_VERSION, timeout=2)
             if response.status_code != 200:
                 Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
                 return
-
-            Debug.logger.debug(f"version: {self.version} response {Version.coerce(response.text)}")
-            if self.version == Version.coerce(response.text):
+            latest:str = str(Version.coerce(response.text)).strip().replace("-", "")
+            Debug.logger.debug(f"version: {version} response {latest}")
+            if version == latest:
                 return
             Debug.logger.debug('Update available')
             self.update_available = True
             self.install_update = True
-            self.update_version = Version.coerce(response.text)
+            self.update_version = latest
 
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)

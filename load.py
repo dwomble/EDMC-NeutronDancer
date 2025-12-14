@@ -15,22 +15,24 @@ from Router.context import Context
 from Router.router import Router
 from Router.ui import UI
 
+
 @catch_exceptions
 def plugin_start3(plugin_dir: str) -> str:
     # Debug Class
     Debug(plugin_dir)
+    Debug.logger.info(f"Starting (start3) {NAME} in {appname}")
+
     Context.plugin_name = NAME
     Context.plugin_dir = Path(plugin_dir).resolve()
     version_file:Path = Context.plugin_dir / "version"
-    version = Version(version_file.read_text())
-
-    Debug.logger.info(f"Starting (start3) {NAME} version {version} in {appname}")
+    version:str = "Development"
+    if version_file.is_file():
+        version = str(Version(version_file.read_text()))
 
     Context.plugin_useragent = f"{GIT_PROJECT}-{version}"
-
-    Debug.logger.debug(f"Calling check for update")
-    Context.updater = Updater(version, str(Context.plugin_dir))
-    Context.updater.check_for_update()
+    Context.updater = Updater(str(Context.plugin_dir))
+    if version_file.is_file():
+        Context.updater.check_for_update(version)
 
     return NAME
 

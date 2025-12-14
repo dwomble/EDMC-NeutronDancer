@@ -19,7 +19,11 @@ from .context import Context
 
 class UI():
     """
-    The main UI for the router
+        The main UI for the router.
+        It has three states with three different frames.
+          - Default, deliberately minimal for when the router isn't being used
+          - Plot, a plot entry frame
+          - Route, displays the route navigation
     """
     # Singleton pattern
     _instance = None
@@ -47,12 +51,12 @@ class UI():
         self.title_fr = None
         self.route_fr = None
         self.plot_fr = None
-        self.update:tk.Label|None = None
+        self.update:tk.Label
 
         if Context.updater and Context.updater.update_available:
             Debug.logger.debug(f"UI: Update available")
             Context.updater.install_update = False # We aren't doing auto installs right now
-            text:str = lbls['update_available'].format(v=str(Context.updater.update_version).replace("-", ""))
+            text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
             self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
             self.update.bind("<Button-1>", partial(self.cancel_update))
             self.update.grid(row=0, column=0, sticky=tk.W)
@@ -69,12 +73,12 @@ class UI():
     @catch_exceptions
     def cancel_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
-        Debug.logger.debug(f"Cancelling update, destroying frame")
         webbrowser.open(GIT_LATEST)
         Context.updater.install_update = False
         self.update.destroy()
 
 
+    @catch_exceptions
     def show_frame(self, which:str = 'Default'):
         """ Display the chosen frame, creating it if necessary """
         Debug.logger.debug(f"Show_frame {which}")

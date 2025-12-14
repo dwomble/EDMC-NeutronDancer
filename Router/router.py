@@ -54,6 +54,7 @@ class Router():
 
 
     def swap_ship(self, ship_id:str) -> None:
+        """ Called on a ship swap event to update our current ship information """
         self.ship_id = str(ship_id)
 
         if ship_id in self.ships:
@@ -253,13 +254,11 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        err:str = ""
+        err:str = lbls["no_response"]
         if response and response.status_code == 400 and "error" in json.loads(response.content):
             err = json.loads(response.content)["error"]
         elif response:
             err = lbls["plot_error"]
-        else:
-            err = lbls["no_response"]
 
         Context.ui.enable_plot_gui(True)
         Context.ui.show_error(err)
@@ -267,6 +266,7 @@ class Router():
 
 
     def plot_edts(self, filename: Path | str) -> None:
+        """ Currently unused """
         try:
             with open(filename, 'r') as txtfile:
                 route_txt:list = txtfile.readlines()
@@ -304,7 +304,7 @@ class Router():
 
     @catch_exceptions
     def _load(self) -> None:
-        ''' Load state from file '''
+        """ Load state from file """
         file:str = path.join(Context.plugin_dir, DATA_DIR, 'route.json')
         if path.exists(file):
             with open(file) as json_file:
@@ -313,7 +313,7 @@ class Router():
 
     @catch_exceptions
     def save(self) -> None:
-        ''' Save state to file '''
+        """ Save state to file """
 
         ind:int = 4
         makedirs(path.join(Context.plugin_dir, DATA_DIR), exist_ok=True)
@@ -324,7 +324,7 @@ class Router():
 
 
     def _as_dict(self) -> dict:
-        ''' Return a Dictionary representation of our data, suitable for serializing '''
+        """ Return a Dictionary representation of our data, suitable for serializing """
         return {
             'system': self.system,
             'source': self.src,
@@ -345,7 +345,7 @@ class Router():
 
 
     def _from_dict(self, dict:dict) -> None:
-        ''' Populate our data from a Dictionary that has been deserialized '''
+        """ Populate our data from a Dictionary that has been deserialized """
         self.system = dict.get('system', '')
         self.src = dict.get('source', '')
         self.dest = dict.get('destination', '')

@@ -25,7 +25,7 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add version
         git commit -m "Auto-generated report"
-        git push
+        git push origin HEAD:master
   
     - name: Zip Folder
       run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*"

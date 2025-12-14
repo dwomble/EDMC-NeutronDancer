@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Change Log
 
-## v0.3.0 - 2025-12-?
+## v0.3.0 - 2025-12-13
 
 ## Changes
 * Manual updater implemented

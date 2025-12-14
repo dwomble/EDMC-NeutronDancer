@@ -43,7 +43,7 @@ class UI():
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
         self.frame:tk.Frame = tk.Frame(parent, borderwidth=2)
-        self.frame.pack(fill=tk.BOTH, expand=True, anchor=tk.W)
+        self.frame.grid(sticky=tk.NSEW)
         self.title_fr = None
         self.route_fr = None
         self.plot_fr = None
@@ -53,9 +53,9 @@ class UI():
             Debug.logger.debug(f"UI: Update available")
             Context.updater.install_update = False # We aren't doing auto installs right now
             text:str = lbls['update_available'].format(v=str(Context.updater.update_version).replace("-", ""))
-            self.update = tk.Label(self.frame, text=text, anchor=tk.NW, font=("Helvetica", 9, "normal"), cursor='hand2')
+            self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
             self.update.bind("<Button-1>", partial(self.cancel_update))
-            self.update.grid(row=0, column=0, columnspan=2)
+            self.update.grid(row=0, column=0, sticky=tk.W)
 
         self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt)
         self.error_lbl.grid(row=1, column=0, columnspan=2)
@@ -83,6 +83,7 @@ class UI():
                 if self.route_fr == None:
                     self.route_fr = self._create_route_fr()
                 self._update_waypoint()
+                Debug.logger.debug(f"Route frame {self.route_fr}")
                 self.route_fr.grid()
                 if self.plot_fr != None: self.plot_fr.grid_remove()
                 self.plot_fr = None

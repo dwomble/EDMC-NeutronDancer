@@ -74,6 +74,7 @@ class Router():
         self.ship = {'name': '', 'range': 32.0, 'type': ''}
         return
 
+
     def set_ship(self, ship_id:str, range:float, name:str, type:str) -> None:
         """ Set the current ship details"""
         Debug.logger.debug(f"Setting current ship to {ship_id} {name} {type}")
@@ -122,11 +123,12 @@ class Router():
             self.history.insert(0, self.dest)
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
-        self.ship['range'] = self.range
-        self.ship['type'] = self.ship.get('type', '')
-        self.ship['name'] = self.ship.get('name', )
-        Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
-        self.ships[self.ship_id] = self.ship
+        if self.ship.get('name', '') != '':
+            self.ship['range'] = self.range
+            self.ship['type'] = self.ship.get('type', '')
+            self.ship['name'] = self.ship.get('name', )
+            Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
+            self.ships[self.ship_id] = self.ship
         self.save()
 
 
@@ -351,7 +353,7 @@ class Router():
         self.efficiency = dict.get('efficiency', 60)
         self.supercharge_mult = dict.get('supercharge_mult', 4)
         self.offset = dict.get('offset', 0)
-        self.jumps_left = dict.get('jumps_left', 0)
+        self.jumps_left = int(dict.get('jumps_left', 0))
         self.next_stop = dict.get('next_stop', "")
         self.headers = dict.get('headers', [])
         self.route = dict.get('route', [])

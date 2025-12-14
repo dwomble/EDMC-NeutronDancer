@@ -55,7 +55,6 @@ class UI():
 
         if Context.updater and Context.updater.update_available:
             Debug.logger.debug(f"UI: Update available")
-            Context.updater.install_update = False # We aren't doing auto installs right now
             text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
             self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
             self.update.bind("<Button-1>", partial(self.cancel_update))
@@ -73,7 +72,7 @@ class UI():
     @catch_exceptions
     def cancel_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
-        webbrowser.open(GIT_LATEST)
+        #webbrowser.open(GIT_LATEST)
         Context.updater.install_update = False
         self.update.destroy()
 

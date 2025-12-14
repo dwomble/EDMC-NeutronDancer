@@ -53,6 +53,7 @@ class Updater():
         self.zip_path:str = os.path.join(self.plugin_dir, "updates")
         os.makedirs(self.zip_path, exist_ok=True)
         zip_file:str = os.path.join(self.zip_path, f"{GIT_PROJECT}-{self.update_version}.zip")
+        if os.path.exists(zip_file): os.remove(zip_file)
         with open(zip_file, 'wb') as f:
             Debug.logger.info(f"Downloading {GIT_PROJECT} to " + zip_file)
             #f.write(os.path.join(r.content))
@@ -64,10 +65,10 @@ class Updater():
 
     def install(self) -> None:
         """ Download the latest zip file and install it """
-        if self.install_update != True or not self.get_changelogs() or not self.download_zip():
+        if self.install_update != True or not self.get_release() or not self.download_zip():
             return
         try:
-            Debug.logger.debug(f"Extracting zipfile to {self.zip_path}")
+            Debug.logger.debug(f"Extracting zipfile to {self.plugin_dir}")
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
             #os.remove(self.zip_downloaded)
@@ -75,7 +76,7 @@ class Updater():
             Debug.logger.error("Failed to install update, exception info:", exc_info=e)
 
 
-    def get_changelogs(self) -> bool:
+    def get_release(self) -> bool:
         """ Mostly only used to get the download_url """
         try:
             Debug.logger.debug(f"Requesting {GIT_CHANGELOG_LIST}")
@@ -86,10 +87,21 @@ class Updater():
             self.install_update = False
             return False
 
+        version_data:dict = json.loads(r.content)
+
         # Get the changelog and replace all breaklines with simple ones
-        changelogs:str = json.loads(r.content).get('body', '')
+        changelogs:str = version_data.get('body', '')
         self.changelogs = "\n".join(changelogs.splitlines())
-        self.download_url = json.loads(r.content).get('zipball_url', '')
+
+        if version_data['draft'] == True or version_data['prerelease'] == True:
+            Debug.logger.info("Latest server version is draft or pre-release, ignoring")
+            return False
+
+        assets:list = version_data.get('assets', [])
+        if assets == []: return False
+
+        self.download_url = assets[0].get('browser_download_url', "")
+        if self.download_url == "": return False
 
         return True
 

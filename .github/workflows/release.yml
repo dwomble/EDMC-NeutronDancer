@@ -19,10 +19,13 @@ jobs:
           # Overwrite the file 'release' with the tag name
           echo "${{ env.VERSION }}" | sed 's/^v//' > version
 
-    - uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: Automated Release Change
-        file_pattern: 'version'
+    - name: Commit and Push updated version file
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add version
+        git commit -m "Auto-generated report"
+        git push
   
     - name: Zip Folder
       run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*"

@@ -1,5 +1,13 @@
 # EDMC-NeutronDancer Changelog
 
+## v0.4.0 - 2025-12-15
+
+### New Features
+* Added CSV importing of various formats
+
+### Bug fixes
+* Fixed Linux copy to clipboard
+
 ## v0.3.1 - 2025-12-14
 
 ### Bug fixes

@@ -18,10 +18,12 @@ DATA_DIR = 'data'
 # Map from returned data to our header names
 HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
                 "Jumps": "jumps", "Neutron": "neutron_star"}
+
 # Headers that we accept
 HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Body Subtype",
                 "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Rem", "Fuel Used", "Icy Ring", "Pristine", "Restock Tritium"]
+                "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used", "Refuel", "Neutron Star",
+                "Icy Ring", "Pristine", "Restock Tritium"]
 
 # Headers
 hdrs:dict = {
@@ -69,6 +71,7 @@ btns:dict = {
     "next": "⋗",
     "next_wp": "Next waypoint ?",
     "plot_route": "do the neutron dance",
+    "import_route": "Import",
     "calculate_route": "Calculate",
     "cancel": "Cancel",
     "import_file": "Import file",
@@ -80,5 +83,9 @@ btns:dict = {
 # Error messages
 errs:dict = {
     "required_version": "This plugin requires EDMC version 4.0 or later.",
-    "invalid_range": "Invalid range"
+    "invalid_range": "Invalid range",
+    "no_file": "No file selected",
+    "empty_file": "File is empty or doesn't have a header row",
+    "invalid_file": "File is corrupt or of unsupported format",
+    "no_filename": "No filename given"
 }

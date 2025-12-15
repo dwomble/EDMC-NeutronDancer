@@ -5,21 +5,43 @@ from pathlib import Path
 from tkinter import filedialog
 import re
 
+from .constants import HEADERS, HEADER_MAP, errs
 from utils.Debug import Debug, catch_exceptions
 from .context import Context
 
-# Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Neutron Star", "Body Name", "Body Subtype",
-                "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Remaining", "Fuel Used", "Icy Ring", "Pristine", "Restock Tritium"]
+class CSV:
+    """ Handle csv import/export """
 
-class csv_handler:
-    """ Handle csv import/export, not currently used """
+    """
+    Class to manage all the route data and state information.
+    """
+    # Singleton pattern
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
+    def __init__(self) -> None:
+        # Only initialize if it's the first time
+        if hasattr(self, '_initialized'): return
+        self.roadtoriches:bool
+        self.fleetcarrier:bool
+        self.headers:list
+        self.route:list
+        self.error:str = ""
+
+        self._initialized = True
+
 
     @catch_exceptions
-    def import_csv(self, filepath:Path|str, clear_previous_route:bool = True):
+    def read(self) -> bool:
         """ Import a csv file """
-        ftypes = [
+        self.error = ""
+
+        ftypes:list = [
             ('All supported files', '*.csv *.txt'),
             ('CSV files', '*.csv'),
             ('Text files', '*.txt'),
@@ -27,39 +49,52 @@ class csv_handler:
         filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'))
 
         if len(filename) == 0:
+            self.error = errs["no_file"]
             Debug.logger.debug(f"No filename selected")
-            return
+            return False
 
-        with open(filepath, 'r', encoding='utf-8-sig', newline='') as csvfile:
+        with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
             self.roadtoriches = False
             self.fleetcarrier = False
-
-            if clear_previous_route:
-                Context.router.clear_route()
 
             route_reader = csv.DictReader(csvfile)
             # Check it has column headings
             if not route_reader.fieldnames:
-                Debug.logger.error(f"File {filepath} is empty or does't have a header row")
-                return
+                self.error = errs["empty_file"]
+                Debug.logger.error(f"File {filename} is empty or doesn't have a header row")
+                return False
 
-            hdrs:list = list(set(HEADERS).intersection(set(route_reader.fieldnames)))
+            fields:list = list(route_reader.fieldnames)
+            Debug.logger.debug(f"Fields: {fields}")
+            hdrs:list = []
+            cols:list = []
+            for h in HEADERS:
+                if h in fields:
+                    hdrs.append(h)
+                    cols.append(HEADER_MAP.get(h, ''))
+                if HEADER_MAP.get(h, '') in fields:
+                    hdrs.append(h)
+                    cols.append(HEADER_MAP.get(h, ''))
+
             if hdrs == [] or "System Name" not in hdrs:
-                Debug.logger.error(f"File {filepath} is of unsupported format")
-                return
+                self.error = errs["invalid_file"]
+                Debug.logger.error(f"File {filename} is of unsupported format")
+                return False
 
             route:list = []
             for row in route_reader:
+                Debug.logger.debug(f"Row {row}")
                 r:list = []
-                if row not in (None, "", []): continue
+                if row in (None, "", []): continue
                 for col in hdrs:
-                    if col in row:
-                        if col in ["body_name", "body_subtype"]:
-                            r.append(ast.literal_eval(row[col]))
-                            continue
-                        m = re.match(r"^\d+(\.\d+)?$", row[col])
-                        Debug.logger.debug(f"Row {row[col]} {m}")
-                        r.append(row[col] if not re.match(r"^\d+(\.\d+)?$", row[col]) else round(float(row[col]), 2))
+                    Debug.logger.debug(f"Col: {col} row: {row.get(col, '')}")
+                    if col not in row: continue
+                    if col in ["body_name", "body_subtype"]:
+                        r.append(ast.literal_eval(row[col]))
+                        continue
+                    m = re.match(r"^\d+(\.\d+)?$", row[col])
+                    Debug.logger.debug(f"Row {row[col]} {m}")
+                    r.append(row[col] if not re.match(r"^\d+(\.\d+)?$", row[col]) else round(float(row[col]), 2))
                 route.append(r)
 
             self.fleetcarrier = True if "Fuel Used" in hdrs else False
@@ -67,30 +102,33 @@ class csv_handler:
             Debug.logger.debug(f"Headers: {hdrs} rows {len(route)}")
             self.headers = hdrs
             self.route = route
+            return True
 
 
-    def export_route(self) -> None:
+    def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """
 
         if self.route == [] or self.headers == []:
             Debug.logger.debug(f"No route")
-            return
+            return False
 
-        route_start:str = self.route[0][0]
-        route_end:str = self.route[-1][0]
+        route_start:str = route[0][0]
+        route_end:str = route[-1][0]
         route_name:str = f"{route_start} to {route_end}"
         ftypes:list = [('CSV files', '*.csv')]
         filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'), initialfile=f"{route_name}.csv")
 
         if len(filename) == 0:
+            self.error = errs["no_filename"]
             Debug.logger.debug(f"No filename selected")
-            return
+            return False
 
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(self.headers)
-            for row in self.route:
+            writer.writerow(headers)
+            for row in route:
                 writer.writerow(row)
+        return True
 
 
     def update_bodies_text(self) -> None:

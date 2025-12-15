@@ -1,4 +1,6 @@
 import subprocess
+import os
+import shutil
 import sys
 import tkinter as tk
 from tkinter import ttk
@@ -193,11 +195,20 @@ class UI():
         r2.grid(row=row, column=col)
 
         row += 1; col = 0
-        self.plot_route_btn = self._button(plot_fr, text=btns["calculate_route"], command=lambda: self.plot_route())
+        btn_frame:tk.Frame = tk.Frame(plot_fr)
+        if config.get_int('theme') == 1: btn_frame.config(bg='black')
+        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+        row = 0; col = 0
+
+        self.import_route_btn = self._button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
+        self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        col += 1
+
+        self.plot_route_btn = self._button(btn_frame, text=btns["calculate_route"], command=lambda: self.plot_route())
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
         col += 1
 
-        self.cancel_plot = self._button(plot_fr, text=btns["cancel"], command=lambda: self.show_frame('None'))
+        self.cancel_plot = self._button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('None'))
         self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
         return plot_fr
 
@@ -324,6 +335,16 @@ class UI():
 
 
     @catch_exceptions
+    def import_route(self) -> None:
+        if Context.router == None or Context.router.load_route() == False:
+            Debug.logger.debug(f"Failed to laod route")
+            self.show_frame('Plot')
+            self.enable_plot_gui(True)
+            return
+        self.show_frame('Route')
+
+
+    @catch_exceptions
     def plot_route(self) -> None:
         Debug.logger.debug(f"UI plotting route")
         self.enable_plot_gui(False)
@@ -379,23 +400,32 @@ class UI():
         """ Copy text to the clipboard """
         if self.parent == None:
             return
-        if text == '': text = Context.router.next_stop
+        if text == '':
+            if Context.router.next_stop == lbls['route_complete']:
+                Debug.logger.debug("No next stop to copy, clearing route")
+                Context.router.clear_route()
+                self.show_frame('None')
+                return
+            text = Context.router.next_stop
 
-        if Context.router.next_stop == lbls['route_complete']:
-            Debug.logger.debug("No next stop to copy, clearing route")
-            Context.router.clear_route()
-            self.show_frame('None')
-            return
-
-        if sys.platform == "linux" or sys.platform == "linux2":
-            command = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
-            subprocess.Popen(["xclip", "-selection", "c"], stdin=command.stdout)
+        if sys.platform != "linux" and sys.platform != "linux2":
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(text)
             self.parent.update()
             return
 
-        self.parent.clipboard_clear()
-        self.parent.clipboard_append(text)
-        self.parent.update()
+        clipboard_cli:str|None = os.getenv("EDMC_NEUTRON_DANCER_XCLIP")
+        if not clipboard_cli and shutil.which("xclip"):
+            clipboard_cli = "xclip -selection c"
+        if not clipboard_cli and shutil.which("wl-clip"):
+            clipboard_cli = "wl-copy"
+        if clipboard_cli == None:
+            Debug.logger.error("Not clipboard copy command found.")
+            return
+
+        commands:list = clipboard_cli.split()
+        command = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
+        subprocess.Popen(commands, stdin=command.stdout)
 
 
     def _button(self, fr:tk.Frame, **kw) -> tk.Button|ttk.Button:

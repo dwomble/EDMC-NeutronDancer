@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .router import Router
     from .ui import UI
     from .updater import Updater
+    from .csv import CSV
 @dataclass
 class Context:
     # plugin parameters
@@ -23,5 +24,6 @@ class Context:
 
     # global objects
     router:'Router' = None
+    csv:'CSV' = None
     ui:'UI' = None
     updater:'Updater' = None

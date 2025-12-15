@@ -1,7 +1,4 @@
-import logging
-import os
 import tkinter as tk
-import tkinter.messagebox as confirmDialog
 from pathlib import Path
 from semantic_version import Version #type: ignore
 
@@ -13,6 +10,7 @@ from utils.Debug import Debug, catch_exceptions
 from Router.updater import Updater
 from Router.context import Context
 from Router.router import Router
+from Router.csv import CSV
 from Router.ui import UI
 
 
@@ -71,6 +69,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
 @catch_exceptions
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.router = Router()
+    Context.csv = CSV()
     Context.ui = UI(parent)
 
     Debug.logger.debug(f"Plugin_app")

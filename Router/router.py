@@ -170,10 +170,9 @@ class Router():
         self.offset += direction
         self.next_stop = self.route[self.offset][c]
         self.jumps = self.route[self.offset][self._syscol('Jumps')] if 'Jumps' in self.headers else 0
-        self.jumps_left = sum([j[self._syscol('Jumps')] for j in self.route[self.offset:]]) if 'Jumps' in self.headers else 0
+        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
 
         Context.ui.show_frame('Route')
-
 
     def plot_route(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
         """ Plot a route by querying Spansh"""
@@ -237,9 +236,8 @@ class Router():
             self.efficiency = efficiency
             self.range = range
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
-            self.jumps_left = sum([j[cols.index('jumps')] for j in self.route]) if 'Jumps' in hdrs else 0
             self.next_stop = self.route[self.offset][self._syscol()]
-            self.jumps = self.route[self.offset][cols.index('jumps')] if 'Jumps' in hdrs else 0
+            (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
             self.save()
             return True
 
@@ -249,6 +247,24 @@ class Router():
             Context.ui.show_error(lbls["plot_error"])
         Debug.logger.debug(f"Done")
         return False
+
+
+    def load_route(self) -> bool:
+        """ Load a route from a CSV """
+        if Context.csv == None or Context.csv.read() == False:
+            Debug.logger.debug(f"Failed to load route")
+            return False
+
+        self.clear_route()
+        self.headers = Context.csv.headers
+        self.route = Context.csv.route
+        self.src = Context.csv.route[0][self._syscol()]
+        self.dest = Context.csv.route[-1][self._syscol()]
+        self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
+        self.next_stop = self.route[self.offset][self._syscol()]
+        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+        self.save()
+        return True
 
 
     def plot_error(self, response:Response) -> None:
@@ -300,6 +316,16 @@ class Router():
         self.next_stop:str = ""
         self.jumps_left = 0
         self.save()
+
+
+    def _calc_jumps(self, headers, route) -> tuple:
+        """ Calculate how many jumps are left in this route """
+        if route == []: return (0, 0)
+        if 'Jumps' in self.headers:
+            return (route[0][self._syscol('Jumps')],
+                    sum([j[self._syscol('Jumps')] for j in route]) if 'Jumps' in headers else 0)
+
+        return (0, len(route))
 
 
     @catch_exceptions

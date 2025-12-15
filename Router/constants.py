@@ -84,6 +84,7 @@ btns:dict = {
 errs:dict = {
     "required_version": "This plugin requires EDMC version 4.0 or later.",
     "invalid_range": "Invalid range",
+    "no_response": "No response from server",
     "no_file": "No file selected",
     "empty_file": "File is empty or doesn't have a header row",
     "invalid_file": "File is corrupt or of unsupported format",

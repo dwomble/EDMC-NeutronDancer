@@ -166,7 +166,7 @@ class UI():
 
         row += 1; col = 0
         self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu)
-        ToolTip(self.source_ac, tts["dest_system"])
+        ToolTip(self.dest_ac, tts["dest_system"])
         if Context.router.dest != '': self.set_dest_ac(Context.router.dest)
         self.dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
@@ -347,8 +347,8 @@ class UI():
     @catch_exceptions
     def plot_route(self) -> None:
         Debug.logger.debug(f"UI plotting route")
-        self.enable_plot_gui(False)
         self.hide_error()
+        self.enable_plot_gui(False)
 
         src:str = self.source_ac.get().strip()
         dest:str = self.dest_ac.get().strip()
@@ -391,7 +391,7 @@ class UI():
 
 
     def enable_plot_gui(self, enable:bool) -> None:
-        for elem in [self.source_ac, self.dest_ac, self.efficiency_slider, self.range_entry, self.plot_route_btn, self.cancel_plot]:
+        for elem in [self.source_ac, self.dest_ac, self.efficiency_slider, self.range_entry, self.import_route_btn, self.plot_route_btn, self.cancel_plot]:
             elem.config(state=tk.NORMAL if enable == True else tk.DISABLED)
             elem.update_idletasks()
 

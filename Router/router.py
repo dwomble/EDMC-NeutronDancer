@@ -8,7 +8,7 @@ from time import sleep
 
 from utils.Debug import Debug, catch_exceptions
 
-from .constants import lbls, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
+from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
 from .context import Context
 
 class Router():
@@ -270,11 +270,12 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        err:str = lbls["no_response"]
+        Debug.logger.debug(f"Server response: {response}")
+        err:str = errs["no_response"]
         if response and response.status_code == 400 and "error" in json.loads(response.content):
             err = json.loads(response.content)["error"]
         elif response:
-            err = lbls["plot_error"]
+            err = errs["plot_error"]
 
         Context.ui.enable_plot_gui(True)
         Context.ui.show_error(err)

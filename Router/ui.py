@@ -223,8 +223,11 @@ class UI():
         if Context.router.jumps != 0:
             wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
         self.waypoint_btn.configure(text=wp)
-        if Context.router.jumps_left > 0:
-            ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
+        if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
+            ToolTip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+        elif Context.router.jumps_left > 0:
+            ToolTip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
+
         self.ctc(Context.router.next_stop)
 
 
@@ -420,8 +423,10 @@ class UI():
             clipboard_cli = "xclip -selection c"
         if not clipboard_cli and shutil.which("wl-clip"):
             clipboard_cli = "wl-copy"
-        if clipboard_cli == None:
-            Debug.logger.error("Not clipboard copy command found.")
+        if clipboard_cli == None: # Just use the tkinter version
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(text)
+            self.parent.update()
             return
 
         commands:list = clipboard_cli.split()

@@ -1,5 +1,11 @@
 # EDMC-NeutronDancer Changelog
 
+## v0.?.? - 2025-??-??
+
+## New Features
+* Added distance remaining to the system tooltip
+* Made Linux copy to clipboard fall back to using Tk's native
+
 ## v0.4.0 - 2025-12-15
 
 ### New Features

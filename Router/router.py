@@ -44,6 +44,7 @@ class Router():
         self.efficiency:int = 60
         self.offset:int = 0
         self.jumps_left:int = 0
+        self.dist_remaining:int = 0
         self.next_stop:str = ""
         self.jumps:int = 0
 
@@ -171,6 +172,7 @@ class Router():
         self.next_stop = self.route[self.offset][c]
         self.jumps = self.route[self.offset][self._syscol('Jumps')] if 'Jumps' in self.headers else 0
         (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
 
         Context.ui.show_frame('Route')
 
@@ -238,6 +240,7 @@ class Router():
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
             self.next_stop = self.route[self.offset][self._syscol()]
             (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+            self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
             self.save()
             return True
 
@@ -263,6 +266,7 @@ class Router():
         self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
         self.next_stop = self.route[self.offset][self._syscol()]
         (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
         self.save()
         return True
 
@@ -319,7 +323,7 @@ class Router():
         self.save()
 
 
-    def _calc_jumps(self, headers, route) -> tuple:
+    def _calc_jumps(self, headers:list, route:list) -> tuple:
         """ Calculate how many jumps are left in this route """
         if route == []: return (0, 0)
         if 'Jumps' in self.headers:
@@ -327,6 +331,16 @@ class Router():
                     sum([j[self._syscol('Jumps')] for j in route]) if 'Jumps' in headers else 0)
 
         return (0, len(route))
+
+
+    def _calc_dist(self, headers, route) -> int:
+        Debug.logger.debug(f"Headers: {headers}")
+        if 'Distance Remaining' in headers:
+            Debug.logger.debug(f"Dist: {route[0][self._syscol('Distance Remaining')]}")
+            return int(route[0][self._syscol('Distance Remaining')])
+        if 'Distance Rem' in headers:
+            return int(route[0][self._syscol('Distance Rem')])
+        return 0
 
 
     @catch_exceptions

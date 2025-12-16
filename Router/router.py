@@ -89,7 +89,6 @@ class Router():
         self.ship['type'] = type
 
         Context.ui.set_range(self.range, self.supercharge_mult)
-        self.save()
 
 
     def goto_next_waypoint(self) -> None:
@@ -267,7 +266,6 @@ class Router():
         self.next_stop = self.route[self.offset][self._syscol()]
         (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
         self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
-        self.save()
         return True
 
 
@@ -321,7 +319,6 @@ class Router():
         self.route = []
         self.next_stop:str = ""
         self.jumps_left = 0
-        self.save()
 
 
     def _calc_jumps(self, headers:list, route:list) -> tuple:

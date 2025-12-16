@@ -7,7 +7,6 @@ import tkinter as tk
 from config import config # type: ignore
 
 from utils.Debug import Debug, catch_exceptions
-from Router.context import Context
 from .Placeholder import Placeholder
 
 
@@ -22,13 +21,22 @@ class Autocompleter(Placeholder):
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
 
+
+        self.func = None
+        if 'func' in kw:
+            Debug.logger.debug(f"Setting func")
+            self.func = kw['func']
+            del kw['func']
+        else:
+            Debug.logger.debug(f"Not deleting func {kw}")
+
         Placeholder.__init__(self, parent, placeholder, **kw)
         self.traceid = self.var.trace_add('write', self.changed)
 
+        if 'menu' in kw:
+            del kw['menu']
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
-        if 'menu' in kw:
-            del kw['menu'] # In case there is one.
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
 
         if config.get_int('theme') > 1: self.lb.configure(fg=config.get("dark_text"))
@@ -75,7 +83,7 @@ class Autocompleter(Placeholder):
             self.hide_list()
             self.has_selected = False
         else:
-            t = threading.Thread(target=self.query_systems, args=[value])
+            t = threading.Thread(target=self.get_list, args=[value])
             t.start()
 
     @catch_exceptions
@@ -151,16 +159,10 @@ class Autocompleter(Placeholder):
             self.lb_up = False
 
     @catch_exceptions
-    def query_systems(self, inp:str) -> None:
+    def get_list(self, inp:str) -> None:
         inp = inp.strip()
-        if inp != self.placeholder and inp.__len__() >= 3:
-            url = "https://spansh.co.uk/api/systems?"
-            results:requests.Response = requests.get(url,
-                                    params={'q': inp},
-                                    headers={'User-Agent': Context.plugin_useragent},
-                                    timeout=3)
-
-            lista = json.loads(results.content)
+        if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
+            lista = self.func(inp)
             if lista:
                 self.queue.put(lista)
 

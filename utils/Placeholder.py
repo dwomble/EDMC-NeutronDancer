@@ -37,6 +37,7 @@ class Placeholder(tk.Entry):
         self.bind("<FocusIn>", self.focus_in)
         self.bind("<FocusOut>", self.focus_out)
         self.bind('<Control-KeyRelease-a>', self.select_all)
+        self.bind('<Control-KeyRelease-c>', self.copy)
         if config.get_int('theme') == 1: self['bg'] = 'black'
         self.put_placeholder()
 
@@ -94,3 +95,6 @@ class Placeholder(tk.Entry):
     @catch_exceptions
     def select_all(self, event) -> None:
         event.widget.event_generate('<<SelectAll>>')
+    @catch_exceptions
+    def copy(self, event) -> None:
+        event.widget.event_generate('<<Copy>>')

@@ -274,12 +274,13 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        Debug.logger.debug(f"Server response: {response}")
+        Debug.logger.debug(f"Server response: {response} {response.status_code == 400} {'error' in json.loads(response.content).keys()}")
         err:str = errs["no_response"]
-        if response and response.status_code == 400 and "error" in json.loads(response.content):
-            err = json.loads(response.content)["error"]
-        elif response:
+        if response:
             err = errs["plot_error"]
+
+        if response != None and response.status_code == 400 and "error" in json.loads(response.content).keys():
+            err = json.loads(response.content)["error"]
 
         Context.ui.enable_plot_gui(True)
         Context.ui.show_error(err)

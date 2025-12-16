@@ -5,6 +5,10 @@
 ## New Features
 * Added distance remaining to the system tooltip
 * Made Linux copy to clipboard fall back to using Tk's native
+* Improved validation and error reporting for plot entry form
+
+## Changes
+* Improved plot entry data validation and error reporting
 
 ## v0.4.0 - 2025-12-15
 

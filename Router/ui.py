@@ -8,6 +8,8 @@ import tkinter.messagebox as confirmDialog
 from functools import partial
 import re
 import webbrowser
+import requests
+import json
 
 from config import config # type: ignore
 
@@ -62,8 +64,8 @@ class UI():
             self.update.bind("<Button-1>", partial(self.cancel_update))
             self.update.grid(row=0, column=0, sticky=tk.W)
 
-        self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt)
-        self.error_lbl.grid(row=1, column=0, columnspan=2)
+        self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt, foreground='red')
+        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
         self.hide_error()
         self.show_frame('Route' if Context.router.route != [] else 'Default')
@@ -152,13 +154,13 @@ class UI():
         for id, ship in Context.router.ships.items():
             shipmenu[ship.get('name')] = [self.menu_callback, 'ship']
 
-        self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu)
+        self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
         ToolTip(self.source_ac, tts["source_system"])
         if Context.router.src != '': self.set_source_ac(Context.router.src)
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=10, menu=shipmenu,)
+        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=10, menu=shipmenu)
         self.range_entry.grid(row=row, column=col)
         ToolTip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
@@ -166,7 +168,7 @@ class UI():
         if Context.router.range > 0: self.range_entry.set_text(str(Context.router.range), False)
 
         row += 1; col = 0
-        self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu)
+        self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
         ToolTip(self.dest_ac, tts["dest_system"])
         if Context.router.dest != '': self.set_dest_ac(Context.router.dest)
         self.dest_ac.grid(row=row, column=col, columnspan=2)
@@ -354,27 +356,31 @@ class UI():
         self.hide_error()
         self.enable_plot_gui(False)
 
-        src:str = self.source_ac.get().strip()
-        dest:str = self.dest_ac.get().strip()
-        eff:int = int(self.efficiency_slider.get())
-        supercharge_mult:int = self.multiplier.get()
-        # Hide autocomplete lists in case they're still shown
-        if src == '' or dest == '' or dest == self.dest_ac.placeholder:
-            Debug.logger.debug(f"src {src} dest {dest} {self.dest_ac.placeholder}")
-            self.enable_plot_gui(True)
-            return
-
-        try:
-            range = float(self.range_entry.var.get())
-        except ValueError as e:
-            Debug.logger.debug(f"Range error {e}")
-            self.show_error(errs["invalid_range"])
-            self.enable_plot_gui(True)
-            return
-
         self.source_ac.hide_list()
         self.dest_ac.hide_list()
-        res:bool = Context.router.plot_route(src, dest, eff, range, supercharge_mult)
+
+        src:str = self.source_ac.get().strip()
+        dest:str = self.dest_ac.get().strip()
+
+        if src not in self.query_systems(src):
+            self.enable_plot_gui(True)
+            self.source_ac.set_error_style()
+            return
+
+        if dest not in self.query_systems(dest):
+            self.enable_plot_gui(True)
+            self.dest_ac.set_error_style()
+            return
+
+        eff:int = int(self.efficiency_slider.get())
+        supercharge_mult:int = self.multiplier.get()
+        range:str = self.range_entry.var.get()
+        if not re.match(r"^\d+(\.\d+)?$", range):
+            Debug.logger.debug(f"Invalid range entry {range}")
+            self.range_entry.set_error_style()
+            return
+
+        res:bool = Context.router.plot_route(src, dest, eff, float(range), supercharge_mult)
         Debug.logger.debug(f"Route plotted {res}")
         if res == True:
             self.ctc(Context.router.next_stop)
@@ -463,6 +469,15 @@ class UI():
             Debug.logger.debug(f"Invalid range entry {value}")
             self.range_entry.set_error_style()
         return
+
+
+    @catch_exceptions
+    def query_systems(self, inp:str) -> list:
+        """ Function called by Autocompleter """
+        inp = inp.strip()
+        url = "https://spansh.co.uk/api/systems?"
+        results:requests.Response = requests.get(url, params={'q': inp}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        return json.loads(results.content)
 
 
 class RouteWindow:

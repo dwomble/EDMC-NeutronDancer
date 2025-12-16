@@ -39,7 +39,6 @@ For Flatpak users, you may need to:
 1. Add permissions when launching EDMC: `--socket=wayland --filesystem=host-os`
 2. Use another path for wl-copy: `export EDMC_NEUTRON_DANCER_XCLIP="/run/host/usr/bin/wl-copy"`
 
-
 ## Tips and Tricks
 
 * The system records the source, destination, and ship field data when you complete a route.

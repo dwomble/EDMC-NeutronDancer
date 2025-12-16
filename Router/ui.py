@@ -74,7 +74,7 @@ class UI():
     @catch_exceptions
     def cancel_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
-        #webbrowser.open(GIT_LATEST)
+        webbrowser.open(GIT_LATEST)
         Context.updater.install_update = False
         self.update.destroy()
 

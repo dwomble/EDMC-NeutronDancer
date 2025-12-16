@@ -116,7 +116,12 @@ class Updater():
             if response.status_code != 200:
                 Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
                 return
-            latest:str = str(Version.coerce(response.text)).strip().replace("-", "")
+            try:
+                latest:str = str(Version.coerce(response.text)).strip().replace("-", "")
+            except Exception as e:
+                Debug.logger.debug(f"Oops {e}")
+                version = "0.0.0"
+
             Debug.logger.debug(f"version: {version} response {latest}")
             if version == latest:
                 return

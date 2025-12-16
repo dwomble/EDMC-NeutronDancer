@@ -76,7 +76,6 @@ class UI():
         """ Cancel the update if they click """
         Debug.logger.debug(f"{GIT_LATEST}")
         webbrowser.open(GIT_LATEST)
-        return
         Context.updater.install_update = False
         self.update.destroy()
 

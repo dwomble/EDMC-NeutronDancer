@@ -145,6 +145,7 @@ class UI():
         srcmenu:dict = {}
         destmenu:dict = {}
         shipmenu:dict = {}
+
         if Context.router.system != '':
             srcmenu[Context.router.system] = [self.menu_callback, 'src']
         for sys in Context.router.history:
@@ -155,6 +156,12 @@ class UI():
 
         for id, ship in Context.router.ships.items():
             shipmenu[ship.get('name')] = [self.menu_callback, 'ship']
+
+        # Create right click menu
+        if shipmenu != {}:
+            self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
+            for m, f in shipmenu.items():
+                self.menu.add_command(label=m, command=partial(*f, m))
 
         self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
         ToolTip(self.source_ac, tts["source_system"])
@@ -177,9 +184,11 @@ class UI():
         col += 2
 
         self.efficiency_slider = tk.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL, fg='black')
+        self.efficiency_slider.bind('<Button-3>', self.show_menu)
         if config.get_int('theme') == 1: self.efficiency_slider.configure(fg=config.get_str('dark_text'),bg='black', troughcolor='darkgrey', highlightbackground='black', border=0)
         if config.get_int('theme') == 2: self.efficiency_slider.configure(fg=config.get_str('dark_text'), border=0)
         ToolTip(self.efficiency_slider, tts["efficiency"])
+
         self.efficiency_slider.grid(row=row, column=col)
         self.efficiency_slider.set(Context.router.efficiency)
 
@@ -192,10 +201,12 @@ class UI():
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
         r1 = tk.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
+        r1.bind('<Button-3>', self.show_menu)
         if config.get_int('theme') == 1: r1.configure(bg='black', fg=config.get_str('dark_text'))
         r1.grid(row=row, column=col)
         col += 1
         r2 = tk.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        r2.bind('<Button-3>', self.show_menu)
         if config.get_int('theme') == 1: r2.configure(bg='black', fg=config.get_str('dark_text'))
         r2.grid(row=row, column=col)
 
@@ -217,6 +228,13 @@ class UI():
         self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
         return plot_fr
 
+
+    @catch_exceptions
+    def show_menu(self, e) -> str:
+        #w = e.widget
+        #self.menu.tk.call("tk_popup", self.menu, e.x_root, e.y_root)
+        self.menu.post(e.x_root, e.y_root)
+        return "break"
 
     def _update_waypoint(self) -> None:
         if Context.router.route == []:

@@ -60,7 +60,7 @@ tts:dict = {
     'source_system': "Source system name, right click for menu",
     'dest_system': "Destination system name, right click for menu",
     "range": "Ship jump range in light years, right click for menu",
-    "efficiency": "Routing efficiency (%)",
+    "efficiency": "Routing efficiency (%), right click for menu",
     "jump": "Click to copy to clipoard.\n{j} jumps {d}remaining.",
 }
 

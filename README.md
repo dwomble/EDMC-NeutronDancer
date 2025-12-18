@@ -26,19 +26,6 @@ If for some reason, your clipboard should be empty or containing other stuff tha
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will start back where you stopped.
 
-### Wayland Support
-
-If you're using a Wayland desktop environment you can't use `xclip` so it will try to use `wl-copy`. If it can't find `wl-copy` or doesn't have permissions to use it you'll have to configure the plugin using the `EDMC_NEUTRON_DANCER_XCLIP` environment variable to use Wayland specific `wl-copy` tool before launching EDMC. For example:
-
-```bash
-export EDMC_SPANSH_ROUTER_XCLIP="/usr/bin/wl-copy"
-python EDMarketConnector.py
-```
-
-For Flatpak users, you may need to:
-1. Add permissions when launching EDMC: `--socket=wayland --filesystem=host-os`
-2. Use another path for wl-copy: `export EDMC_NEUTRON_DANCER_XCLIP="/run/host/usr/bin/wl-copy"`
-
 ## Tips and Tricks
 
 * The system records the source, destination, and ship field data when you complete a route.

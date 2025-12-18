@@ -4,7 +4,7 @@
 
 ## New Features
 * Added distance remaining to the system tooltip
-* Made Linux copy to clipboard fall back to using Tk's native
+* Switched copy to clipboard to Tk's native for all platorms
 * Improved validation and error reporting for plot entry form
 
 ## Changes

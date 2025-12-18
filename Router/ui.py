@@ -410,34 +410,9 @@ class UI():
         """ Copy text to the clipboard """
         if self.parent == None:
             return
-        if text == '':
-            if Context.router.next_stop == lbls['route_complete']:
-                Debug.logger.debug("No next stop to copy, clearing route")
-                Context.router.clear_route()
-                self.show_frame('None')
-                return
-            text = Context.router.next_stop
-
-        if sys.platform != "linux" and sys.platform != "linux2":
-            self.parent.clipboard_clear()
-            self.parent.clipboard_append(text)
-            self.parent.update()
-            return
-
-        clipboard_cli:str|None = os.getenv("EDMC_NEUTRON_DANCER_XCLIP")
-        if not clipboard_cli and shutil.which("xclip"):
-            clipboard_cli = "xclip -selection c"
-        if not clipboard_cli and shutil.which("wl-clip"):
-            clipboard_cli = "wl-copy"
-        if clipboard_cli == None: # Just use the tkinter version
-            self.parent.clipboard_clear()
-            self.parent.clipboard_append(text)
-            self.parent.update()
-            return
-
-        commands:list = clipboard_cli.split()
-        command = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
-        subprocess.Popen(commands, stdin=command.stdout)
+        self.parent.clipboard_clear()
+        self.parent.clipboard_append(text)
+        self.parent.update()
 
 
     def _button(self, fr:tk.Frame, **kw) -> tk.Button|ttk.Button:

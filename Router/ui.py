@@ -202,10 +202,12 @@ class UI():
         col += 1
         r1 = tk.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
+        ToolTip(r1, tts['standard_multiplier'])
         if config.get_int('theme') == 1: r1.configure(bg='black', fg=config.get_str('dark_text'))
         r1.grid(row=row, column=col)
         col += 1
         r2 = tk.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        ToolTip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
         if config.get_int('theme') == 1: r2.configure(bg='black', fg=config.get_str('dark_text'))
         r2.grid(row=row, column=col)

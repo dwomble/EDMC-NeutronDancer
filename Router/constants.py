@@ -61,6 +61,8 @@ tts:dict = {
     'dest_system': "Destination system name, right click for menu",
     "range": "Ship jump range in light years, right click for menu",
     "efficiency": "Routing efficiency (%), right click for menu",
+    "standard_multiplier": "Standard range increase (4x), right click for menu",
+    "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "jump": "Click to copy to clipoard.\n{j} jumps {d}remaining.",
 }
 

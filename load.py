@@ -45,8 +45,8 @@ def plugin_start(plugin_dir: str) -> None:
 def plugin_stop() -> None:
     Context.router.save()
     # Auto updates are currently disabled.
-    #if Context.updater.install_update:
-    #    Context.updater.install()
+    if Context.updater.install_update:
+        Context.updater.install()
 
 
 @catch_exceptions

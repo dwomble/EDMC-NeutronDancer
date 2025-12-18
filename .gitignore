@@ -19,4 +19,4 @@ deploy.sh
 */.DS_Store
 
 data/route.json
-
+updates/*

@@ -50,9 +50,8 @@ lbls:dict = {
     "overcharge_supercharge": "Overcharge (x6)",
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
-    #"update_available": "Version {v} will be installed on exit. Click to cancel.",
-    "update_available": "New version available: {v}",
-    "jump": "jump",
+    "update_available": "Version {v} will be installed on exit. Click to cancel.",
+    "tooltips": "Changelog:\n{c}",    "jump": "jump",
     "jumps": "jumps"
 }
 

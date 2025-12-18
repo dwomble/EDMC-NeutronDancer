@@ -60,9 +60,11 @@ class UI():
         if Context.updater and Context.updater.update_available:
             Debug.logger.debug(f"UI: Update available")
             text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
+            if Context.updater.changelogs != "":
+                ToolTip(self.frame, text=lbls["changelog"].format(c=Context.updater.changelogs))
             self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
             self.update.bind("<Button-1>", partial(self.cancel_update))
-            self.update.grid(row=0, column=0, sticky=tk.W)
+            self.update.grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt, foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)

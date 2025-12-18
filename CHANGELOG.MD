@@ -6,6 +6,7 @@
 * Added distance remaining to the system tooltip
 * Switched copy to clipboard to Tk's native for all platorms
 * Improved validation and error reporting for plot entry form
+* Enabled auto-updating
 
 ## Changes
 * Improved plot entry data validation and error reporting

@@ -31,6 +31,7 @@ class Updater():
         self.update_available:bool = False
         self.install_update:bool = False
         self.update_version:str
+        self.changelogs:str = ""
 
         self.download_url:str = ""
         self.zip_downloaded:str = ""

@@ -95,6 +95,7 @@ class Placeholder(tk.Entry):
     @catch_exceptions
     def select_all(self, event) -> None:
         event.widget.event_generate('<<SelectAll>>')
+
     @catch_exceptions
     def copy(self, event) -> None:
         event.widget.event_generate('<<Copy>>')

@@ -51,7 +51,7 @@ lbls:dict = {
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
-    "tooltips": "Changelog:\n{c}",    "jump": "jump",
+    "jump": "jump",
     "jumps": "jumps"
 }
 
@@ -64,6 +64,7 @@ tts:dict = {
     "standard_multiplier": "Standard range increase (4x), right click for menu",
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "jump": "Click to copy to clipoard.\n{j} jumps {d}remaining.",
+    "changelog": "Changelog:\n{c}"
 }
 
 # Button names

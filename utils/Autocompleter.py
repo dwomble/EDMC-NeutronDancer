@@ -24,14 +24,11 @@ class Autocompleter(Placeholder):
 
         self.func = None
         if 'func' in kw:
-            Debug.logger.debug(f"Setting func")
             self.func = kw['func']
             del kw['func']
-        else:
-            Debug.logger.debug(f"Not deleting func {kw}")
 
         Placeholder.__init__(self, parent, placeholder, **kw)
-        self.traceid = self.var.trace_add('write', self.changed)
+        self.traceid:str = self.var.trace_add('write', self.changed)
 
         if 'menu' in kw:
             del kw['menu']
@@ -58,7 +55,7 @@ class Autocompleter(Placeholder):
 
     def ac_focus_out(self, event=None) -> None:
         x, y = self.parent.winfo_pointerxy()
-        widget_under_cursor = self.parent.winfo_containing(x, y)
+        widget_under_cursor:tk.Misc|None = self.parent.winfo_containing(x, y)
         if (widget_under_cursor != self.lb and widget_under_cursor != self) or event is None:
             self.focus_out()
             self.hide_list()
@@ -78,7 +75,7 @@ class Autocompleter(Placeholder):
 
     @catch_exceptions
     def changed(self, name=None, index=None, mode=None) -> None:
-        value = self.var.get()
+        value:str = self.var.get()
         if value.__len__() < 3 and self.lb_up or self.has_selected:
             self.hide_list()
             self.has_selected = False
@@ -91,7 +88,6 @@ class Autocompleter(Placeholder):
         if self.lb_up:
             self.has_selected = True
             index = self.lb.curselection()
-
             self.var.trace_remove("write", self.traceid)
 
             self.var.set(self.lb.get(index))
@@ -131,7 +127,7 @@ class Autocompleter(Placeholder):
             self.changed()
 
     @catch_exceptions
-    def show_results(self, results):
+    def show_results(self, results) -> None:
         if results:
             self.lb.delete(0, tk.END)
             for w in results:

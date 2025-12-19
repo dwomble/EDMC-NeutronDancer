@@ -66,7 +66,7 @@ class Updater():
 
     def install(self) -> None:
         """ Download the latest zip file and install it """
-        if self.install_update != True or not self.get_release() or not self.download_zip():
+        if self.install_update != True or not self.download_zip():
             return
         try:
             Debug.logger.debug(f"Extracting zipfile to {self.plugin_dir}")
@@ -93,16 +93,20 @@ class Updater():
         # Get the changelog and replace all breaklines with simple ones
         changelogs:str = version_data.get('body', '')
         self.changelogs = "\n".join(changelogs.splitlines())
-
+        Debug.logger.debug(f"Changelogs: {changelogs}")
         if version_data['draft'] == True or version_data['prerelease'] == True:
             Debug.logger.info("Latest server version is draft or pre-release, ignoring")
             return False
 
         assets:list = version_data.get('assets', [])
-        if assets == []: return False
+        if assets == []:
+            Debug.logger.info("No assets")
+            return False
 
         self.download_url = assets[0].get('browser_download_url', "")
-        if self.download_url == "": return False
+        if self.download_url == "":
+            Debug.logger.info("No download URL")
+            return False
 
         return True
 
@@ -124,9 +128,11 @@ class Updater():
                 version = "0.0.0"
 
             Debug.logger.debug(f"version: {version} response {latest}")
-            if version == latest:
+            if version == latest or not self.get_release():
                 return
+
             Debug.logger.debug('Update available')
+
             self.update_available = True
             self.install_update = True
             self.update_version = latest

@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v0.?.? - 2025-??-??
+## v0.5.5 - 2025-12-18
 
 ## New Features
 * Added distance remaining to the system tooltip

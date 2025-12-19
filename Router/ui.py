@@ -124,10 +124,10 @@ class UI():
         if config.get_int('theme') == 1: title_fr.config(bg='black')
         title_fr.grid(row=2, column=0)
         col:int = 0; row:int = 0
-        self.lbl = self._label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
+        self.lbl:tk.Label|ttk.Label = self._label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
-        self.plot_gui_btn = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
+        self.plot_gui_btn:tk.Button|ttk.Button = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
         Debug.logger.debug(f"plot_gui_btn created {self.plot_gui_btn}")
         self.plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
         return title_fr
@@ -183,10 +183,9 @@ class UI():
         self.dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.efficiency_slider = tk.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL, fg='black')
+        self.efficiency_slider:tk.Scale|ttk.Scale = self._scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         self.efficiency_slider.bind('<Button-3>', self.show_menu)
-        if config.get_int('theme') == 1: self.efficiency_slider.configure(fg=config.get_str('dark_text'),bg='black', troughcolor='darkgrey', highlightbackground='black', border=0)
-        if config.get_int('theme') == 2: self.efficiency_slider.configure(fg=config.get_str('dark_text'), border=0)
+
         ToolTip(self.efficiency_slider, tts["efficiency"])
 
         self.efficiency_slider.grid(row=row, column=col)
@@ -197,19 +196,18 @@ class UI():
         self.multiplier.set(Context.router.supercharge_mult)  # Set default value
 
         # Create radio buttons
-        l1 = self._label(plot_fr, text=lbls["supercharge_label"])
+        l1:tk.Label|ttk.Label = self._label(plot_fr, text=lbls["supercharge_label"])
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
-        r1 = tk.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
+        r1:tk.Radiobutton|ttk.Radiobutton = self._radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
         ToolTip(r1, tts['standard_multiplier'])
-        if config.get_int('theme') == 1: r1.configure(bg='black', fg=config.get_str('dark_text'))
+
         r1.grid(row=row, column=col)
         col += 1
-        r2 = tk.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        r2:tk.Radiobutton|ttk.Radiobutton = self._radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         ToolTip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
-        if config.get_int('theme') == 1: r2.configure(bg='black', fg=config.get_str('dark_text'))
         r2.grid(row=row, column=col)
 
         row += 1; col = 0
@@ -218,15 +216,15 @@ class UI():
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
         row = 0; col = 0
 
-        self.import_route_btn = self._button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
+        self.import_route_btn:tk.Button|ttk.Button = self._button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
         self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
         col += 1
 
-        self.plot_route_btn = self._button(btn_frame, text=btns["calculate_route"], command=lambda: self.plot_route())
+        self.plot_route_btn:tk.Button|ttk.Button = self._button(btn_frame, text=btns["calculate_route"], command=lambda: self.plot_route())
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
         col += 1
 
-        self.cancel_plot = self._button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('None'))
+        self.cancel_plot:tk.Button|ttk.Button = self._button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('None'))
         self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
         return plot_fr
 
@@ -269,18 +267,18 @@ class UI():
         fr1.grid(row=0, column=0, sticky=tk.W)
         row:int = 2
         col:int = 0
-        self.waypoint_prev_btn = self._button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.goto_prev_waypoint())
+        self.waypoint_prev_btn:tk.Button|ttk.Button = self._button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.goto_prev_waypoint())
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-        Debug.logger.debug(f"waypoint_prev_btn created {self.waypoint_prev_btn}")
+
         col += 1
-        self.waypoint_btn = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
+        self.waypoint_btn:tk.Button|ttk.Button = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
         ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-        Debug.logger.debug(f"waypoint_btn created {self.waypoint_btn}")
+
         col += 1
-        self.waypoint_next_btn = self._button(fr1, text=btns["next"], width=3, command=lambda: Context.router.goto_next_waypoint())
+        self.waypoint_next_btn:tk.Button|ttk.Button = self._button(fr1, text=btns["next"], width=3, command=lambda: Context.router.goto_next_waypoint())
         self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-        Debug.logger.debug(f"waypoint_next_btn created {self.waypoint_next_btn}")
+
         #row +=1
         #col -= 1
         #self.jumpcounttxt_lbl = self._label(fr1, text=lbls["jumps_remaining"] + " " + str(Context.router.jumps_left))
@@ -294,10 +292,10 @@ class UI():
         row = 0
         col = 0
 
-        self.show_route_btn = self._button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
+        self.show_route_btn:tk.Button|ttk.Button = self._button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
         col += 1
-        self.clear_route_btn = self._button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
+        self.clear_route_btn:tk.Button|ttk.Button = self._button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         Debug.logger.debug(f"show_route_btn created {self.show_route_btn}")
@@ -449,6 +447,26 @@ class UI():
         if config.get_int('theme') == 0: return ttk.Label(fr, **kw)
 
         return tk.Label(fr, **kw, fg=config.get_str('dark_text'), bg='black')
+
+
+    def _radiobutton(self, fr:tk.Frame, **kw) -> tk.Radiobutton|ttk.Radiobutton:
+        """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
+        if config.get_int('theme') == 0: return ttk.Radiobutton(fr, **kw)
+
+        return tk.Radiobutton(fr, **kw, fg=config.get_str('dark_text'), bg='black')
+
+    def _scale(self, fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
+        """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
+        match config.get_int('theme'):
+
+            case 0: # Turns out the ttk scale looks terrible
+                #if 'resolution' in kw: del kw['resolution']
+                #return ttk.Scale(fr, **kw)
+                return tk.Scale(fr, **kw)
+            case 1:
+                return tk.Scale(fr, **kw, fg=config.get_str('dark_text'), bg='black', troughcolor='darkgrey', highlightbackground='black', border=0)
+            case _:
+                return tk.Scale(fr, **kw, fg=config.get_str('dark_text'), border=0)
 
 
     @catch_exceptions

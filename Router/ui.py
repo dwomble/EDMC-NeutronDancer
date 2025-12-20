@@ -40,7 +40,7 @@ class UI():
 
         # Initialise the UI
         if parent == None:
-            Debug.logger.debug(f"no parent")
+            Debug.logger.info(f"No parent")
             return
 
         self.error_txt:tk.StringVar = tk.StringVar()
@@ -83,8 +83,6 @@ class UI():
     @catch_exceptions
     def show_frame(self, which:str = 'Default'):
         """ Display the chosen frame, creating it if necessary """
-        Debug.logger.debug(f"Show_frame {which}")
-
         self.subfr.grid_remove()
         match which:
             case 'Route':
@@ -105,9 +103,8 @@ class UI():
         self.lbl:tk.Label|ttk.Label = self._label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
-        self.plot_gui_btn:tk.Button|ttk.Button = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
-        Debug.logger.debug(f"plot_gui_btn created {self.plot_gui_btn}")
-        self.plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
+        plot_gui_btn:tk.Button|ttk.Button = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
+        plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
 
         return title_fr
 
@@ -115,7 +112,6 @@ class UI():
     def _create_plot_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route plotting frame """
 
-        Debug.logger.debug(f"Creating plot frame")
         plot_fr:tk.Frame = self._frame(parent)
         row:int = 2
         col:int = 0
@@ -236,7 +232,7 @@ class UI():
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """
-        Debug.logger.debug(f"Creating route frame")
+
         route_fr:tk.Frame = self._frame(parent)
         fr1:tk.Frame = self._frame(route_fr)
         fr1.grid_columnconfigure(0, weight=0)
@@ -271,9 +267,6 @@ class UI():
         self.clear_route_btn:tk.Button|ttk.Button = self._button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
-        Debug.logger.debug(f"show_route_btn created {self.show_route_btn}")
-        Debug.logger.debug(f"clear_route_btn created {self.clear_route_btn}")
-
         return route_fr
 
 
@@ -288,7 +281,6 @@ class UI():
             case _:
                 for id, ship in Context.router.ships.items():
                     if ship.get('name', '') == param:
-                        Debug.logger.debug(f"Range set to {param} {ship.get('range', '0.0')}")
                         self.range_entry.set_text(str(ship.get('range', '0.0')), False)
                         self.multiplier.set(6 if ship.get('type', '') in ('explorer_nx') else 4)
                         return
@@ -335,7 +327,7 @@ class UI():
     @catch_exceptions
     def import_route(self) -> None:
         if Context.router == None or Context.router.load_route() == False:
-            Debug.logger.debug(f"Failed to laod route")
+            Debug.logger.error(f"Failed to laod route")
             self.show_frame('Plot')
             self.enable_plot_gui(True)
             return
@@ -344,7 +336,6 @@ class UI():
 
     @catch_exceptions
     def plot_route(self) -> None:
-        Debug.logger.debug(f"UI plotting route")
         self.hide_error()
         self.enable_plot_gui(False)
 

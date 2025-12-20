@@ -2,12 +2,10 @@ import json
 import os
 import requests
 import zipfile
-import webbrowser
 from semantic_version import Version # type: ignore
 
-from .constants import GIT_PROJECT, GIT_DOWNLOAD, GIT_CHANGELOG_LIST, GIT_CHANGELOG, GIT_VERSION
+from .constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_VERSION
 from utils.Debug import Debug, catch_exceptions
-from .context import Context
 
 class Updater():
     """
@@ -31,7 +29,7 @@ class Updater():
         self.update_available:bool = False
         self.install_update:bool = False
         self.update_version:str
-        self.changelogs:str = ""
+        self.releasenotes:str = ""
 
         self.download_url:str = ""
         self.zip_downloaded:str = ""
@@ -80,8 +78,8 @@ class Updater():
     def get_release(self) -> bool:
         """ Mostly only used to get the download_url """
         try:
-            Debug.logger.debug(f"Requesting {GIT_CHANGELOG_LIST}")
-            r:requests.Response = requests.get(GIT_CHANGELOG_LIST, timeout=2)
+            Debug.logger.debug(f"Requesting {GIT_RELEASE_INFO}")
+            r:requests.Response = requests.get(GIT_RELEASE_INFO, timeout=2)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -91,9 +89,9 @@ class Updater():
         version_data:dict = json.loads(r.content)
 
         # Get the changelog and replace all breaklines with simple ones
-        changelogs:str = version_data.get('body', '')
-        self.changelogs = "\n".join(changelogs.splitlines())
-        Debug.logger.debug(f"Changelogs: {changelogs}")
+        releasenotes:str = version_data.get('body', '')
+        self.releasenotes = "\n".join(releasenotes.splitlines())
+        Debug.logger.debug(f"Release notes: {releasenotes}")
         if version_data['draft'] == True or version_data['prerelease'] == True:
             Debug.logger.info("Latest server version is draft or pre-release, ignoring")
             return False

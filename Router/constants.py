@@ -1,13 +1,16 @@
+# Project information
 NAME="Navl's Neutron Dancer"
-
 GIT_USER="dwomble"
 GIT_PROJECT="EDMC-NeutronDancer"
+
+# GIT info and URLs
 GIT_LATEST:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/latest"
 GIT_DOWNLOAD:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/download"
 GIT_VERSION:str = f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
-GIT_CHANGELOG_LIST:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
+GIT_RELEASE_INFO:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
 GIT_CHANGELOG:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CHANGELOG.md#"
 
+# Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
@@ -25,6 +28,11 @@ HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Bo
                 "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used", "Refuel", "Neutron Star",
                 "Icy Ring", "Pristine", "Restock Tritium"]
 
+
+"""
+Output strings
+"""
+
 # Headers
 hdrs:dict = {
     "restock_tritium": "Restock Tritium",
@@ -36,6 +44,7 @@ hdrs:dict = {
 
 # Text labels
 lbls:dict = {
+    "route": "Route",
     "plot_title": "I'm just burnin'…",
     "no_route": "No route planned",
     "jumps_remaining": "Remaining",
@@ -48,6 +57,7 @@ lbls:dict = {
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
+    "plotting_route": "Plotting route...",
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
@@ -64,7 +74,7 @@ tts:dict = {
     "standard_multiplier": "Standard range increase (4x), right click for menu",
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "jump": "Click to copy to clipoard.\n{j} jumps {d}remaining.",
-    "changelog": "Changelog:\n{c}"
+    "releasenotes": "Release notes:\n{c}"
 }
 
 # Button names

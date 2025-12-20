@@ -1,23 +1,19 @@
-import subprocess
-import os
-import shutil
-import sys
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
 from functools import partial
 import re
-import webbrowser
 import requests
 import json
 
 from config import config # type: ignore
+from theme import theme #type: ignore
 
 from utils.Tooltip import ToolTip
 from utils.Autocompleter import Autocompleter
 from utils.Placeholder import Placeholder
 from utils.Debug import Debug, catch_exceptions
-from .constants import lbls, btns, tts, errs, GIT_LATEST
+from .constants import NAME, lbls, btns, tts
 
 from .context import Context
 
@@ -61,8 +57,8 @@ class UI():
             Debug.logger.debug(f"UI: Update available")
             text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
             self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
-            if Context.updater.changelogs != "":
-                ToolTip(self.update, text=tts["changelog"].format(c=Context.updater.changelogs))
+            if Context.updater.releasenotes != "":
+                ToolTip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
             self.update.bind("<Button-1>", partial(self.cancel_update))
             self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
         self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt, foreground='red')
@@ -212,18 +208,19 @@ class UI():
         btn_frame:tk.Frame = tk.Frame(plot_fr)
         if config.get_int('theme') == 1: btn_frame.config(bg='black')
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
-        row = 0; col = 0
 
+        r = 0; col = 0
         self.import_route_btn:tk.Button|ttk.Button = self._button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
-        self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        self.import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
         col += 1
 
         self.plot_route_btn:tk.Button|ttk.Button = self._button(btn_frame, text=btns["calculate_route"], command=lambda: self.plot_route())
-        self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        self.plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
         col += 1
 
         self.cancel_plot:tk.Button|ttk.Button = self._button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('None'))
-        self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
+        self.cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+
         return plot_fr
 
 
@@ -234,6 +231,8 @@ class UI():
         self.menu.post(e.x_root, e.y_root)
         return "break"
 
+
+    @catch_exceptions
     def _update_waypoint(self) -> None:
         if Context.router.route == []:
             return
@@ -242,7 +241,7 @@ class UI():
         wp:str = Context.router.next_stop
         if Context.router.jumps != 0:
             wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
-        self.waypoint_btn.configure(text=wp)
+        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 30))
         if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
             ToolTip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
         elif Context.router.jumps_left > 0:
@@ -269,6 +268,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
+
         self.waypoint_btn:tk.Button|ttk.Button = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
         ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
@@ -398,13 +398,7 @@ class UI():
             self.range_entry.set_error_style()
             return
 
-        res:bool = Context.router.plot_route(src, dest, eff, float(range), supercharge_mult)
-        Debug.logger.debug(f"Route plotted {res}")
-        if res == True:
-            self.ctc(Context.router.next_stop)
-            self.show_frame('Route')
-            return
-        self.enable_plot_gui(True)
+        Context.router.plot_route(src, dest, eff, float(range), supercharge_mult)
 
 
     def show_error(self, error:str|None = None) -> None:
@@ -422,6 +416,7 @@ class UI():
         for elem in [self.source_ac, self.dest_ac, self.efficiency_slider, self.range_entry, self.import_route_btn, self.plot_route_btn, self.cancel_plot]:
             elem.config(state=tk.NORMAL if enable == True else tk.DISABLED)
             elem.update_idletasks()
+        self.plot_fr.config(cursor="" if enable == True else "watch")
 
 
     def ctc(self, text:str = '') -> None:
@@ -530,8 +525,7 @@ class RouteWindow:
 
         self.scale = config.get_int('ui_scale') / 100.00
         self.window = tk.Toplevel(self.root)
-        self.window.title()
-        #self.window.iconphoto(False, 32x32, 16x16)
+        self.window.title(f"{NAME} – {lbls['route']}")
         self.window.geometry(f"{int(600*self.scale)}x{int(300*self.scale)}")
 
         self.frame = tk.Frame(self.window, borderwidth=2)

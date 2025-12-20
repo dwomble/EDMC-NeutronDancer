@@ -5,7 +5,9 @@ import requests
 from requests import Response
 from pathlib import Path
 from time import sleep
+from threading import Thread
 
+from config import config # type: ignore
 from utils.Debug import Debug, catch_exceptions
 
 from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
@@ -103,17 +105,20 @@ class Router():
             self.update_route(-1)
 
 
-    def _syscol(self, which:str = '') -> int:
+    def _syscol(self, which:str = '', hdrs:list = []) -> int:
         """ Figure out which column has a chosen key, by default the system name """
+        if hdrs == []:
+            hdrs = self.headers
+
         if which == '':
             for h in ['System Name', 'system']:
-                if h in self.headers:
+                if h in hdrs:
                     which = h
                     break
-        if which == '' or which not in self.headers:
+        if which == '' or which not in hdrs:
             return 0
 
-        return self.headers.index(which)
+        return hdrs.index(which)
 
 
     def _store_history(self) -> None:
@@ -168,15 +173,23 @@ class Router():
 
         Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
         self.offset += direction
-        self.next_stop = self.route[self.offset][c]
-        self.jumps = self.route[self.offset][self._syscol('Jumps')] if 'Jumps' in self.headers else 0
+        self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
         (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
         self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
 
         Context.ui.show_frame('Route')
 
+
     def plot_route(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
-        """ Plot a route by querying Spansh"""
+        """ Initiate Spansh route plotting """
+        thread: Thread = Thread(target=self._plotter, args=(source, dest, efficiency, range, supercharge_mult), name="Neutron Dancer route plotting worker")
+        thread.start()
+
+        return True
+
+
+    def _plotter(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> None:
+        """ Async function to run the Spansh query """
         Debug.logger.debug(f"Plotting route")
 
         try:
@@ -186,10 +199,12 @@ class Router():
 
             if results.status_code != 202:
                 self.plot_error(results)
-                return False
+                return
 
             tries = 0
             while tries < 20:
+                if config.shutting_down: return # Quit
+
                 Debug.logger.debug(f"Checking for route results, try {tries + 1}")
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
@@ -203,7 +218,7 @@ class Router():
 
             if not route_response or route_response.status_code != 200:
                 self.plot_error(route_response)
-                return False
+                return
 
             route:dict = json.loads(route_response.content)["result"]["system_jumps"]
 
@@ -223,9 +238,17 @@ class Router():
                 r:list = []
                 for c in cols:
                     if c == 'jumps_remaining':
-                        r.append(sum([j['jumps'] for j in route[i:]]))
+                        (j, jr) = self._calc_jumps(hdrs, route[i:])
+                        r.append(int(jr))
                         continue
-                    r.append(waypoint[c] if not re.match(r"^\d+\.(\d+)?$", str(waypoint[c])) else round(float(waypoint[c]), 2))
+                    if re.match(r"^(\d+)?$", str(waypoint[c])):
+                        r.append(round(int(waypoint[c]), 2))
+                        continue
+                    if re.match(r"^\d+\.(\d+)?$", str(waypoint[c])):
+                        r.append(round(float(waypoint[c]), 2))
+                        continue
+                    r.append(waypoint[c])
+
                 rte.append(r)
 
             self.clear_route()
@@ -241,32 +264,15 @@ class Router():
             (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
             self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
             self.save()
-            return True
+            self.plot_finished()
+            return
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
             Context.ui.enable_plot_gui(True) # Return to the plot gui
             Context.ui.show_error(lbls["plot_error"])
-        Debug.logger.debug(f"Done")
-        return False
-
-
-    def load_route(self) -> bool:
-        """ Load a route from a CSV """
-        if Context.csv == None or Context.csv.read() == False:
-            Debug.logger.debug(f"Failed to load route")
-            return False
-
-        self.clear_route()
-        self.headers = Context.csv.headers
-        self.route = Context.csv.route
-        self.src = Context.csv.route[0][self._syscol()]
-        self.dest = Context.csv.route[-1][self._syscol()]
-        self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
-        self.next_stop = self.route[self.offset][self._syscol()]
-        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
-        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
-        return True
+            Debug.logger.debug(f"Done")
+        return
 
 
     def plot_error(self, response:Response) -> None:
@@ -283,6 +289,42 @@ class Router():
         Context.ui.enable_plot_gui(True)
         Context.ui.show_error(err)
         return
+
+
+    def plot_finished(self) -> None:
+        """ Called when a plot request completes """
+        Debug.logger.debug(f"Route plotted")
+        Context.ui.ctc(Context.router.next_stop)
+        Context.ui.show_frame('Route')
+
+
+    def load_route(self) -> bool:
+        """ Load a route from a CSV """
+        if Context.csv == None or Context.csv.read() == False:
+            Debug.logger.debug(f"Failed to load route")
+            return False
+
+        self.clear_route()
+        self.headers = Context.csv.headers
+        self.route = Context.csv.route
+
+        # Calculate jumps remaining and insert into the headers & the route
+        if 'Jumps Rem' not in self.headers:
+            jc:int|str = self._syscol('Jumps', self.headers)
+            self.headers.insert(jc+1, 'Jumps Rem')
+            for i in range(0, len(self.route)):
+                (j, jr) = self._calc_jumps(self.headers, self.route[i:])
+                self.route[i].insert(jc+1, jr)
+
+        Debug.logger.debug(f"{self.headers}")
+        Debug.logger.debug(f"{self.route}")
+        self.src = Context.csv.route[0][self._syscol()]
+        self.dest = Context.csv.route[-1][self._syscol()]
+        self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
+        self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
+        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
+        return True
 
 
     def plot_edts(self, filename: Path | str) -> None:
@@ -321,13 +363,26 @@ class Router():
         self.jumps_left = 0
 
 
-    def _calc_jumps(self, headers:list, route:list) -> tuple:
+    def _calc_next_stop(self, hdrs:list, stop:list) -> str:
+        """ Return the name of the next stop, system or body """
+        return stop[self._syscol('Body Name' if 'Body Name' in hdrs else 'System Name', hdrs)]
+
+
+    def _calc_jumps(self, hdrs:list, route:list) -> tuple:
         """ Calculate how many jumps are left in this route """
         if route == []: return (0, 0)
-        if 'Jumps' in self.headers:
-            return (route[0][self._syscol('Jumps')],
-                    sum([j[self._syscol('Jumps')] for j in route]) if 'Jumps' in headers else 0)
 
+        # Identify system name and jumps columns. It may be a dict or a list so handle both.
+        sc:int|str = self._syscol('System Name', hdrs) if isinstance(route[0], list) else HEADER_MAP.get('System Name', 'System Name')
+        jc:int|str = self._syscol('Jumps', hdrs) if isinstance(route[0], list) else HEADER_MAP.get('Jumps', 'Jumps')
+
+        if 'Jumps' in hdrs:
+            return (
+                route[0][jc], # jumps to this system
+                sum([j[jc] for i, j in enumerate(route) if i == 0 or route[i-1][sc] != j[sc]]) # Jumps from this system on
+                )
+
+        # No jump info so treat each row as a single jump
         return (0, len(route))
 
 

@@ -65,17 +65,15 @@ class CSV:
                 return False
 
             fields:list = list(route_reader.fieldnames)
-            Debug.logger.debug(f"Fields: {fields}")
             hdrs:list = []
-            cols:list = []
-            for h in HEADERS:
-                if h in fields:
-                    hdrs.append(h)
-                    cols.append(HEADER_MAP.get(h, ''))
-                if HEADER_MAP.get(h, '') in fields:
-                    hdrs.append(h)
-                    cols.append(HEADER_MAP.get(h, ''))
+            hdrs = [h for h in HEADERS if h in fields]
 
+            # Append any remaining fields
+            for f in fields:
+                if f not in HEADERS:
+                    hdrs.append(f)
+
+            Debug.logger.debug(f"Fields: {fields} hdrs: {hdrs}")
             if hdrs == [] or "System Name" not in hdrs:
                 self.error = errs["invalid_file"]
                 Debug.logger.error(f"File {filename} is of unsupported format")
@@ -83,18 +81,21 @@ class CSV:
 
             route:list = []
             for row in route_reader:
-                Debug.logger.debug(f"Row {row}")
                 r:list = []
                 if row in (None, "", []): continue
                 for col in hdrs:
-                    Debug.logger.debug(f"Col: {col} row: {row.get(col, '')}")
+                    Debug.logger.debug(f"{col} {row[col]}")
                     if col not in row: continue
                     if col in ["body_name", "body_subtype"]:
                         r.append(ast.literal_eval(row[col]))
                         continue
-                    m = re.match(r"^\d+(\.\d+)?$", row[col])
-                    Debug.logger.debug(f"Row {row[col]} {m}")
-                    r.append(row[col] if not re.match(r"^\d+(\.\d+)?$", row[col]) else round(float(row[col]), 2))
+                    if re.match(r"^(\d+)$", str(row[col])):
+                        r.append(round(int(row[col]), 2))
+                        continue
+                    if re.match(r"^\d+\.(\d+)?$", str(row[col])):
+                        r.append(round(float(row[col]), 2))
+                        continue
+                    r.append(row[col])
                 route.append(r)
 
             self.fleetcarrier = True if "Fuel Used" in hdrs else False

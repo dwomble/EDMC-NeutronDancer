@@ -1,6 +1,13 @@
 # EDMC-NeutronDancer Changelog
 
-## v0.5.5 - 2025-12-18
+## v?.?.? - ????-??-??
+
+## Changes
+* Switched to a threaded implementation for the Spansh plot calls
+* Modified to support just about any CSV as long as it has a system name column
+
+
+## v0.5.0 - 2025-12-18
 
 ## New Features
 * Added distance remaining to the system tooltip
@@ -10,6 +17,7 @@
 
 ## Changes
 * Improved plot entry data validation and error reporting
+
 
 ## v0.4.0 - 2025-12-15
 

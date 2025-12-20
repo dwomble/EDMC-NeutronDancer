@@ -38,7 +38,11 @@ class Placeholder(tk.Entry):
         self.bind("<FocusOut>", self.focus_out)
         self.bind('<Control-KeyRelease-a>', self.select_all)
         self.bind('<Control-KeyRelease-c>', self.copy)
-        if config.get_int('theme') == 1: self['bg'] = 'black'
+
+        if config.get_int('theme') > 0:
+            self['fg'] = config.get_str('dark_text')
+            self['bg'] = 'black'
+            self['disabledbackground'] = 'black'
         self.put_placeholder()
 
     def show_menu(self, e) -> None:

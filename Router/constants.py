@@ -50,7 +50,6 @@ lbls:dict = {
     "jumps_remaining": "Remaining",
     "body_count": "Bodies to scan at",
     "restock_tritium": "Time to restock Tritium",
-    "plot_error": "Error while trying to plot a route, please try again.",
     "source_system": "Source System",
     "dest_system": "Destination System",
     "range": "Range (LY)",
@@ -94,6 +93,7 @@ btns:dict = {
 
 # Error messages
 errs:dict = {
+    "plot_error": "Error while trying to plot a route, please try again.",
     "required_version": "This plugin requires EDMC version 4.0 or later.",
     "invalid_range": "Invalid range",
     "no_response": "No response from server",

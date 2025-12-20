@@ -46,11 +46,8 @@ class UI():
         self.error_txt:tk.StringVar = tk.StringVar()
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
-        self.frame:tk.Frame = tk.Frame(parent, borderwidth=2)
+        self.frame:tk.Frame = self._frame(parent, borderwidth=2)
         self.frame.grid(sticky=tk.NSEW)
-        self.title_fr = None
-        self.route_fr = None
-        self.plot_fr = None
         self.update:tk.Label
 
         if Context.updater and Context.updater.update_available:
@@ -65,6 +62,11 @@ class UI():
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
         self.hide_error()
+        self.title_fr:tk.Frame = self._create_title_fr(self.frame)
+        self.plot_fr:tk.Frame = self._create_plot_fr(self.frame)
+        self.route_fr:tk.Frame = self._create_route_fr(self.frame)
+
+        self.subfr:tk.Frame = self.plot_fr
         self.show_frame('Route' if Context.router.route != [] else 'Default')
 
         self._initialized = True
@@ -82,41 +84,23 @@ class UI():
     def show_frame(self, which:str = 'Default'):
         """ Display the chosen frame, creating it if necessary """
         Debug.logger.debug(f"Show_frame {which}")
+
+        self.subfr.grid_remove()
         match which:
             case 'Route':
-                if self.route_fr == None:
-                    self.route_fr = self._create_route_fr()
+                self.subfr = self.route_fr
                 self._update_waypoint()
-                Debug.logger.debug(f"Route frame {self.route_fr}")
-                self.route_fr.grid()
-                if self.plot_fr != None: self.plot_fr.grid_remove()
-                self.plot_fr = None
-                if self.title_fr != None: self.title_fr.grid_remove()
-                self.title_fr = None
             case 'Plot':
-                if self.route_fr != None: self.route_fr.grid_remove()
-                self.route_fr = None
-                if self.plot_fr == None:
-                    self.plot_fr = self._create_plot_fr()
-                self.plot_fr.grid()
+                self.subfr = self.plot_fr
                 self.enable_plot_gui(True)
-                if self.title_fr != None: self.title_fr.grid_remove()
-                self.title_fr = None
             case _:
-                if self.route_fr != None: self.route_fr.grid_remove()
-                self.route_fr = None
-                if self.plot_fr != None: self.plot_fr.grid_remove()
-                self.plot_fr = None
-                if self.title_fr == None:
-                    self.title_fr = self._create_title_fr()
-                self.title_fr.grid()
+                self.subfr = self.title_fr
+        self.subfr.grid(row=2, column=0)
 
 
-    def _create_title_fr(self) -> tk.Frame:
+    def _create_title_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the base/title frame """
-        title_fr:tk.Frame = tk.Frame(self.frame)
-        if config.get_int('theme') == 1: title_fr.config(bg='black')
-        title_fr.grid(row=2, column=0)
+        title_fr:tk.Frame = self._frame(parent)
         col:int = 0; row:int = 0
         self.lbl:tk.Label|ttk.Label = self._label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
@@ -124,14 +108,15 @@ class UI():
         self.plot_gui_btn:tk.Button|ttk.Button = self._button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Plot'))
         Debug.logger.debug(f"plot_gui_btn created {self.plot_gui_btn}")
         self.plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
+
         return title_fr
 
 
-    def _create_plot_fr(self) -> tk.Frame:
+    def _create_plot_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route plotting frame """
+
         Debug.logger.debug(f"Creating plot frame")
-        plot_fr:tk.Frame = tk.Frame(self.frame)
-        if config.get_int('theme') == 1: plot_fr.config(bg='black')
+        plot_fr:tk.Frame = self._frame(parent)
         row:int = 2
         col:int = 0
 
@@ -205,8 +190,7 @@ class UI():
         r2.grid(row=row, column=col)
 
         row += 1; col = 0
-        btn_frame:tk.Frame = tk.Frame(plot_fr)
-        if config.get_int('theme') == 1: btn_frame.config(bg='black')
+        btn_frame:tk.Frame = self._frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         r = 0; col = 0
@@ -250,25 +234,22 @@ class UI():
         self.ctc(Context.router.next_stop)
 
 
-    def _create_route_fr(self) -> tk.Frame:
+    def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """
         Debug.logger.debug(f"Creating route frame")
-        route_fr:tk.Frame = tk.Frame(self.frame)
-        if config.get_int('theme') == 1: route_fr.config(bg='black')
-        fr1:tk.Frame = tk.Frame(route_fr)
-        if config.get_int('theme') == 1: fr1.config(bg='black')
+        route_fr:tk.Frame = self._frame(parent)
+        fr1:tk.Frame = self._frame(route_fr)
         fr1.grid_columnconfigure(0, weight=0)
         fr1.grid_columnconfigure(1, weight=1)
         fr1.grid_columnconfigure(2, weight=0)
         fr1.grid_columnconfigure(3, weight=0)
         fr1.grid(row=0, column=0, sticky=tk.W)
-        row:int = 2
-        col:int = 0
+
+        row:int = 0; col:int = 0
         self.waypoint_prev_btn:tk.Button|ttk.Button = self._button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.goto_prev_waypoint())
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-
         self.waypoint_btn:tk.Button|ttk.Button = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
         ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
@@ -277,21 +258,15 @@ class UI():
         self.waypoint_next_btn:tk.Button|ttk.Button = self._button(fr1, text=btns["next"], width=3, command=lambda: Context.router.goto_next_waypoint())
         self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
-        #row +=1
-        #col -= 1
-        #self.jumpcounttxt_lbl = self._label(fr1, text=lbls["jumps_remaining"] + " " + str(Context.router.jumps_left))
-        #self.jumpcounttxt_lbl.grid(row=row, column=col, padx=5, pady=5)
-
-        fr2:tk.Frame = tk.Frame(route_fr)
-        if config.get_int('theme') == 1: fr2.config(bg='black')
+        fr2:tk.Frame = self._frame(route_fr)
         fr2.grid_columnconfigure(0, weight=0)
         fr2.grid_columnconfigure(1, weight=0)
         fr2.grid(row=1, column=0, sticky=tk.W)
-        row = 0
-        col = 0
+        row = 0; col = 0
 
         self.show_route_btn:tk.Button|ttk.Button = self._button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+
         col += 1
         self.clear_route_btn:tk.Button|ttk.Button = self._button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
@@ -299,7 +274,6 @@ class UI():
         Debug.logger.debug(f"show_route_btn created {self.show_route_btn}")
         Debug.logger.debug(f"clear_route_btn created {self.clear_route_btn}")
 
-        row += 1; col = 0
         return route_fr
 
 
@@ -341,7 +315,7 @@ class UI():
 
     def set_range(self, range:float, supercharge_mult:int) -> None:
         """ Set the range display """
-        if self.plot_fr == None: return
+        if self.range_entry == None: return
         self.range_entry.set_text(str(range), False)
         self.multiplier.set(supercharge_mult)
 
@@ -416,50 +390,72 @@ class UI():
         for elem in [self.source_ac, self.dest_ac, self.efficiency_slider, self.range_entry, self.import_route_btn, self.plot_route_btn, self.cancel_plot]:
             elem.config(state=tk.NORMAL if enable == True else tk.DISABLED)
             elem.update_idletasks()
-        self.plot_fr.config(cursor="" if enable == True else "watch")
+        self.subfr.config(cursor="" if enable == True else "watch")
 
 
     def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
-        if self.parent == None:
-            return
+        if self.parent == None: return
         self.parent.clipboard_clear()
         self.parent.clipboard_append(text)
         self.parent.update()
 
 
+    def _set_bg(self, w) -> None:
+        match config.get_int('theme'):
+            case 2:
+                w.config(bg='')
+            case 1:
+                w.config(bg='black')
+
+
+    def _frame(self, parent:tk.Widget, **kw) -> tk.Frame:
+        """ Deal with EDMC theme/color weirdness """
+        fr:tk.Frame = tk.Frame(parent, kw)
+        match config.get_int('theme'):
+            case 2:
+                fr.config(bg='')
+            case 1:
+                fr.config(bg='black')
+        return fr
+
+
     def _button(self, fr:tk.Frame, **kw) -> tk.Button|ttk.Button:
         """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
         if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
-
-        return tk.Button(fr, **kw, fg=config.get_str('dark_text'), bg='black', activebackground='black')
+        btn:tk.Button = tk.Button(fr, **kw, fg=config.get_str('dark_text'), activebackground='black')
+        return btn
 
 
     def _label(self, fr:tk.Frame, **kw) -> tk.Label|ttk.Label:
         """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
         if config.get_int('theme') == 0: return ttk.Label(fr, **kw)
+        lbl:tk.Label = tk.Label(fr, **kw, fg=config.get_str('dark_text'), activebackground='black')
+        match config.get_int('theme'):
+            #case 2:
+                #lbl.config(bg='')
 
-        return tk.Label(fr, **kw, fg=config.get_str('dark_text'), bg='black')
+            case 1:
+                lbl.config(bg='black')
+
+        return lbl
 
 
     def _radiobutton(self, fr:tk.Frame, **kw) -> tk.Radiobutton|ttk.Radiobutton:
         """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
         if config.get_int('theme') == 0: return ttk.Radiobutton(fr, **kw)
 
-        return tk.Radiobutton(fr, **kw, fg=config.get_str('dark_text'), bg='black')
+        rb:tk.Radiobutton = tk.Radiobutton(fr, **kw, fg=config.get_str('dark_text'), activebackground='black', background='black')
+        if config.get('theme') == 1: rb.configure(background='black')
+        return rb
+
 
     def _scale(self, fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
         """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-        match config.get_int('theme'):
-
-            case 0: # Turns out the ttk scale looks terrible
-                #if 'resolution' in kw: del kw['resolution']
-                #return ttk.Scale(fr, **kw)
-                return tk.Scale(fr, **kw)
-            case 1:
-                return tk.Scale(fr, **kw, fg=config.get_str('dark_text'), bg='black', troughcolor='darkgrey', highlightbackground='black', border=0)
-            case _:
-                return tk.Scale(fr, **kw, fg=config.get_str('dark_text'), border=0)
+        sc:tk.Scale = tk.Scale(fr, kw, border=0)
+        if int(config.get('theme')) > 0:
+            sc.config(foreground=config.get_str('dark_text'), troughcolor='darkgrey', highlightbackground='black', border=0, activebackground='black', background='black')
+        return sc
 
 
     @catch_exceptions

@@ -36,9 +36,9 @@ class Autocompleter(Placeholder):
         self.popup.wm_overrideredirect(True)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
 
-        if config.get_int('theme') > 1: self.lb.configure(fg=config.get("dark_text"))
-        elif config.get_int('theme') > 0:
-            self.lb.configure(fg=config.get("dark_text"), bg='black')
+        #if config.get_int('theme') > 1: self.lb.configure(fg=config.get("dark_text"))
+        #elif config.get_int('theme') > 0:
+        #    self.lb.configure(fg=config.get("dark_text"), bg='black')
 
         self.lb.pack(fill=tk.BOTH, expand=True)
         self.popup.withdraw()

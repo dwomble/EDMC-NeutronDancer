@@ -27,6 +27,8 @@ Neutron dancer supports two route creation methods:
 
 Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. When you complete a route Neutron Dancer saves the source, destination, and ship details for easy entry. These are available from a right click menu to simplify entry.
 
+<img width="483" height="159" alt="Screenshot 2025-12-20 220012" src="https://github.com/user-attachments/assets/b3eaf1b7-a7b8-4ab1-93a0-f5f04b6685ac" />
+
 Next click **Calculate** to query Spansh and plot your route.
 
 ### CSV Import
@@ -45,11 +47,14 @@ The **System Name** button also has a Tooltip that provides the number of jumps 
 
 The **Show route** button will bring up a window showing the details of the plotted route.
 
-If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will start back where you stopped.
+<img width="795" height="390" alt="Screenshot 2025-12-20 220119" src="https://github.com/user-attachments/assets/f4a3b4d0-f578-4b8b-86b2-671cff1e45b0" />
+
+If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
 
 ## Suggestions
 
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
 

@@ -1,6 +1,6 @@
 # Navl's Neutron Dancer
 
-This plugin's purpose is to make neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within EDMC and automatically copying the next waypoint in that route to your clipboard.
+This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within EDMC and automatically copying the next waypoint in that route to your clipboard.
 
 The goal of this fork is support for the new 6x overcharge of the Caspian and a cleaner UI.
 
@@ -50,6 +50,10 @@ The **Show route** button will bring up a window showing the details of the plot
 <img width="795" height="390" alt="Screenshot 2025-12-20 220119" src="https://github.com/user-attachments/assets/f4a3b4d0-f578-4b8b-86b2-671cff1e45b0" />
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
+
+## Credits
+
+This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
 
 ## Suggestions
 

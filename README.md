@@ -4,6 +4,9 @@ This plugin's purpose is to make neutron jumping easier by plotting a route usin
 
 The goal of this fork is support for the new 6x overcharge of the Caspian and a cleaner UI.
 
+
+<img width="483" height="135" alt="Screenshot 2025-12-20 215912" src="https://github.com/user-attachments/assets/11c0f557-bbc4-4085-b6e3-fd6e5ec6056f" />
+
 ## Installation
 
 - Open your EDMC plugins folder - in EDMC settings, select "Plugins" tab, click the "Open" button.
@@ -32,6 +35,8 @@ Click **Import** and select a comma separated file such as that exported by the 
 
 ### Following the route
 
+<img width="478" height="85" alt="Screenshot 2025-12-20 220110" src="https://github.com/user-attachments/assets/1376f752-4956-45fa-931c-6e43076d5aab" />
+
 Once your route is plotted, and every time you reach a waypoint, the next one is automatically copied to your clipboard. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
 
 If for some reason, your clipboard should be empty or contain other stuff that you copied yourself, click on the **System Name** button, and the waypoint will be copied again to your clipboard.
@@ -47,3 +52,4 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+

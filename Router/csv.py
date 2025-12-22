@@ -10,10 +10,8 @@ from utils.Debug import Debug, catch_exceptions
 from .context import Context
 
 class CSV:
-    """ Handle csv import/export """
-
     """
-    Class to manage all the route data and state information.
+    Class to manage importing and exporting routes as CSV files
     """
     # Singleton pattern
     _instance = None

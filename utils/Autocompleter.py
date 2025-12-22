@@ -1,15 +1,10 @@
-import json
 import queue
-import requests
 import threading
 import tkinter as tk
 
 from config import config # type: ignore
 
-from utils.Debug import Debug, catch_exceptions
 from .Placeholder import Placeholder
-
-
 
 class Autocompleter(Placeholder):
     """
@@ -72,8 +67,6 @@ class Autocompleter(Placeholder):
         elif key in ['Escape', 'Tab', 'ISO_Left_Tab'] and self.lb_up:
             self.hide_list()
 
-
-    @catch_exceptions
     def changed(self, name=None, index=None, mode=None) -> None:
         value:str = self.var.get()
         if value.__len__() < 3 and self.lb_up or self.has_selected:
@@ -83,7 +76,6 @@ class Autocompleter(Placeholder):
             t = threading.Thread(target=self.get_list, args=[value])
             t.start()
 
-    @catch_exceptions
     def selection(self, event=None) -> None:
         if self.lb_up:
             self.has_selected = True
@@ -95,7 +87,6 @@ class Autocompleter(Placeholder):
             self.icursor(tk.END)
             self.traceid = self.var.trace_add('write', self.changed)
 
-    @catch_exceptions
     def up(self, widget) -> None:
         if self.lb_up:
             if self.lb.curselection() == ():
@@ -109,7 +100,6 @@ class Autocompleter(Placeholder):
                 if widget != "listbox":
                     self.lb.activate(index)
 
-    @catch_exceptions
     def down(self, widget) -> None:
         if self.lb_up:
             if self.lb.curselection() == ():
@@ -126,7 +116,6 @@ class Autocompleter(Placeholder):
         else:
             self.changed()
 
-    @catch_exceptions
     def show_results(self, results) -> None:
         if results:
             self.lb.delete(0, tk.END)
@@ -138,7 +127,6 @@ class Autocompleter(Placeholder):
             if self.lb_up:
                 self.hide_list()
 
-    @catch_exceptions
     def show_list(self, height) -> None:
         self.lb["height"] = height
         if not self.lb_up and self.parent.focus_get() is self:
@@ -148,13 +136,11 @@ class Autocompleter(Placeholder):
             self.popup.deiconify() # Show the popup
             self.lb_up = True
 
-    @catch_exceptions
     def hide_list(self) -> None:
         if self.lb_up:
             self.popup.withdraw()
             self.lb_up = False
 
-    @catch_exceptions
     def get_list(self, inp:str) -> None:
         inp = inp.strip()
         if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
@@ -162,7 +148,6 @@ class Autocompleter(Placeholder):
             if lista:
                 self.queue.put(lista)
 
-    @catch_exceptions
     def update_me(self) -> None:
         try:
             while 1:
@@ -173,7 +158,6 @@ class Autocompleter(Placeholder):
             pass
         self.after(100, self.update_me)
 
-    @catch_exceptions
     def set_text(self, text, placeholder_style=True) -> None:
         if placeholder_style:
             self['fg'] = self.placeholder_color

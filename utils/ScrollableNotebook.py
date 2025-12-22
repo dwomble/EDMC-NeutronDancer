@@ -2,7 +2,7 @@
 
 # Copyright (c) Muhammet Emin TURGUT 2020
 # For license see LICENSE
-from tkinter import *
+from tkinter import * # type: ignore
 from tkinter import ttk
 
 class ScrollableNotebook(ttk.Frame):

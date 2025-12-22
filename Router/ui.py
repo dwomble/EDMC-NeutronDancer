@@ -9,7 +9,7 @@ import json
 from config import config # type: ignore
 from theme import theme #type: ignore
 
-from utils.Tooltip import ToolTip
+from utils.Tooltip import Tooltip
 from utils.Autocompleter import Autocompleter
 from utils.Placeholder import Placeholder
 from utils.Debug import Debug, catch_exceptions
@@ -55,7 +55,7 @@ class UI():
             text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
             self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
             if Context.updater.releasenotes != "":
-                ToolTip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
+                Tooltip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
             self.update.bind("<Button-1>", partial(self.cancel_update))
             self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
         self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt, foreground='red')
@@ -139,21 +139,21 @@ class UI():
                 self.menu.add_command(label=m, command=partial(*f, m))
 
         self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        ToolTip(self.source_ac, tts["source_system"])
+        Tooltip(self.source_ac, tts["source_system"])
         if Context.router.src != '': self.set_source_ac(Context.router.src)
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=10, menu=shipmenu)
+        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
         self.range_entry.grid(row=row, column=col)
-        ToolTip(self.range_entry, tts["range"])
+        Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
         self.range_entry.var.trace_add('write', self.check_range)
         if Context.router.range > 0: self.range_entry.set_text(str(Context.router.range), False)
 
         row += 1; col = 0
         self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        ToolTip(self.dest_ac, tts["dest_system"])
+        Tooltip(self.dest_ac, tts["dest_system"])
         if Context.router.dest != '': self.set_dest_ac(Context.router.dest)
         self.dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
@@ -161,7 +161,7 @@ class UI():
         self.efficiency_slider:tk.Scale|ttk.Scale = self._scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         self.efficiency_slider.bind('<Button-3>', self.show_menu)
 
-        ToolTip(self.efficiency_slider, tts["efficiency"])
+        Tooltip(self.efficiency_slider, tts["efficiency"])
 
         self.efficiency_slider.grid(row=row, column=col)
         self.efficiency_slider.set(Context.router.efficiency)
@@ -176,12 +176,12 @@ class UI():
         col += 1
         r1:tk.Radiobutton|ttk.Radiobutton = self._radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
-        ToolTip(r1, tts['standard_multiplier'])
+        Tooltip(r1, tts['standard_multiplier'])
 
         r1.grid(row=row, column=col)
         col += 1
         r2:tk.Radiobutton|ttk.Radiobutton = self._radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
-        ToolTip(r2, tts['overcharge_multiplier'])
+        Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
         r2.grid(row=row, column=col)
 
@@ -223,9 +223,9 @@ class UI():
             wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
         self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 30))
         if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
-            ToolTip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
         elif Context.router.jumps_left > 0:
-            ToolTip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
+            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
 
         self.ctc(Context.router.next_stop)
 
@@ -247,7 +247,7 @@ class UI():
 
         col += 1
         self.waypoint_btn:tk.Button|ttk.Button = self._button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
-        ToolTip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
+        Tooltip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
@@ -392,14 +392,6 @@ class UI():
         self.parent.update()
 
 
-    def _set_bg(self, w) -> None:
-        match config.get_int('theme'):
-            case 2:
-                w.config(bg='')
-            case 1:
-                w.config(bg='black')
-
-
     def _frame(self, parent:tk.Widget, **kw) -> tk.Frame:
         """ Deal with EDMC theme/color weirdness """
         fr:tk.Frame = tk.Frame(parent, kw)
@@ -422,12 +414,6 @@ class UI():
         """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
         if config.get_int('theme') == 0: return ttk.Label(fr, **kw)
         lbl:tk.Label = tk.Label(fr, **kw, fg=config.get_str('dark_text'), activebackground='black')
-        match config.get_int('theme'):
-            #case 2:
-                #lbl.config(bg='')
-
-            case 1:
-                lbl.config(bg='black')
 
         return lbl
 
@@ -436,16 +422,16 @@ class UI():
         """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
         if config.get_int('theme') == 0: return ttk.Radiobutton(fr, **kw)
 
-        rb:tk.Radiobutton = tk.Radiobutton(fr, **kw, fg=config.get_str('dark_text'), activebackground='black', background='black')
-        if config.get('theme') == 1: rb.configure(background='black')
+        rb:tk.Radiobutton = tk.Radiobutton(fr, **kw, fg=config.get_str('dark_text'), activebackground='black', highlightbackground='yellow')
         return rb
 
 
     def _scale(self, fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
         """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-        sc:tk.Scale = tk.Scale(fr, kw, border=0)
-        if int(config.get('theme')) > 0:
-            sc.config(foreground=config.get_str('dark_text'), troughcolor='darkgrey', highlightbackground='black', border=0, activebackground='black', background='black')
+        if config.get_int('theme') == 0: return tk.Scale(fr, kw, border=0)
+
+        sc:tk.Scale = tk.Scale(fr, kw)
+        sc.configure(foreground=config.get_str('dark_text'), troughcolor='gray25', highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
         return sc
 
 

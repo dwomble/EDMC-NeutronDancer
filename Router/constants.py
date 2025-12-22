@@ -100,5 +100,6 @@ errs:dict = {
     "no_file": "No file selected",
     "empty_file": "File is empty or doesn't have a header row",
     "invalid_file": "File is corrupt or of unsupported format",
-    "no_filename": "No filename given"
+    "no_filename": "No filename given",
+    "parse_error": "Error parsing route file",
 }

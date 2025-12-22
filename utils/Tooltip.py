@@ -7,7 +7,7 @@ import tkinter as tk
 
 DELAY: int = 500 # Delay before tooltip appears in ms
 
-class ToolTipBase:
+class TooltipBase:
 
     def __init__(self, button):
         self.button = button
@@ -62,11 +62,11 @@ class ToolTipBase:
             tw.destroy()
 
 
-class ToolTip(ToolTipBase):
+class Tooltip(TooltipBase):
 
     def __init__(self, button, text):
-        ToolTipBase.__init__(self, button)
+        TooltipBase.__init__(self, button)
         self.text = text
 
     def showcontents(self):
-        ToolTipBase.showcontents(self, self.text)
+        TooltipBase.showcontents(self, self.text)

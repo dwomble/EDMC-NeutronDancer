@@ -126,6 +126,7 @@ class Updater():
                 Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
                 return
             try:
+                Debug.logger.debug(f"{response.text}")
                 latest:Version = Version.coerce(response.text.strip().replace("-", ""))
             except Exception as e:
                 Debug.logger.info(f"Bad version file {e}")

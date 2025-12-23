@@ -50,14 +50,6 @@ class UI():
         self.frame.grid(sticky=tk.NSEW)
         self.update:tk.Label
 
-        if Context.updater and Context.updater.update_available:
-            text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
-            self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, font=("Helvetica", 9, "normal"), cursor='hand2')
-            if Context.updater.releasenotes != "":
-                Tooltip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
-            self.update.bind("<Button-1>", partial(self.cancel_update))
-            self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
-
         self.error_lbl:tk.Label|ttk.Label = self._label(self.frame, textvariable=self.error_txt, foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
@@ -69,7 +61,23 @@ class UI():
         self.subfr:tk.Frame = self.plot_fr
         self.show_frame('Route' if Context.router.route != [] else 'Default')
 
+        # Wait a while before deciding if we should show the update text
+        parent.after(30000, lambda: self.show_update())
         self._initialized = True
+
+
+    @catch_exceptions
+    def show_update(self) -> None:
+        """ Display the update text if appropriate"""
+        if Context.updater.update_available == False or Context.updater.install_update == False or Context.updater.zip_downloaded == "":
+            return
+
+        text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
+        self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=("Helvetica", 9, "normal"), cursor='hand2')
+        if Context.updater.releasenotes != "":
+            Tooltip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
+        self.update.bind("<Button-1>", partial(self.cancel_update))
+        self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
 
     @catch_exceptions
@@ -81,7 +89,7 @@ class UI():
 
 
     @catch_exceptions
-    def show_frame(self, which:str = 'Default'):
+    def show_frame(self, which:str = 'Default') -> None:
         """ Display the chosen frame, creating it if necessary """
         self.subfr.grid_remove()
         match which:

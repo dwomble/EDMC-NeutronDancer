@@ -21,15 +21,14 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_name = NAME
     Context.plugin_dir = Path(plugin_dir).resolve()
 
-    version:str = "Development"
+    version:Version = Version("0.0.0")
     version_file:Path = Context.plugin_dir / "version"
     if version_file.is_file():
         version = Version(version_file.read_text())
+    Context.plugin_version = version
     Context.plugin_useragent = f"{GIT_PROJECT}-{version}"
-
     Context.updater = Updater(str(Context.plugin_dir))
-    if version_file.is_file():
-        Context.updater.check_for_update(version)
+    Context.updater.check_for_update(Context.plugin_version)
 
     return NAME
 

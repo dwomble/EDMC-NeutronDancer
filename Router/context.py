@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+from semantic_version import Version #type: ignore
 
 # to avoid circular imports, local imports go here
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ class Context:
     # plugin parameters
     plugin_name:str = os.path.basename(os.path.dirname(__file__))
     plugin_dir:Path = None
+    plugin_version:Version = None
     plugin_useragent:str = None
 
     # global objects

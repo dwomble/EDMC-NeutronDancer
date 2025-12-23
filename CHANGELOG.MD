@@ -7,6 +7,7 @@
 * Modified to support just about any CSV as long as it has a system name column
 * The UI now works properly with transparent and dark modes
 * Code cleanup and consistency improvements
+* Modified the update checker to work asynchonrously to not delay EDMC startup
 
 
 ## v0.5.0 - 2025-12-18

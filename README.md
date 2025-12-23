@@ -1,10 +1,12 @@
 # Navl's Neutron Dancer
 
-[![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
+
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
 [![CodeQL](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql)
+[![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NEutronDancer/releases/latest)
 
-This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within EDMC and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
+This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC]() and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
 The goal of this fork is support for the new 6x overcharge of the Caspian and a cleaner UI.
 
@@ -63,6 +65,7 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
 
 
 

@@ -79,6 +79,7 @@ class Updater():
         try:
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
+            Debug.logger.info(f"Version {self.update_version} installed")
         except Exception as e:
             Debug.logger.error("Failed to install update, exception info:", exc_info=e)
 

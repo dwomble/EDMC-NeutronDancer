@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.0.0 - 2025-12-??
+## v1.0.0 - 2025-12-23
 
 ## Changes
 * Switched to a threaded implementation for the Spansh plot calls

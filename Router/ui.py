@@ -89,17 +89,27 @@ class UI():
 
 
     @catch_exceptions
-    def show_frame(self, which:str = 'Default') -> None:
+    def show_frame(self, which:str = 'Default', destroy:bool = False) -> None:
         """ Display the chosen frame, creating it if necessary """
         self.subfr.grid_remove()
         match which:
             case 'Route':
+                if destroy == True:
+                    self.route_fr.destroy()
+                    self.route_fr = self._create_route_fr(self.frame)
                 self.subfr = self.route_fr
                 self._update_waypoint()
             case 'Plot':
+                if destroy == True:
+                    self.plot_fr.destroy()
+                    self.plot_fr = self._create_plot_fr(self.frame)
+
                 self.subfr = self.plot_fr
                 self.enable_plot_gui(True)
             case _:
+                if destroy == True:
+                    self.title_fr.destroy()
+                    self.title_fr = self._create_title_fr(self.frame)
                 self.subfr = self.title_fr
         self.subfr.grid(row=2, column=0)
 

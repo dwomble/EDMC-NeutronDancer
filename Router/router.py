@@ -150,7 +150,6 @@ class Router():
         if direction == 0: # Figure out if we're on the route
             for i, r in enumerate(self.route):
                 if r[c] == self.system:
-                    Debug.logger.debug(f"Found system {self.offset} {direction}")
                     self.offset = i
                     break
 
@@ -168,7 +167,7 @@ class Router():
                 self.jumps_left = 0
                 self.jumps = 0
                 self._store_history()
-            Context.ui.show_frame('Route')
+            Context.ui.show_frame('Route', True)
             return
 
         Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
@@ -204,8 +203,6 @@ class Router():
             tries = 0
             while tries < 20:
                 if config.shutting_down: return # Quit
-
-                Debug.logger.debug(f"Checking for route results, try {tries + 1}")
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
 
@@ -276,12 +273,12 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        Debug.logger.info(f"Server response: {response} {response.status_code == 400} {'error' in json.loads(response.content).keys()}")
         err:str = errs["no_response"]
         if response:
+            Debug.logger.info(f"Server response: {response} {response.status_code == 400} {'error' in json.loads(response.content).keys()}")
             err = errs["plot_error"]
 
-        if response != None and response.status_code == 400 and "error" in json.loads(response.content).keys():
+        if response and response.status_code == 400 and "error" in json.loads(response.content).keys():
             err = json.loads(response.content)["error"]
 
         Context.ui.enable_plot_gui(True)
@@ -411,12 +408,11 @@ class Router():
     def save(self) -> None:
         """ Save state to file """
 
-        ind:int = 4 # Just to make it easier to read for debugging
         makedirs(path.join(Context.plugin_dir, DATA_DIR), exist_ok=True)
         file:str = path.join(Context.plugin_dir, DATA_DIR, 'route.json')
 
         with open(file, 'w') as outfile:
-            json.dump(self._as_dict(), outfile, indent=ind)
+            json.dump(self._as_dict(), outfile)
 
 
     def _as_dict(self) -> dict:

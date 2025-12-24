@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .router import Router
     from .ui import UI
     from .csv import CSV
+
 @dataclass
 class Context:
     # plugin parameters

@@ -1,5 +1,6 @@
 import json
 from os import path, makedirs
+from dataclasses import dataclass, asdict
 import re
 import requests
 from requests import Response
@@ -12,6 +13,14 @@ from utils.Debug import Debug, catch_exceptions
 
 from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
 from .context import Context
+
+@dataclass
+class Ship:
+    """ Details of a ship """
+    name:str = ''
+    range:float = 32.0
+    type:str = ''
+    supercharge_mult:int = 4
 
 class Router():
     """
@@ -32,7 +41,7 @@ class Router():
 
         self.headers:list = []
         self.route:list = []
-        self.ships:dict = {}
+        self.ships:dict[str, Ship] = {}
         self.history:list = []
         self.bodies:str = ""
 
@@ -40,9 +49,9 @@ class Router():
         self.src:str = ""
         self.dest:str = ""
         self.ship_id:str = ""
-        self.ship:dict = {'name': "", 'range': 0.0, 'type': "" }
-        self.range:float = 32.0
-        self.supercharge_mult:int = 4
+        self.ship:Ship = Ship()
+        self.range:float = Ship.range
+        self.supercharge_mult:int = Ship.supercharge_mult
         self.efficiency:int = 60
         self.offset:int = 0
         self.jumps_left:int = 0
@@ -56,53 +65,58 @@ class Router():
         self._initialized = True
 
 
+    def _supercharge_mult(self, modules:list) -> int:
+        """ Determine the supercharge multiplier from the ship's modules """
+        fsd:str = [m['Item'] for m in modules if m['Slot'] == 'FrameShiftDrive'][0]
+        return 6 if fsd.endswith('overchargebooster_mkii') else 4
+
+
     def swap_ship(self, ship_id:str) -> None:
         """ Called on a ship swap event to update our current ship information """
         self.ship_id = str(ship_id)
 
-        if ship_id in self.ships:
-            self.range = self.ships[ship_id].get('range', 32.0)
-            self.supercharge_mult = 6 if self.ships[ship_id].get('type', '') in ('explorer_nx') else 4
+        # Do we have a record of this ship? If so set the fields and we're done
+        if ship_id in self.ships.keys():
+            self.range = self.ships[ship_id].range
+            self.supercharge_mult = self.ships[ship_id].supercharge_mult
             self.ship = self.ships[ship_id]
             return
 
-        found_ship:dict = next((item for item in self.shipyard if item.get('ship_id', '') == self.ship_id), {})
+        # Otherwise look it up in the shipyard
+        found_ship:dict = next((item for item in self.shipyard if item.get('ShipID', '') == self.ship_id), {})
         if found_ship != {}:
             self.range = found_ship.get('max_jump_range', 32.0) * 0.95
-            self.supercharge_mult = 6 if found_ship.get('type', '') in ('explorer_nx') else 4
-            self.ship = {'name': found_ship.get('name', ''), 'range': self.range, 'type': found_ship.get('type', '')}
+            self.supercharge_mult = self._supercharge_mult(found_ship.get('modules', []))
+            self.ship = Ship(name=found_ship.get('ShipName', ''), range=self.range, type=found_ship.get('Ship', ''), supercharge_mult=self.supercharge_mult)
             return
 
         self.range = 32.0
         self.supercharge_mult = 4
-        self.ship = {'name': '', 'range': 32.0, 'type': ''}
+        self.ship = Ship()
         return
 
 
-    def set_ship(self, ship_id:str, range:float, name:str, type:str) -> None:
-        """ Set the current ship details"""
-        Debug.logger.debug(f"Setting current ship to {ship_id} {name} {type}")
+    def set_ship(self, entry:dict) -> None:
+        """ Set the current ship details and update the UI """
+        Debug.logger.debug(f"Setting current ship to {entry.get('ShipID', '')} {entry.get('ShipName', '')} {entry.get('Ship', '')}")
+        range:float = entry.get('MaxJumpRange', 0.0)
+        supercharge_mult:int = self._supercharge_mult(entry.get('modules', []))
 
         self.range = round(float(range) * 0.95, 2)
-        self.supercharge_mult = 6 if type in ('explorer_nx') else 4
-
-        self.ship['name'] = name
-        self.ship['range'] = round(float(range) * 0.95, 2)
-        self.ship['type'] = type
+        self.supercharge_mult = supercharge_mult
+        self.ship = Ship(name=entry.get('ShipName', ''), range=self.range, type=entry.get('Ship', ''), supercharge_mult=self.supercharge_mult)
 
         Context.ui.set_range(self.range, self.supercharge_mult)
 
 
     def goto_next_waypoint(self) -> None:
         """ Move to the next waypoint """
-        if self.offset < len(self.route) - 1:
-            self.update_route(1)
+        if self.offset < len(self.route) - 1: self.update_route(1)
 
 
     def goto_prev_waypoint(self) -> None:
-        """ Move back to the previous waypoint"""
-        if self.offset > 0:
-            self.update_route(-1)
+        """ Move back to the previous waypoint """
+        if self.offset > 0: self.update_route(-1)
 
 
     def _syscol(self, which:str = '', hdrs:list = []) -> int:
@@ -123,18 +137,19 @@ class Router():
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
+
         if self.src != '' and self.src:
             self.history.insert(0, self.src)
         if self.dest != '' and self.dest not in self.history:
             self.history.insert(0, self.dest)
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
-        if self.ship.get('name', '') != '':
-            self.ship['range'] = self.range
-            self.ship['type'] = self.ship.get('type', '')
-            self.ship['name'] = self.ship.get('name', )
-            Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
+        if self.ship.name != '':
+            self.ship.range = self.range
+            self.ship.supercharge_mult = self.supercharge_mult
             self.ships[self.ship_id] = self.ship
+            Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
+
         self.save()
 
 
@@ -431,13 +446,16 @@ class Router():
             'shipid': self.ship_id,
             'ship': self.ship,
             'route': self.route,
-            'ships': self.ships,
+            'ships': {k: asdict(ship) for k, ship in self.ships.items()},
             'history': self.history
             }
 
 
     def _from_dict(self, dict:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
+
+        # Need to migrate from older ships format?
+
         self.system = dict.get('system', '')
         self.src = dict.get('source', '')
         self.dest = dict.get('destination', '')
@@ -451,5 +469,5 @@ class Router():
         self.route = dict.get('route', [])
         self.ship_id = dict.get('shipid', "")
         self.ship = dict.get('ship', {})
-        self.ships = dict.get('ships', {})
+        self.ships = {k: Ship(**data) for k, data in dict.get('ships', {}).items()}
         self.history = dict.get('history', [])

@@ -7,6 +7,7 @@ from config import appname  # type: ignore
 from Router.constants import GIT_PROJECT, NAME, errs, lbls
 from utils.Debug import Debug, catch_exceptions
 from utils.Updater import Updater
+from utils.misc import get_by_path
 
 from Router.context import Context
 from Router.router import Router
@@ -55,7 +56,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'StoredShips':
             Context.router.shipyard = entry.get('ShipsHere', []) + entry.get('ShipsRemote', [])
         case 'Loadout':
-            Context.router.set_ship(entry.get('ShipID', ''), entry.get('MaxJumpRange', 0.0), entry.get('ShipName', ''), entry.get('Ship', ''))
+            Context.router.set_ship(entry)
         case 'ShipyardSwap':
             Context.router.swap_ship(entry.get('ShipID', ''))
 

@@ -148,7 +148,7 @@ class UI():
                 destmenu[sys] = [self.menu_callback, 'dest']
 
         for id, ship in Context.router.ships.items():
-            shipmenu[ship.get('name')] = [self.menu_callback, 'ship']
+            shipmenu[ship.name] = [self.menu_callback, 'ship']
 
         # Create right click menu
         if shipmenu != {}:
@@ -297,17 +297,16 @@ class UI():
             case 'dest':
                 self.dest_ac.set_text(param, False)
             case _:
-                for id, ship in Context.router.ships.items():
-                    if ship.get('name', '') == param:
-                        self.range_entry.set_text(str(ship.get('range', '0.0')), False)
-                        self.multiplier.set(6 if ship.get('type', '') in ('explorer_nx') else 4)
+                for ship in Context.router.ships.values():
+                    if ship.name == param:
+                        self.range_entry.set_text(str(ship.range), False)
+                        self.multiplier.set(ship.supercharge_mult)
                         return
 
 
     def set_source_ac(self, text: str) -> None:
         """ Set the start system display """
         if self.source_ac == None: return
-        #self.source_ac.set_text(str(range), False)
         self.source_ac.delete(0, tk.END)
         self.source_ac.insert(0, text)
         self.source_ac.set_default_style()
@@ -316,7 +315,6 @@ class UI():
     def set_dest_ac(self, text: str) -> None:
         """ Set the destination system display """
         if self.dest_ac == None: return
-        #self.dest_ac.set_text(str(range), False)
         self.dest_ac.delete(0, tk.END)
         self.dest_ac.insert(0, text)
         self.dest_ac.set_default_style()
@@ -345,7 +343,7 @@ class UI():
     @catch_exceptions
     def import_route(self) -> None:
         if Context.router == None or Context.router.load_route() == False:
-            Debug.logger.error(f"Failed to laod route")
+            Debug.logger.error(f"Failed to load route")
             self.show_frame('Plot')
             self.enable_plot_gui(True)
             return

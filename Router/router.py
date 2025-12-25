@@ -1,11 +1,9 @@
 import json
-from os import path, makedirs
-from dataclasses import dataclass, asdict
 import re
 import requests
 from requests import Response
 from pathlib import Path
-from time import sleep
+from time import time, sleep
 from threading import Thread
 
 from config import config # type: ignore
@@ -13,14 +11,7 @@ from utils.Debug import Debug, catch_exceptions
 
 from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
 from .context import Context
-
-@dataclass
-class Ship:
-    """ Details of a ship """
-    name:str = ''
-    range:float = 32.0
-    type:str = ''
-    supercharge_mult:int = 4
+from .ship import Ship
 
 class Router():
     """
@@ -41,17 +32,20 @@ class Router():
 
         self.headers:list = []
         self.route:list = []
+        self.used_ships:list = []
         self.ships:dict[str, Ship] = {}
         self.history:list = []
-        self.bodies:str = ""
 
+        self.modules:list = []
+
+        # Current route data
         self.system:str = ""
         self.src:str = ""
         self.dest:str = ""
         self.ship_id:str = ""
-        self.ship:Ship = Ship()
-        self.range:float = Ship.range
-        self.supercharge_mult:int = Ship.supercharge_mult
+        self.ship:Ship|None = None
+        self.range:float = 32.0
+        self.supercharge_mult:int = 4
         self.efficiency:int = 60
         self.offset:int = 0
         self.jumps_left:int = 0
@@ -59,52 +53,34 @@ class Router():
         self.next_stop:str = ""
         self.jumps:int = 0
 
-        self.shipyard:list = [] # Temporary store of shipyard ships
-
         self._load()
         self._initialized = True
 
 
-    def _supercharge_mult(self, modules:list) -> int:
-        """ Determine the supercharge multiplier from the ship's modules """
-        fsd:str = [m['Item'] for m in modules if m['Slot'] == 'FrameShiftDrive'][0]
-        return 6 if fsd.endswith('overchargebooster_mkii') else 4
-
-
     def swap_ship(self, ship_id:str) -> None:
         """ Called on a ship swap event to update our current ship information """
+        if ship_id not in self.ships.keys():
+            Debug.logger.debug(f"ShipID {ship_id} not found in shipyard")
+            self.ship_id = ""
+            self.ship = None
+            return
+
         self.ship_id = str(ship_id)
 
-        # Do we have a record of this ship? If so set the fields and we're done
-        if ship_id in self.ships.keys():
-            self.range = self.ships[ship_id].range
-            self.supercharge_mult = self.ships[ship_id].supercharge_mult
-            self.ship = self.ships[ship_id]
-            return
-
-        # Otherwise look it up in the shipyard
-        found_ship:dict = next((item for item in self.shipyard if item.get('ShipID', '') == self.ship_id), {})
-        if found_ship != {}:
-            self.range = found_ship.get('max_jump_range', 32.0) * 0.95
-            self.supercharge_mult = self._supercharge_mult(found_ship.get('modules', []))
-            self.ship = Ship(name=found_ship.get('ShipName', ''), range=self.range, type=found_ship.get('Ship', ''), supercharge_mult=self.supercharge_mult)
-            return
-
-        self.range = 32.0
-        self.supercharge_mult = 4
-        self.ship = Ship()
-        return
+        self.range = self.ships[ship_id].range
+        self.supercharge_mult = self.ships[ship_id].supercharge_mult
+        self.ship = self.ships[ship_id]
 
 
     def set_ship(self, entry:dict) -> None:
         """ Set the current ship details and update the UI """
         Debug.logger.debug(f"Setting current ship to {entry.get('ShipID', '')} {entry.get('ShipName', '')} {entry.get('Ship', '')}")
-        range:float = entry.get('MaxJumpRange', 0.0)
-        supercharge_mult:int = self._supercharge_mult(entry.get('modules', []))
-
-        self.range = round(float(range) * 0.95, 2)
-        self.supercharge_mult = supercharge_mult
-        self.ship = Ship(name=entry.get('ShipName', ''), range=self.range, type=entry.get('Ship', ''), supercharge_mult=self.supercharge_mult)
+        ship:Ship = Ship(entry)
+        self.ship = ship
+        self.ship_id = str(ship.id)
+        self.supercharge_mult = ship.supercharge_mult
+        self.range = ship.range
+        self.ships[self.ship_id] = ship
 
         Context.ui.set_range(self.range, self.supercharge_mult)
 
@@ -144,13 +120,15 @@ class Router():
             self.history.insert(0, self.dest)
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
-        if self.ship.name != '':
-            self.ship.range = self.range
-            self.ship.supercharge_mult = self.supercharge_mult
-            self.ships[self.ship_id] = self.ship
-            Debug.logger.debug(f"Storing ship {self.ship_id} data {self.ship}")
+        if self.ship_id == None or self.ship == None:
+            Debug.logger.debug(f"No ship to store")
+            return
 
-        self.save()
+        self.ship.range = self.range
+        self.ship.supercharge_mult = self.supercharge_mult
+        if self.ship_id not in self.used_ships:
+            self.used_ships.append(self.ship_id)
+        Debug.logger.debug(f"Storing ship {str(self.ship)}")
 
 
     @catch_exceptions
@@ -198,7 +176,6 @@ class Router():
         """ Initiate Spansh route plotting """
         thread:Thread = Thread(target=self._plotter, args=(source, dest, efficiency, range, supercharge_mult), name="Neutron Dancer route plotting worker")
         thread.start()
-
         return True
 
 
@@ -410,22 +387,81 @@ class Router():
         return 0
 
 
+    def _get_module_data(self) -> None:
+        """ Download module data from Coriolis """
+        try:
+            Debug.logger.debug(f"Getting module data")
+            modules:list = []
+            for key, url  in {"fsd": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/frame_shift_drive.json",
+                              "gfsb": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/internal/guardian_fsd_booster.json",
+                              "ft": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/fuel_tank.json"}.items():
+                r:Response = requests.get(url, timeout=10)
+                if r.status_code != 200:
+                    Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")
+                    return
+
+                data:dict = json.loads(r.content)
+                if data.get(key, []) == []:
+                    Debug.logger.error(f"No {key} found {json.loads(r.content)} {r.content}")
+                    return
+                modules = modules + data.get(key, [])
+
+            self.modules = modules
+
+            # Temporary hack since Coriolis doens't yet have the new MkII overcharge boosters
+            self.modules.append({
+                "class": 8,
+                "cost": 82042060,
+                "fuelmul": 0.011,
+                "fuelpower": 2.5,
+                "mass": 160,
+                "maxfuel": 6.8,
+                "optmass": 4670,
+                "power": 1.15,
+                "rating": "A",
+                "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
+            })
+
+            Debug.logger.debug(f"Downloaded {len(self.modules)} FSD entries from Coriolis")
+            file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
+
+            with open(file, 'w') as outfile:
+                json.dump(self.modules, outfile)
+
+        except Exception as e:
+            Debug.logger.error("Failed to download FSD data, exception info:", exc_info=e)
+
+
     @catch_exceptions
     def _load(self) -> None:
-        """ Load state from file """
-        file:str = path.join(Context.plugin_dir, DATA_DIR, 'route.json')
-        if path.exists(file):
+        """ Load state from files """
+        file:Path = Path(Context.plugin_dir) / DATA_DIR / 'route.json'
+        if file.exists():
             with open(file) as json_file:
                 self._from_dict(json.load(json_file))
+
+        Debug.logger.debug(f"Loading modules")
+        # Get the FSD data from Coriolis' github repo
+        file = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
+        if file.exists():
+            with open(file) as json_file:
+                self.modules = json.load(json_file)
+                Debug.logger.debug(f"Loaded {len(self.modules)} modules from local file")
+
+        Debug.logger.debug(f"Modules: {len(self.modules)}")
+        if not file.exists() or file.stat().st_mtime < time() - 86400:
+            Debug.logger.debug("FSD data is more than a day old, downloading fresh data")
+            thread:Thread = Thread(target=self._get_module_data, args=[], name="Neutron Dancer FSD data downloader")
+            thread.start()
 
 
     @catch_exceptions
     def save(self) -> None:
         """ Save state to file """
 
-        makedirs(path.join(Context.plugin_dir, DATA_DIR), exist_ok=True)
-        file:str = path.join(Context.plugin_dir, DATA_DIR, 'route.json')
-
+        dir:Path = Path(Context.plugin_dir) / DATA_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        file:Path = dir / 'route.json'
         with open(file, 'w') as outfile:
             json.dump(self._as_dict(), outfile)
 
@@ -444,9 +480,9 @@ class Router():
             'next_stop': self.next_stop,
             'headers': self.headers,
             'shipid': self.ship_id,
-            'ship': self.ship,
+            'ship': self.ship.to_dict(),
             'route': self.route,
-            'ships': {k: asdict(ship) for k, ship in self.ships.items()},
+            'ships': {k: ship.to_dict() for k, ship in self.ships.items()},
             'history': self.history
             }
 
@@ -468,6 +504,6 @@ class Router():
         self.headers = dict.get('headers', [])
         self.route = dict.get('route', [])
         self.ship_id = dict.get('shipid', "")
-        self.ship = dict.get('ship', {})
-        self.ships = {k: Ship(**data) for k, data in dict.get('ships', {}).items()}
+        self.ship = Ship(dict.get('ship', {}))
+        self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
         self.history = dict.get('history', [])

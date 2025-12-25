@@ -150,5 +150,5 @@ class Updater():
 
     def check_for_update(self, version:Version) -> None:
         """ Start an update check thread """
-        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update chcker")
+        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
         thread.start()

@@ -1,6 +1,6 @@
 # pyright: reportAssignmentType=false
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 from semantic_version import Version #type: ignore
@@ -19,6 +19,9 @@ class Context:
     plugin_dir:Path = None
     plugin_version:Version = None
     plugin_useragent:str = None
+
+    # Global variables
+    modules:list = field(default_factory=list)
 
     # global objects
     router:'Router' = None

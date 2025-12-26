@@ -19,14 +19,23 @@ SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 DATA_DIR = 'data'
 
 # Map from returned data to our header names
-HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
-                "Jumps": "jumps", "Neutron": "neutron_star"}
+#HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
+#                "Jumps": "jumps", "Neutron": "neutron_star", "Refuel": "must_refuel"}
+
+HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
+                   "distance_jumped": "Distance Jumped", "distance": "Distance",
+                   "distance_left": "Distance Rem", "distance_to_destination": "Distance Rem",
+                    "fuel_in_tank": "Fuel Left", "fuel_used": "Fuel Used", "must_refuel": "Refuel",
+                    "jumps": "Jumps", "neutron_star": "Neutron", "has_neutron": "Neutron", "is_scoopable": "Scoopable",
+                    #"x": "", "y": "", "z": "", "id64": ""
+                    }
+
 
 # Headers that we accept
 HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Body Subtype",
                 "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used", "Refuel", "Neutron Star",
-                "Icy Ring", "Pristine", "Restock Tritium"]
+                "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used",
+                "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
 
 
 """

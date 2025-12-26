@@ -36,8 +36,6 @@ class Router():
         self.ships:dict[str, Ship] = {}
         self.history:list = []
 
-        self.modules:list = []
-
         # Current route data
         self.system:str = ""
         self.src:str = ""
@@ -172,28 +170,94 @@ class Router():
         Context.ui.show_frame('Route')
 
 
+    def _get_sysid(self, sys:str) -> str:
+        url = "https://spansh.co.uk/api/systems/field_values/system_names?"
+        results:requests.Response = requests.get(url, params={'q': sys}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        res:dict = json.loads(results.content)
+        if 'min_max' not in res or len(res['min_max']) < 1:
+            return ""
+        return res['min_max'][0]['id64']
+
+
     def plot_route(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
         """ Initiate Spansh route plotting """
-        thread:Thread = Thread(target=self._plotter, args=(source, dest, efficiency, range, supercharge_mult), name="Neutron Dancer route plotting worker")
+
+        # Save values
+        self.src = source
+        self.dest = dest
+        self.supercharge_mult = supercharge_mult
+        self.efficiency = efficiency
+        self.range = range
+
+        url:str = "https://spansh.co.uk/api/generic/route"
+
+        build:list = [
+            {
+                "header": {
+                    "appName": "EDMC-NeutronDancer",
+                    "appVersion": "2.0.0-dev"
+                    },
+                "data": self.ships["115"].loadout
+            }
+        ]
+        build:list = []
+        params:dict = {'source': source, 'destination': dest, 'is_supercharged': 0, 'use_supercharge': 1,
+                       'use_injections': 0, 'exclude_secondary': 0, 'refuel_every_scoopable': 0,
+                       'fuel_power': self.ships['115'].fuel_power, "fuel_multiplier": self.ships['115'].fuel_multiplier,
+                       "optimal_mass": self.ships['115'].optimal_mass, 'base_mass': self.ships['115'].base_mass,
+                       'tank_size': self.ships['115'].tank_size,  "internal_tank_size": self.ships['115'].internal_tank_size,
+                       "reserve_size": "4.0", "max_fuel_per_jump": self.ships['115'].max_fuel_per_jump,
+                       "range_boost": self.ships['115'].range_boost, "max_time": 60,
+                       "ship_build": json.dumps(build), "cargo": 0,
+                       "algorithm": "optimistic", "supercharge_multiplier": self.ships['115'].supercharge_mult,
+                       "injection_multiplier": '2'}
+
+        Debug.logger.debug(f"parameters: {params}")
+        thread:Thread = Thread(target=self._plotter, args=(url, params, 120), name="Neutron Dancer route plotting worker")
         thread.start()
+
         return True
 
 
-    def _plotter(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> None:
+    def plot_route_def(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
+        """ Initiate Spansh route plotting """
+        url:str = SPANSH_ROUTE
+        params:dict = {'source': source, 'destination': dest, 'efficiency':efficiency, 'range': range, 'supercharge_mult': supercharge_mult}
+        thread:Thread = Thread(target=self._plotter, args=(url, params), name="Neutron Dancer route plotting worker")
+        thread.start()
+
+        self.src = source
+        self.dest = dest
+        self.supercharge_mult = supercharge_mult
+        self.efficiency = efficiency
+        self.range = range
+
+        return True
+
+
+    @catch_exceptions
+    def _plotter(self, url:str, params:dict, limit:int = 20) -> None:
         """ Async function to run the Spansh query """
         Debug.logger.debug(f"Plotting route")
 
         try:
-            results:Response = requests.post(SPANSH_ROUTE + "?",
-                params={"efficiency": efficiency, "range": range, "from": source, "to": dest, 'supercharge_multiplier': supercharge_mult},
-                headers={'User-Agent': Context.plugin_useragent})
+            # Convert systems
+            #params['source'] = self._get_sysid(params['source'])
+            #if params['source'] == "": return
+
+            #params['destination'] = self._get_sysid(params['destination'])
+            #if params['destination'] == "": return
+            #Debug.logger.debug(f"Params: {params}")
+            results:Response = requests.post(url, data=params,
+                                             headers={'User-Agent': Context.plugin_useragent,
+                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
             if results.status_code != 202:
                 self.plot_error(results)
                 return
 
             tries = 0
-            while tries < 20:
+            while tries < limit:
                 if config.shutting_down: return # Quit
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
@@ -209,18 +273,26 @@ class Router():
                 self.plot_error(route_response)
                 return
 
-            route:dict = json.loads(route_response.content)["result"]["system_jumps"]
+            #Debug.logger.debug(f"{route_response.json()}")
+            res = json.loads(route_response.content)["result"]
+
+            route = res.get('jumps', res.get('system_jumps', []))
 
             cols:list = []
             hdrs:list = []
+            h:str
             for h in HEADERS:
-                if HEADER_MAP.get(h, '') in route[0].keys():
-                    hdrs.append(h)
-                    cols.append(HEADER_MAP.get(h, ''))
+                k:str
+                for k in route[0].keys():
+                    if HEADER_MAP.get(k, '') == h:
+                        hdrs.append(h)
+                        cols.append(k)
+                    continue
                 if h == "Jumps Rem":
                     hdrs.append(h)
                     cols.append('jumps_remaining')
 
+            Debug.logger.debug(f"hdrs: {hdrs} cols: {cols}")
             rte:list = []
             for i, waypoint in enumerate(route):
                 r:list = []
@@ -242,15 +314,11 @@ class Router():
             self.clear_route()
             self.headers = hdrs
             self.route = rte
-            self.src = source
-            self.dest = dest
-            self.supercharge_mult = supercharge_mult
-            self.efficiency = efficiency
-            self.range = range
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
             self.next_stop = self.route[self.offset][self._syscol()]
             (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
             self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
+            Debug.logger.debug(f"{self.headers} {self.route}")
             self.save()
             self.plot_finished()
             return
@@ -262,15 +330,18 @@ class Router():
         return
 
 
+    @catch_exceptions
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
+        Debug.logger.debug(f"Result: {response}")
         err:str = errs["no_response"]
-        if response:
-            Debug.logger.info(f"Server response: {response} {response.status_code == 400} {'error' in json.loads(response.content).keys()}")
-            err = errs["plot_error"]
+        #if response:
+        #    Debug.logger.info(f"Server response: {response.json()}")
+        #    err = errs["plot_error"]
 
-        if response and response.status_code == 400 and "error" in json.loads(response.content).keys():
+        if response.status_code == 400 and "error" in json.loads(response.content).keys():
+            Debug.logger.info(f"Server response: {response.json()}")
             err = json.loads(response.content)["error"]
 
         Context.ui.enable_plot_gui(True)
@@ -406,14 +477,14 @@ class Router():
                     return
                 modules = modules + data.get(key, [])
 
-            self.modules = modules
+            Context.modules = modules
 
             # Temporary hack since Coriolis doens't yet have the new MkII overcharge boosters
-            self.modules.append({
+            Context.modules.append({
                 "class": 8,
                 "cost": 82042060,
                 "fuelmul": 0.011,
-                "fuelpower": 2.5,
+                "fuelpower": 2.505,
                 "mass": 160,
                 "maxfuel": 6.8,
                 "optmass": 4670,
@@ -422,11 +493,11 @@ class Router():
                 "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
             })
 
-            Debug.logger.debug(f"Downloaded {len(self.modules)} FSD entries from Coriolis")
+            Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
             file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
 
             with open(file, 'w') as outfile:
-                json.dump(self.modules, outfile)
+                json.dump(Context.modules, outfile)
 
         except Exception as e:
             Debug.logger.error("Failed to download FSD data, exception info:", exc_info=e)
@@ -435,24 +506,24 @@ class Router():
     @catch_exceptions
     def _load(self) -> None:
         """ Load state from files """
-        file:Path = Path(Context.plugin_dir) / DATA_DIR / 'route.json'
-        if file.exists():
-            with open(file) as json_file:
-                self._from_dict(json.load(json_file))
-
         Debug.logger.debug(f"Loading modules")
         # Get the FSD data from Coriolis' github repo
         file = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
         if file.exists():
             with open(file) as json_file:
-                self.modules = json.load(json_file)
-                Debug.logger.debug(f"Loaded {len(self.modules)} modules from local file")
+                Context.modules = json.load(json_file)
+                Debug.logger.debug(f"Loaded {len(Context.modules)} modules from local file")
+        Debug.logger.debug(f"Total modules: {len(Context.modules)}")
 
-        Debug.logger.debug(f"Modules: {len(self.modules)}")
         if not file.exists() or file.stat().st_mtime < time() - 86400:
-            Debug.logger.debug("FSD data is more than a day old, downloading fresh data")
+            Debug.logger.debug("Module data is more than a day old, downloading fresh data")
             thread:Thread = Thread(target=self._get_module_data, args=[], name="Neutron Dancer FSD data downloader")
             thread.start()
+
+        file:Path = Path(Context.plugin_dir) / DATA_DIR / 'route.json'
+        if file.exists():
+            with open(file) as json_file:
+                self._from_dict(json.load(json_file))
 
 
     @catch_exceptions
@@ -480,7 +551,7 @@ class Router():
             'next_stop': self.next_stop,
             'headers': self.headers,
             'shipid': self.ship_id,
-            'ship': self.ship.to_dict(),
+            'ship': self.ship.to_dict() if self.ship else {},
             'route': self.route,
             'ships': {k: ship.to_dict() for k, ship in self.ships.items()},
             'history': self.history

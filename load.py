@@ -67,3 +67,6 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.ui = UI(parent)
 
     return Context.ui.frame
+
+def __version__() -> str:
+    return str(Context.plugin_version)

@@ -9,7 +9,7 @@ from threading import Thread
 from config import config # type: ignore
 from utils.Debug import Debug, catch_exceptions
 
-from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_RESULTS
+from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 
@@ -170,87 +170,39 @@ class Router():
         Context.ui.show_frame('Route')
 
 
-    def _get_sysid(self, sys:str) -> str:
-        url = "https://spansh.co.uk/api/systems/field_values/system_names?"
-        results:requests.Response = requests.get(url, params={'q': sys}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
-        res:dict = json.loads(results.content)
-        if 'min_max' not in res or len(res['min_max']) < 1:
-            return ""
-        return res['min_max'][0]['id64']
+#    def _get_sysid(self, sys:str) -> str:
+#        url = "https://spansh.co.uk/api/systems/field_values/system_names?"
+#        results:requests.Response = requests.get(url, params={'q': sys}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+#        res:dict = json.loads(results.content)
+#        if 'min_max' not in res or len(res['min_max']) < 1:
+#            return ""
+#        return res['min_max'][0]['id64']
 
 
-    def plot_route(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
+    def plot_route(self, which:str, params:dict) -> bool:
         """ Initiate Spansh route plotting """
-
-        # Save values
-        self.src = source
-        self.dest = dest
-        self.supercharge_mult = supercharge_mult
-        self.efficiency = efficiency
-        self.range = range
-
-        url:str = "https://spansh.co.uk/api/generic/route"
-
-        build:list = [
-            {
-                "header": {
-                    "appName": "EDMC-NeutronDancer",
-                    "appVersion": "2.0.0-dev"
-                    },
-                "data": self.ships["115"].loadout
-            }
-        ]
-        build:list = []
-        params:dict = {'source': source, 'destination': dest, 'is_supercharged': 0, 'use_supercharge': 1,
-                       'use_injections': 0, 'exclude_secondary': 0, 'refuel_every_scoopable': 0,
-                       'fuel_power': self.ships['115'].fuel_power, "fuel_multiplier": self.ships['115'].fuel_multiplier,
-                       "optimal_mass": self.ships['115'].optimal_mass, 'base_mass': self.ships['115'].base_mass,
-                       'tank_size': self.ships['115'].tank_size,  "internal_tank_size": self.ships['115'].internal_tank_size,
-                       "reserve_size": "4.0", "max_fuel_per_jump": self.ships['115'].max_fuel_per_jump,
-                       "range_boost": self.ships['115'].range_boost, "max_time": 60,
-                       "ship_build": json.dumps(build), "cargo": 0,
-                       "algorithm": "optimistic", "supercharge_multiplier": self.ships['115'].supercharge_mult,
-                       "injection_multiplier": '2'}
+        match which:
+            case 'neutron':
+                url = SPANSH_ROUTE
+            case 'galaxy':
+                url = SPANSH_GALAXY_ROUTE
 
         Debug.logger.debug(f"parameters: {params}")
-        thread:Thread = Thread(target=self._plotter, args=(url, params, 120), name="Neutron Dancer route plotting worker")
-        thread.start()
-
-        return True
-
-
-    def plot_route_def(self, source:str, dest:str, efficiency:int, range:float, supercharge_mult:int = 4) -> bool:
-        """ Initiate Spansh route plotting """
-        url:str = SPANSH_ROUTE
-        params:dict = {'source': source, 'destination': dest, 'efficiency':efficiency, 'range': range, 'supercharge_mult': supercharge_mult}
         thread:Thread = Thread(target=self._plotter, args=(url, params), name="Neutron Dancer route plotting worker")
         thread.start()
-
-        self.src = source
-        self.dest = dest
-        self.supercharge_mult = supercharge_mult
-        self.efficiency = efficiency
-        self.range = range
 
         return True
 
 
     @catch_exceptions
-    def _plotter(self, url:str, params:dict, limit:int = 20) -> None:
+    def _plotter(self, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
         Debug.logger.debug(f"Plotting route")
 
         try:
-            # Convert systems
-            #params['source'] = self._get_sysid(params['source'])
-            #if params['source'] == "": return
-
-            #params['destination'] = self._get_sysid(params['destination'])
-            #if params['destination'] == "": return
-            #Debug.logger.debug(f"Params: {params}")
-            results:Response = requests.post(url, data=params,
-                                             headers={'User-Agent': Context.plugin_useragent,
-                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+            limit:int = int(params.get('max_time', 20))
+            results:Response = requests.post(url, data=params, headers={'User-Agent': Context.plugin_useragent,
+                                                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
             if results.status_code != 202:
                 self.plot_error(results)
@@ -553,6 +505,7 @@ class Router():
             'shipid': self.ship_id,
             'ship': self.ship.to_dict() if self.ship else {},
             'route': self.route,
+            'used_ships': self.used_ships,
             'ships': {k: ship.to_dict() for k, ship in self.ships.items()},
             'history': self.history
             }
@@ -576,5 +529,6 @@ class Router():
         self.route = dict.get('route', [])
         self.ship_id = dict.get('shipid', "")
         self.ship = Ship(dict.get('ship', {}))
+        self.used_ships = dict.get('used_ships', [])
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
         self.history = dict.get('history', [])

@@ -13,6 +13,7 @@ GIT_CHANGELOG:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CH
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
+SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 
 # Directory we store our save data in
@@ -70,7 +71,16 @@ lbls:dict = {
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
     "jump": "jump",
-    "jumps": "jumps"
+    "jumps": "jumps",
+    "neutron_router": "Neutron Router",
+    "galaxy_router": "Galaxy Router",
+    "cargo": "Cargo",
+    "fuel_reserve": "Fuel Reserve",
+    "already_supercharged": "Already Supercharged?",
+    "use_supercharge": "Use Supercharge?",
+    "use_injections": "Use FSD Injections?",
+    "exclude_secondary": "Exclude Secondary Stars?",
+    "refuel_every": "Refuel Every scoopable?",
 }
 
 # Tooltips
@@ -82,7 +92,12 @@ tts:dict = {
     "standard_multiplier": "Standard range increase (4x), right click for menu",
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "jump": "Click to copy to clipoard.\n{j} jumps {d}remaining.",
-    "releasenotes": "Release notes:\n{c}"
+    "releasenotes": "Release notes:\n{c}",
+    "select_ship": "Select ship to use",
+    "cargo": "Tonnes of cargo carried",
+    "calc_time": "How long to spend calculating route",
+    "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
+    "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
 }
 
 # Button names

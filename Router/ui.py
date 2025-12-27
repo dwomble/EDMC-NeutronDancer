@@ -62,9 +62,7 @@ class UI():
         self.error_txt:tk.StringVar = tk.StringVar()
         self.hide_error()
 
-        # Config parameters for galaxy and neutron plotting
-        self.galaxy_params:dict = {}
-        self.neutron_params:dict = {}
+        self.progbar:ttk.Progressbar # Overall progress bar
 
         self.title_fr:tk.Frame = self._create_title_fr(self.frame)
         self.neutron_fr:tk.Frame = self._create_neutron_fr(self.frame)
@@ -106,6 +104,7 @@ class UI():
         """ Display the chosen frame, recreating it if necessary """
         Debug.logger.debug(f"Show_frame called: {which}")
         self.subfr.grid_remove()
+
         match which:
             case 'Route':
                 if destroy == True:
@@ -113,27 +112,29 @@ class UI():
                     self.route_fr = self._create_route_fr(self.frame)
                 self.subfr = self.route_fr
                 self._update_waypoint()
+
             case 'Neutron':
-                if destroy == True:
-                    self.neutron_fr.destroy()
-                    self.neutron_fr = self._create_neutron_fr(self.frame)
+                self.neutron_fr.destroy()
+                self.neutron_fr = self._create_neutron_fr(self.frame)
 
                 self.subfr = self.neutron_fr
                 self.router.set('Neutron')
                 self.enable_plot_gui(True)
+
             case 'Galaxy':
-                if destroy == True:
-                    self.galaxy_fr.destroy()
-                    self.galaxy_fr = self._create_galaxy_fr(self.frame)
+                self.galaxy_fr.destroy()
+                self.galaxy_fr = self._create_galaxy_fr(self.frame)
 
                 self.subfr = self.galaxy_fr
                 self.router.set('Galaxy')
                 self.enable_plot_gui(True)
+
             case _:
                 if destroy == True:
                     self.title_fr.destroy()
                     self.title_fr = self._create_title_fr(self.frame)
                 self.subfr = self.title_fr
+
         self.subfr.grid(row=2, column=0)
 
 
@@ -167,6 +168,8 @@ class UI():
         row:int = 2
         col:int = 0
 
+        params:dict = Context.router.galaxy_params
+
         # Define the popup menu additions
         srcmenu:dict = {}
         destmenu:dict = {}
@@ -190,11 +193,12 @@ class UI():
         self.gal_source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
         col += 2
 
-        self.optionlist:list = [lbls['already_supercharged'], lbls['use_supercharge'], lbls['use_injections'], lbls['exclude_secondary'], lbls['refuel_every']]
-        self.gallb:tk.Listbox = listbox(plot_fr, self.optionlist)
+        self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
+        self.gallb:tk.Listbox = listbox(plot_fr, [lbls[v] for v in self.optionlist])
 
         for i, item in enumerate(self.optionlist):
-            if self.galaxy_params.get(item, False) == True:
+            if params.get(item, False) == True:
+                Debug.logger.debug(f"Setting  {i} {item}")
                 self.gallb.selection_set(i)
         self.gallb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
 
@@ -208,7 +212,7 @@ class UI():
         # Row three
         row += 1; col = 0
         shiplist:list = [s.name for s in Context.router.ships.values()]
-        init:str = self.galaxy_params.get('ship', '') if self.galaxy_params.get('ship', '') in shiplist else shiplist[0]
+        init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0]
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=shiplist, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
@@ -217,30 +221,34 @@ class UI():
         col += 1
 
         self.cargo_entry:Placeholder = Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
-        if self.galaxy_params.get('cargo', 0) != 0:
-            self.cargo_entry.insert(0, str(self.galaxy_params.get('cargo', 0)))
+        if params.get('cargo', 0) != 0:
+            self.set_entry(self.cargo_entry, str(params.get('cargo', 0)))
+        elif Context.router.cargo != 0:
+            self.set_entry(self.cargo_entry, str(Context.router.cargo))
+
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         Tooltip(self.cargo_entry, tts["cargo"])
 
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
-        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value='Optimistic')
+        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
         algodd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.algorithm, values=algorithms, width=10)
         Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         self.fuel_res:Placeholder = Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
-        Tooltip(algodd, tts["fuel_reserve"])
+        if params.get('fuel_reserve', 0) != 0:
+            self.set_entry(self.fuel_res, str(params.get('fuel_reserve', 0)))
+        Tooltip(self.fuel_res, tts["fuel_reserve"])
         self.fuel_res.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         self.time_limit:tk.Scale|ttk.Scale = scale(plot_fr, from_=60, to=120, resolution=5, orient=tk.HORIZONTAL)
         Tooltip(self.time_limit, tts["calc_time"])
         self.time_limit.grid(row=row, column=col, pady=5)
-        self.time_limit.set(60)
+        self.time_limit.set(params.get('max_time', 60))
 
-        row += 1; col = 0
 
         # Row ?
         row += 1; col = 0
@@ -268,6 +276,8 @@ class UI():
         plot_fr:tk.Frame = frame(parent)
         row:int = 2
         col:int = 0
+
+        params:dict = Context.router.neutron_params
 
         # Define the popup menu additions
         srcmenu:dict = {}
@@ -308,7 +318,7 @@ class UI():
         Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
         self.range_entry.var.trace_add('write', self.check_range)
-        if Context.router.range > 0: self.range_entry.set_text(str(Context.router.range), False)
+        self.range_entry.set_text(str(params.get('range', None)), False)
 
         row += 1; col = 0
         self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
@@ -321,11 +331,11 @@ class UI():
         self.efficiency_slider.bind('<Button-3>', self.show_menu)
         Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col)
-        self.efficiency_slider.set(Context.router.efficiency)
+        self.efficiency_slider.set(params.get('efficiency', 60))
 
         row += 1; col = 0
         self.multiplier = tk.IntVar() # Or StringVar() for string values
-        self.multiplier.set(Context.router.supercharge_mult)  # Set default value
+        self.multiplier.set(params.get('supercharge_mult', 4))  # Set default value
 
         # Create radio buttons
         l1:tk.Label|ttk.Label = label(plot_fr, text=lbls["supercharge_label"])
@@ -369,6 +379,34 @@ class UI():
         return "break"
 
 
+    def _progress(self) -> int:
+        """ Return progress as a percentage """
+
+        if Context.router.jumps_left == 0: return 100
+
+        if Context.router.total_distance > 0:
+            return round((Context.router.total_distance - Context.router.dist_remaining) * 100 / Context.router.total_distance)
+        return round((Context.router.total_jumps - Context.router.jumps_left) * 100 / Context.router.total_jumps)
+
+
+    @catch_exceptions
+    def _update_progress(self) -> None:
+        if Context.router.route == []:
+            return
+
+        if Context.router.jumps_left > 0:
+            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
+            Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
+
+        if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
+            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+            Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+
+        # Update the progress bar's width to match our frame
+        self.bar_fr.configure(width=self.route_fr.winfo_width()-5)
+        self.progbar.configure(length=self.route_fr.winfo_width()-5, value=self._progress())
+
+
     @catch_exceptions
     def _update_waypoint(self) -> None:
         if Context.router.route == []:
@@ -379,11 +417,7 @@ class UI():
         if Context.router.jumps != 0:
             wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
         self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 30))
-        if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
-            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
-        elif Context.router.jumps_left > 0:
-            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
-
+        self._update_progress()
         self.ctc(Context.router.next_stop)
 
 
@@ -391,12 +425,24 @@ class UI():
         """ Create the route display frame """
 
         route_fr:tk.Frame = frame(parent)
+        self.bar_fr = tk.LabelFrame(route_fr, border=0, height=10, width=200)
+        self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
+        self.bar_fr.grid_rowconfigure(0, weight=1)
+        self.bar_fr.grid_propagate(False)
+
+        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=200)
+        self.progtt:Tooltip = Tooltip(self.progbar, text=tts["progress"])
+        self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
+        self.progbar.rowconfigure(0, weight=1)
+
+        parent.after(5000, self._update_progress) # We need to wait til TK has finished loading before upading the progress bar
+
         fr1:tk.Frame = frame(route_fr)
         fr1.grid_columnconfigure(0, weight=0)
         fr1.grid_columnconfigure(1, weight=1)
         fr1.grid_columnconfigure(2, weight=0)
         fr1.grid_columnconfigure(3, weight=0)
-        fr1.grid(row=0, column=0, sticky=tk.W)
+        fr1.grid(row=1, column=0, sticky=tk.W)
 
         row:int = 0; col:int = 0
         self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.goto_prev_waypoint())
@@ -414,7 +460,7 @@ class UI():
         fr2:tk.Frame = frame(route_fr)
         fr2.grid_columnconfigure(0, weight=0)
         fr2.grid_columnconfigure(1, weight=0)
-        fr2.grid(row=1, column=0, sticky=tk.W)
+        fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
         self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
@@ -433,12 +479,14 @@ class UI():
         match field:
             case 'src':
                 self.source_ac.set_text(param, False)
+                self.gal_source_ac.set_text(param, False)
             case 'dest':
                 self.dest_ac.set_text(param, False)
+                self.gal_dest_ac.set_text(param, False)
             case _:
                 for ship in Context.router.ships.values():
                     if ship.name == param:
-                        self.range_entry.set_text(str(ship.range), False)
+                        self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
                         self.multiplier.set(ship.supercharge_mult)
                         # Set ship in the galaxy form
                         return
@@ -491,14 +539,14 @@ class UI():
 
         params:dict = {}
 
-        params['source'] = self.source_ac.get().strip()
-        if params['source'] not in self.query_systems(params['source']):
+        params['from'] = self.source_ac.get().strip()
+        if params['from'] not in self.query_systems(params['from']):
             self.enable_plot_gui(True)
             self.source_ac.set_error_style()
             return
 
-        params['destination'] = self.dest_ac.get().strip()
-        if params['destination'] not in self.query_systems(params['destination']):
+        params['to'] = self.dest_ac.get().strip()
+        if params['to'] not in self.query_systems(params['to']):
             self.enable_plot_gui(True)
             self.dest_ac.set_error_style()
             return
@@ -533,11 +581,11 @@ class UI():
             'max_time': int(self.time_limit.get()),
             'algorithm': self.algorithm.get(),
             'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
-            'is_supercharged': self.gallb.selection_includes(self.optionlist.index(lbls['already_supercharged'])),
-            'use_supercharge': self.gallb.selection_includes(self.optionlist.index(lbls['use_supercharge'])),
-            'use_injections': self.gallb.selection_includes(self.optionlist.index(lbls['use_injections'])),
-            'exclude_secondary': self.gallb.selection_includes(self.optionlist.index(lbls['exclude_secondary'])),
-            'refuel_every_scoopable': self.gallb.selection_includes(self.optionlist.index(lbls['refuel_every'])),
+            'is_supercharged': self.gallb.selection_includes(self.optionlist.index('is_supercharged')),
+            'use_supercharge': self.gallb.selection_includes(self.optionlist.index('use_supercharge')),
+            'use_injections': self.gallb.selection_includes(self.optionlist.index('use_injections')),
+            'exclude_secondary': self.gallb.selection_includes(self.optionlist.index('exclude_secondary')),
+            'refuel_every_scoopable': self.gallb.selection_includes(self.optionlist.index('refuel_every_scoopable')),
             'fuel_power': Context.router.ships[ship_id].fuel_power,
             'fuel_multiplier': Context.router.ships[ship_id].fuel_multiplier,
             'optimal_mass': Context.router.ships[ship_id].optimal_mass,

@@ -79,12 +79,16 @@ class Ship:
         #Debug.logger.debug(f"Calculating range: {self.optimal_mass} {self.base_mass} {self.tank_size} {self.max_fuel_per_jump} {self.fuel_multiplier} {self.fuel_power}")
         #Debug.logger.debug(f"{self.optimal_mass} / {(self.base_mass + self.internal_tank_size + self.tank_size)} * {(self.max_fuel_per_jump / self.fuel_multiplier)} ^ {(1 / self.fuel_power)}")
 
-        # Range calculation
-        self.range:float = round((self.optimal_mass / (self.base_mass + self.tank_size)) * \
+        # Base range calculation
+        self.range:float = self.get_range()
+
+
+    def get_range(self, cargo:int = 0) -> int:
+        """ Return the range of this ship with a given quantity of cargo """
+        return round((self.optimal_mass / (self.base_mass + self.tank_size + cargo)) * \
                             (self.max_fuel_per_jump / self.fuel_multiplier) ** \
                             (1 / self.fuel_power) + \
                             self.range_boost, 2)
-
 
     def __repr__(self) -> str:
         return f"Ship(id={self.id}, name={self.name}, type={self.type}, range={self.range:.2f}ly)"

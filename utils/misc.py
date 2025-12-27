@@ -71,14 +71,14 @@ def listbox(fr:tk.Frame, items:list) -> tk.Listbox:
     # @TODO: Switch the plain mode for a treeview?
     rows:int = min(len(items), 10)
     if config.get_int('theme') == 0:
-        lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE)
+        lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
         lb.configure(border=0, borderwidth=0, highlightthickness=0, activestyle=tk.NONE, relief=tk.FLAT)
         for i in range(len(items)):
             lb.insert(tk.END, items[i])
         return lb
 
     lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE)
-    lb.configure(foreground=config.get_str('dark_text'), activestyle=tk.NONE, highlightbackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+    lb.configure(foreground=config.get_str('dark_text'), activestyle=tk.NONE, highlightbackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT, exportselection=False)
     for i in range(len(items)):
         lb.insert(tk.END, items[i])
     return lb

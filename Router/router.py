@@ -13,6 +13,8 @@ from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, 
 from .context import Context
 from .ship import Ship
 
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'neutron_params': {}, 'galaxy_params': {}, 'cargo': 0,
+                  'offset': 0, 'headers': [], 'ship_id': '', 'used_ships': [], 'history': []}
 class Router():
     """
     Class to manage all the route data and state information.
@@ -41,12 +43,16 @@ class Router():
         self.src:str = ""
         self.dest:str = ""
         self.ship_id:str = ""
+        self.cargo:int = 0
         self.ship:Ship|None = None
-        self.range:float = 32.0
-        self.supercharge_mult:int = 4
-        self.efficiency:int = 60
+
+        self.galaxy_params:dict = {}
+        self.neutron_params:dict = {}
+
         self.offset:int = 0
+        self.total_jumps:int = 0
         self.jumps_left:int = 0
+        self.total_distance:int = 0
         self.dist_remaining:int = 0
         self.next_stop:str = ""
         self.jumps:int = 0
@@ -65,8 +71,8 @@ class Router():
 
         self.ship_id = str(ship_id)
 
-        self.range = self.ships[ship_id].range
-        self.supercharge_mult = self.ships[ship_id].supercharge_mult
+        self.neutron_params['range'] = self.ships[ship_id].range
+        self.neutron_params['supercharge_mult'] = self.ships[ship_id].supercharge_mult
         self.ship = self.ships[ship_id]
 
 
@@ -76,11 +82,11 @@ class Router():
         ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
-        self.supercharge_mult = ship.supercharge_mult
-        self.range = ship.range
+        self.neutron_params['supercharge_mult'] = ship.supercharge_mult
+        self.neutron_params['range'] = ship.range
         self.ships[self.ship_id] = ship
 
-        Context.ui.set_range(self.range, self.supercharge_mult)
+        Context.ui.set_range(self.ship.get_range(self.cargo), self.neutron_params['supercharge_mult'])
 
 
     def goto_next_waypoint(self) -> None:
@@ -95,18 +101,24 @@ class Router():
 
     def _syscol(self, which:str = '', hdrs:list = []) -> int:
         """ Figure out which column has a chosen key, by default the system name """
+
         if hdrs == []:
             hdrs = self.headers
 
         if which == '':
-            for h in ['System Name', 'system']:
+            for h in ['System Name', 'system', 'name']:
                 if h in hdrs:
-                    which = h
-                    break
-        if which == '' or which not in hdrs:
+                    return hdrs.index(h)
             return 0
 
-        return hdrs.index(which)
+        for w in [which, which.lower()]:
+            if w in hdrs:
+                return hdrs.index(w)
+
+            if w in HEADER_MAP.keys() and HEADER_MAP[w] in hdrs:
+                return hdrs.index(HEADER_MAP[w])
+
+        return -1
 
 
     def _store_history(self) -> None:
@@ -122,8 +134,6 @@ class Router():
             Debug.logger.debug(f"No ship to store")
             return
 
-        self.ship.range = self.range
-        self.ship.supercharge_mult = self.supercharge_mult
         if self.ship_id not in self.used_ships:
             self.used_ships.append(self.ship_id)
         Debug.logger.debug(f"Storing ship {str(self.ship)}")
@@ -163,35 +173,40 @@ class Router():
 
         Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
         self.offset += direction
-        self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
-        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
-        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
+        self._calc_stats()
 
         Context.ui.show_frame('Route')
 
 
-#    def _get_sysid(self, sys:str) -> str:
-#        url = "https://spansh.co.uk/api/systems/field_values/system_names?"
-#        results:requests.Response = requests.get(url, params={'q': sys}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
-#        res:dict = json.loads(results.content)
-#        if 'min_max' not in res or len(res['min_max']) < 1:
-#            return ""
-#        return res['min_max'][0]['id64']
-
-
     def plot_route(self, which:str, params:dict) -> bool:
         """ Initiate Spansh route plotting """
+
         match which:
-            case 'neutron':
-                url = SPANSH_ROUTE
             case 'galaxy':
                 url = SPANSH_GALAXY_ROUTE
+                self.src = params['source']
+                self.dest = params['destination']
+                self.galaxy_params = params
+            case _:
+                url:str = SPANSH_ROUTE
+                self.src = params['from']
+                self.dest = params['to']
+                self.neutron_params = params
 
-        Debug.logger.debug(f"parameters: {params}")
+
         thread:Thread = Thread(target=self._plotter, args=(url, params), name="Neutron Dancer route plotting worker")
         thread.start()
-
         return True
+
+    @catch_exceptions
+    def _calc_stats(self) -> None:
+        """ Calculate the stats about the current route """
+
+        self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
+        (self.jumps, self.total_jumps) = self._calc_jumps(self.headers, self.route)
+        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
+        self.total_distance = self._calc_dist(self.headers, self.route)
+        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
 
 
     @catch_exceptions
@@ -226,9 +241,8 @@ class Router():
                 return
 
             #Debug.logger.debug(f"{route_response.json()}")
-            res = json.loads(route_response.content)["result"]
-
-            route = res.get('jumps', res.get('system_jumps', []))
+            res:dict = json.loads(route_response.content)["result"]
+            route:list = res.get('jumps', res.get('system_jumps', []))
 
             cols:list = []
             hdrs:list = []
@@ -267,10 +281,8 @@ class Router():
             self.headers = hdrs
             self.route = rte
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
-            self.next_stop = self.route[self.offset][self._syscol()]
-            (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
-            self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
-            Debug.logger.debug(f"{self.headers} {self.route}")
+
+            self._calc_stats()
             self.save()
             self.plot_finished()
             return
@@ -331,9 +343,8 @@ class Router():
             self.src = Context.csv.route[0][self._syscol()]
             self.dest = Context.csv.route[-1][self._syscol()]
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
-            self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
-            (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
-            self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
+            self._calc_stats()
+
             return True
 
         except Exception as e:
@@ -389,11 +400,11 @@ class Router():
             return (0, 0)
 
         # Identify system name and jumps columns. It may be a dict or a list so handle both.
-        sc:int|str = self._syscol('System Name', hdrs) if isinstance(route[0], list) else HEADER_MAP.get('System Name', 'System Name')
-        jc:int|str = self._syscol('Jumps', hdrs) if isinstance(route[0], list) else HEADER_MAP.get('Jumps', 'Jumps')
+        sc:int|str = self._syscol('System Name', hdrs) if isinstance(route[0], list) else 'System Name'
+        jc:int|str = self._syscol('Jumps', hdrs) if isinstance(route[0], list) else -1
 
         # No jump info so treat each row as a single jump
-        if 'Jumps' not in hdrs:
+        if jc == -1:
             return (0, len(route))
 
         return (
@@ -486,49 +497,28 @@ class Router():
         dir.mkdir(parents=True, exist_ok=True)
         file:Path = dir / 'route.json'
         with open(file, 'w') as outfile:
-            json.dump(self._as_dict(), outfile)
+            json.dump(self._as_dict(), outfile, indent=4)
 
 
     def _as_dict(self) -> dict:
         """ Return a Dictionary representation of our data, suitable for serializing """
-        return {
-            'system': self.system,
-            'source': self.src,
-            'destination': self.dest,
-            'range': self.range,
-            'efficiency': self.efficiency,
-            'supercharge_mult': self.supercharge_mult,
-            'offset': self.offset,
-            'jumps_left': self.jumps_left,
-            'next_stop': self.next_stop,
-            'headers': self.headers,
-            'shipid': self.ship_id,
-            'ship': self.ship.to_dict() if self.ship else {},
-            'route': self.route,
-            'used_ships': self.used_ships,
-            'ships': {k: ship.to_dict() for k, ship in self.ships.items()},
-            'history': self.history
-            }
 
+        save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
+
+        save['ship'] = self.ship.to_dict() if self.ship else {}
+        save['ships'] = {k: ship.to_dict() for k, ship in self.ships.items()}
+
+        return save
 
     def _from_dict(self, dict:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
 
-        # Need to migrate from older ships format?
+        [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
 
-        self.system = dict.get('system', '')
-        self.src = dict.get('source', '')
-        self.dest = dict.get('destination', '')
-        self.range = dict.get('range', 32.0)
-        self.efficiency = dict.get('efficiency', 60)
-        self.supercharge_mult = dict.get('supercharge_mult', 4)
-        self.offset = dict.get('offset', 0)
-        self.jumps_left = int(dict.get('jumps_left', 0))
-        self.next_stop = dict.get('next_stop', "")
-        self.headers = dict.get('headers', [])
-        self.route = dict.get('route', [])
-        self.ship_id = dict.get('shipid', "")
         self.ship = Ship(dict.get('ship', {}))
-        self.used_ships = dict.get('used_ships', [])
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
-        self.history = dict.get('history', [])
+
+        if self.route != [] and self.headers != []:
+            self._calc_stats()
+
+

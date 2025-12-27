@@ -59,6 +59,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.set_ship(entry)
         case 'ShipyardSwap':
             Context.router.swap_ship(entry.get('ShipID', ''))
+        case 'Cargo':
+            Context.router.cargo = entry.get('Count', 0)
 
 
 def plugin_app(parent:tk.Widget) -> tk.Frame:

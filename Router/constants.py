@@ -76,11 +76,11 @@ lbls:dict = {
     "galaxy_router": "Galaxy Router",
     "cargo": "Cargo",
     "fuel_reserve": "Fuel Reserve",
-    "already_supercharged": "Already Supercharged?",
+    "is_supercharged": "Already Supercharged?",
     "use_supercharge": "Use Supercharge?",
     "use_injections": "Use FSD Injections?",
     "exclude_secondary": "Exclude Secondary Stars?",
-    "refuel_every": "Refuel Every scoopable?",
+    "refuel_every_scoopable": "Refuel Every scoopable?",
 }
 
 # Tooltips
@@ -98,6 +98,7 @@ tts:dict = {
     "calc_time": "How long to spend calculating route",
     "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
+    "progress": "Progress"
 }
 
 # Button names

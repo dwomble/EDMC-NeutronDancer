@@ -13,7 +13,7 @@ from utils.Tooltip import Tooltip
 from utils.Autocompleter import Autocompleter
 from utils.Placeholder import Placeholder
 from utils.Debug import Debug, catch_exceptions
-from utils.misc import frame, button, label, radiobutton, combobox, scale, checkbox, listbox
+from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox
 
 from .constants import NAME, lbls, btns, tts
 from .ship import Ship
@@ -130,9 +130,8 @@ class UI():
                 self.enable_plot_gui(True)
 
             case _:
-                if destroy == True:
-                    self.title_fr.destroy()
-                    self.title_fr = self._create_title_fr(self.frame)
+                self.title_fr.destroy()
+                self.title_fr = self._create_title_fr(self.frame)
                 self.subfr = self.title_fr
 
         self.subfr.grid(row=2, column=0)
@@ -145,7 +144,7 @@ class UI():
         self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
-        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame('Neutron'))
+        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame(Context.router.last_plot))
         plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
 
         return title_fr
@@ -195,10 +194,10 @@ class UI():
 
         self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
         self.gallb:tk.Listbox = listbox(plot_fr, [lbls[v] for v in self.optionlist])
+        Tooltip(self.gallb, tts['galaxy_options'])
 
         for i, item in enumerate(self.optionlist):
             if params.get(item, False) == True:
-                Debug.logger.debug(f"Setting  {i} {item}")
                 self.gallb.selection_set(i)
         self.gallb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
 
@@ -390,16 +389,15 @@ class UI():
 
 
     @catch_exceptions
-    def _update_progress(self) -> None:
+    def _update_progbar(self) -> None:
+        """ Update our progress tooltips and progress bar """
         if Context.router.route == []:
             return
 
         if Context.router.jumps_left > 0:
-            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
             Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
 
-        if Context.router.jumps_left > 0 and Context.router.dist_remaining > 0:
-            Tooltip(self.waypoint_btn, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+        if Context.router.dist_remaining > 0:
             Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
 
         # Update the progress bar's width to match our frame
@@ -409,15 +407,16 @@ class UI():
 
     @catch_exceptions
     def _update_waypoint(self) -> None:
-        if Context.router.route == []:
+        if Context.router.route == [] or not hasattr(self, 'waypoint_btn'):
             return
+
         self.waypoint_prev_btn.config(state=tk.DISABLED if Context.router.offset == 0 else tk.NORMAL)
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.router.offset >= len(Context.router.route) -1 else tk.NORMAL)
         wp:str = Context.router.next_stop
         if Context.router.jumps != 0:
             wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
-        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 30))
-        self._update_progress()
+        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
+        self._update_progbar()
         self.ctc(Context.router.next_stop)
 
 
@@ -425,17 +424,18 @@ class UI():
         """ Create the route display frame """
 
         route_fr:tk.Frame = frame(parent)
-        self.bar_fr = tk.LabelFrame(route_fr, border=0, height=10, width=200)
-        self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
+        self.bar_fr = labelframe(route_fr, border=0, height=10, width=200)
         self.bar_fr.grid_rowconfigure(0, weight=1)
         self.bar_fr.grid_propagate(False)
+        self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
 
-        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=200)
+        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=400)
         self.progtt:Tooltip = Tooltip(self.progbar, text=tts["progress"])
-        self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
         self.progbar.rowconfigure(0, weight=1)
+        self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
+        self._update_progbar()
 
-        parent.after(5000, self._update_progress) # We need to wait til TK has finished loading before upading the progress bar
+        parent.after(5000, self._update_progbar) # We may need to wait til TK has finished loading before updating the progress bar
 
         fr1:tk.Frame = frame(route_fr)
         fr1.grid_columnconfigure(0, weight=0)
@@ -449,8 +449,8 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.router.next_stop, width=30, command=lambda: self.ctc(Context.router.next_stop))
-        Tooltip(self.waypoint_btn, tts["jump"] + " " + str(Context.router.jumps_left))
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.router.next_stop, width=40, command=lambda: self.ctc(Context.router.next_stop))
+        Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
@@ -559,7 +559,7 @@ class UI():
             self.range_entry.set_error_style()
             return
 
-        Context.router.plot_route('neutron', params)
+        Context.router.plot_route('Neutron', params)
 
 
     @catch_exceptions
@@ -611,7 +611,7 @@ class UI():
             self.dest_ac.set_error_style()
             return
 
-        Context.router.plot_route('galaxy', params)
+        Context.router.plot_route('Galaxy', params)
 
 
     def show_error(self, error:str|None = None) -> None:

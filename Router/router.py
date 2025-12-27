@@ -13,8 +13,8 @@ from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, 
 from .context import Context
 from .ship import Ship
 
-SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'neutron_params': {}, 'galaxy_params': {}, 'cargo': 0,
-                  'offset': 0, 'headers': [], 'ship_id': '', 'used_ships': [], 'history': []}
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron', 'neutron_params': {}, 'galaxy_params': {},
+                  'cargo': 0, 'offset': 0, 'headers': [], 'route': [], 'ship_id': '', 'used_ships': [], 'history': []}
 class Router():
     """
     Class to manage all the route data and state information.
@@ -46,6 +46,7 @@ class Router():
         self.cargo:int = 0
         self.ship:Ship|None = None
 
+        self.last_plot:str = "Neutron"
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
 
@@ -182,7 +183,7 @@ class Router():
         """ Initiate Spansh route plotting """
 
         match which:
-            case 'galaxy':
+            case 'Galaxy':
                 url = SPANSH_GALAXY_ROUTE
                 self.src = params['source']
                 self.dest = params['destination']
@@ -192,7 +193,7 @@ class Router():
                 self.src = params['from']
                 self.dest = params['to']
                 self.neutron_params = params
-
+        self.last_plot = which
 
         thread:Thread = Thread(target=self._plotter, args=(url, params), name="Neutron Dancer route plotting worker")
         thread.start()
@@ -203,7 +204,7 @@ class Router():
         """ Calculate the stats about the current route """
 
         self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
-        (self.jumps, self.total_jumps) = self._calc_jumps(self.headers, self.route)
+        (unused, self.total_jumps) = self._calc_jumps(self.headers, self.route)
         (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
         self.total_distance = self._calc_dist(self.headers, self.route)
         self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
@@ -283,15 +284,15 @@ class Router():
             self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
 
             self._calc_stats()
+
+            Context.ui.ctc(Context.router.next_stop)
+            Context.ui.show_frame('Route')
             self.save()
-            self.plot_finished()
-            return
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
             Context.ui.enable_plot_gui(True) # Return to the plot gui
             Context.ui.show_error(lbls["plot_error"])
-        return
 
 
     @catch_exceptions
@@ -311,13 +312,6 @@ class Router():
         Context.ui.enable_plot_gui(True)
         Context.ui.show_error(err)
         return
-
-
-    def plot_finished(self) -> None:
-        """ Called when a plot request completes """
-        Debug.logger.debug(f"Route plotted")
-        Context.ui.ctc(Context.router.next_stop)
-        Context.ui.show_frame('Route')
 
 
     def load_route(self) -> bool:

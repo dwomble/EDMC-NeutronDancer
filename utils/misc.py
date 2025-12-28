@@ -90,7 +90,7 @@ def listbox(fr:tk.Frame, items:list) -> tk.Listbox:
         return lb
 
     lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
-    lb.configure(foreground=config.get_str('dark_text'), activestyle=tk.NONE, highlightbackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT, exportselection=False)
+    lb.configure(foreground=config.get_str('dark_text'), activestyle=tk.NONE, selectbackground='gray25', highlightbackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT, exportselection=False)
     _set_bg(lb)
     for i in range(len(items)):
         lb.insert(tk.END, items[i])

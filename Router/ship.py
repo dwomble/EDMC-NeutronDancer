@@ -91,7 +91,7 @@ class Ship:
                             self.range_boost, 2)
 
     def __repr__(self) -> str:
-        return f"Ship(id={self.id}, name={self.name}, type={self.type}, range={self.range:.2f}ly)"
+        return f"Ship(id={self.id}, name {self.name}, type {self.type}, unladen range {self.range:.2f}ly)"
 
     def __str__(self) -> str:
         return self.__repr__()

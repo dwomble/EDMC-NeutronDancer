@@ -55,7 +55,7 @@ class CSV:
             self.roadtoriches = False
             self.fleetcarrier = False
 
-            route_reader = csv.DictReader(csvfile)
+            route_reader:csv.DictReader[str] = csv.DictReader(csvfile)
             # Check it has column headings
             if not route_reader.fieldnames:
                 self.error = errs["empty_file"]
@@ -107,7 +107,7 @@ class CSV:
     def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """
 
-        if self.route == [] or self.headers == []:
+        if route == [] or headers == []:
             Debug.logger.debug(f"No route")
             return False
 

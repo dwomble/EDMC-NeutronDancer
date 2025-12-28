@@ -1,5 +1,14 @@
 # EDMC-NeutronDancer Changelog
 
+## v?.?.? - ????-??-??
+
+## New Features
+* Spansh Galaxy Plotter
+* Route export as CSV
+* Progress bar
+* Accurate ship range calculation
+
+
 ## v1.0.0 - 2025-12-23
 
 ## Changes

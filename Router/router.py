@@ -314,7 +314,7 @@ class Router():
         return
 
 
-    def load_route(self) -> bool:
+    def import_route(self) -> bool:
         """ Load a route from a CSV """
         try:
             if Context.csv == None or Context.csv.read() == False:
@@ -344,6 +344,20 @@ class Router():
         except Exception as e:
             Debug.logger.error("Failed to load route:", exc_info=e)
             Context.ui.show_error(errs['parse_error'])
+            return False
+
+
+    def export_route(self) -> bool:
+        """ Save a route to a CSV file """
+        try:
+            if Context.csv == None or Context.csv.write(self.headers, self.route) == False:
+                Debug.logger.debug(f"Failed to save route")
+                Context.ui.show_error(errs['no_filename'])
+                return False
+            return True
+        except Exception as e:
+            Debug.logger.error("Failed to save route:", exc_info=e)
+            Context.ui.show_error(errs['export_error'])
             return False
 
 

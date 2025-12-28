@@ -64,8 +64,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
 
 
 def plugin_app(parent:tk.Widget) -> tk.Frame:
-    Context.router = Router()
     Context.csv = CSV()
+    Context.router = Router()
     Context.ui = UI(parent)
 
     return Context.ui.frame

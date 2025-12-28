@@ -102,8 +102,13 @@ class UI():
     @catch_exceptions
     def show_frame(self, which:str = 'Default', destroy:bool = False) -> None:
         """ Display the chosen frame, recreating it if necessary """
-        Debug.logger.debug(f"Show_frame called: {which}")
+        #Debug.logger.debug(f"Show_frame called: {which} Ship: {Context.router.ship} Current range: {Context.router.ship.get_range(Context.router.cargo)}")
         self.subfr.grid_remove()
+
+        Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}"
+        Context.router.neutron_params['supercharge_mult'] = Context.router.ship.supercharge_mult
+        if Context.router.cargo != 0 and Context.router.cargo != Context.router.galaxy_params['cargo']:
+            Context.router.galaxy_params['cargo'] = Context.router.cargo
 
         match which:
             case 'Route':
@@ -401,6 +406,9 @@ class UI():
             Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
 
         # Update the progress bar's width to match our frame
+        if not hasattr(self, "route_fr"):
+            return
+
         self.bar_fr.configure(width=self.route_fr.winfo_width()-5)
         self.progbar.configure(length=self.route_fr.winfo_width()-5, value=self._progress())
 
@@ -424,7 +432,7 @@ class UI():
         """ Create the route display frame """
 
         route_fr:tk.Frame = frame(parent)
-        self.bar_fr = labelframe(route_fr, border=0, height=10, width=200)
+        self.bar_fr:tk.LabelFrame = labelframe(route_fr, border=0, height=10, width=400)
         self.bar_fr.grid_rowconfigure(0, weight=1)
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
@@ -463,6 +471,10 @@ class UI():
         fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
+        self.export_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["export_route"], command=lambda: self._export_route())
+        self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+
+        col += 1
         self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
@@ -507,6 +519,14 @@ class UI():
         self.multiplier.set(supercharge_mult)
 
 
+    def _export_route(self) -> None:
+        if Context.router == None or Context.router.export_route() == False:
+            Debug.logger.error(f"Failed to load route")
+            return
+
+        self.show_frame('Route')
+
+
     def _clear_route(self) -> None:
         """ Display a confirmation dialog for clearing the current route """
         clear: bool = confirmDialog.askyesno(
@@ -515,22 +535,22 @@ class UI():
         )
         if clear == True:
             Context.router.clear_route()
-            self.show_frame('Plot')
+            self.show_frame(Context.router.last_plot)
             self.enable_plot_gui(True)
 
 
     @catch_exceptions
     def import_route(self) -> None:
-        if Context.router == None or Context.router.load_route() == False:
+        if Context.router == None or Context.router.import_route() == False:
             Debug.logger.error(f"Failed to load route")
-            self.show_frame('Plot')
+            self.show_frame(Context.router.last_plot)
             self.enable_plot_gui(True)
             return
         self.show_frame('Route')
 
 
     @catch_exceptions
-    def neutron_plot(self, type:str = 'neutron') -> None:
+    def neutron_plot(self) -> None:
         self.hide_error()
         self.enable_plot_gui(False)
 

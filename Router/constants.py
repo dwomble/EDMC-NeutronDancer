@@ -72,8 +72,8 @@ lbls:dict = {
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
     "jump": "jump",
     "jumps": "jumps",
-    "neutron_router": "Neutron Router",
-    "galaxy_router": "Galaxy Router",
+    "neutron_router": "Neutron Plotter",
+    "galaxy_router": "Galaxy Plotter",
     "cargo": "Cargo",
     "fuel_reserve": "Fuel Reserve",
     "is_supercharged": "Already Supercharged?",
@@ -116,6 +116,7 @@ btns:dict = {
     "export_route": "Export for TCE",
     "clear_route": "Clear route",
     "show_route": "Show route",
+    "export_route": "Export route"
 }
 
 # Error messages

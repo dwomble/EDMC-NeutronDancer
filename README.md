@@ -26,7 +26,7 @@ By default Neutron Dancer starts in a minimized mode to be unobtrusive when not 
 
 Neutron dancer supports two route creation methods:
 1. Direct plotting from Spansh Neutron Router or Spansh Galaxy Router
-2. CSV import from Spansh Galaxy Plotter, Fleetcarrier plotter, and similar formats
+2. CSV import from Spansh Road to Riches, Expressway to Exomastery, Tourist planner, Fleetcarrier plotter, etc.
 
 ### Neutron Plotting
 
@@ -74,6 +74,7 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
 
 
 

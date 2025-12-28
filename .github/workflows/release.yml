@@ -1,15 +1,15 @@
 on:
   release:
     types:
-      - created
+      - published
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: "!github.event.release.prerelease" 
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 

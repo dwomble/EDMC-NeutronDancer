@@ -1,5 +1,5 @@
 from time import time
-from utils.Debug import Debug
+from utils.debug import Debug
 from .constants import HEADER_MAP
 
 class Route:

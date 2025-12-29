@@ -1,11 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
+import re
+from datetime import datetime
+from math import floor
 from typing import Any
 from functools import reduce
 import operator
 
 from config import config # type: ignore
 from theme import theme #type: ignore
+
+from utils.debug import Debug
 
 """
   Miscellaneous utility functions
@@ -116,3 +121,79 @@ def scale(fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
     sc.configure(foreground=config.get_str('dark_text'), troughcolor='gray25', highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
     _set_bg(sc)
     return sc
+
+
+def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
+    """
+        A general customized formatting function.
+        Args:
+            val (int|float|str|bool|tuple): A tuple or a value
+            tuple can contain up to 4 elements: (value, type, default, units)
+        Returns:
+            str: The human-readable friendly/readable result
+    """
+    units:str = ''
+    default:str = ''
+
+    if isinstance(val, tuple): # Handle a tuple of 1-4 elements: (value, type, default, units)
+        if len(val) > 1: type = val[1]
+        if len(val) > 2: default = val[2]
+        if len(val) > 3: units = val[3]
+        if len(val) > 0: value = val[0]
+    else:
+        value = val
+        if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
+        if isinstance(value, bool): type = 'bool'
+        if isinstance(value, int) or isinstance(value, float): type = 'num'
+
+    # Fixed is left entirely alone
+    if type == 'fixed': return str(value)
+
+    # Empty, zero or false we return the default so the display isn't full of "No" and "0" etc.
+    if value == None or value == 0 or value == '' or value == False: return default
+
+    ret:str = ""
+    match type:
+        case 'bool': # We're going to display Yes (blanks and False are handled above)
+            ret = "Yes"
+
+        case 'datetime': # If it's a datetime convert it from the json date format to our date format
+            ret = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d %H:%M")
+
+        case 'interval': # Approximated interval (no seconds, only show minutes if it's less than a day)
+            days , rem = divmod(int(value), 60*60*24)
+            hours, rem = divmod(rem, 60*60)
+            mins, rem = divmod(rem, 60)
+            tmp:list = []
+            if floor(days) > 1: tmp.append(f"{floor(days)} days")
+            elif int(days) > 0: tmp.append(f"1 day")
+            if floor(hours) > 1: tmp.append(f"{floor(hours)} hours")
+            elif int(hours) > 0: tmp.append(f" 1 hour")
+            if len(tmp) < 2:
+                if floor(mins) > 1: tmp.append(f" {int(mins)} minutes")
+                elif mins > 0: tmp.append(f" 1 minute")
+            ret = ' '.join(tmp)
+
+        case 'num' | 'float' | 'int': # We only shorten/simplify numbers over 100k. Smaller ones we just display with commas at thousands
+            if float(value) > 10000:
+                abbrs:list[str] = ['', 'K', 'M', 'B', 'T']  # Abbreviations for thousands, millions, billions, trillions
+                fnum:float = float('{:.3g}'.format(value))
+                magnitude = 0
+                while abs(fnum) >= 1000:
+                    if magnitude >= len(abbrs) - 1: break
+                    magnitude += 1
+                    fnum /= 1000.0
+                ret = '{}{}'.format('{:f}'.format(fnum).rstrip('0').rstrip('.'), abbrs[magnitude])
+            elif float(value) > 100 or type == 'int': # No decimals above 100
+                ret = f"{value:,.0f}"
+            elif float(value) > 10: # Only 1 above 10
+                ret = f"{value:,.1f}"
+            elif type == 'float': # Two if it's <100.
+                ret = f"{value:,.2f}"
+            else:
+                ret = f"{value:,}"
+
+        case _: # Title case two words, leave longer strings as is
+            ret = str(value).title() if str(value).count(' ') < 2 and re.search(r"[A-Z0-9]", str(value)) == None else str(value)
+
+    return ret + units

@@ -1,3 +1,5 @@
+import sys
+import os
 import tkinter as tk
 from pathlib import Path
 from semantic_version import Version #type: ignore
@@ -5,11 +7,11 @@ from semantic_version import Version #type: ignore
 from config import appname  # type: ignore
 
 from Router.constants import GIT_PROJECT, NAME, errs
-from utils.Debug import Debug, catch_exceptions
-from utils.Updater import Updater
+from utils.debug import Debug, catch_exceptions
+from utils.updater import Updater
 
 from Router.context import Context
-from Router.router import Router
+from Router.route_manager import Router
 from Router.csv import CSV
 from Router.ui import UI
 
@@ -20,6 +22,11 @@ def plugin_start3(plugin_dir: str) -> str:
 
     Context.plugin_name = NAME
     Context.plugin_dir = Path(plugin_dir).resolve()
+
+    # Add the lib path to sys.path if it isn't already there
+    #lib_path = os.path.join(plugin_dir, 'utils')
+    #if lib_path not in sys.path:
+    #    sys.path.insert(0, lib_path)
 
     version:Version = Version("0.0.0")
     version_file:Path = Context.plugin_dir / "version"

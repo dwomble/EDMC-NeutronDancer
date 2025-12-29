@@ -9,13 +9,14 @@ import json
 from config import config # type: ignore
 from theme import theme #type: ignore
 
-from utils.Tooltip import Tooltip
-from utils.Autocompleter import Autocompleter
-from utils.Placeholder import Placeholder
-from utils.Debug import Debug, catch_exceptions
-from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox
+from utils.tooltip import Tooltip
+from utils.autocompleter import Autocompleter
+from utils.placeholder import Placeholder
+from utils.treeviewplus import TreeviewPlus
+from utils.debug import Debug, catch_exceptions
+from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
 
-from .constants import NAME, lbls, btns, tts
+from .constants import NAME, HEADER_TYPES, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -25,7 +26,7 @@ class UI():
         The main UI for the router.
         It has three states with three different frames.
           - Default, deliberately minimal for when the router isn't being used
-          - Plot, a plot entry frame
+          - Plot, a plot entry frame with neutron and galaxy route variants
           - Route, displays the route navigation
     """
     # Singleton pattern
@@ -105,9 +106,10 @@ class UI():
         #Debug.logger.debug(f"Show_frame called: {which} Ship: {Context.router.ship} Current range: {Context.router.ship.get_range(Context.router.cargo)}")
         self.subfr.grid_remove()
 
-        Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}"
-        Context.router.neutron_params['supercharge_mult'] = Context.router.ship.supercharge_mult
-        if Context.router.cargo != 0 and Context.router.cargo != Context.router.galaxy_params['cargo']:
+
+        Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
+        Context.router.neutron_params['supercharge_mult'] = Context.router.ship.supercharge_mult if Context.router.ship else 4
+        if Context.router.cargo != 0 and Context.router.cargo != Context.router.galaxy_params.get('cargo', 0):
             Context.router.galaxy_params['cargo'] = Context.router.cargo
 
         match which:
@@ -405,10 +407,13 @@ class UI():
             tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="")
 
         if Context.route.dist_remaining() > 0:
-            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="("+str(Context.route.dist_remaining())+"Ly) ")
+            d:tuple = tuple([Context.route.dist_remaining(), 'float', '', ' Ly'])
+            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="("+hfplus(d)+") ")
 
         if Context.route.jumps_per_hour() > 0:
-            tt += "\n" + tts['speed'].format(j=int(Context.route.jumps_per_hour()), d=int(Context.route.dist_per_hour()))
+            j:tuple = tuple([Context.route.jumps_per_hour(), 'float'])
+            d:tuple = tuple([Context.route.dist_per_hour(), 'float'])
+            tt += "\n" + tts['speed'].format(j=hfplus(j), d=hfplus(d))
 
         Tooltip(self.progbar, tt)
 
@@ -741,7 +746,7 @@ class RouteWindow:
         style:ttk.Style = ttk.Style()
         style.configure("My.Treeview.Heading", font=("Helvetica", 9, "bold"), background='lightgrey')
 
-        tree:ttk.Treeview = ttk.Treeview(self.frame, columns=Context.route.hdrs, show="headings", style="My.Treeview")
+        tree:ttk.Treeview = TreeviewPlus(self.frame, columns=Context.route.hdrs, show="headings", style="My.Treeview")
         sb:ttk.Scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=tree.yview)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         tree.configure(yscrollcommand=sb.set)
@@ -755,8 +760,11 @@ class RouteWindow:
             tree.heading(hdr, text=hdr, anchor=tk.W if i == 0 else tk.E)
             tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*self.scale), anchor=tk.W if i == 0 else tk.E)
 
-        for row in Context.route.route:
-            tree.insert("", 'end', values=row)
+        for i, row in enumerate(Context.route.route):
+            tmp:list[tuple] = [ tuple([val] + HEADER_TYPES.get(Context.route.hdrs[col], ["-", ""])) for col, val in enumerate(row)]
+            r:str = tree.insert("", 'end', values=[hfplus(c) for c in tmp])
+            if i > 0 and i == Context.route.offset:
+                tree.selection_set(r)
 
         w:int = sum([int(widths[i]*8*self.scale) for i in range(len(widths))]) + 30
         self.window.geometry(f"{int(w)}x{int(300*self.scale)}")

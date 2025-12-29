@@ -5,13 +5,13 @@ from pathlib import Path
 from tkinter import filedialog
 import re
 
-from .constants import HEADERS, HEADER_MAP, errs
-from utils.Debug import Debug, catch_exceptions
+from .constants import HEADERS, errs
+from utils.debug import Debug, catch_exceptions
 from .context import Context
 
 class CSV:
     """
-    Class to manage importing and exporting routes as CSV files
+    Class to import and export routes as CSV files
     """
     # Singleton pattern
     _instance = None

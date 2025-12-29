@@ -12,7 +12,7 @@
 # Changes
 * Refactored route and ship data to support new functionality
 * Modified updater to check the latest release tag instead of the version file in the master
-
+* Made the route window highlight the current jump location
 
 ## v1.0.0 - 2025-12-23
 

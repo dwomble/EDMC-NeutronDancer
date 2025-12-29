@@ -7,24 +7,24 @@ from semantic_version import Version #type: ignore
 
 # to avoid circular imports, local imports go here
 if TYPE_CHECKING:
-    from utils.Updater import Updater
-    from .router import Router
+    from utils.updater import Updater
+    from .route_manager import Router
     from .ui import UI
     from .csv import CSV
     from .route import Route
 
 @dataclass
 class Context:
-    # plugin parameters
+    # Plugin parameters
     plugin_name:str = os.path.basename(os.path.dirname(__file__))
     plugin_dir:Path = None
     plugin_version:Version = None
     plugin_useragent:str = None
 
     # Global variables
-    modules:list = field(default_factory=list)
+    modules:list = field(default_factory=list) # Module details from Coriolis
 
-    # global objects
+    # Global objects
     router:'Router' = None
     route:'Route' = None
     csv:'CSV' = None

@@ -38,6 +38,30 @@ HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Bo
                 "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used",
                 "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
 
+# Formatting info for each header
+HEADER_TYPES:dict = {"System Name": ["str", ""],
+                    "Jumps": ["int", ""],
+                    "Jumps Rem": ["int", ""],
+                    "Neutron": ["bool", ""],
+                    "Body Name": ["str", ""],
+                    "Body Subtype": ["str", ""],
+                    "Is Terraformable": ["bool", ""],
+                    "Distance To Arrival": ["float", "", " Ls"],
+                    "Estimated Scan Value": ["float", "", " Cr"],
+                    "Estimated Mapping Value": ["float", "", " Cr"],
+                    "Distance": ["float", "", " Ly"],
+                    "Distance Jumped": ["float", "", " Ly"],
+                    "Distance Rem": ["float", "", " Ly"],
+                    "Distance Remaining": ["float", "", " Ly"],
+                    "Fuel Left": ["float", "", " T"],
+                    "Fuel Used": ["float", "", " T"],
+                    "Refuel": ["bool", ""],
+                    "Scoopable": ["bool", ""],
+                    "Neutron Star": ["bool", ""],
+                    "Icy Ring": ["bool", ""],
+                    "Pristine": ["bool", ""],
+                    "Restock Tritium": ["bool", ""]
+                }
 
 """
 Output strings

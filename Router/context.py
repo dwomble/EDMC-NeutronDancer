@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from semantic_version import Version #type: ignore
 
 # to avoid circular imports, local imports go here
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .router import Router
     from .ui import UI
     from .csv import CSV
+    from .route import Route
 
 @dataclass
 class Context:
@@ -25,6 +26,7 @@ class Context:
 
     # global objects
     router:'Router' = None
+    route:'Route' = None
     csv:'CSV' = None
     ui:'UI' = None
     updater:'Updater' = None

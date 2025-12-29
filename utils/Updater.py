@@ -5,7 +5,7 @@ import zipfile
 from threading import Thread
 from semantic_version import Version # type: ignore
 
-from Router.constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_VERSION
+from Router.constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_LATEST
 from utils.Debug import Debug, catch_exceptions
 
 TIMEOUT=10
@@ -98,6 +98,12 @@ class Updater():
 
         version_data:dict = json.loads(r.content)
 
+        try:
+            self.update_version = Version.coerce(version_data.get('tag_name', '0.0.0'))
+        except Exception as e:
+            Debug.logger.info(f"Bad version data {e}")
+            return False
+
         # Get the changelog and replace all breaklines with simple ones
         releasenotes:str = version_data.get('body', '')
         self.releasenotes = "\n".join(releasenotes.splitlines())
@@ -123,25 +129,13 @@ class Updater():
         """ Compare the current version file with github version """
         try:
             Debug.logger.debug(f"Checking for update")
-            latest:Version = Version("0.0.0")
-            response:requests.Response = requests.get(GIT_VERSION, timeout=TIMEOUT)
-            if response.status_code != 200:
-                Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
-                return
-            try:
-                latest:Version = Version.coerce(response.text.strip().replace("-", ""))
-            except Exception as e:
-                Debug.logger.info(f"Bad version file {e}")
-
-            Debug.logger.debug(f"Version: {version} response {latest} ")
-            if version >= latest or not self.get_release():
-                return
+            if not self.get_release(): return
+            Debug.logger.debug(f"Version: {version} response {self.update_version} ")
+            if version >= self.update_version: return
 
             Debug.logger.debug('Update available')
-
             self.update_available = True
             self.install_update = True
-            self.update_version = latest
             self.download_zip()
 
         except Exception as e:

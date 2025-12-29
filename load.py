@@ -4,10 +4,9 @@ from semantic_version import Version #type: ignore
 
 from config import appname  # type: ignore
 
-from Router.constants import GIT_PROJECT, NAME, errs, lbls
+from Router.constants import GIT_PROJECT, NAME, errs
 from utils.Debug import Debug, catch_exceptions
 from utils.Updater import Updater
-from utils.misc import get_by_path
 
 from Router.context import Context
 from Router.router import Router
@@ -30,7 +29,6 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_useragent = f"{GIT_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir))
     Context.updater.check_for_update(Context.plugin_version)
-
     return NAME
 
 
@@ -49,12 +47,12 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     match entry['event']:
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.system = entry.get('StarSystem', system)
-            Context.router.update_route()
+            Context.route.add_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
+            if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
+                Context.ui.update_waypoint()
         case 'CarrierJump' if entry.get('Docked', True) == True:
             Context.router.system = entry.get('StarSystem', system)
-            Context.router.update_route()
-        #case 'StoredShips':
-        #    Context.router.shipyard = entry.get('ShipsHere', []) + entry.get('ShipsRemote', [])
+            Context.route.update_route()
         case 'Loadout':
             Context.router.set_ship(entry)
         case 'ShipyardSwap':
@@ -67,7 +65,6 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
     Context.ui = UI(parent)
-
     return Context.ui.frame
 
 def __version__() -> str:

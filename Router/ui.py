@@ -17,6 +17,7 @@ from utils.misc import frame, labelframe, button, label, radiobutton, combobox, 
 
 from .constants import NAME, lbls, btns, tts
 from .ship import Ship
+from .route import Route
 from .context import Context
 
 class UI():
@@ -52,8 +53,7 @@ class UI():
 
         self.update:tk.Label
 
-        self.error_txt:tk.StringVar = tk.StringVar()
-        self.error_lbl:tk.Label|ttk.Label = label(self.frame, textvariable=self.error_txt, foreground='red')
+        self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
         self.router:tk.StringVar = tk.StringVar()
@@ -70,7 +70,7 @@ class UI():
         self.route_fr:tk.Frame = self._create_route_fr(self.frame)
 
         self.subfr:tk.Frame = self.title_fr
-        self.show_frame('Route' if Context.router.route != [] else 'Default')
+        self.show_frame('Route' if Context.route.route != [] else 'Default')
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_update())
@@ -116,7 +116,7 @@ class UI():
                     self.route_fr.destroy()
                     self.route_fr = self._create_route_fr(self.frame)
                 self.subfr = self.route_fr
-                self._update_waypoint()
+                self.update_waypoint()
 
             case 'Neutron':
                 self.neutron_fr.destroy()
@@ -216,7 +216,7 @@ class UI():
         # Row three
         row += 1; col = 0
         shiplist:list = [s.name for s in Context.router.ships.values()]
-        init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0]
+        init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0] if len(shiplist) else ""
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=shiplist, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
@@ -385,47 +385,52 @@ class UI():
 
     def _progress(self) -> int:
         """ Return progress as a percentage """
+        if Context.route.route == []: return 0
 
-        if Context.router.jumps_left == 0: return 100
+        if Context.route.jumps_remaining() == 0: return 100
 
-        if Context.router.total_distance > 0:
-            return round((Context.router.total_distance - Context.router.dist_remaining) * 100 / Context.router.total_distance)
-        return round((Context.router.total_jumps - Context.router.jumps_left) * 100 / Context.router.total_jumps)
+        if Context.route.total_dist() > 0:
+            return round(Context.route.perc_dist_rem())
+        return round(Context.route.perc_jumps_rem())
 
 
     @catch_exceptions
     def _update_progbar(self) -> None:
         """ Update our progress tooltips and progress bar """
-        if Context.router.route == []:
+        if Context.route.route == []:
             return
 
-        if Context.router.jumps_left > 0:
-            Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d=""))
+        tt:str = ""
+        if Context.route.jumps_remaining() > 0:
+            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="")
 
-        if Context.router.dist_remaining > 0:
-            Tooltip(self.progbar, tts["jump"].format(j=str(Context.router.jumps_left), d="("+str(Context.router.dist_remaining)+"Ly) "))
+        if Context.route.dist_remaining() > 0:
+            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="("+str(Context.route.dist_remaining())+"Ly) ")
 
+        if Context.route.jumps_per_hour() > 0:
+            tt += "\n" + tts['speed'].format(j=int(Context.route.jumps_per_hour()), d=int(Context.route.dist_per_hour()))
+
+        Tooltip(self.progbar, tt)
+
+        if not hasattr(self, "route_fr"): return
         # Update the progress bar's width to match our frame
-        if not hasattr(self, "route_fr"):
-            return
-
         self.bar_fr.configure(width=self.route_fr.winfo_width()-5)
         self.progbar.configure(length=self.route_fr.winfo_width()-5, value=self._progress())
 
 
     @catch_exceptions
-    def _update_waypoint(self) -> None:
-        if Context.router.route == [] or not hasattr(self, 'waypoint_btn'):
+    def update_waypoint(self) -> None:
+        if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
 
-        self.waypoint_prev_btn.config(state=tk.DISABLED if Context.router.offset == 0 else tk.NORMAL)
-        self.waypoint_next_btn.config(state=tk.DISABLED if Context.router.offset >= len(Context.router.route) -1 else tk.NORMAL)
-        wp:str = Context.router.next_stop
-        if Context.router.jumps != 0:
-            wp += f" ({Context.router.jumps} {lbls['jumps'] if Context.router.jumps != 1 else lbls['jump']})"
+        self.waypoint_prev_btn.config(state=tk.DISABLED if Context.route.offset == 0 else tk.NORMAL)
+        self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
+        wp:str = Context.route.next_stop()
+        if Context.route.jumps_to_wp() != 0:
+            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
         self._update_progbar()
-        self.ctc(Context.router.next_stop)
+        self.ctc(Context.route.next_stop())
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -453,16 +458,16 @@ class UI():
         fr1.grid(row=1, column=0, sticky=tk.W)
 
         row:int = 0; col:int = 0
-        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.goto_prev_waypoint())
+        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.router.next_stop, width=40, command=lambda: self.ctc(Context.router.next_stop))
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40, command=lambda: self.ctc(Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, text=btns["next"], width=3, command=lambda: Context.router.goto_next_waypoint())
+        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
         self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         fr2:tk.Frame = frame(route_fr)
@@ -512,11 +517,13 @@ class UI():
         which.set_default_style()
 
 
-    def set_range(self, range:float, supercharge_mult:int) -> None:
+    def switch_ship(self, ship:Ship) -> None:
         """ Set the range display """
-        if self.range_entry == None: return
-        self.range_entry.set_text(str(range), False)
-        self.multiplier.set(supercharge_mult)
+
+        self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
+        self.multiplier.set(ship.supercharge_mult)
+        if hasattr(self, "shipdd"): # Update the ships dropdown list
+            self.shipdd['values'] = [s.name for s in Context.router.ships.values()] # This may error in dark mode.
 
 
     def _export_route(self) -> None:
@@ -529,13 +536,13 @@ class UI():
 
     def _clear_route(self) -> None:
         """ Display a confirmation dialog for clearing the current route """
-        clear: bool = confirmDialog.askyesno(
+        clear:bool = confirmDialog.askyesno(
             Context.plugin_name,
             lbls["clear_route_yesno"]
         )
         if clear == True:
-            Context.router.clear_route()
             self.show_frame(Context.router.last_plot)
+            Context.route = Route()
             self.enable_plot_gui(True)
 
 
@@ -597,6 +604,8 @@ class UI():
                 break
 
         params:dict = {
+            'source': self.gal_source_ac.get().strip(),
+            'destination': self.gal_dest_ac.get().strip(),
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
             'max_time': int(self.time_limit.get()),
             'algorithm': self.algorithm.get(),
@@ -619,25 +628,14 @@ class UI():
             'injection_multiplier': Context.router.ships[ship_id].injection_mult
             }
 
-        params['source'] = self.source_ac.get().strip()
-        if params['source'] not in self.query_systems(params['source']):
-            self.enable_plot_gui(True)
-            self.source_ac.set_error_style()
-            return
-
-        params['destination'] = self.dest_ac.get().strip()
-        if params['destination'] not in self.query_systems(params['destination']):
-            self.enable_plot_gui(True)
-            self.dest_ac.set_error_style()
-            return
-
         Context.router.plot_route('Galaxy', params)
 
 
     def show_error(self, error:str|None = None) -> None:
         """ Set and show the error text """
-        if error != None:
-            self.error_txt.set(error)
+        if error == None: return
+        Debug.logger.debug(f"Showing error {error}")
+        self.error_lbl['text'] = error
         self.error_lbl.grid()
 
 
@@ -650,6 +648,18 @@ class UI():
             elem.config(state=tk.NORMAL if enable == True else tk.DISABLED)
             elem.update_idletasks()
         self.subfr.config(cursor="" if enable == True else "watch")
+
+
+    def goto_next_waypoint(self) -> None:
+        """ Move to the next waypoint """
+        Context.route.update_route(1)
+        self.update_waypoint()
+
+
+    def goto_prev_waypoint(self) -> None:
+        """ Move back to the previous waypoint """
+        Context.route.update_route(-1)
+        self.update_waypoint()
 
 
     def ctc(self, text:str = '') -> None:
@@ -718,7 +728,7 @@ class RouteWindow:
         if self.window is not None and self.window.winfo_exists():
             self.window.destroy()
 
-        if Context.router.headers == [] or Context.router.route == []:
+        if Context.route.hdrs == [] or Context.route.route == []:
             return
 
         self.scale = config.get_int('ui_scale') / 100.00
@@ -731,21 +741,21 @@ class RouteWindow:
         style:ttk.Style = ttk.Style()
         style.configure("My.Treeview.Heading", font=("Helvetica", 9, "bold"), background='lightgrey')
 
-        tree:ttk.Treeview = ttk.Treeview(self.frame, columns=Context.router.headers, show="headings", style="My.Treeview")
+        tree:ttk.Treeview = ttk.Treeview(self.frame, columns=Context.route.hdrs, show="headings", style="My.Treeview")
         sb:ttk.Scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=tree.yview)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         tree.configure(yscrollcommand=sb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        widths:list = [len(w)+1 for w in Context.router.headers]
-        for r in Context.router.route:
+        widths:list = [len(w)+1 for w in Context.route.hdrs]
+        for r in Context.route.route:
             widths = [max(widths[i], len(str(w))+1) for i, w in enumerate(r)]
 
-        for i, hdr in enumerate(Context.router.headers):
+        for i, hdr in enumerate(Context.route.hdrs):
             tree.heading(hdr, text=hdr, anchor=tk.W if i == 0 else tk.E)
             tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*self.scale), anchor=tk.W if i == 0 else tk.E)
 
-        for row in Context.router.route:
+        for row in Context.route.route:
             tree.insert("", 'end', values=row)
 
         w:int = sum([int(widths[i]*8*self.scale) for i in range(len(widths))]) + 30

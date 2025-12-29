@@ -135,7 +135,7 @@ class CSV:
             return
 
         # For the bodies to scan use the current system, which is one before the next stop
-        lastsystemoffset:int = Context.router.offset - 1
+        lastsystemoffset:int = Context.route.offset - 1
         if lastsystemoffset < 0:
             lastsystemoffset = 0    # Display bodies of the first system
 
@@ -175,3 +175,29 @@ class CSV:
             bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
 
         self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
+
+
+    def plot_edts(self, filename: Path | str) -> None:
+        """ Currently unused """
+        try:
+            with open(filename, 'r') as txtfile:
+                route_txt:list = txtfile.readlines()
+                for row in route_txt:
+                    if row not in (None, "", []):
+                        if row.lstrip().startswith('==='):
+                            jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
+                            self.jumps_left += jumps
+
+                            system:str = row[row.find('>') + 1:]
+                            if ',' in system:
+                                systems:list = system.split(',')
+                                for system in systems:
+                                    self.route.append([system.strip(), jumps])
+                                    jumps = 1
+                                    self.jumps_left += jumps
+                            else:
+                                self.route.append([system.strip(), jumps])
+        except Exception as e:
+            Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
+            Context.ui.enable_plot_gui(True)
+            Context.ui.show_error("An error occured while reading the file.")

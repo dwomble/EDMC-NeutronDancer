@@ -93,6 +93,7 @@ tts:dict = {
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "copy_to_clipboard": "Click to copy to clipboard",
     "jump": "{j} jumps {d}remaining.",
+    "speed": "{j} jumps per hour, {d} Ly/hour",
     "releasenotes": "Release notes:\n{c}",
     "select_ship": "Select ship for which to plot route",
     "galaxy_options": "Galaxy plotter options (see Spansh for details)",

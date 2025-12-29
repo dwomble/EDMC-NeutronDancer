@@ -12,9 +12,11 @@ from utils.Debug import Debug, catch_exceptions
 from .constants import lbls, errs, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
+from .route import Route
 
-SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron', 'neutron_params': {}, 'galaxy_params': {},
-                  'cargo': 0, 'offset': 0, 'headers': [], 'route': [], 'ship_id': '', 'used_ships': [], 'history': []}
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot':
+                  'Neutron', 'neutron_params': {}, 'galaxy_params': {},
+                  'ship_id': '', 'cargo': 0, 'used_ships': [], 'history': []}
 class Router():
     """
     Class to manage all the route data and state information.
@@ -32,16 +34,15 @@ class Router():
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
-        self.headers:list = []
-        self.route:list = []
+        self.src:str = ''
+        self.dest:str = ''
+
         self.used_ships:list = []
         self.ships:dict[str, Ship] = {}
         self.history:list = []
 
-        # Current route data
+        # Current ship data
         self.system:str = ""
-        self.src:str = ""
-        self.dest:str = ""
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
@@ -49,14 +50,6 @@ class Router():
         self.last_plot:str = "Neutron"
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
-
-        self.offset:int = 0
-        self.total_jumps:int = 0
-        self.jumps_left:int = 0
-        self.total_distance:int = 0
-        self.dist_remaining:int = 0
-        self.next_stop:str = ""
-        self.jumps:int = 0
 
         self._load()
         self._initialized = True
@@ -86,49 +79,16 @@ class Router():
         self.neutron_params['supercharge_mult'] = ship.supercharge_mult
         self.neutron_params['range'] = ship.range
         self.ships[self.ship_id] = ship
-
-        Context.ui.set_range(self.ship.get_range(self.cargo), self.neutron_params['supercharge_mult'])
-
-
-    def goto_next_waypoint(self) -> None:
-        """ Move to the next waypoint """
-        if self.offset < len(self.route) - 1: self.update_route(1)
-
-
-    def goto_prev_waypoint(self) -> None:
-        """ Move back to the previous waypoint """
-        if self.offset > 0: self.update_route(-1)
-
-
-    def _syscol(self, which:str = '', hdrs:list = []) -> int:
-        """ Figure out which column has a chosen key, by default the system name """
-
-        if hdrs == []:
-            hdrs = self.headers
-
-        if which == '':
-            for h in ['System Name', 'system', 'name']:
-                if h in hdrs:
-                    return hdrs.index(h)
-            return 0
-
-        for w in [which, which.lower()]:
-            if w in hdrs:
-                return hdrs.index(w)
-
-            if w in HEADER_MAP.keys() and HEADER_MAP[w] in hdrs:
-                return hdrs.index(HEADER_MAP[w])
-
-        return -1
+        Context.ui.switch_ship(self.ship)
 
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
 
         if self.src != '' and self.src:
-            self.history.insert(0, self.src)
+            self.history.insert(0, Context.route.source())
         if self.dest != '' and self.dest not in self.history:
-            self.history.insert(0, self.dest)
+            self.history.insert(0, Context.route.destination())
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
         if self.ship_id == None or self.ship == None:
@@ -138,45 +98,6 @@ class Router():
         if self.ship_id not in self.used_ships:
             self.used_ships.append(self.ship_id)
         Debug.logger.debug(f"Storing ship {str(self.ship)}")
-
-
-    @catch_exceptions
-    def update_route(self, direction:int = 0) -> None:
-        """
-        Step forwards or backwards through the route.
-        If no direction is given pickup from wherever we are on the route
-        """
-        if self.route == []: return
-        Debug.logger.debug(f"Updating route by {direction} {self.system}")
-        c:int = self._syscol()
-        if direction == 0: # Figure out if we're on the route
-            for i, r in enumerate(self.route):
-                if r[c] == self.system:
-                    self.offset = i
-                    break
-
-            # We aren't on the route so just return
-            if self.route[self.offset][c] != self.system:
-                Debug.logger.debug(f"We aren't on the route")
-                return
-            direction = 1  # Default to moving forwards
-            Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][c]}")
-
-        # Are we at one end or the other?
-        if self.offset + direction < 0 or self.offset + direction >= len(self.route):
-            if direction >= 0:
-                self.next_stop = lbls['route_complete']
-                self.jumps_left = 0
-                self.jumps = 0
-                self._store_history()
-            Context.ui.show_frame('Route', True)
-            return
-
-        Debug.logger.debug(f"Stepping to {self.offset + direction} {self.route[self.offset + direction][c]}")
-        self.offset += direction
-        self._calc_stats()
-
-        Context.ui.show_frame('Route')
 
 
     def plot_route(self, which:str, params:dict) -> bool:
@@ -199,18 +120,7 @@ class Router():
         thread.start()
         return True
 
-    @catch_exceptions
-    def _calc_stats(self) -> None:
-        """ Calculate the stats about the current route """
 
-        self.next_stop = self._calc_next_stop(self.headers, self.route[self.offset])
-        (unused, self.total_jumps) = self._calc_jumps(self.headers, self.route)
-        (self.jumps, self.jumps_left) = self._calc_jumps(self.headers, self.route[self.offset:])
-        self.total_distance = self._calc_dist(self.headers, self.route)
-        self.dist_remaining = self._calc_dist(self.headers, self.route[self.offset:])
-
-
-    @catch_exceptions
     def _plotter(self, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
         Debug.logger.debug(f"Plotting route")
@@ -241,33 +151,23 @@ class Router():
                 self.plot_error(route_response)
                 return
 
-            #Debug.logger.debug(f"{route_response.json()}")
-            res:dict = json.loads(route_response.content)["result"]
-            route:list = res.get('jumps', res.get('system_jumps', []))
+            result:dict = json.loads(route_response.content)["result"]
+            res:list = result.get('jumps', result.get('system_jumps', []))
 
             cols:list = []
             hdrs:list = []
             h:str
             for h in HEADERS:
                 k:str
-                for k in route[0].keys():
+                for k in res[0].keys():
                     if HEADER_MAP.get(k, '') == h:
                         hdrs.append(h)
                         cols.append(k)
-                    continue
-                if h == "Jumps Rem":
-                    hdrs.append(h)
-                    cols.append('jumps_remaining')
 
-            Debug.logger.debug(f"hdrs: {hdrs} cols: {cols}")
             rte:list = []
-            for i, waypoint in enumerate(route):
+            for i, waypoint in enumerate(res):
                 r:list = []
                 for c in cols:
-                    if c == 'jumps_remaining':
-                        (j, jr) = self._calc_jumps(hdrs, route[i:])
-                        r.append(int(jr))
-                        continue
                     if re.match(r"^(\d+)?$", str(waypoint[c])):
                         r.append(round(int(waypoint[c]), 2))
                         continue
@@ -275,19 +175,15 @@ class Router():
                         r.append(round(float(waypoint[c]), 2))
                         continue
                     r.append(waypoint[c])
-
                 rte.append(r)
 
-            self.clear_route()
-            self.headers = hdrs
-            self.route = rte
-            self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
+            Context.route = Route(hdrs, rte)
+            Context.route.offset = 1 if Context.route.source() == self.system else 0
 
-            self._calc_stats()
-
-            Context.ui.ctc(Context.router.next_stop)
+            Context.ui.ctc(Context.route.next_stop())
             Context.ui.show_frame('Route')
             self.save()
+            Debug.logger.debug(f" Route plotted {Context.route}")
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
@@ -299,13 +195,13 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        Debug.logger.debug(f"Result: {response}")
+        Debug.logger.debug(f"Result: {response} {json.loads(response.content)}")
         err:str = errs["no_response"]
         #if response:
         #    Debug.logger.info(f"Server response: {response.json()}")
         #    err = errs["plot_error"]
 
-        if response.status_code == 400 and "error" in json.loads(response.content).keys():
+        if response.status_code in [400, 500] and "error" in json.loads(response.content).keys():
             Debug.logger.info(f"Server response: {response.json()}")
             err = json.loads(response.content)["error"]
 
@@ -322,22 +218,11 @@ class Router():
                 Context.ui.show_error(errs['no_filename'])
                 return False
 
-            self.clear_route()
-            self.headers = Context.csv.headers
-            self.route = Context.csv.route
-
-            # Calculate jumps remaining and insert into the headers & the route
-            if 'Jumps Rem' not in self.headers:
-                jc:int|str = self._syscol('Jumps', self.headers)
-                self.headers.insert(jc+1, 'Jumps Rem')
-                for i in range(0, len(self.route)):
-                    (j, jr) = self._calc_jumps(self.headers, self.route[i:])
-                    self.route[i].insert(jc+1, jr)
-
-            self.src = Context.csv.route[0][self._syscol()]
-            self.dest = Context.csv.route[-1][self._syscol()]
-            self.offset = 1 if self.route[0][self._syscol()] == self.system else 0
-            self._calc_stats()
+            hdrs:list = Context.csv.headers
+            rte:list = Context.csv.route
+            route:Route = Route(hdrs, rte)
+            self.src = route.source()
+            self.dest = route.destination()
 
             return True
 
@@ -350,7 +235,7 @@ class Router():
     def export_route(self) -> bool:
         """ Save a route to a CSV file """
         try:
-            if Context.csv == None or Context.csv.write(self.headers, self.route) == False:
+            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
                 Debug.logger.debug(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False
@@ -359,74 +244,6 @@ class Router():
             Debug.logger.error("Failed to save route:", exc_info=e)
             Context.ui.show_error(errs['export_error'])
             return False
-
-
-    def plot_edts(self, filename: Path | str) -> None:
-        """ Currently unused """
-        try:
-            with open(filename, 'r') as txtfile:
-                route_txt:list = txtfile.readlines()
-                self.clear_route()
-                for row in route_txt:
-                    if row not in (None, "", []):
-                        if row.lstrip().startswith('==='):
-                            jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
-                            self.jumps_left += jumps
-
-                            system:str = row[row.find('>') + 1:]
-                            if ',' in system:
-                                systems:list = system.split(',')
-                                for system in systems:
-                                    self.route.append([system.strip(), jumps])
-                                    jumps = 1
-                                    self.jumps_left += jumps
-                            else:
-                                self.route.append([system.strip(), jumps])
-        except Exception as e:
-            Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
-            Context.ui.enable_plot_gui(True)
-            Context.ui.show_error("An error occured while reading the file.")
-
-
-    def clear_route(self) -> None:
-        """ Clear the current route """
-        self.offset = 0
-        self.headers = []
-        self.route = []
-        self.next_stop:str = ""
-        self.jumps_left = 0
-
-
-    def _calc_next_stop(self, hdrs:list, stop:list) -> str:
-        """ Return the name of the next stop, system or body """
-        return stop[self._syscol('Body Name' if 'Body Name' in hdrs else 'System Name', hdrs)]
-
-
-    def _calc_jumps(self, hdrs:list, route:list) -> tuple:
-        """ Calculate how many jumps are left in this route """
-        if route == []:
-            return (0, 0)
-
-        # Identify system name and jumps columns. It may be a dict or a list so handle both.
-        sc:int|str = self._syscol('System Name', hdrs) if isinstance(route[0], list) else 'System Name'
-        jc:int|str = self._syscol('Jumps', hdrs) if isinstance(route[0], list) else -1
-
-        # No jump info so treat each row as a single jump
-        if jc == -1:
-            return (0, len(route))
-
-        return (
-            route[0][jc], # jumps to this system
-            sum([j[jc] for i, j in enumerate(route) if i == 0 or route[i-1][sc] != j[sc]]) # Jumps from this system on
-            )
-
-
-    def _calc_dist(self, headers, route) -> int:
-        """ Calculate the distance remaining in this route """
-        for val in ['Distance Remaining', 'Distance Rem']:
-            if val in headers:
-                return int(route[0][self._syscol(val)])
-        return 0
 
 
     def _get_module_data(self) -> None:
@@ -515,18 +332,16 @@ class Router():
 
         save['ship'] = self.ship.to_dict() if self.ship else {}
         save['ships'] = {k: ship.to_dict() for k, ship in self.ships.items()}
-
+        save['route'] = Context.route.to_dict()
         return save
 
     def _from_dict(self, dict:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-
+        (hdrs, route, offset, jumps) = dict.get('route', [[], [], 0, []])
+        Context.route = Route(hdrs, route, offset, jumps)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
-
-        if self.route != [] and self.headers != []:
-            self._calc_stats()
 
 

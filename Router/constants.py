@@ -1,3 +1,5 @@
+from config import config  # type: ignore
+
 # Project information
 NAME="Navl's Neutron Dancer"
 GIT_USER="dwomble"
@@ -19,6 +21,10 @@ SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 
 # Directory we store our save data in
 DATA_DIR = 'data'
+ASSET_DIR = 'assets'
+
+FONT = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "normal")
+BOLD = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "bold")
 
 # Map from returned data to our header names
 #HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
@@ -34,7 +40,7 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
 
 
 # Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Body Subtype",
+HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
                 "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
                 "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used",
                 "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
@@ -43,6 +49,8 @@ HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Neutron", "Body Name", "Bo
 HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Jumps": ["int", ""],
                     "Jumps Rem": ["int", ""],
+                    "Waypoints": ["int", ""],
+                    "Waypoints Rem": ["int", ""],
                     "Neutron": ["bool", ""],
                     "Body Name": ["str", ""],
                     "Body Subtype": ["str", ""],
@@ -74,7 +82,7 @@ hdrs:dict = {
     "jumps": "Jumps",
     "system_name": "System Name",
     "body_subtype": "Body Subtype",
-    "body_name": "Body Name",
+    "body_name": "Body Name"
 }
 
 # Text labels
@@ -97,6 +105,8 @@ lbls:dict = {
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
     "jump": "jump",
     "jumps": "jumps",
+    "distance": "distance",
+    "total_distance": "Total Distance",
     "neutron_router": "Neutron Plotter",
     "galaxy_router": "Galaxy Plotter",
     "cargo": "Cargo",
@@ -106,6 +116,11 @@ lbls:dict = {
     "use_injections": "Use FSD Injections?",
     "exclude_secondary": "Exclude Secondary Stars?",
     "refuel_every_scoopable": "Refuel Every scoopable?",
+    "plotting": "Plotting route",
+    "progress": "Progress",
+    "speed": "Speed",
+    "jumps_per_hour": "Jumps/hr",
+    "dist_per_hour": "Ly/hr"
 }
 
 # Tooltips
@@ -118,6 +133,7 @@ tts:dict = {
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "copy_to_clipboard": "Click to copy to clipboard",
     "jump": "{j} jumps {d}remaining.",
+    "waypoints": "{j} waypoints {d}remaining.",
     "speed": "{j} jumps per hour, {d} Ly/hour",
     "releasenotes": "Release notes:\n{c}",
     "select_ship": "Select ship for which to plot route",
@@ -141,9 +157,9 @@ btns:dict = {
     "cancel": "Cancel",
     "import_file": "Import file",
     "export_route": "Export for TCE",
-    "clear_route": "Clear route",
-    "show_route": "Show route",
-    "export_route": "Export route"
+    "clear_route": "Clear",
+    "show_route": "Show",
+    "export_route": "Export"
 }
 
 # Error messages

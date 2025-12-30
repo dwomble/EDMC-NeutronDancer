@@ -1,21 +1,24 @@
 # EDMC-NeutronDancer Changelog
 
-## v2.0.0 - 2025-12-29
+## v2.0.0 - 2025-12-??
 
 ## New Features
-* Spansh Galaxy Plotter
+* Spansh Galaxy Plotter [Issue #3](https://github.com/dwomble/EDMC-NeutronDancer/issues/3)
 * Route export to CSV
-* Progress bar
+* Progress bar [Issue #4](https://github.com/dwomble/EDMC-NeutronDancer/issues/4)
 * Jump and distance per hour progress statistics
 * Accurate ship range calculation
 
 # Changes
+* Modified to determine supercharge multiplier via the Caspian's v2 FSD rather than just the ship [Issue #2](https://github.com/dwomble/EDMC-NeutronDancer/issues/2)
 * Refactored route and ship data to support new functionality
 * Modified updater to check the latest release tag instead of the version file in the master
 * Made the route window highlight the current jump location
-* Switched to treeview plus for improved text formatting
+* Switched to treeview plus for improved route window text formatting
+* Added progress summary to the route window
 * Modified so clicking on a system in the route window copies that system name to the clipboard
 * Added tooltips for previous & next waypoint
+* Added a busy view while plotting
 
 
 ## v1.0.0 - 2025-12-23

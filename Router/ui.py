@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -6,21 +7,17 @@ import re
 import requests
 import json
 
-from config import config # type: ignore
-from theme import theme #type: ignore
-
 from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
-from utils.treeviewplus import TreeviewPlus
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
 
-from .constants import SPANSH_SYSTEMS, NAME, HEADER_TYPES, lbls, btns, tts
+from .constants import SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
-
+from .route_window import RouteWindow
 class UI():
     """
         The main UI for the router.
@@ -70,7 +67,7 @@ class UI():
         self.galaxy_fr:tk.Frame = self._create_galaxy_fr(self.frame)
         self.route_fr:tk.Frame = self._create_route_fr(self.frame)
 
-        self.subfr:tk.Frame = self.title_fr
+        self.sub_fr:tk.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
 
         # Wait a while before deciding if we should show the update text
@@ -85,7 +82,7 @@ class UI():
             return
 
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
-        self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=("Helvetica", 9, "normal"), cursor='hand2')
+        self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
         if Context.updater.releasenotes != "":
             Tooltip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
         self.update.bind("<Button-1>", partial(self.cancel_update))
@@ -103,9 +100,10 @@ class UI():
     @catch_exceptions
     def show_frame(self, which:str = 'Default', destroy:bool = False) -> None:
         """ Display the chosen frame, recreating it if necessary """
-        #Debug.logger.debug(f"Show_frame called: {which} Ship: {Context.router.ship} Current range: {Context.router.ship.get_range(Context.router.cargo)}")
-        self.subfr.grid_remove()
-
+        self.hide_error()
+        self._show_busy_gui(False)
+        Context.router.cancel_plot = True
+        self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
         Context.router.neutron_params['supercharge_mult'] = Context.router.ship.supercharge_mult if Context.router.ship else 4
@@ -117,38 +115,36 @@ class UI():
                 if destroy == True:
                     self.route_fr.destroy()
                     self.route_fr = self._create_route_fr(self.frame)
-                self.subfr = self.route_fr
+                self.sub_fr = self.route_fr
                 self.update_waypoint()
 
             case 'Neutron':
                 self.neutron_fr.destroy()
                 self.neutron_fr = self._create_neutron_fr(self.frame)
 
-                self.subfr = self.neutron_fr
+                self.sub_fr = self.neutron_fr
                 self.router.set('Neutron')
-                self.enable_plot_gui(True)
 
             case 'Galaxy':
                 self.galaxy_fr.destroy()
                 self.galaxy_fr = self._create_galaxy_fr(self.frame)
 
-                self.subfr = self.galaxy_fr
+                self.sub_fr = self.galaxy_fr
                 self.router.set('Galaxy')
-                self.enable_plot_gui(True)
 
             case _:
                 self.title_fr.destroy()
                 self.title_fr = self._create_title_fr(self.frame)
-                self.subfr = self.title_fr
+                self.sub_fr = self.title_fr
 
-        self.subfr.grid(row=2, column=0)
+        self.sub_fr.grid(row=2, column=0)
 
 
     def _create_title_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the base/title frame """
         title_fr:tk.Frame = frame(parent)
         col:int = 0; row:int = 0
-        self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=("Helvetica", 9, "bold"))
+        self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=BOLD)
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
         plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame(Context.router.last_plot))
@@ -164,6 +160,8 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
+        r3:tk.Label|ttk.Label = label(sfr, text="ⓘ", cursor="hand2", foreground="red", font=BOLD)
+        r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
 
@@ -270,7 +268,7 @@ class UI():
         self.gal_plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
         col += 1
 
-        self.gal_cancel_plot:tk.Button|ttk.Button = button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('None'))
+        self.gal_cancel_plot:tk.Button|ttk.Button = button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('Default'))
         self.gal_cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
 
         return plot_fr
@@ -399,26 +397,27 @@ class UI():
     @catch_exceptions
     def _update_progbar(self) -> None:
         """ Update our progress tooltips and progress bar """
-        if Context.route.route == []:
+        if Context.route.route == [] or not hasattr(self, "route_fr"):
             return
 
-        tt:str = ""
+        # Create the tooltip with jumps/waypoints, distance, and speed depending on what we have
+        tt:str = tts["jump"] if Context.route.jc != None else tts["waypoints"]
+        j:str = "";  d:str = ""
         if Context.route.jumps_remaining() > 0:
-            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="")
-
+            j = str(Context.route.jumps_remaining())
         if Context.route.dist_remaining() > 0:
-            d:tuple = tuple([Context.route.dist_remaining(), 'float', '', ' Ly'])
-            tt = tts["jump"].format(j=str(Context.route.jumps_remaining()), d="("+hfplus(d)+") ")
+            tmp:tuple = tuple([Context.route.dist_remaining(), 'float', '', ' Ly'])
+            d = f"({hfplus(tmp)}) "
+        tt = tt.format(j=j, d=d)
 
         if Context.route.jumps_per_hour() > 0:
-            j:tuple = tuple([Context.route.jumps_per_hour(), 'float'])
-            d:tuple = tuple([Context.route.dist_per_hour(), 'float'])
+            jr = tuple([Context.route.jumps_per_hour(), 'float'])
+            dr:tuple = tuple([Context.route.dist_per_hour(), 'float'])
             if tt != "": tt += "\n"
-            tt += tts['speed'].format(j=hfplus(j), d=hfplus(d))
+            tt += tts['speed'].format(j=hfplus(jr), d=hfplus(dr))
 
         Tooltip(self.progbar, tt)
 
-        if not hasattr(self, "route_fr"): return
         # Update the progress bar's width to match our frame
         self.bar_fr.configure(width=self.route_fr.winfo_width()-5)
         self.progbar.configure(length=self.route_fr.winfo_width()-5, value=self._progress())
@@ -497,7 +496,7 @@ class UI():
         self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], command=lambda: self.window_route.show())
+        self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], command=lambda: self.window_route.show(Context.route))
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -560,7 +559,6 @@ class UI():
         if clear == True:
             self.show_frame(Context.router.last_plot)
             Context.route = Route()
-            self.enable_plot_gui(True)
 
 
     @catch_exceptions
@@ -568,15 +566,15 @@ class UI():
         if Context.router == None or Context.router.import_route() == False:
             Debug.logger.error(f"Failed to load route")
             self.show_frame(Context.router.last_plot)
-            self.enable_plot_gui(True)
             return
         self.show_frame('Route')
 
 
     @catch_exceptions
     def neutron_plot(self) -> None:
+        """ Perform a neutron plotter plot """
         self.hide_error()
-        self.enable_plot_gui(False)
+        self._show_busy_gui(True)
 
         self.source_ac.hide_list()
         self.dest_ac.hide_list()
@@ -585,13 +583,13 @@ class UI():
 
         params['from'] = self.source_ac.get().strip()
         if params['from'] not in self.query_systems(params['from']):
-            self.enable_plot_gui(True)
+            self.show_frame(Context.router.last_plot)
             self.source_ac.set_error_style()
             return
 
         params['to'] = self.dest_ac.get().strip()
         if params['to'] not in self.query_systems(params['to']):
-            self.enable_plot_gui(True)
+            self.show_frame(Context.router.last_plot)
             self.dest_ac.set_error_style()
             return
 
@@ -600,6 +598,7 @@ class UI():
         params['range'] = self.range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.debug(f"Invalid range entry {params['range']}")
+            self.show_frame(Context.router.last_plot)
             self.range_entry.set_error_style()
             return
 
@@ -608,8 +607,9 @@ class UI():
 
     @catch_exceptions
     def galaxy_plot(self) -> None:
+        """ Perform a galaxy plotter plot """
         self.hide_error()
-        self.enable_plot_gui(False)
+        self._show_busy_gui(True)
 
         self.source_ac.hide_list()
         self.dest_ac.hide_list()
@@ -657,14 +657,43 @@ class UI():
 
 
     def hide_error(self) -> None:
+        """ Hide the the error message """
         self.error_lbl.grid_remove()
 
 
-    def enable_plot_gui(self, enable:bool) -> None:
-        for elem in [self.source_ac, self.dest_ac, self.efficiency_slider, self.range_entry, self.import_route_btn, self.plot_route_btn, self.cancel_plot]:
-            elem.config(state=tk.NORMAL if enable == True else tk.DISABLED)
-            elem.update_idletasks()
-        self.subfr.config(cursor="" if enable == True else "watch")
+    @catch_exceptions
+    def _show_busy_gui(self, enable:bool) -> None:
+        """ Activate/deactivate the plot gui (show a progress icon) """
+        def update(ind):
+            if self.busy_fr == None: return
+            self.busyimg.configure(image=frames[ind])
+            self.busy_fr.after(150, update, (ind + 1) % frameCnt)
+
+        # Show the busy image
+        if enable == True:
+            self.sub_fr.forget()
+            frameCnt:int = 12
+            image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation.gif")
+            frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(frameCnt)]
+            self.busy_fr = frame(self.frame)
+            self.busy_fr.grid(row=2, column=0, rowspan=3, columnspan=3, sticky=tk.NSEW)
+            self.busy_fr.config(cursor="" if enable == True else "watch")
+            self.busy_fr.after(100, update, 0)
+
+            label(self.busy_fr, text=lbls["plotting"], justify=tk.CENTER, font=BOLD).pack(padx=5, pady=5)
+            self.busyimg = label(self.busy_fr)
+            self.busyimg.pack(anchor=tk.CENTER)
+            button(self.busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot)).pack(padx=5, pady=5, anchor=tk.CENTER)
+            return
+
+        # Destroy the busy frame if it exists
+        if hasattr(self, "busy_fr") and self.busy_fr != None:
+            self.busy_fr.destroy()
+            self.busy_fr = None
+
+        # Display the "current" frame if one exists.
+        if self.sub_fr != None:
+            self.sub_fr.grid()
 
 
     def goto_next_waypoint(self) -> None:
@@ -709,79 +738,3 @@ class UI():
         """ Function called by Autocompleter """
         results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         return json.loads(results.content)
-
-
-class RouteWindow:
-    """
-    Treeview display of the current route.
-    """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
-    def __init__(self, root:tk.Tk|tk.Toplevel) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
-        self.root:tk.Tk|tk.Toplevel = root
-        self.window:tk.Toplevel|None = None
-        self.frame:tk.Frame|None = None
-        self.scale:float = 1.0
-
-        self._initialized = True
-
-
-    @catch_exceptions
-    def show(self) -> None:
-        """ Show our window """
-
-        if self.window is not None and self.window.winfo_exists():
-            self.window.destroy()
-
-        if Context.route.hdrs == [] or Context.route.route == []:
-            return
-
-       # On click copy the first column to the clipboard
-        @catch_exceptions
-        def _selected(values, column, tr:TreeviewPlus, iid:str) -> None:
-            Debug.logger.debug(f"Values: {values}, Column: {column}, iid: {iid}")
-            self.frame.clipboard_clear()
-            self.frame.clipboard_append(values[0])
-
-        self.scale = config.get_int('ui_scale') / 100.00
-        self.window = tk.Toplevel(self.root)
-        self.window.title(f"{NAME} – {lbls['route']}")
-        self.window.geometry(f"{int(600*self.scale)}x{int(300*self.scale)}")
-
-        self.frame = tk.Frame(self.window, borderwidth=2)
-        self.frame.pack(fill=tk.BOTH, expand=True)
-        style:ttk.Style = ttk.Style()
-        style.configure("My.Treeview.Heading", font=("Helvetica", 9, "bold"), background='lightgrey')
-
-        tree:ttk.Treeview = TreeviewPlus(self.frame, columns=Context.route.hdrs, callback=_selected, show="headings", style="My.Treeview")
-        sb:ttk.Scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=tree.yview)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.configure(yscrollcommand=sb.set)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        widths:list = [len(w)+1 for w in Context.route.hdrs]
-        for r in Context.route.route:
-            widths = [max(widths[i], len(str(w))+1) for i, w in enumerate(r)]
-
-        for i, hdr in enumerate(Context.route.hdrs):
-            tree.heading(hdr, text=hdr, anchor=tk.W if i == 0 else tk.E)
-            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*self.scale), anchor=tk.W if i == 0 else tk.E)
-
-        for i, row in enumerate(Context.route.route):
-            tmp:list[tuple] = [ tuple([val] + HEADER_TYPES.get(Context.route.hdrs[col], ["-", ""])) for col, val in enumerate(row)]
-            r:str = tree.insert("", 'end', values=[hfplus(c) for c in tmp])
-            if i > 0 and i == Context.route.offset:
-                tree.selection_set(r)
-
-        w:int = sum([int(widths[i]*8*self.scale) for i in range(len(widths))]) + 30
-        self.window.geometry(f"{int(w)}x{int(300*self.scale)}")

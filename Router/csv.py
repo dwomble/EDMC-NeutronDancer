@@ -199,5 +199,5 @@ class CSV:
                                 self.route.append([system.strip(), jumps])
         except Exception as e:
             Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
-            Context.ui.enable_plot_gui(True)
+            Context.ui._show_busy_gui(True)
             Context.ui.show_error("An error occured while reading the file.")

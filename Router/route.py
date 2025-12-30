@@ -18,10 +18,12 @@ class Route:
         self.jc:int|None = self.colind('Jumps')
         self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
-        # If necessary calculate jumps remaining and insert into the headers & the route
-        if 'Jumps Rem' not in hdrs:
-            jr:int = len(hdrs) if self.jc == None else self.jc+1
-            self.hdrs.insert(jr, 'Jumps Rem')
+        # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
+        if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs:
+            jr:int = len(hdrs)
+            if self.jc != None: jr = self.jc+1
+
+            self.hdrs.insert(jr, 'Jumps Rem' if self.jc != None else 'Waypoints Rem')
             for i in range(0, len(cols)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
@@ -64,7 +66,6 @@ class Route:
     def jumps_remaining(self, offset:int|None = None) -> int:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
         if self.route == []: return -1
-        Debug.logger.debug(f"Offset: {self.offset} {len(self.route)}")
         if offset == None: offset = self.offset
         if offset >= len(self.route)-1: return 0
 
@@ -93,6 +94,7 @@ class Route:
 
     def dist_per_hour(self) -> float:
         """ Ly per hour on this route """
+        if self.jumps == []: return 0
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
         return sum([j[2] for j in self.jumps]) / td
 
@@ -165,7 +167,7 @@ class Route:
         return self.offset
 
 
-    def add_jump(self, dest:str, dist:float) -> None:
+    def record_jump(self, dest:str, dist:float) -> None:
         """ Add details of an FSD jump """
         Debug.logger.debug(f"Jump added")
         self.jumps.append([time(), dest, dist])

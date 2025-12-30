@@ -54,6 +54,7 @@ class Router():
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
 
+        self.cancel_plot:bool = False
         self._load()
         self._initialized = True
 
@@ -94,7 +95,7 @@ class Router():
         Debug.logger.debug(f"Jumped called")
 
         Context.router.system = entry.get('StarSystem', system)
-        Context.route.add_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
+        Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
         Debug.logger.debug(f"System: {Context.router.system} Destination: {Context.route.destination()}")
 
@@ -153,6 +154,7 @@ class Router():
         """ Async function to run the Spansh query """
         Debug.logger.debug(f"Plotting route")
 
+        self.cancel_plot = False
         try:
             limit:int = int(params.get('max_time', 20))
             results:Response = requests.post(url, data=params, headers={'User-Agent': Context.plugin_useragent,
@@ -164,7 +166,7 @@ class Router():
 
             tries = 0
             while tries < limit:
-                if config.shutting_down: return # Quit
+                if config.shutting_down or self.cancel_plot: return # Quit
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
 
@@ -175,7 +177,7 @@ class Router():
                 tries += 1
                 sleep(1)
 
-            if not route_response or route_response.status_code != 200:
+            if not route_response or route_response.status_code != 200 or self.cancel_plot:
                 self.plot_error(route_response)
                 return
 
@@ -215,7 +217,7 @@ class Router():
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
-            Context.ui.enable_plot_gui(True) # Return to the plot gui
+            Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
             Context.ui.show_error(lbls["plot_error"])
 
 
@@ -233,7 +235,7 @@ class Router():
             Debug.logger.info(f"Server response: {response.json()}")
             err = json.loads(response.content)["error"]
 
-        Context.ui.enable_plot_gui(True)
+        Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
         Context.ui.show_error(err)
         return
 

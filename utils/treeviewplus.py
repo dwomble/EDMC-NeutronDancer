@@ -1,3 +1,5 @@
+# Enhanced version of treeview with sortable columns and click callback
+# Modified from BGS-Tally
 import tkinter as tk
 from tkinter import ttk
 from functools import partial

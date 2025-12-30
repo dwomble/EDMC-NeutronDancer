@@ -88,6 +88,25 @@ class Router():
         Context.ui.switch_ship(self.ship)
 
 
+    def jumped(self, system:str, entry:dict) -> None:
+        """ Called after a jump in order to update the route, the UI etc."""
+
+        Debug.logger.debug(f"Jumped called")
+
+        Context.router.system = entry.get('StarSystem', system)
+        Context.route.add_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
+
+        Debug.logger.debug(f"System: {Context.router.system} Destination: {Context.route.destination()}")
+
+        # End of the line?
+        if Context.router.system == Context.route.destination():
+            self._store_history()
+
+        if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
+            Debug.logger.debug(f"Updating route")
+            Context.ui.update_waypoint()
+
+
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
 

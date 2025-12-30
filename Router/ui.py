@@ -16,7 +16,7 @@ from utils.treeviewplus import TreeviewPlus
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
 
-from .constants import NAME, HEADER_TYPES, lbls, btns, tts
+from .constants import SPANSH_SYSTEMS, NAME, HEADER_TYPES, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -413,7 +413,8 @@ class UI():
         if Context.route.jumps_per_hour() > 0:
             j:tuple = tuple([Context.route.jumps_per_hour(), 'float'])
             d:tuple = tuple([Context.route.dist_per_hour(), 'float'])
-            tt += "\n" + tts['speed'].format(j=hfplus(j), d=hfplus(d))
+            if tt != "": tt += "\n"
+            tt += tts['speed'].format(j=hfplus(j), d=hfplus(d))
 
         Tooltip(self.progbar, tt)
 
@@ -429,11 +430,20 @@ class UI():
             return
 
         self.waypoint_prev_btn.config(state=tk.DISABLED if Context.route.offset == 0 else tk.NORMAL)
+        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
-        wp:str = Context.route.next_stop()
-        if Context.route.jumps_to_wp() != 0:
-            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
-        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
+        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
+
+        # We check if we're there rather than if there are no jumps remaining so
+        # we don't show end of the road when someone steps forward/backward.
+        if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
+            self.waypoint_btn.configure(text=lbls["route_complete"])
+        else:
+            wp:str = Context.route.next_stop()
+            if Context.route.jumps_to_wp() != 0:
+                wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
+            self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
+
         self._update_progbar()
         self.ctc(Context.route.next_stop())
 
@@ -464,6 +474,7 @@ class UI():
 
         row:int = 0; col:int = 0
         self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
+        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
@@ -473,6 +484,7 @@ class UI():
 
         col += 1
         self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
+        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
         self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         fr2:tk.Frame = frame(route_fr)
@@ -695,9 +707,7 @@ class UI():
     @catch_exceptions
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
-        inp = inp.strip()
-        url = "https://spansh.co.uk/api/systems?"
-        results:requests.Response = requests.get(url, params={'q': inp}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         return json.loads(results.content)
 
 
@@ -736,6 +746,13 @@ class RouteWindow:
         if Context.route.hdrs == [] or Context.route.route == []:
             return
 
+       # On click copy the first column to the clipboard
+        @catch_exceptions
+        def _selected(values, column, tr:TreeviewPlus, iid:str) -> None:
+            Debug.logger.debug(f"Values: {values}, Column: {column}, iid: {iid}")
+            self.frame.clipboard_clear()
+            self.frame.clipboard_append(values[0])
+
         self.scale = config.get_int('ui_scale') / 100.00
         self.window = tk.Toplevel(self.root)
         self.window.title(f"{NAME} – {lbls['route']}")
@@ -746,7 +763,7 @@ class RouteWindow:
         style:ttk.Style = ttk.Style()
         style.configure("My.Treeview.Heading", font=("Helvetica", 9, "bold"), background='lightgrey')
 
-        tree:ttk.Treeview = TreeviewPlus(self.frame, columns=Context.route.hdrs, show="headings", style="My.Treeview")
+        tree:ttk.Treeview = TreeviewPlus(self.frame, columns=Context.route.hdrs, callback=_selected, show="headings", style="My.Treeview")
         sb:ttk.Scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=tree.yview)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         tree.configure(yscrollcommand=sb.set)

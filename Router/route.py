@@ -1,6 +1,6 @@
 from time import time
 from utils.debug import Debug
-from .constants import HEADER_MAP
+from .constants import HEADER_MAP, tts
 
 class Route:
     """
@@ -64,8 +64,9 @@ class Route:
     def jumps_remaining(self, offset:int|None = None) -> int:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
         if self.route == []: return -1
+        Debug.logger.debug(f"Offset: {self.offset} {len(self.route)}")
         if offset == None: offset = self.offset
-        if offset >= len(self.route): return -1
+        if offset >= len(self.route)-1: return 0
 
         # No jump count column
         if self.jc == None: return len(self.route[offset:])
@@ -127,6 +128,12 @@ class Route:
         return None
 
 
+    def get_waypoint(self, inc:int = 0) -> str:
+        """ Return the system of a waypoint relative to our current offset """
+        if self.route == [] or self.offset + inc > len(self.route)-1 or self.offset+inc < 0: return tts["none"]
+
+        return self.route[self.offset+inc][self.sc]
+
     def update_route(self, direction:int = 0, system:str = '') -> int:
         """
         Step forwards or backwards through the route.
@@ -152,7 +159,7 @@ class Route:
             return 0
 
         if self.offset + direction >= len(self.route):
-            return -1
+            return self.offset
 
         self.offset += direction
         return self.offset

@@ -15,6 +15,7 @@ SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
+SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 
 # Directory we store our save data in
 DATA_DIR = 'data'
@@ -125,7 +126,8 @@ tts:dict = {
     "calc_time": "How long to spend calculating route",
     "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
-    "progress": "Progress"
+    "progress": "Progress",
+    "none": "None"
 }
 
 # Button names

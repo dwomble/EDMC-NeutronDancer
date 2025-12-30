@@ -13,6 +13,10 @@
 * Refactored route and ship data to support new functionality
 * Modified updater to check the latest release tag instead of the version file in the master
 * Made the route window highlight the current jump location
+* Switched to treeview plus for improved text formatting
+* Modified so clicking on a system in the route window copies that system name to the clipboard
+* Added tooltips for previous & next waypoint
+
 
 ## v1.0.0 - 2025-12-23
 

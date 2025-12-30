@@ -1,5 +1,3 @@
-import sys
-import os
 import tkinter as tk
 from pathlib import Path
 from semantic_version import Version #type: ignore
@@ -22,11 +20,6 @@ def plugin_start3(plugin_dir: str) -> str:
 
     Context.plugin_name = NAME
     Context.plugin_dir = Path(plugin_dir).resolve()
-
-    # Add the lib path to sys.path if it isn't already there
-    #lib_path = os.path.join(plugin_dir, 'utils')
-    #if lib_path not in sys.path:
-    #    sys.path.insert(0, lib_path)
 
     version:Version = Version("0.0.0")
     version_file:Path = Context.plugin_dir / "version"
@@ -52,14 +45,12 @@ def plugin_stop() -> None:
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     match entry['event']:
+        case 'Startup':
+            Context.router.system = system
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
-            Context.router.system = entry.get('StarSystem', system)
-            Context.route.add_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
-            if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
-                Context.ui.update_waypoint()
+            Context.router.jumped(system, entry)
         case 'CarrierJump' if entry.get('Docked', True) == True:
-            Context.router.system = entry.get('StarSystem', system)
-            Context.route.update_route()
+            Context.router.jumped(system, entry)
         case 'Loadout':
             Context.router.set_ship(entry)
         case 'ShipyardSwap':
@@ -73,6 +64,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.router = Router()
     Context.ui = UI(parent)
     return Context.ui.frame
+
 
 def __version__() -> str:
     return str(Context.plugin_version)

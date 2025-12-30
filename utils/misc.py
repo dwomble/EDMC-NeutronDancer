@@ -129,6 +129,8 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         Args:
             val (int|float|str|bool|tuple): A tuple or a value
             tuple can contain up to 4 elements: (value, type, default, units)
+            'int' and 'float' force types, 'num' will decide based on the value
+            'fixed' will return the value modified
         Returns:
             str: The human-readable friendly/readable result
     """
@@ -141,13 +143,13 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         if len(val) > 3: units = val[3]
         if len(val) > 0: value = val[0]
     else:
-        value = val
+        value:int|float|str|bool = val
         if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
         if isinstance(value, bool): type = 'bool'
         if isinstance(value, int) or isinstance(value, float): type = 'num'
 
     # Fixed is left entirely alone
-    if type == 'fixed': return str(value)
+    if type == 'fixed': return str(value) + units
 
     # Empty, zero or false we return the default so the display isn't full of "No" and "0" etc.
     if value == None or value == 0 or value == '' or value == False: return default
@@ -188,7 +190,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
                 ret = f"{value:,.0f}"
             elif float(value) > 10: # Only 1 above 10
                 ret = f"{value:,.1f}"
-            elif type == 'float': # Two if it's <100.
+            elif type == 'float': # Two if it's <10 and a float.
                 ret = f"{value:,.2f}"
             else:
                 ret = f"{value:,}"

@@ -238,6 +238,7 @@ class UI():
         # Row three
         row += 1; col = 0
         shiplist:list = [s.name for s in Context.router.ships.values()]
+        if shiplist == []: self.show_error(errs["no_ships"])
         init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0] if len(shiplist) else ""
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=shiplist, width=10)

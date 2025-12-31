@@ -5,8 +5,8 @@ import zipfile
 from threading import Thread
 from semantic_version import Version # type: ignore
 
-from Router.constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_VERSION
-from utils.Debug import Debug, catch_exceptions
+from Router.constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_LATEST
+from utils.debug import Debug, catch_exceptions
 
 TIMEOUT=10
 
@@ -79,14 +79,15 @@ class Updater():
         try:
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
+            with open(os.path.join(self.plugin_dir, "version"), 'w') as version_file:
+                version_file.write(str(self.update_version))
             Debug.logger.info(f"Version {self.update_version} installed")
         except Exception as e:
             Debug.logger.error("Failed to install update, exception info:", exc_info=e)
 
 
-
     def get_release(self) -> bool:
-        """ Mostly only used to get the download_url """
+        """ Get info about the latest release from github, version, changelog, and download url """
         try:
             Debug.logger.debug(f"Requesting {GIT_RELEASE_INFO}")
             r:requests.Response = requests.get(GIT_RELEASE_INFO, timeout=TIMEOUT)
@@ -97,11 +98,6 @@ class Updater():
             return False
 
         version_data:dict = json.loads(r.content)
-
-        # Get the changelog and replace all breaklines with simple ones
-        releasenotes:str = version_data.get('body', '')
-        self.releasenotes = "\n".join(releasenotes.splitlines())
-        Debug.logger.debug(f"Release notes: {releasenotes}")
         if version_data['draft'] == True or version_data['prerelease'] == True:
             Debug.logger.info("Latest server version is draft or pre-release, ignoring")
             return False
@@ -110,6 +106,16 @@ class Updater():
         if assets == []:
             Debug.logger.info("No assets")
             return False
+
+        try:
+            self.update_version = Version.coerce(version_data.get('tag_name', '0.0.0').replace('v', ''))
+        except Exception as e:
+            Debug.logger.info(f"Bad version data {e}")
+            return False
+
+        # Get the changelog and replace all breaklines with simple ones
+        releasenotes:str = version_data.get('body', '')
+        self.releasenotes = "\n".join(releasenotes.splitlines())
 
         self.download_url = assets[0].get('browser_download_url', "")
         if self.download_url == "":
@@ -123,25 +129,13 @@ class Updater():
         """ Compare the current version file with github version """
         try:
             Debug.logger.debug(f"Checking for update")
-            latest:Version = Version("0.0.0")
-            response:requests.Response = requests.get(GIT_VERSION, timeout=TIMEOUT)
-            if response.status_code != 200:
-                Debug.logger.error(f"Could not query latest {GIT_PROJECT} version (status code {response.status_code}): {response.text}")
-                return
-            try:
-                latest:Version = Version.coerce(response.text.strip().replace("-", ""))
-            except Exception as e:
-                Debug.logger.info(f"Bad version file {e}")
-
-            Debug.logger.debug(f"Version: {version} response {latest} ")
-            if version >= latest or not self.get_release():
-                return
+            if not self.get_release(): return
+            Debug.logger.debug(f"Version: {version} response {self.update_version} ")
+            if version >= self.update_version: return
 
             Debug.logger.debug('Update available')
-
             self.update_available = True
             self.install_update = True
-            self.update_version = latest
             self.download_zip()
 
         except Exception as e:
@@ -150,5 +144,5 @@ class Updater():
 
     def check_for_update(self, version:Version) -> None:
         """ Start an update check thread """
-        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update chcker")
+        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
         thread.start()

@@ -1,17 +1,16 @@
 import ast
 import csv
-import os
 from pathlib import Path
 from tkinter import filedialog
 import re
 
-from .constants import HEADERS, HEADER_MAP, errs
-from utils.Debug import Debug, catch_exceptions
+from .constants import HEADERS, ROUTE_DIR, errs
+from utils.debug import Debug, catch_exceptions
 from .context import Context
 
 class CSV:
     """
-    Class to manage importing and exporting routes as CSV files
+    Class to import and export routes as CSV files
     """
     # Singleton pattern
     _instance = None
@@ -44,7 +43,9 @@ class CSV:
             ('CSV files', '*.csv'),
             ('Text files', '*.txt'),
         ]
-        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'))
+        dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=dir)
 
         if len(filename) == 0:
             self.error = errs["no_file"]
@@ -55,7 +56,7 @@ class CSV:
             self.roadtoriches = False
             self.fleetcarrier = False
 
-            route_reader = csv.DictReader(csvfile)
+            route_reader:csv.DictReader[str] = csv.DictReader(csvfile)
             # Check it has column headings
             if not route_reader.fieldnames:
                 self.error = errs["empty_file"]
@@ -71,7 +72,6 @@ class CSV:
                 if f not in HEADERS:
                     hdrs.append(f)
 
-            Debug.logger.debug(f"Fields: {fields} hdrs: {hdrs}")
             if hdrs == [] or "System Name" not in hdrs:
                 self.error = errs["invalid_file"]
                 Debug.logger.error(f"File {filename} is of unsupported format")
@@ -82,7 +82,6 @@ class CSV:
                 r:list = []
                 if row in (None, "", []): continue
                 for col in hdrs:
-                    Debug.logger.debug(f"{col} {row[col]}")
                     if col not in row: continue
                     if col in ["body_name", "body_subtype"]:
                         r.append(ast.literal_eval(row[col]))
@@ -96,9 +95,8 @@ class CSV:
                     r.append(row[col])
                 route.append(r)
 
-            self.fleetcarrier = True if "Fuel Used" in hdrs else False
-            self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
-            Debug.logger.debug(f"Headers: {hdrs} rows {len(route)}")
+            #self.fleetcarrier = True if "Fuel Used" in hdrs else False
+            #self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
             self.headers = hdrs
             self.route = route
             return True
@@ -107,7 +105,8 @@ class CSV:
     def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """
 
-        if self.route == [] or self.headers == []:
+        if route == [] or headers == []:
+            self.error = errs["no_route"]
             Debug.logger.debug(f"No route")
             return False
 
@@ -115,7 +114,9 @@ class CSV:
         route_end:str = route[-1][0]
         route_name:str = f"{route_start} to {route_end}"
         ftypes:list = [('CSV files', '*.csv')]
-        filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'), initialfile=f"{route_name}.csv")
+        dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=dir, initialfile=f"{route_name}.csv")
 
         if len(filename) == 0:
             self.error = errs["no_filename"]
@@ -135,7 +136,7 @@ class CSV:
             return
 
         # For the bodies to scan use the current system, which is one before the next stop
-        lastsystemoffset:int = Context.router.offset - 1
+        lastsystemoffset:int = Context.route.offset - 1
         if lastsystemoffset < 0:
             lastsystemoffset = 0    # Display bodies of the first system
 
@@ -175,3 +176,29 @@ class CSV:
             bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
 
         self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
+
+
+    def plot_edts(self, filename: Path | str) -> None:
+        """ Currently unused """
+        try:
+            with open(filename, 'r') as txtfile:
+                route_txt:list = txtfile.readlines()
+                for row in route_txt:
+                    if row not in (None, "", []):
+                        if row.lstrip().startswith('==='):
+                            jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
+                            self.jumps_left += jumps
+
+                            system:str = row[row.find('>') + 1:]
+                            if ',' in system:
+                                systems:list = system.split(',')
+                                for system in systems:
+                                    self.route.append([system.strip(), jumps])
+                                    jumps = 1
+                                    self.jumps_left += jumps
+                            else:
+                                self.route.append([system.strip(), jumps])
+        except Exception as e:
+            Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
+            Context.ui._show_busy_gui(True)
+            Context.ui.show_error("An error occured while reading the file.")

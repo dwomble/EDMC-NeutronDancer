@@ -16,8 +16,14 @@ class Placeholder(tk.Entry):
         if parent is not None:
             tk.Entry.__init__(self, parent, **kw)
         t = tk.Entry()
+        match config.get_int('theme'):
+            case 2:
+                self['bg'] = ''
+                self['disabledbackground'] = ''
+            case 1:
+                self['bg'] = 'black'
+                self['disabledbackground'] = 'black'
 
-        if config.get_int('theme') == 1: self['disabledbackground'] = 'black'
         self.var = tk.StringVar()
         self["textvariable"] = self.var
 

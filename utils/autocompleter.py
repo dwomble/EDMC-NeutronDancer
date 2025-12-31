@@ -4,7 +4,7 @@ import tkinter as tk
 
 from config import config # type: ignore
 
-from .Placeholder import Placeholder
+from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
     """

@@ -22,6 +22,7 @@ SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 # Directory we store our save data in
 DATA_DIR = 'data'
 ASSET_DIR = 'assets'
+ROUTE_DIR = 'routes'
 
 FONT = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "normal")
 BOLD = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "bold")
@@ -87,6 +88,7 @@ hdrs:dict = {
 
 # Text labels
 lbls:dict = {
+    "warning": "Warning",
     "route": "Route",
     "plot_title": "I'm just burnin'…",
     "no_route": "No route planned",

@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
 from functools import partial
+from pathlib import Path
 import re
 import requests
 import json
@@ -12,8 +13,9 @@ from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
+from utils.tkhtmlview import HTMLScrolledText
 
-from .constants import SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -160,9 +162,29 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
-        r3:tk.Label|ttk.Label = label(sfr, text="ⓘ", cursor="hand2", foreground="red", font=BOLD)
+        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_warning())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+
+
+    @catch_exceptions
+    def _show_warning(self) -> None:
+        """ Spiel about the galaxy plotter """
+        if hasattr(self, 'warning') and self.warning.winfo_exists():
+            self.warning.lift()
+            return
+
+        file:Path = Path(Context.plugin_dir, ASSET_DIR, "warning.html")
+        html:str = ""
+        with open(file, encoding="utf-8") as infile:
+            html = infile.read()
+
+        self.warning:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
+        self.warning.title(f"{NAME} – {lbls['warning']}")
+        self.warning.geometry("550x650")
+        html_label = HTMLScrolledText(self.warning, html=html)
+        html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
+        html_label.fit_height()
 
 
     def _create_galaxy_fr(self, parent:tk.Frame) -> tk.Frame:

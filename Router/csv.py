@@ -5,7 +5,7 @@ from pathlib import Path
 from tkinter import filedialog
 import re
 
-from .constants import HEADERS, errs
+from .constants import HEADERS, ROUTE_DIR, errs
 from utils.debug import Debug, catch_exceptions
 from .context import Context
 
@@ -44,7 +44,9 @@ class CSV:
             ('CSV files', '*.csv'),
             ('Text files', '*.txt'),
         ]
-        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'))
+        dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=dir)
 
         if len(filename) == 0:
             self.error = errs["no_file"]
@@ -115,7 +117,9 @@ class CSV:
         route_end:str = route[-1][0]
         route_name:str = f"{route_start} to {route_end}"
         ftypes:list = [('CSV files', '*.csv')]
-        filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=os.path.expanduser('~'), initialfile=f"{route_name}.csv")
+        dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=dir, initialfile=f"{route_name}.csv")
 
         if len(filename) == 0:
             self.error = errs["no_filename"]

@@ -23,7 +23,7 @@
 
 ## v1.0.0 - 2025-12-23
 
-## Changes
+### Changes
 * Switched to a threaded implementation for the Spansh plot calls
 * Modified to support just about any CSV as long as it has a system name column
 * The UI now works properly with transparent and dark modes

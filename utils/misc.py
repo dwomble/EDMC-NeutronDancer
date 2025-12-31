@@ -74,8 +74,13 @@ def combobox(fr:tk.Frame, v:tk.StringVar, **kw) -> ttk.Combobox|tk.OptionMenu:
     if config.get_int('theme') == 0:
         return ttk.Combobox(fr, textvariable=v, state='readonly', **kw)
 
-    value:str = kw['values'][0]
-    values:list = kw['values'][1:]
+    value:str = ''
+    values:list = []
+    if len(kw.get('values', [])) > 0:
+        value = kw['values'][0]
+    if len(kw.get('values', [])) > 1:
+        values = kw['values'][1:]
+
     om:tk.OptionMenu = tk.OptionMenu(fr, v, value, *values)
     #om.configure(borderwidth=0, border=0, relief=tk.FLAT)
     om.configure(foreground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)

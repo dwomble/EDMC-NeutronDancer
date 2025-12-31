@@ -424,7 +424,7 @@ class UI():
 
         # Create the tooltip with jumps/waypoints, distance, and speed depending on what we have
         tt:str = tts["jump"] if Context.route.jc != None else tts["waypoints"]
-        j:str = "";  d:str = ""
+        j:str = ""; d:str = ""
         if Context.route.jumps_remaining() > 0:
             j = str(Context.route.jumps_remaining())
         if Context.route.dist_remaining() > 0:
@@ -433,7 +433,7 @@ class UI():
         tt = tt.format(j=j, d=d)
 
         if Context.route.jumps_per_hour() > 0:
-            jr = tuple([Context.route.jumps_per_hour(), 'float'])
+            jr:tuple = tuple([Context.route.jumps_per_hour(), 'float'])
             dr:tuple = tuple([Context.route.dist_per_hour(), 'float'])
             if tt != "": tt += "\n"
             tt += tts['speed'].format(j=hfplus(jr), d=hfplus(dr))

@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.5.0 - 2025-12-??
+## v1.5.0 - 2025-12-30
 
 ### New Features
 * Spansh Galaxy Plotter [Issue #3](https://github.com/dwomble/EDMC-NeutronDancer/issues/3)

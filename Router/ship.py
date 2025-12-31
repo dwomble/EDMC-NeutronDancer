@@ -8,6 +8,8 @@ class Ship:
 
         # The journal loadout entry
         self.loadout:dict = {}
+        self.supercharge_mult:int = 4
+        self.injection_mult:int = 2
 
         if entry.get('event', None) != 'Loadout':
             Debug.logger.debug(f"Not an event")
@@ -31,8 +33,7 @@ class Ship:
         fsd:dict = [m for m in entry.get('Modules', []) if m['Slot'] == 'FrameShiftDrive'][0]
         fsd_type:str = fsd['Item']
 
-        self.supercharge_mult:int = 6 if fsd_type.lower().endswith('overchargebooster_mkii') else 4
-        self.injection_mult:int = 2
+        self.supercharge_mult = 6 if fsd_type.lower().endswith('overchargebooster_mkii') else 4
 
         if Context.modules == []:
             Debug.logger.error(f"Ship has no modules. Cannot calculate range.")
@@ -83,12 +84,16 @@ class Ship:
         self.range:float = self.get_range()
 
 
-    def get_range(self, cargo:int = 0) -> int:
+    def get_range(self, cargo:int = 0) -> float:
         """ Return the range of this ship with a given quantity of cargo """
-        return round((self.optimal_mass / (self.base_mass + self.tank_size + cargo)) * \
-                            (self.max_fuel_per_jump / self.fuel_multiplier) ** \
-                            (1 / self.fuel_power) + \
-                            self.range_boost, 2)
+        try:
+            return round((self.optimal_mass / (self.base_mass + self.tank_size + cargo)) * \
+                                (self.max_fuel_per_jump / self.fuel_multiplier) ** \
+                                (1 / self.fuel_power) + \
+                                self.range_boost, 2)
+        except Exception:
+            return 32.0
+
 
     def __repr__(self) -> str:
         return f"Ship(id={self.id}, name {self.name}, type {self.type}, unladen range {self.range:.2f}ly)"

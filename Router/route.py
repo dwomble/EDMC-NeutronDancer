@@ -108,7 +108,7 @@ class Route:
 
     def perc_dist_rem(self, offset:int|None = None) -> float:
         """ Percentage of distance remaining """
-        if self.route == []: return 0
+        if self.route == [] or self.total_dist() == 0: return 0
         return (self.total_dist() - self.dist_remaining(offset)) * 100 / self.total_dist()
 
 

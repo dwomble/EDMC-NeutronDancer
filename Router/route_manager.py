@@ -240,19 +240,22 @@ class Router():
         return
 
 
+    @catch_exceptions
     def import_route(self) -> bool:
         """ Load a route from a CSV """
         try:
+            Debug.logger.info("Importing route")
             if Context.csv == None or Context.csv.read() == False:
-                Debug.logger.debug(f"Failed to load route")
-                Context.ui.show_error(errs['no_filename'])
+                Debug.logger.info(f"Failed to load route")
+                Context.ui.show_error(errs['no_filename'] if not Context.csv else Context.csv.error)
                 return False
 
-            hdrs:list = Context.csv.headers
-            rte:list = Context.csv.route
-            route:Route = Route(hdrs, rte)
-            self.src = route.source()
-            self.dest = route.destination()
+            Context.route = Route(Context.csv.headers, Context.csv.route)
+            self.src = Context.route.source()
+            self.dest = Context.route.destination()
+
+            Context.route.offset = 1 if Context.route.source() == self.system else 0
+            Context.ui.ctc(Context.route.next_stop())
 
             return True
 
@@ -324,14 +327,13 @@ class Router():
     @catch_exceptions
     def _load(self) -> None:
         """ Load state from files """
-        Debug.logger.debug(f"Loading modules")
+
         # Get the FSD data from Coriolis' github repo
         file = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
         if file.exists():
             with open(file) as json_file:
                 Context.modules = json.load(json_file)
                 Debug.logger.debug(f"Loaded {len(Context.modules)} modules from local file")
-        Debug.logger.debug(f"Total modules: {len(Context.modules)}")
 
         if not file.exists() or file.stat().st_mtime < time() - 86400:
             Debug.logger.debug("Module data is more than a day old, downloading fresh data")
@@ -362,14 +364,15 @@ class Router():
 
         save['ship'] = self.ship.to_dict() if self.ship else {}
         save['ships'] = {k: ship.to_dict() for k, ship in self.ships.items()}
-        save['route'] = Context.route.to_dict()
+        if Context.route != None:
+            save['route'] = Context.route.to_dict()
         return save
 
     def _from_dict(self, dict:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        (hdrs, route, offset, jumps) = dict.get('route', [[], [], 0, []])
+        (hdrs, route, offset, jumps) = dict.get('route', ([], [], 0, []))
         Context.route = Route(hdrs, route, offset, jumps)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}

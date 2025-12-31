@@ -1,6 +1,5 @@
 import ast
 import csv
-import os
 from pathlib import Path
 from tkinter import filedialog
 import re
@@ -73,7 +72,6 @@ class CSV:
                 if f not in HEADERS:
                     hdrs.append(f)
 
-            Debug.logger.debug(f"Fields: {fields} hdrs: {hdrs}")
             if hdrs == [] or "System Name" not in hdrs:
                 self.error = errs["invalid_file"]
                 Debug.logger.error(f"File {filename} is of unsupported format")
@@ -84,7 +82,6 @@ class CSV:
                 r:list = []
                 if row in (None, "", []): continue
                 for col in hdrs:
-                    Debug.logger.debug(f"{col} {row[col]}")
                     if col not in row: continue
                     if col in ["body_name", "body_subtype"]:
                         r.append(ast.literal_eval(row[col]))
@@ -98,9 +95,8 @@ class CSV:
                     r.append(row[col])
                 route.append(r)
 
-            self.fleetcarrier = True if "Fuel Used" in hdrs else False
-            self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
-            Debug.logger.debug(f"Headers: {hdrs} rows {len(route)}")
+            #self.fleetcarrier = True if "Fuel Used" in hdrs else False
+            #self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
             self.headers = hdrs
             self.route = route
             return True
@@ -110,6 +106,7 @@ class CSV:
         """ Export the route as a csv """
 
         if route == [] or headers == []:
+            self.error = errs["no_route"]
             Debug.logger.debug(f"No route")
             return False
 

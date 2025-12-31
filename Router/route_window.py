@@ -79,7 +79,8 @@ class RouteWindow:
             ttl.pack(side=tk.LEFT, padx=5)
 
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
-            jstr:str = f"{hfplus(jumps)} / {hfplus(route.total_jumps())}"
+            tjumps:tuple = tuple([route.total_jumps(), 'int'])
+            jstr:str = f"{hfplus(jumps)} / {hfplus(tjumps)}"
             lbl:ttk.Label = ttk.Label(frm, text=jstr, font=FONT)
             lbl.pack(side=tk.LEFT, padx=5)
 

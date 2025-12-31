@@ -15,7 +15,7 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
 from utils.tkhtmlview import HTMLScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -564,9 +564,10 @@ class UI():
             self.shipdd['values'] = [s.name for s in Context.router.ships.values()] # This may error in dark mode.
 
 
+    @catch_exceptions
     def _export_route(self) -> None:
         if Context.router == None or Context.router.export_route() == False:
-            Debug.logger.error(f"Failed to load route")
+            Debug.logger.error(f"Failed to export route")
             return
 
         self.show_frame('Route')
@@ -586,9 +587,11 @@ class UI():
     @catch_exceptions
     def import_route(self) -> None:
         if Context.router == None or Context.router.import_route() == False:
-            Debug.logger.error(f"Failed to load route")
+            Debug.logger.error(f"Failed to load route {self.error_lbl['text']}")
             self.show_frame(Context.router.last_plot)
+            self.show_error(self.error_lbl['text'])
             return
+
         self.show_frame('Route')
 
 
@@ -642,9 +645,12 @@ class UI():
                 ship_id = id
                 break
 
+        if ship_id == '':
+            self.show_frame('Galaxy')
+            self.show_error(errs['no_ship'])
+            return
+
         params:dict = {
-            'source': self.gal_source_ac.get().strip(),
-            'destination': self.gal_dest_ac.get().strip(),
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
             'max_time': int(self.time_limit.get()),
             'algorithm': self.algorithm.get(),
@@ -666,6 +672,18 @@ class UI():
             'supercharge_multiplier': Context.router.ships[ship_id].supercharge_mult,
             'injection_multiplier': Context.router.ships[ship_id].injection_mult
             }
+
+        params['source'] = self.gal_source_ac.get().strip()
+        if params['source'] not in self.query_systems(params['source']):
+            self.show_frame(Context.router.last_plot)
+            self.gal_source_ac.set_error_style()
+            return
+
+        params['destination'] = self.dest_ac.get().strip()
+        if params['destination'] not in self.query_systems(params['destination']):
+            self.show_frame(Context.router.last_plot)
+            self.gal_dest_ac.set_error_style()
+            return
 
         Context.router.plot_route('Galaxy', params)
 

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .route_manager import Router
     from .ui import UI
     from .csv import CSV
-    from .route import Route
+from .route import Route
 
 @dataclass
 class Context:
@@ -25,8 +25,8 @@ class Context:
     modules:list = field(default_factory=list) # Module details from Coriolis
 
     # Global objects
+    route:Route = Route([], [], 0, [])
     router:'Router' = None
-    route:'Route' = None
     csv:'CSV' = None
     ui:'UI' = None
     updater:'Updater' = None

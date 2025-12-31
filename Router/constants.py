@@ -24,8 +24,8 @@ DATA_DIR = 'data'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
 
-FONT = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "normal")
-BOLD = ("Helvetica", int(9*config.get_int('ui_scale') / 100.00), "bold")
+FONT:tuple = ("Helvetica", 9, "normal")
+BOLD:tuple = ("Helvetica", 9, "bold")
 
 # Map from returned data to our header names
 #HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
@@ -107,6 +107,7 @@ lbls:dict = {
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
     "jump": "jump",
     "jumps": "jumps",
+    "waypoints": "waypoints",
     "distance": "distance",
     "total_distance": "Total Distance",
     "neutron_router": "Neutron Plotter",
@@ -171,8 +172,10 @@ errs:dict = {
     "invalid_range": "Invalid range",
     "no_response": "No response from server",
     "no_file": "No file selected",
+    "no_route": "No current route",
     "empty_file": "File is empty or doesn't have a header row",
     "invalid_file": "File is corrupt or of unsupported format",
     "no_filename": "No filename given",
     "parse_error": "Error parsing route file",
+    "no_ship": "No ship selected"
 }

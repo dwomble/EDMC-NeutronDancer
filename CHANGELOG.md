@@ -1,5 +1,11 @@
 # EDMC-NeutronDancer Changelog
 
+## v1.5.1 - 2025-12-31
+
+### Bug fixes
+* Fixed galaxy router error in dark mode when ships hadn't been switched
+* Addressed more dark and transparent mode craziness
+
 ## v1.5.0 - 2025-12-30
 
 ### New Features

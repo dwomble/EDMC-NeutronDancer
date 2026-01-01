@@ -64,17 +64,19 @@ class Router():
         Called on a ship swap event to update our current ship information
         On a ship swap we don't get the full loadout so we have torely on our shipyard and hope we've seen this ship before
         """
-        if ship_id not in self.ships.keys():
-            Debug.logger.debug(f"ShipID {ship_id} not found in shipyard")
+        # Normalize ship_id to string since stored keys are strings
+        sid = str(ship_id)
+        if sid not in self.ships.keys():
+            Debug.logger.debug(f"ShipID {sid} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
 
-        self.ship_id = str(ship_id)
+        self.ship_id = sid
 
-        self.neutron_params['range'] = self.ships[ship_id].range
-        self.neutron_params['supercharge_mult'] = self.ships[ship_id].supercharge_mult
-        self.ship = self.ships[ship_id]
+        self.neutron_params['range'] = self.ships[sid].range
+        self.neutron_params['supercharge_mult'] = self.ships[sid].supercharge_mult
+        self.ship = self.ships[sid]
 
 
     def set_ship(self, entry:dict) -> None:
@@ -218,7 +220,7 @@ class Router():
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
             Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
-            Context.ui.show_error(lbls["plot_error"])
+            Context.ui.show_error(errs["plot_error"])
 
 
     @catch_exceptions

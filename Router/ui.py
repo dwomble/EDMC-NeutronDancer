@@ -67,6 +67,8 @@ class UI():
         self.title_fr:tk.Frame = self._create_title_fr(self.frame)
         self.neutron_fr:tk.Frame = self._create_neutron_fr(self.frame)
         self.galaxy_fr:tk.Frame = self._create_galaxy_fr(self.frame)
+        self.frameCnt:int = 12
+        self.busy_fr:tk.Frame = self._create_busy_fr(self.frame)
         self.route_fr:tk.Frame = self._create_route_fr(self.frame)
 
         self.sub_fr:tk.Frame = self.title_fr
@@ -114,29 +116,18 @@ class UI():
 
         match which:
             case 'Route':
-                if destroy == True:
-                    self.route_fr.destroy()
-                    self.route_fr = self._create_route_fr(self.frame)
                 self.sub_fr = self.route_fr
                 self.update_waypoint()
 
             case 'Neutron':
-                self.neutron_fr.destroy()
-                self.neutron_fr = self._create_neutron_fr(self.frame)
-
                 self.sub_fr = self.neutron_fr
                 self.router.set('Neutron')
 
             case 'Galaxy':
-                self.galaxy_fr.destroy()
-                self.galaxy_fr = self._create_galaxy_fr(self.frame)
-
                 self.sub_fr = self.galaxy_fr
                 self.router.set('Galaxy')
 
             case _:
-                self.title_fr.destroy()
-                self.title_fr = self._create_title_fr(self.frame)
                 self.sub_fr = self.title_fr
 
         self.sub_fr.grid(row=2, column=0)
@@ -153,6 +144,20 @@ class UI():
         plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
 
         return title_fr
+
+
+    def _create_busy_fr(self, parent:tk.Frame) -> tk.Frame:
+        """ Spinner image for route plotting """
+        image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation.gif")
+        self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
+        busy_fr:tk.Frame = frame(parent)
+        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"], justify=tk.CENTER, font=BOLD)
+        lbl.pack(anchor=tk.CENTER)
+        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0])
+        self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
+        cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
+        cancel.pack(anchor=tk.CENTER)
+        return busy_fr
 
 
     def _plot_switcher(self, fr:tk.Frame, row:int, col:int) -> None:
@@ -329,7 +334,6 @@ class UI():
             self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
             for m, f in shipmenu.items():
                 self.menu.add_command(label=m, command=partial(*f, m))
-
 
         self._plot_switcher(plot_fr, row, col)
 
@@ -561,8 +565,10 @@ class UI():
 
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
-        if hasattr(self, "shipdd"): # Update the ships dropdown list
-            self.shipdd['values'] = [s.name for s in Context.router.ships.values()] # This may error in dark mode.
+
+        # Redraw the galaxy frame if we're on it so the ship list is rebuilt
+        if self.sub_fr == self.galaxy_fr:
+            self.show_frame('Galaxy')
 
 
     @catch_exceptions
@@ -609,13 +615,13 @@ class UI():
 
         params['from'] = self.source_ac.get().strip()
         if params['from'] not in self.query_systems(params['from']):
-            self.show_frame(Context.router.last_plot)
+            self.show_frame('Neutron')
             self.source_ac.set_error_style()
             return
 
         params['to'] = self.dest_ac.get().strip()
         if params['to'] not in self.query_systems(params['to']):
-            self.show_frame(Context.router.last_plot)
+            self.show_frame('Neutron')
             self.dest_ac.set_error_style()
             return
 
@@ -624,7 +630,7 @@ class UI():
         params['range'] = self.range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.debug(f"Invalid range entry {params['range']}")
-            self.show_frame(Context.router.last_plot)
+            self.show_frame('Neutron')
             self.range_entry.set_error_style()
             return
 
@@ -637,8 +643,8 @@ class UI():
         self.hide_error()
         self._show_busy_gui(True)
 
-        self.source_ac.hide_list()
-        self.dest_ac.hide_list()
+        self.gal_source_ac.hide_list()
+        self.gal_dest_ac.hide_list()
 
         ship_id:str = ''
         for id, ship in Context.router.ships.items():
@@ -676,13 +682,13 @@ class UI():
 
         params['source'] = self.gal_source_ac.get().strip()
         if params['source'] not in self.query_systems(params['source']):
-            self.show_frame(Context.router.last_plot)
+            self.show_frame('Galaxy')
             self.gal_source_ac.set_error_style()
             return
 
         params['destination'] = self.dest_ac.get().strip()
         if params['destination'] not in self.query_systems(params['destination']):
-            self.show_frame(Context.router.last_plot)
+            self.show_frame('Galaxy')
             self.gal_dest_ac.set_error_style()
             return
 
@@ -694,6 +700,7 @@ class UI():
         if error == None: return
         Debug.logger.debug(f"Showing error {error}")
         self.error_lbl['text'] = error
+
         self.error_lbl.grid()
 
 
@@ -705,36 +712,22 @@ class UI():
     @catch_exceptions
     def _show_busy_gui(self, enable:bool) -> None:
         """ Activate/deactivate the plot gui (show a progress icon) """
-        def update(ind):
-            if self.busy_fr == None: return
-            self.busyimg.configure(image=frames[ind])
-            self.busy_fr.after(150, update, (ind + 1) % frameCnt)
+        def update(ind) -> None:
+            if self.busy_fr == None or self.show_spinner == False: return
+            self.busyimg.configure(image=self.frames[ind])
+            Debug.logger.debug(f"Showing {ind}")
+            self.busy_fr.after(150, update, (ind + 1) % self.frameCnt)
 
+        self.show_spinner:bool = enable
         # Show the busy image
         if enable == True:
-            self.sub_fr.forget()
-            frameCnt:int = 12
-            image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation.gif")
-            frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(frameCnt)]
-            self.busy_fr = frame(self.frame)
-            self.busy_fr.grid(row=2, column=0, rowspan=3, columnspan=3, sticky=tk.NSEW)
-            self.busy_fr.config(cursor="" if enable == True else "watch")
-            self.busy_fr.after(100, update, 0)
-
-            label(self.busy_fr, text=lbls["plotting"], justify=tk.CENTER, font=BOLD).pack(padx=5, pady=5)
-            self.busyimg = label(self.busy_fr)
-            self.busyimg.pack(anchor=tk.CENTER)
-            button(self.busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot)).pack(padx=5, pady=5, anchor=tk.CENTER)
+            self.sub_fr.grid_remove()
+            self.busy_fr.grid(row=2, column=0, padx=150, pady=10)
+            self.busy_fr.after(250, update, 0)
             return
 
-        # Destroy the busy frame if it exists
-        if hasattr(self, "busy_fr") and self.busy_fr != None:
-            self.busy_fr.destroy()
-            self.busy_fr = None
-
-        # Display the "current" frame if one exists.
-        if self.sub_fr != None:
-            self.sub_fr.grid()
+        self.busy_fr.grid_remove()
+        self.sub_fr.grid()
 
 
     def goto_next_waypoint(self) -> None:

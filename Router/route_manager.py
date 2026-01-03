@@ -53,8 +53,11 @@ class Router():
         self.last_plot:str = "Neutron"
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
-
         self.cancel_plot:bool = False
+
+        # Carrier
+        self.carrier_jumping:bool = False
+
         self._load()
         self._initialized = True
 
@@ -109,6 +112,18 @@ class Router():
             Debug.logger.debug(f"Updating route")
             Context.ui.update_waypoint()
 
+
+    def carrier_event(self, entry:dict) -> None:
+        """ Note carrier jumps for a cooldown notification """
+        if Context.route.route == []: return
+        match entry.get('event'):
+            case 'CarrierJumpRequested':
+                self.carrier_jumping = True
+            case 'CarrierJumpCancelled':
+                self.carrier_jumping = False
+            case 'CarrierLocation' if self.carrier_jumping == True:
+                # Schedule the UI cooldown_complete notification
+                Context.ui.parent.after(300000, lambda: Context.ui.cooldown_complete())
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """

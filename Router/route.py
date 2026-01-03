@@ -11,8 +11,12 @@ class Route:
         self.route:list = cols
         self.jumps:list = jumps
         self.offset:int = offset
+        self.fleetcarrer:bool = False
 
         if hdrs == [] or cols == []: return
+
+        # Detect if this route appears to be a fleet carrier loadout (tritium column)
+        self.fleetcarrer = any('tritium' in h.lower() for h in hdrs)
 
         self.sc:int|None = self.colind()
         self.jc:int|None = self.colind('Jumps')

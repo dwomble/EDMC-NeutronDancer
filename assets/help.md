@@ -10,6 +10,7 @@ Next click **Calculate** to query Spansh and plot your route.
 
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
+
 ## Galaxy Plotter
 
 This works the same as the Neutron Plotter but Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route. [*You have been warned*]{red}.
@@ -20,11 +21,13 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
     1. *Optimistic* Prioritises Neutron jumps. Penalises areas of the galaxy which have large gaps between neutron stars. Typically generates the fastest route with fewest total jumps.
     1. *Pessimistic* Prioritises calculation speed. Overestimates the average star distance to filter out routes. This means it calculates routes faster but the routes are typically less optimal.
 
+
 ## Importing routes
 
 Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters. 
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
+
 
 ## Following the route
 
@@ -40,16 +43,19 @@ The **Export route** button will allow you to save the route as a CSV.
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
 
+
 ## Tips
 
 * Almost every component has a tooltip to provide further information or hints on use.
 * Many components have a right-click context menu with shortcuts
+
 
 ## Credits
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
 This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
+
 
 ## Suggestions
 

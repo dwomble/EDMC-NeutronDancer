@@ -13,9 +13,9 @@ from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
-from utils.tkhtmlview import HTMLScrolledText
+from utils.tkhtmlview import MDScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -167,27 +167,27 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
-        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_warning())
+        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
 
     @catch_exceptions
-    def _show_warning(self) -> None:
+    def _show_help(self) -> None:
         """ Spiel about the galaxy plotter """
-        if hasattr(self, 'warning') and self.warning.winfo_exists():
-            self.warning.lift()
+        if hasattr(self, 'help') and self.help.winfo_exists():
+            self.help.lift()
             return
 
-        file:Path = Path(Context.plugin_dir, ASSET_DIR, "warning.html")
-        html:str = ""
+        file:Path = Path(Context.plugin_dir, ASSET_DIR, "help.md")
+        text:str = ""
         with open(file, encoding="utf-8") as infile:
-            html = infile.read()
+            text = infile.read()
 
-        self.warning:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
-        self.warning.title(f"{NAME} – {lbls['warning']}")
-        self.warning.geometry("550x650")
-        html_label = HTMLScrolledText(self.warning, html=html)
+        self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
+        self.help.title(f"{NAME} – {lbls['help']}")
+        self.help.geometry("650x750")
+        html_label = MDScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
 
@@ -772,3 +772,13 @@ class UI():
         """ Function called by Autocompleter """
         results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         return json.loads(results.content)
+
+    @catch_exceptions
+    def cooldown_complete(self) -> None:
+        """Show an informational messagebox indicating a carrier cooldown has completed."""
+        title = f"{NAME} – {hdrs['cooldown_title']}"
+        message = lbls['cooldown_complete']
+        try:
+            confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())
+        except Exception:
+            confirmDialog.showinfo(title, message)

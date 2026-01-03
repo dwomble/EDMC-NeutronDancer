@@ -5,6 +5,7 @@ import sys
 import tkinter as tk
 from . import html_parser
 from .utils import RenderHTML
+from .markdown_converter import markdown_to_html
 
 VERSION = "0.3.1"
 
@@ -29,6 +30,7 @@ class _ScrolledText(tk.Text):
         self.vbar["command"] = self.yview
 
         tk.Text.__init__(self, self.frame, **kw)
+        self.configure(spacing1=6, spacing2=2, spacing3=4)
         self.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         text_meths = vars(tk.Text).keys()
@@ -133,3 +135,53 @@ class HTMLLabel(HTMLText):
         super().set_html(*args, **kwargs)
         self.config(state=tk.DISABLED)
 
+
+def MDScrolledText(*args, markdown=None, **kwargs):
+    """
+    Create an HTML scrolled text widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLScrolledText.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLScrolledText(*args, html=html, **kwargs)
+
+
+def MDText(*args, markdown=None, **kwargs):
+    """
+    Create an HTML text widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLText.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLText(*args, html=html, **kwargs)
+
+
+def MDLabel(*args, markdown=None, **kwargs):
+    """
+    Create an HTML label widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLLabel.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLLabel(*args, html=html, **kwargs)

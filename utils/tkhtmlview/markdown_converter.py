@@ -35,16 +35,32 @@ class MarkdownConverter:
             return ""
 
         lines = markdown_text.split("\n")
+        
+        # Replace consecutive empty lines with a special marker
+        normalized:list = []
+        prev_empty:bool = False
+        for line in lines:
+            if prev_empty == True and not line.strip():
+                normalized.append("__BR__")
+                continue
+            prev_empty = not line.strip()
+            normalized.append(line)                
+        
+        lines = normalized
         html_lines = []
         i = 0
 
         while i < len(lines):
             line = lines[i]
 
+            # Handle the <br> marker for consecutive empty lines
+            if line == "__BR__":
+                html_lines.append("<br>")
+                i += 1
+                continue
+
             # Empty lines
             if not line.strip():
-                if html_lines and not html_lines[-1].endswith("</p>"):
-                    html_lines.append("")
                 i += 1
                 continue
 

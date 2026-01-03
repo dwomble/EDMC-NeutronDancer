@@ -49,8 +49,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.system = system
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
-        case 'CarrierJump' if entry.get('Docked', True) == True:
-            Context.router.jumped(system, entry)
+        case 'CarrierJumpRequested' | 'CarrierLocation' | 'CarrierJumpCancelled':
+            Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.set_ship(entry)
         case 'ShipyardSwap':

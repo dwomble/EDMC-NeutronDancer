@@ -7,7 +7,7 @@
 
 This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC]() and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
-The goal of this fork is support for the new 6x overcharge of the Caspian and a cleaner UI.
+The original goal of this fork was support for the new 6x overcharge of the Caspian and a cleaner UI. It has grown beyond that into a significant rewrite.
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984" />
 

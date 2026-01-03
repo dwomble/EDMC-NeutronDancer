@@ -686,7 +686,7 @@ class UI():
             self.gal_source_ac.set_error_style()
             return
 
-        params['destination'] = self.dest_ac.get().strip()
+        params['destination'] = self.gal_dest_ac.get().strip()
         if params['destination'] not in self.query_systems(params['destination']):
             self.show_frame('Galaxy')
             self.gal_dest_ac.set_error_style()

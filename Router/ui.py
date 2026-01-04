@@ -53,6 +53,8 @@ class UI():
 
         self.update:tk.Label
 
+        self.help_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
+
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
@@ -167,7 +169,8 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
-        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_help())
+        # Use help.png image if available (prefer transparent PNG), fallback to text '!'
+        r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, width=3, cursor="hand2", command=lambda: self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
@@ -242,11 +245,15 @@ class UI():
 
         # Row three
         row += 1; col = 0
-        shiplist:list = [s.name for s in Context.router.ships.values()]
-        if shiplist == []: self.show_error(errs["no_ships"])
-        init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0] if len(shiplist) else ""
+        if Context.router.shiplist == []: self.show_error(errs["no_ships"])
+        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        init:str = params.get('ship_build', {}).get('ShipName', '')
+        if init == "" and names != []:
+            init = names[0]
+
+        Debug.logger.debug(f"{init} {init} - {names}")
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
-        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=shiplist, width=10)
+        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
@@ -325,10 +332,8 @@ class UI():
                 destmenu[sys] = [self.menu_callback, 'dest']
 
         # Create right click menu
-        for id in Context.router.used_ships:
-            if id in Context.router.ships.keys():
-                ship:Ship = Context.router.ships[id]
-                shipmenu[ship.name] = [self.menu_callback, 'ship']
+        for id in Context.router.shiplist[:10]:
+            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
 
         if shipmenu != {}:
             self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
@@ -662,11 +667,11 @@ class UI():
             'max_time': int(self.time_limit.get()),
             'algorithm': self.algorithm.get(),
             'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
-            'is_supercharged': self.gallb.selection_includes(self.optionlist.index('is_supercharged')),
-            'use_supercharge': self.gallb.selection_includes(self.optionlist.index('use_supercharge')),
-            'use_injections': self.gallb.selection_includes(self.optionlist.index('use_injections')),
-            'exclude_secondary': self.gallb.selection_includes(self.optionlist.index('exclude_secondary')),
-            'refuel_every_scoopable': self.gallb.selection_includes(self.optionlist.index('refuel_every_scoopable')),
+            'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,
+            'use_supercharge': 1 if self.gallb.selection_includes(self.optionlist.index('use_supercharge')) else 0,
+            'use_injections': 1 if self.gallb.selection_includes(self.optionlist.index('use_injections')) else 0,
+            'exclude_secondary': 1 if self.gallb.selection_includes(self.optionlist.index('exclude_secondary')) else 0,
+            'refuel_every_scoopable': 1 if self.gallb.selection_includes(self.optionlist.index('refuel_every_scoopable')) else 0,
             'fuel_power': Context.router.ships[ship_id].fuel_power,
             'fuel_multiplier': Context.router.ships[ship_id].fuel_multiplier,
             'optimal_mass': Context.router.ships[ship_id].optimal_mass,
@@ -715,7 +720,6 @@ class UI():
         def update(ind) -> None:
             if self.busy_fr == None or self.show_spinner == False: return
             self.busyimg.configure(image=self.frames[ind])
-            Debug.logger.debug(f"Showing {ind}")
             self.busy_fr.after(150, update, (ind + 1) % self.frameCnt)
 
         self.show_spinner:bool = enable

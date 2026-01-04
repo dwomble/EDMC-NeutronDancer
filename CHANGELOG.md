@@ -1,5 +1,15 @@
 # EDMC-NeutronDancer Changelog
 
+## v#.#.# ##-##-##
+
+### New Features
+* Better fleetcarrier support with a jump cooldown notification
+
+## v1.5.2 - 2026-01-03
+
+### Bug fixes
+* Fixed typo that caused Galaxy Plotter to use the Neutron Plotter's destination
+
 ## v1.5.1 - 2025-12-31
 
 ### Bug fixes

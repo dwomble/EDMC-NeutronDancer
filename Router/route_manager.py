@@ -16,7 +16,7 @@ from .route import Route
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot':
                   'Neutron', 'neutron_params': {}, 'galaxy_params': {},
-                  'ship_id': '', 'cargo': 0, 'used_ships': [], 'history': []}
+                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': []}
 class Router():
     """
     Class to manage routes, all the route data and state information.
@@ -45,7 +45,7 @@ class Router():
         self.ship:Ship|None = None
 
         # Record of used ships and shipyard
-        self.used_ships:list = []
+        self.shiplist:list = []
         self.ships:dict[str, Ship] = {}
         self.history:list = []
 
@@ -91,6 +91,10 @@ class Router():
         self.neutron_params['supercharge_mult'] = ship.supercharge_mult
         self.neutron_params['range'] = ship.range
         self.ships[self.ship_id] = ship
+
+        if self.ship_id in self.shiplist:
+            self.shiplist.remove(self.ship_id)
+        self.shiplist.insert(0, self.ship_id)
         Context.ui.switch_ship(self.ship)
 
 
@@ -133,14 +137,6 @@ class Router():
         if self.dest != '' and self.dest not in self.history:
             self.history.insert(0, Context.route.destination())
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
-
-        if self.ship_id == None or self.ship == None:
-            Debug.logger.debug(f"No ship to store")
-            return
-
-        if self.ship_id not in self.used_ships:
-            self.used_ships.append(self.ship_id)
-        Debug.logger.debug(f"Storing ship {str(self.ship)}")
 
 
     def plot_route(self, which:str, params:dict) -> bool:
@@ -393,5 +389,9 @@ class Router():
         Context.route = Route(hdrs, route, offset, jumps)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
+
+        # Migrate
+        if self.shiplist == [] and self.ships != {}:
+            self.shiplist = [id for id in self.ships.keys()]
 
 

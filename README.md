@@ -66,13 +66,14 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
-This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
+This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.
 
 ## Suggestions
 
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
 
 
 

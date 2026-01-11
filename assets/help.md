@@ -2,7 +2,7 @@
 
 This is the simple neutron route plotter. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
 
-Next click **Calculate** to query Spansh and plot your route. 
+Next click **Calculate** to query Spansh and plot your route.
 
 ![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
 
@@ -24,9 +24,12 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
     1. *Pessimistic* Prioritises calculation speed. Overestimates the average star distance to filter out routes. This means it calculates routes faster but the routes are typically less optimal.
 
 
+**Note** Due to the complexity of the galaxy plotter and the calculations involved a route plotted in the Neutron Dancer may vary slightly from one created through the web interface.
+
+
 ## Importing routes
 
-Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters. 
+Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters.
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
 

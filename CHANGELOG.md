@@ -1,9 +1,10 @@
 # EDMC-NeutronDancer Changelog
 
-## v#.#.# ##-##-##
+## v1.6.0 2026-01-##
 
 ### New Features
 * Better fleetcarrier support with a jump cooldown notification
+* More detailed help
 
 
 ## v1.5.3 - 2026-01-03
@@ -23,6 +24,7 @@
 ### Bug fixes
 * Fixed galaxy router error in dark mode when ships hadn't been switched
 * Addressed more dark and transparent mode craziness
+
 
 ## v1.5.0 - 2025-12-30
 

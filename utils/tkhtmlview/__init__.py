@@ -30,7 +30,12 @@ class _ScrolledText(tk.Text):
         self.vbar["command"] = self.yview
 
         tk.Text.__init__(self, self.frame, **kw)
-        self.configure(spacing1=6, spacing2=2, spacing3=4)
+        if 'spacing1' not in kw: self.configure(spacing1=6)
+        if 'spacing2' not in kw: self.configure(spacing2=2)
+        if 'spacing3' not in kw: self.configure(spacing3=4)
+        if 'padx' not in kw: self.configure(padx=5)
+        if 'pady' not in kw: self.configure(pady=5)
+
         self.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         text_meths = vars(tk.Text).keys()

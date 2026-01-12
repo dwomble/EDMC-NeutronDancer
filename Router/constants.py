@@ -6,11 +6,13 @@ GIT_USER="dwomble"
 GIT_PROJECT="EDMC-NeutronDancer"
 
 # GIT info and URLs
-GIT_LATEST:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_DOWNLOAD:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/download"
+GIT_BASE:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}"
+GIT_RELEASES:str = f"{GIT_BASE}/releases"
+GIT_LATEST:str = f"{GIT_RELEASES}/latest"
+GIT_DOWNLOAD:str = f"{GIT_RELEASES}/download"
 GIT_VERSION:str = f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
 GIT_RELEASE_INFO:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_CHANGELOG:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CHANGELOG.md#"
+GIT_CHANGELOG:str = f"{GIT_BASE}/blob/master/CHANGELOG.md#"
 
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
@@ -181,4 +183,14 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected"
+}
+
+cnf:dict = {
+    "version": "Version",
+    "overlay": "Overlay",
+    "overlay_enable": "Enable overlay",
+    "overlay_position": "Overlay Position",
+    "X": "X",
+    "Y": "Y",
+    "overlay_colour": "Overlay Colour"
 }

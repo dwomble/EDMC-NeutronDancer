@@ -20,6 +20,7 @@ from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
+
 class UI():
     """
         The main UI for the router.

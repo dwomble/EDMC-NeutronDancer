@@ -1,4 +1,4 @@
-name: VirustTotal Scan
+name: VirusTotal Scan
 on:
   release:
     types: [published]

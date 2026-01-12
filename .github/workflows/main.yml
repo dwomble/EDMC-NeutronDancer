@@ -1,4 +1,4 @@
-name: Scan Release Assets
+name: VirustTotal Scan
 on:
   release:
     types: [published]

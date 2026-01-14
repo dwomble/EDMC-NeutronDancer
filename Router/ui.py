@@ -175,8 +175,11 @@ class UI():
     @catch_exceptions
     def _show_warning(self) -> None:
         """ Spiel about the galaxy plotter """
-        if hasattr(self, 'warning') and self.warning.winfo_exists():
-            self.warning.lift()
+
+        if self.parent == None: return
+
+        if hasattr(self, 'help') and self.help.winfo_exists():
+            self.help.lift()
             return
 
         file:Path = Path(Context.plugin_dir, ASSET_DIR, "warning.html")

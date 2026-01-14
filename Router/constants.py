@@ -2,17 +2,17 @@ from config import config  # type: ignore
 
 # Project information
 NAME="Navl's Neutron Dancer"
-GIT_USER="dwomble"
-GIT_PROJECT="EDMC-NeutronDancer"
+GH_USER="dwomble"
+GH_PROJECT="EDMC-NeutronDancer"
 
 # GIT info and URLs
-GIT_BASE:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}"
-GIT_RELEASES:str = f"{GIT_BASE}/releases"
-GIT_LATEST:str = f"{GIT_RELEASES}/latest"
-GIT_DOWNLOAD:str = f"{GIT_RELEASES}/download"
-GIT_VERSION:str = f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
-GIT_RELEASE_INFO:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_CHANGELOG:str = f"{GIT_BASE}/blob/master/CHANGELOG.md#"
+GH_BASE:str = f"https://github.com/{GH_USER}/{GH_PROJECT}"
+GH_RELEASES:str = f"{GH_BASE}/releases"
+GH_LATEST:str = f"{GH_RELEASES}/latest"
+GH_DOWNLOAD:str = f"{GH_RELEASES}/download"
+GH_VERSION:str = f"https://raw.githubusercontent.com/{GH_USER}/{GH_PROJECT}/master/version"
+GH_RELEASE_INFO:str = f"https://api.github.com/repos/{GH_USER}/{GH_PROJECT}/releases/latest"
+GH_CHANGELOG:str = f"{GH_BASE}/blob/master/CHANGELOG.md#"
 
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"

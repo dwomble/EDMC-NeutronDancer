@@ -125,9 +125,10 @@ class Router():
                 self.carrier_jumping = True
             case 'CarrierJumpCancelled':
                 self.carrier_jumping = False
-            case 'CarrierLocation' if self.carrier_jumping == True:
+            case 'CarrierLocation' if self.carrier_jumping == True and Context.ui.parent != None:
                 # Schedule the UI cooldown_complete notification
                 Context.ui.parent.after(300000, lambda: Context.ui.cooldown_complete())
+
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """

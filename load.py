@@ -8,7 +8,7 @@ from semantic_version import Version #type: ignore
 
 from config import appname  # type: ignore
 
-from Router.constants import GIT_PROJECT, NAME, errs
+from Router.constants import GH_PROJECT, NAME, errs
 from utils.debug import Debug, catch_exceptions
 from utils.updater import Updater
 

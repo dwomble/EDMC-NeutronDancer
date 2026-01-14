@@ -99,7 +99,7 @@ class UI():
     @catch_exceptions
     def cancel_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
-        #webbrowser.open(GIT_LATEST)
+        #webbrowser.open(GH_LATEST)
         Context.updater.install_update = False
         self.update.destroy()
 
@@ -179,6 +179,9 @@ class UI():
     @catch_exceptions
     def _show_help(self) -> None:
         """ Spiel about the galaxy plotter """
+
+        if self.parent == None: return
+
         if hasattr(self, 'help') and self.help.winfo_exists():
             self.help.lift()
             return
@@ -781,6 +784,8 @@ class UI():
     @catch_exceptions
     def cooldown_complete(self) -> None:
         """Show an informational messagebox indicating a carrier cooldown has completed."""
+        if self.parent == None: return
+
         title = f"{NAME} – {hdrs['cooldown_title']}"
         message = lbls['cooldown_complete']
         try:

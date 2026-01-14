@@ -5,8 +5,8 @@ import zipfile
 from threading import Thread
 from semantic_version import Version # type: ignore
 
-from Router.constants import GIT_PROJECT, GIT_RELEASE_INFO, GIT_LATEST
-from utils.debug import Debug, catch_exceptions
+from Router.constants import GH_PROJECT, GH_RELEASE_INFO
+from utils.debug import Debug
 
 TIMEOUT=10
 
@@ -51,7 +51,7 @@ class Updater():
         self.zip_path:str = os.path.join(self.plugin_dir, "updates")
         os.makedirs(self.zip_path, exist_ok=True)
 
-        zip_file:str = os.path.join(self.zip_path, f"{GIT_PROJECT}-{str(self.update_version)}.zip")
+        zip_file:str = os.path.join(self.zip_path, f"{GH_PROJECT}-{str(self.update_version)}.zip")
         # Don't download again if we already have it. (Was os.remove(zip_file))
         if os.path.exists(zip_file):
             self.zip_downloaded = zip_file
@@ -62,11 +62,11 @@ class Updater():
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {GIT_PROJECT} update (status code {r.status_code}).)")
+            Debug.logger.error(f"Failed to download {GH_PROJECT} update (status code {r.status_code}).)")
             return
 
         with open(zip_file, 'wb') as f:
-            Debug.logger.info(f"Downloading {GIT_PROJECT} to " + zip_file)
+            Debug.logger.info(f"Downloading {GH_PROJECT} to " + zip_file)
             for chunk in r.iter_content(chunk_size=32768):
                 f.write(chunk)
         self.zip_downloaded = zip_file
@@ -89,8 +89,8 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {GIT_RELEASE_INFO}")
-            r:requests.Response = requests.get(GIT_RELEASE_INFO, timeout=TIMEOUT)
+            Debug.logger.debug(f"Requesting {GH_RELEASE_INFO}")
+            r:requests.Response = requests.get(GH_RELEASE_INFO, timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)

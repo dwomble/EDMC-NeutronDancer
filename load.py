@@ -8,7 +8,7 @@ from semantic_version import Version #type: ignore
 
 from config import appname  # type: ignore
 
-from Router.constants import GIT_PROJECT, NAME, errs
+from Router.constants import GH_PROJECT, NAME, errs
 from utils.debug import Debug, catch_exceptions
 from utils.updater import Updater
 
@@ -31,7 +31,7 @@ def plugin_start3(plugin_dir: str) -> str:
     if version_file.is_file():
         version = Version(version_file.read_text())
     Context.plugin_version = version
-    Context.plugin_useragent = f"{GIT_PROJECT}-{version}"
+    Context.plugin_useragent = f"{GH_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir))
     Context.updater.check_for_update(Context.plugin_version)
 

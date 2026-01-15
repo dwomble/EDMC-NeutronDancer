@@ -202,8 +202,9 @@ class Router():
         self.cancel_plot = False
         try:
             limit:int = int(params.get('max_time', 20))
-            results:Response = requests.post(url, data=params, headers={'User-Agent': Context.plugin_useragent,
-                                                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+            results:Response = requests.post(url, data=params,
+                                             headers={'User-Agent': Context.plugin_useragent,
+                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
             if results.status_code != 202:
                 self.plot_error(results)
@@ -229,9 +230,7 @@ class Router():
             result:dict = json.loads(route_response.content)["result"]
             res:list = result.get('jumps', result.get('system_jumps', []))
 
-            cols:list = []
-            hdrs:list = []
-            h:str
+            cols:list = []; hdrs:list = []; h:str
             for h in HEADERS:
                 k:str
                 for k in res[0].keys():

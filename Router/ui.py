@@ -182,7 +182,7 @@ class UI():
 
     @catch_exceptions
     def _show_help(self) -> None:
-        """ Spiel about the galaxy plotter """
+        """ Help window """
 
         if self.parent == None: return
 

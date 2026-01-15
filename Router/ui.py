@@ -13,7 +13,7 @@ from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
-from utils.tkhtmlview import MDScrolledText
+from utils.tkhtmlview import HTMLScrolledText, MDScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
@@ -55,6 +55,10 @@ class UI():
         self.update:tk.Label
 
         self.help_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
+        self.fuel_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        self.countdown_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
+        self.timer_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
+
 
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
@@ -186,15 +190,16 @@ class UI():
             self.help.lift()
             return
 
+        self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
+        self.help.title(f"{NAME} – {lbls['help']}")
+        self.help.geometry("650x750")
+
         file:Path = Path(Context.plugin_dir, ASSET_DIR, "help.md")
         text:str = ""
         with open(file, encoding="utf-8") as infile:
             text = infile.read()
 
-        self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
-        self.help.title(f"{NAME} – {lbls['help']}")
-        self.help.geometry("650x750")
-        html_label = MDScrolledText(self.help, markdown=text)
+        html_label:HTMLScrolledText = MDScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
 
@@ -469,18 +474,31 @@ class UI():
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
 
+
         # We check if we're there rather than if there are no jumps remaining so
         # we don't show end of the road when someone steps forward/backward.
+        Debug.logger.debug(f"System: {Context.router.system} Dest: {Context.route.destination()} Jumps remaining: {Context.route.jumps_remaining()}")
         if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
-            self.waypoint_btn.configure(text=lbls["route_complete"])
-        else:
-            wp:str = Context.route.next_stop()
-            if Context.route.jumps_to_wp() != 0:
-                wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
-            self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
+            self.waypoint_btn.configure(text=lbls["route_complete"], image='', compound=tk.NONE)
+            self._update_progbar()
+            return
 
+        wp:str = Context.route.next_stop()
+        self.ctc(wp)
+        if Context.route.jumps_to_wp() != 0:
+            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
-        self.ctc(Context.route.next_stop())
+
+        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Jumping' and Context.route.get_waypoint(-1) == Context.router.system:
+            wp = f"{lbls['carrier_jumping']}"
+        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Cooldown' and Context.route.get_waypoint(-1) == Context.router.system:
+            wp = f"{lbls['carrier_cooldown']}"
+
+        # Set an icon if appropriate
+        image:tk.PhotoImage|str = ''  # Empty image
+        if Context.route.refuel() == True: image=self.fuel_img
+
+        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40), image=image, compound=tk.RIGHT)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -781,14 +799,15 @@ class UI():
         results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         return json.loads(results.content)
 
+
     @catch_exceptions
     def cooldown_complete(self) -> None:
         """Show an informational messagebox indicating a carrier cooldown has completed."""
+        Debug.logger.debug(f"Cooldown complete notification triggered.")
+        self.update_waypoint()
         if self.parent == None: return
 
-        title = f"{NAME} – {hdrs['cooldown_title']}"
-        message = lbls['cooldown_complete']
-        try:
-            confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())
-        except Exception:
-            confirmDialog.showinfo(title, message)
+        # I don't love this. Overlay would be better.
+        title:str = f"{NAME} – {hdrs['cooldown_title']}"
+        message:str = lbls['cooldown_complete']
+        confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())

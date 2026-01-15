@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-from Router import prefs
 import myNotebook as nb # type: ignore
 
 from pathlib import Path
@@ -16,8 +15,6 @@ from Router.context import Context
 from Router.route_manager import Router
 from Router.csv import CSV
 from Router.ui import UI
-from Router.prefs import prefs_setup, prefs_display, prefs_save
-
 
 def plugin_start3(plugin_dir: str) -> str:
     # Debug Class
@@ -34,8 +31,6 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_useragent = f"{GH_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir))
     Context.updater.check_for_update(Context.plugin_version)
-
-    prefs_setup()
 
     return NAME
 
@@ -55,7 +50,6 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
     Context.ui = UI(parent)
-    prefs_setup()
 
     return Context.ui.frame
 
@@ -66,7 +60,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.system = system
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
-        case 'CarrierJumpRequested' | 'CarrierLocation' | 'CarrierJumpCancelled':
+        case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
             Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.set_ship(entry)
@@ -74,13 +68,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
-
-
-def plugin_prefs(parent: ttk.Notebook, cmdr: str, is_beta: bool) -> nb.Frame:
-    return prefs_display(parent)
-
-def prefs_changed(cmdr: str, is_beta: bool) -> None:
-    prefs_save()
 
 def __version__() -> str:
     return str(Context.plugin_version)

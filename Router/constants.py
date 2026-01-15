@@ -127,7 +127,10 @@ lbls:dict = {
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": "Jumps/hr",
-    "dist_per_hour": "Ly/hr"
+    "dist_per_hour": "Ly/hr",
+    "refuel": "Refuel",
+    "carrier_jumping": "Carrier Jump Scheduled",
+    "carrier_cooldown": "Carrier Cooldown"
 }
 
 # Tooltips

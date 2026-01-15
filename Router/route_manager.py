@@ -6,6 +6,8 @@ from pathlib import Path
 from time import time, sleep
 from threading import Thread
 
+from sqlalchemy import case
+
 from config import config # type: ignore
 from utils.debug import Debug, catch_exceptions
 
@@ -14,8 +16,9 @@ from .context import Context
 from .ship import Ship
 from .route import Route
 
-SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot':
-                  'Neutron', 'neutron_params': {}, 'galaxy_params': {},
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
+                  'carrier_id': '', 'carrier_state': 'Idle',
+                  'neutron_params': {}, 'galaxy_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': []}
 class Router():
     """
@@ -56,7 +59,8 @@ class Router():
         self.cancel_plot:bool = False
 
         # Carrier
-        self.carrier_jumping:bool = False
+        self.carrier_id:str = ''
+        self.carrier_state:str = 'Idle'
 
         self._load()
         self._initialized = True
@@ -103,6 +107,8 @@ class Router():
 
         Debug.logger.debug(f"Jumped called")
 
+        if Context.route.route == [] or Context.route.fleetcarrer == True: return
+
         Context.router.system = entry.get('StarSystem', system)
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
@@ -119,15 +125,40 @@ class Router():
 
     def carrier_event(self, entry:dict) -> None:
         """ Note carrier jumps for a cooldown notification """
-        if Context.route.route == []: return
+        Debug.logger.debug(f"Carrier event {entry.get('event', '')} State: {self.carrier_state}")
+        if Context.route.route == [] or Context.route.fleetcarrer == False: return
+
         match entry.get('event'):
-            case 'CarrierJumpRequested':
-                self.carrier_jumping = True
-            case 'CarrierJumpCancelled':
-                self.carrier_jumping = False
-            case 'CarrierLocation' if self.carrier_jumping == True and Context.ui.parent != None:
-                # Schedule the UI cooldown_complete notification
-                Context.ui.parent.after(300000, lambda: Context.ui.cooldown_complete())
+            case 'CarrierJumpRequest' if entry.get('SystemName', '') == Context.route.next_stop():
+                self.carrier_id = entry.get('CarrierID', '')
+                self.carrier_state = 'Jumping'
+                Debug.logger.debug(f"Carrier {self.carrier_id} jumping to {entry.get('SystemName', '')}")
+
+            case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
+                self.carrier_state = 'Cooldown'
+                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+
+            case 'CarrierLocation' if self.carrier_state == 'Jumping' and self.carrier_id == entry.get('CarrierID', '') and Context.ui.parent != None:
+                system:str = entry.get('StarSystem', '')
+                Debug.logger.debug(f"Carrier is in {system}")
+                if Context.route.update_route(0, system) < 0: return
+
+                Debug.logger.debug(f"Updated route")
+                self.carrier_state = 'Cooldown'
+                self.system = system
+                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.update_waypoint()
+
+            #case _ if self.carrier_id == entry.get('CarrierID', ''):
+            #    self.carrier_state = 'Idle'
+
+
+    def cooldown_complete(self) -> None:
+        """ Show an informational messagebox indicating a carrier cooldown has completed. """
+        Debug.logger.debug(f"Cooldown complete notification triggered.")
+        if Context.ui.parent == None: return
+        self.carrier_state = 'Idle'
+        Context.ui.cooldown_complete()
 
 
     def _store_history(self) -> None:

@@ -23,7 +23,7 @@ class Route:
         self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
-        if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs:
+        if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrer == False:
             jr:int = len(hdrs)
             if self.jc != None: jr = self.jc+1
 
@@ -93,14 +93,14 @@ class Route:
         """ Jumps per hour on this route """
         if self.jumps == []: return 0
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
-        return len(self.jumps) / td
+        return len(self.jumps) / td if td > 0 else 0
 
 
     def dist_per_hour(self) -> float:
         """ Ly per hour on this route """
         if self.jumps == []: return 0
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
-        return sum([j[2] for j in self.jumps]) / td
+        return sum([j[2] for j in self.jumps]) / td if td > 0 else 0
 
 
     def dist_remaining(self, offset:int|None = None) -> int:
@@ -118,6 +118,7 @@ class Route:
 
     def colind(self, which:str = '') -> int|None:
         """ Return the index of a given column, by default the system name column """
+        if self.hdrs == []: return None
 
         if which == '':
             for h in ['Body Name', 'body', 'System Name', 'system', 'name']:
@@ -139,6 +140,14 @@ class Route:
         if self.route == [] or self.offset + inc > len(self.route)-1 or self.offset+inc < 0: return tts["none"]
 
         return self.route[self.offset+inc][self.sc]
+
+
+    def refuel(self) -> bool:
+        """ Return whether we need to refuel at this waypoint """
+        ind:int|None = self.colind('Refuel') or self.colind('Restock')
+        if ind == None: return False
+        return self.route[self.offset][ind] != ''
+
 
     def update_route(self, direction:int = 0, system:str = '') -> int:
         """

@@ -134,7 +134,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
     if type == 'fixed': return str(value) + units
 
     # Empty, zero or false we return the default so the display isn't full of "No" and "0" etc.
-    if value == None or value == 0 or value == '' or value == False: return default
+    if value in [None, False, 'False', 'false', 'NO', 'No', 'no', 0, '0', '', ' ', 'Null', 'null']: return default
 
     ret:str = ""
     match type:

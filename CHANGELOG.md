@@ -3,25 +3,30 @@
 ## v1.6.0 2026-01-##
 
 ### New Features
-* Better fleetcarrier support with a jump cooldown notification
+* Improved fleetcarrier support with jump cooldown notification
 * More detailed help
+* Added a refuel reminder icon
 
+### Bug Fixes
+* Fixed error with displaying booleans on imported routes
+* Yet another go at Linux copy to clipboard
+* Made ship menus update dynamically
 
 ## v1.5.3 - 2026-01-03
 
-### Bug fixes
+### Bug Fixes
 * Fixed bug with True/False vs 1/0 which confused the API.
 
 
 ## v1.5.2 - 2026-01-03
 
-### Bug fixes
+### Bug Fixes
 * Fixed typo that caused Galaxy Plotter to use the Neutron Plotter's destination
 
 
 ## v1.5.1 - 2025-12-31
 
-### Bug fixes
+### Bug Fixes
 * Fixed galaxy router error in dark mode when ships hadn't been switched
 * Addressed more dark and transparent mode craziness
 
@@ -74,12 +79,12 @@
 ### New Features
 * Added CSV importing of various formats
 
-### Bug fixes
+### Bug Fixes
 * Fixed Linux copy to clipboard
 
 ## v0.3.1 - 2025-12-14
 
-### Bug fixes
+### Bug Fixes
 * Fixed the updater and version identification
 
 
@@ -97,7 +102,7 @@
 ### Changes
 * Work on the autoupdater
 
-### Bug fixes
+### Bug Fixes
 * Autocreation of data directory
 * Clearing of placeholder text on click
 

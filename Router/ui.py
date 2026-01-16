@@ -1,4 +1,7 @@
+import subprocess
 import os
+import sys
+import shutil
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -54,10 +57,10 @@ class UI():
 
         self.update:tk.Label
 
-        self.help_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
-        self.fuel_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
-        self.countdown_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
-        self.timer_img = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
+        self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
+        self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
+        #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
 
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
@@ -373,7 +376,6 @@ class UI():
         col += 2
 
         self.efficiency_slider:tk.Scale|ttk.Scale = scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
-        self.efficiency_slider.bind('<Button-3>', self.show_menu)
         Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col)
         self.efficiency_slider.set(params.get('efficiency', 60))
@@ -418,9 +420,17 @@ class UI():
 
     @catch_exceptions
     def show_menu(self, e) -> str:
-        #w = e.widget
-        #self.menu.tk.call("tk_popup", self.menu, e.x_root, e.y_root)
-        self.menu.post(e.x_root, e.y_root)
+        # Create right click menu
+        shipmenu:dict = {}
+        for id in Context.router.shiplist[:10]:
+            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+
+        if shipmenu != {}:
+            menu:tk.Menu = tk.Menu(self.neutron_fr, tearoff=0)
+            for m, f in shipmenu.items():
+                menu.add_command(label=m, command=partial(*f, m))
+            menu.post(e.x_root, e.y_root)
+
         return "break"
 
 
@@ -495,10 +505,13 @@ class UI():
             wp = f"{lbls['carrier_cooldown']}"
 
         # Set an icon if appropriate
+        width:int = max(len(wp)-2, 40)
         image:tk.PhotoImage|str = ''  # Empty image
-        if Context.route.refuel() == True: image=self.fuel_img
+        if Context.route.refuel() == True:
+            width = max(len(wp)-2, 37)
+            image=self.fuel_img
 
-        self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40), image=image, compound=tk.RIGHT)
+        self.waypoint_btn.configure(text=wp, width=width, image=image, compound=tk.RIGHT)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -593,9 +606,10 @@ class UI():
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
-        # Redraw the galaxy frame if we're on it so the ship list is rebuilt
-        if self.sub_fr == self.galaxy_fr:
-            self.show_frame('Galaxy')
+        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        self.shipdd['values'] = names
+        self.ship.set(ship.name)
+        self.set_entry(self.cargo_entry, str(Context.router.cargo))
 
 
     @catch_exceptions
@@ -771,6 +785,29 @@ class UI():
     def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
         if self.parent == None: return
+
+        # It's here and below so we don't have to go through all the checks on non-linux systems
+        if sys.platform not in ['linux', 'linux2']:
+            # Use the native clipboard method
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(text)
+            self.parent.update()
+            return
+
+        # Try to use a CLI clipboard tool first
+        clipboard_cli:str|None = os.getenv("EDMC_CLIPBOARD_CLI", None)
+        if shutil.which("wl-copy"):
+            clipboard_cli = "wl-copy"
+        elif shutil.which("xclip"):
+            clipboard_cli = "xclip -selection c"
+
+        if clipboard_cli != None:
+            commands:list = clipboard_cli.split()
+            command:subprocess.Popen[bytes] = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
+            subprocess.Popen(commands, stdin=command.stdout)
+            return
+
+        # Fallback to the tkinter version
         self.parent.clipboard_clear()
         self.parent.clipboard_append(text)
         self.parent.update()

@@ -88,7 +88,6 @@ class Router():
 
     def set_ship(self, entry:dict) -> None:
         """ Set the current ship details and update the UI """
-        Debug.logger.debug(f"Setting current ship to {entry.get('ShipID', '')} {entry.get('ShipName', '')} {entry.get('Ship', '')}")
         ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
@@ -109,8 +108,6 @@ class Router():
 
         Context.router.system = entry.get('StarSystem', system)
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
-
-        Debug.logger.debug(f"System: {Context.router.system} Destination: {Context.route.destination()}")
 
         # End of the line?
         if Context.router.system == Context.route.destination():

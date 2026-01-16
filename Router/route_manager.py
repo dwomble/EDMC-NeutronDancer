@@ -74,7 +74,7 @@ class Router():
         # Normalize ship_id to string since stored keys are strings
         sid = str(ship_id)
         if sid not in self.ships.keys():
-            Debug.logger.debug(f"ShipID {sid} not found in shipyard")
+            Debug.logger.info(f"ShipID {sid} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
@@ -103,9 +103,7 @@ class Router():
 
 
     def jumped(self, system:str, entry:dict) -> None:
-        """ Called after a jump in order to update the route, the UI etc."""
-
-        Debug.logger.debug(f"Jumped called")
+        """ Called after a carrier jump in order to update the route, the UI etc."""
 
         if Context.route.route == [] or Context.route.fleetcarrer == True: return
 
@@ -125,7 +123,6 @@ class Router():
 
     def carrier_event(self, entry:dict) -> None:
         """ Note carrier jumps for a cooldown notification """
-        Debug.logger.debug(f"Carrier event {entry.get('event', '')} State: {self.carrier_state}")
         if Context.route.route == [] or Context.route.fleetcarrer == False: return
 
         match entry.get('event'):
@@ -186,7 +183,7 @@ class Router():
                 self.dest = params['to']
                 self.neutron_params = params
             case _:
-                Debug.logger.debug(f"Unknown route type {which}")
+                Debug.logger.error(f"Unknown route type {which}")
                 return False
 
         self.last_plot = which
@@ -313,7 +310,7 @@ class Router():
         """ Save a route to a CSV file """
         try:
             if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
-                Debug.logger.debug(f"Failed to save route")
+                Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False
             return True

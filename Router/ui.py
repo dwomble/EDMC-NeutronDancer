@@ -263,7 +263,6 @@ class UI():
         if init == "" and names != []:
             init = names[0]
 
-        Debug.logger.debug(f"{init} {init} - {names}")
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
@@ -487,7 +486,6 @@ class UI():
 
         # We check if we're there rather than if there are no jumps remaining so
         # we don't show end of the road when someone steps forward/backward.
-        Debug.logger.debug(f"System: {Context.router.system} Dest: {Context.route.destination()} Jumps remaining: {Context.route.jumps_remaining()}")
         if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
             self.waypoint_btn.configure(text=lbls["route_complete"], image='', compound=tk.NONE)
             self._update_progbar()
@@ -670,7 +668,7 @@ class UI():
         params['supercharge_mult'] = self.multiplier.get()
         params['range'] = self.range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
-            Debug.logger.debug(f"Invalid range entry {params['range']}")
+            Debug.logger.info(f"Invalid range entry {params['range']}")
             self.show_frame('Neutron')
             self.range_entry.set_error_style()
             return
@@ -739,7 +737,7 @@ class UI():
     def show_error(self, error:str|None = None) -> None:
         """ Set and show the error text """
         if error == None: return
-        Debug.logger.debug(f"Showing error {error}")
+        Debug.logger.error(f"Showing error {error}")
         self.error_lbl['text'] = error
 
         self.error_lbl.grid()
@@ -825,7 +823,7 @@ class UI():
             return
 
         if not re.match(r"^\d+(\.\d+)?$", value):
-            Debug.logger.debug(f"Invalid range entry {value}")
+            Debug.logger.info(f"Invalid range entry {value}")
             self.range_entry.set_error_style()
         return
 

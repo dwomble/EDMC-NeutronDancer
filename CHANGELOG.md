@@ -15,12 +15,15 @@
 ## v1.5.3 - 2026-01-03
 
 ### Bug Fixes
+## v1.5.3 - 2026-01-03
+
+### Bug fixes
 * Fixed bug with True/False vs 1/0 which confused the API.
 
 
 ## v1.5.2 - 2026-01-03
 
-### Bug Fixes
+### Bug fixes
 * Fixed typo that caused Galaxy Plotter to use the Neutron Plotter's destination
 
 

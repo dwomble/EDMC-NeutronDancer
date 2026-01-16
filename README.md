@@ -73,14 +73,3 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
-
-
-
-
-
-
-
-
-
-
-

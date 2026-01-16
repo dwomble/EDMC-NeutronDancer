@@ -5,6 +5,7 @@ import sys
 import tkinter as tk
 from . import html_parser
 from .utils import RenderHTML
+from .markdown_converter import markdown_to_html
 
 VERSION = "0.3.1"
 
@@ -29,6 +30,12 @@ class _ScrolledText(tk.Text):
         self.vbar["command"] = self.yview
 
         tk.Text.__init__(self, self.frame, **kw)
+        if 'spacing1' not in kw: self.configure(spacing1=6)
+        if 'spacing2' not in kw: self.configure(spacing2=2)
+        if 'spacing3' not in kw: self.configure(spacing3=4)
+        if 'padx' not in kw: self.configure(padx=5)
+        if 'pady' not in kw: self.configure(pady=5)
+
         self.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         text_meths = vars(tk.Text).keys()
@@ -133,3 +140,53 @@ class HTMLLabel(HTMLText):
         super().set_html(*args, **kwargs)
         self.config(state=tk.DISABLED)
 
+
+def MDScrolledText(*args, markdown=None, **kwargs):
+    """
+    Create an HTML scrolled text widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLScrolledText.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLScrolledText(*args, html=html, **kwargs)
+
+
+def MDText(*args, markdown=None, **kwargs):
+    """
+    Create an HTML text widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLText.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLText(*args, html=html, **kwargs)
+
+
+def MDLabel(*args, markdown=None, **kwargs):
+    """
+    Create an HTML label widget from Markdown text.
+
+    Parameters:
+    - markdown: Markdown formatted string to convert and display.
+    - other args/kwargs are forwarded to HTMLLabel.
+    """
+    html = ""
+    if isinstance(markdown, str):
+        html = markdown_to_html(markdown)
+    elif isinstance(markdown, RenderHTML):
+        html = markdown.get_html()
+
+    return HTMLLabel(*args, html=html, **kwargs)

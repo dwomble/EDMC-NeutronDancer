@@ -4,6 +4,7 @@ HTML parser
 import os
 import webbrowser
 import tkinter as tk
+import re
 from tkinter import font
 from copy import deepcopy
 from PIL import Image, ImageTk
@@ -11,7 +12,6 @@ from .parser import HTMLParser
 from collections import OrderedDict
 import requests
 from io import BytesIO
-
 
 # __________________________________________________________________________________________________
 class Defs:
@@ -572,7 +572,7 @@ class HTMLTextParser(HTMLParser):
 
         if self.strip:
             if tag == HTML.Tag.BR:
-                self._insert_new_line()
+                self._insert_new_line(double=True)
             else:
                 self.html_tags.append(tag)
 
@@ -585,11 +585,13 @@ class HTMLTextParser(HTMLParser):
                 self._insert_new_line()
             elif tag in (HTML.Tag.UL, HTML.Tag.OL):
                 if len(self.list_tags) == 1:
-                    self._insert_new_line(double=True)
+                    self._insert_new_line(double=False)
                 else:
                     self._insert_new_line(double=False)
+            #elif re.search("^h", tag): # Double before a header
+            #    self._insert_new_line(double=True)
             else:
-                self._insert_new_line(double=True)
+                self._insert_new_line(double=False)
 
         self._w_tags_add()
 
@@ -698,9 +700,9 @@ class HTMLTextParser(HTMLParser):
         if tag in HTML.NEW_LINE_TAGS and self.strip:
             if tag in (HTML.Tag.DIV, HTML.Tag.UL, HTML.Tag.OL):
                 if not len(self.list_tags):
-                    self._insert_new_line(double=True)
+                    self._insert_new_line(double=False)
             else:
-                self._insert_new_line(double=True)
+                self._insert_new_line(double=False)
 
     def _w_tags_apply_all(self):
         # ------------------------------------------------------------------------------------------

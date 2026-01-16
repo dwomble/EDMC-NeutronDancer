@@ -1,4 +1,7 @@
+import subprocess
 import os
+import sys
+import shutil
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -13,13 +16,14 @@ from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
-from utils.tkhtmlview import HTMLScrolledText
+from utils.tkhtmlview import HTMLScrolledText, MDScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
+
 class UI():
     """
         The main UI for the router.
@@ -52,6 +56,12 @@ class UI():
         self.frame.grid(sticky=tk.NSEW)
 
         self.update:tk.Label
+
+        self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
+        self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
+        #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
+
 
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
         self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
@@ -96,7 +106,7 @@ class UI():
     @catch_exceptions
     def cancel_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
-        #webbrowser.open(GIT_LATEST)
+        #webbrowser.open(GH_LATEST)
         Context.updater.install_update = False
         self.update.destroy()
 
@@ -167,27 +177,32 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
-        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_warning())
+        # Use help.png image if available (prefer transparent PNG), fallback to text '!'
+        r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, width=3, cursor="hand2", command=lambda: self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
 
     @catch_exceptions
-    def _show_warning(self) -> None:
-        """ Spiel about the galaxy plotter """
-        if hasattr(self, 'warning') and self.warning.winfo_exists():
-            self.warning.lift()
+    def _show_help(self) -> None:
+        """ Help window """
+
+        if self.parent == None: return
+
+        if hasattr(self, 'help') and self.help.winfo_exists():
+            self.help.lift()
             return
 
-        file:Path = Path(Context.plugin_dir, ASSET_DIR, "warning.html")
-        html:str = ""
-        with open(file, encoding="utf-8") as infile:
-            html = infile.read()
+        self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
+        self.help.title(f"{NAME} – {lbls['help']}")
+        self.help.geometry("650x750")
 
-        self.warning:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
-        self.warning.title(f"{NAME} – {lbls['warning']}")
-        self.warning.geometry("550x650")
-        html_label = HTMLScrolledText(self.warning, html=html)
+        file:Path = Path(Context.plugin_dir, ASSET_DIR, "help.md")
+        text:str = ""
+        with open(file, encoding="utf-8") as infile:
+            text = infile.read()
+
+        html_label:HTMLScrolledText = MDScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
 
@@ -242,11 +257,14 @@ class UI():
 
         # Row three
         row += 1; col = 0
-        shiplist:list = [s.name for s in Context.router.ships.values()]
-        if shiplist == []: self.show_error(errs["no_ships"])
-        init:str = params.get('ship', '') if params.get('ship', '') in shiplist else shiplist[0] if len(shiplist) else ""
+        if Context.router.shiplist == []: self.show_error(errs["no_ships"])
+        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        init:str = params.get('ship_build', {}).get('ShipName', '')
+        if init == "" and names != []:
+            init = names[0]
+
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
-        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=shiplist, width=10)
+        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
@@ -325,10 +343,8 @@ class UI():
                 destmenu[sys] = [self.menu_callback, 'dest']
 
         # Create right click menu
-        for id in Context.router.used_ships:
-            if id in Context.router.ships.keys():
-                ship:Ship = Context.router.ships[id]
-                shipmenu[ship.name] = [self.menu_callback, 'ship']
+        for id in Context.router.shiplist[:10]:
+            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
 
         if shipmenu != {}:
             self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
@@ -359,7 +375,6 @@ class UI():
         col += 2
 
         self.efficiency_slider:tk.Scale|ttk.Scale = scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
-        self.efficiency_slider.bind('<Button-3>', self.show_menu)
         Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col)
         self.efficiency_slider.set(params.get('efficiency', 60))
@@ -404,9 +419,17 @@ class UI():
 
     @catch_exceptions
     def show_menu(self, e) -> str:
-        #w = e.widget
-        #self.menu.tk.call("tk_popup", self.menu, e.x_root, e.y_root)
-        self.menu.post(e.x_root, e.y_root)
+        # Create right click menu
+        shipmenu:dict = {}
+        for id in Context.router.shiplist[:10]:
+            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+
+        if shipmenu != {}:
+            menu:tk.Menu = tk.Menu(self.neutron_fr, tearoff=0)
+            for m, f in shipmenu.items():
+                menu.add_command(label=m, command=partial(*f, m))
+            menu.post(e.x_root, e.y_root)
+
         return "break"
 
 
@@ -460,18 +483,33 @@ class UI():
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
 
+
         # We check if we're there rather than if there are no jumps remaining so
         # we don't show end of the road when someone steps forward/backward.
         if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
-            self.waypoint_btn.configure(text=lbls["route_complete"])
-        else:
-            wp:str = Context.route.next_stop()
-            if Context.route.jumps_to_wp() != 0:
-                wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
-            self.waypoint_btn.configure(text=wp, width=max(len(wp)-2, 40))
+            self.waypoint_btn.configure(text=lbls["route_complete"], image='', compound=tk.NONE)
+            self._update_progbar()
+            return
 
+        wp:str = Context.route.next_stop()
+        self.ctc(wp)
+        if Context.route.jumps_to_wp() != 0:
+            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
-        self.ctc(Context.route.next_stop())
+
+        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Jumping' and Context.route.get_waypoint(-1) == Context.router.system:
+            wp = f"{lbls['carrier_jumping']}"
+        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Cooldown' and Context.route.get_waypoint(-1) == Context.router.system:
+            wp = f"{lbls['carrier_cooldown']}"
+
+        # Set an icon if appropriate
+        width:int = max(len(wp)-2, 40)
+        image:tk.PhotoImage|str = ''  # Empty image
+        if Context.route.refuel() == True:
+            width = max(len(wp)-2, 37)
+            image=self.fuel_img
+
+        self.waypoint_btn.configure(text=wp, width=width, image=image, compound=tk.RIGHT)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -566,9 +604,10 @@ class UI():
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
-        # Redraw the galaxy frame if we're on it so the ship list is rebuilt
-        if self.sub_fr == self.galaxy_fr:
-            self.show_frame('Galaxy')
+        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        self.shipdd['values'] = names
+        self.ship.set(ship.name)
+        self.set_entry(self.cargo_entry, str(Context.router.cargo))
 
 
     @catch_exceptions
@@ -629,7 +668,7 @@ class UI():
         params['supercharge_mult'] = self.multiplier.get()
         params['range'] = self.range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
-            Debug.logger.debug(f"Invalid range entry {params['range']}")
+            Debug.logger.info(f"Invalid range entry {params['range']}")
             self.show_frame('Neutron')
             self.range_entry.set_error_style()
             return
@@ -698,7 +737,7 @@ class UI():
     def show_error(self, error:str|None = None) -> None:
         """ Set and show the error text """
         if error == None: return
-        Debug.logger.debug(f"Showing error {error}")
+        Debug.logger.error(f"Showing error {error}")
         self.error_lbl['text'] = error
 
         self.error_lbl.grid()
@@ -715,7 +754,6 @@ class UI():
         def update(ind) -> None:
             if self.busy_fr == None or self.show_spinner == False: return
             self.busyimg.configure(image=self.frames[ind])
-            Debug.logger.debug(f"Showing {ind}")
             self.busy_fr.after(150, update, (ind + 1) % self.frameCnt)
 
         self.show_spinner:bool = enable
@@ -745,6 +783,29 @@ class UI():
     def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
         if self.parent == None: return
+
+        # It's here and below so we don't have to go through all the checks on non-linux systems
+        if sys.platform not in ['linux', 'linux2']:
+            # Use the native clipboard method
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(text)
+            self.parent.update()
+            return
+
+        # Try to use a CLI clipboard tool first
+        clipboard_cli:str|None = os.getenv("EDMC_CLIPBOARD_CLI", None)
+        if shutil.which("wl-copy"):
+            clipboard_cli = "wl-copy"
+        elif shutil.which("xclip"):
+            clipboard_cli = "xclip -selection c"
+
+        if clipboard_cli != None:
+            commands:list = clipboard_cli.split()
+            command:subprocess.Popen[bytes] = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
+            subprocess.Popen(commands, stdin=command.stdout)
+            return
+
+        # Fallback to the tkinter version
         self.parent.clipboard_clear()
         self.parent.clipboard_append(text)
         self.parent.update()
@@ -762,7 +823,7 @@ class UI():
             return
 
         if not re.match(r"^\d+(\.\d+)?$", value):
-            Debug.logger.debug(f"Invalid range entry {value}")
+            Debug.logger.info(f"Invalid range entry {value}")
             self.range_entry.set_error_style()
         return
 
@@ -772,3 +833,16 @@ class UI():
         """ Function called by Autocompleter """
         results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         return json.loads(results.content)
+
+
+    @catch_exceptions
+    def cooldown_complete(self) -> None:
+        """Show an informational messagebox indicating a carrier cooldown has completed."""
+        Debug.logger.debug(f"Cooldown complete notification triggered.")
+        self.update_waypoint()
+        if self.parent == None: return
+
+        # I don't love this. Overlay would be better.
+        title:str = f"{NAME} – {hdrs['cooldown_title']}"
+        message:str = lbls['cooldown_complete']
+        confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())

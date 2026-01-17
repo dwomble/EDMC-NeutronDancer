@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.6.0 2026-01-##
+## v1.6.0 2026-01-16
 
 ### New Features
 * Improved fleetcarrier support with jump cooldown notification
@@ -8,13 +8,11 @@
 * Added a refuel reminder icon
 
 ### Bug Fixes
-* Fixed error with displaying booleans on imported routes
-* Yet another go at Linux copy to clipboard
+* Fixed error with displaying booleans on imported routes [Issue 8](https://github.com/dwomble/EDMC-NeutronDancer/issues/8)
+* Yet another go at Linux copy to clipboard [Issue 8](https://github.com/dwomble/EDMC-NeutronDancer/issues/8)
 * Made ship menus update dynamically
 
-## v1.5.3 - 2026-01-03
 
-### Bug Fixes
 ## v1.5.3 - 2026-01-03
 
 ### Bug fixes

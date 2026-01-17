@@ -64,13 +64,11 @@ class UI():
 
 
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
-        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
+        self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
+        self.hide_error()
 
         self.router:tk.StringVar = tk.StringVar()
         self.router.set('Neutron')  # Set default value
-
-        self.error_txt:tk.StringVar = tk.StringVar()
-        self.hide_error()
 
         self.progbar:ttk.Progressbar # Overall progress bar
 
@@ -739,8 +737,7 @@ class UI():
         if error == None: return
         Debug.logger.error(f"Showing error {error}")
         self.error_lbl['text'] = error
-
-        self.error_lbl.grid()
+        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
 
 
     def hide_error(self) -> None:
@@ -815,7 +812,6 @@ class UI():
     def check_range(self, one, two, three) -> None:
         """ Validate the range entry """
 
-        self.hide_error()
         self.range_entry.set_default_style()
 
         value:str = self.range_entry.var.get()

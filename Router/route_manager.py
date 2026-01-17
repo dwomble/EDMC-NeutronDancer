@@ -353,6 +353,8 @@ class Router():
             })
 
             Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
+            dir:Path = Path(Context.plugin_dir) / DATA_DIR
+            dir.mkdir(parents=True, exist_ok=True)
             file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
 
             with open(file, 'w') as outfile:

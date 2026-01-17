@@ -23,8 +23,10 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
     1. *Optimistic* Prioritises Neutron jumps. Penalises areas of the galaxy which have large gaps between neutron stars. Typically generates the fastest route with fewest total jumps.
     1. *Pessimistic* Prioritises calculation speed. Overestimates the average star distance to filter out routes. This means it calculates routes faster but the routes are typically less optimal.
 
+**Notes**
+1. In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
 
-**Note** Due to the complexity of the galaxy plotter and the calculations involved a route plotted in the Neutron Dancer may vary slightly from one created through the web interface.
+2. Due to the complexity of the galaxy plotter and the calculations involved a route plotted in the Neutron Dancer may vary *slightly* from one created through the web interface.
 
 
 ## Importing routes

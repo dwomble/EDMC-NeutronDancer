@@ -41,6 +41,8 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 
 <img width="437" height="232" alt="Screenshot 2025-12-27 165549" src="https://github.com/user-attachments/assets/7eb44a7e-5233-41b8-ada5-3dd39f9fd35a" />
 
+**Note** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
+
 
 ### CSV Import
 

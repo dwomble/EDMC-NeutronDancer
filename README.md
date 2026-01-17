@@ -1,3 +1,5 @@
+<img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" />
+
 # Navl's Neutron Dancer
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
@@ -77,4 +79,5 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
 

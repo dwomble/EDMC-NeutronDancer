@@ -58,6 +58,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'Startup':
             Context.router.system = system
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
+            Context.router.system = system
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
             Context.router.carrier_event(entry)

@@ -215,7 +215,7 @@ class UI():
         params:dict = Context.router.galaxy_params
 
         # Define the popup menu additions
-        srcmenu:dict = {}
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
 
         if Context.router.system != '':

@@ -5,7 +5,6 @@ from dataclasses import dataclass, asdict
 
 import tkinter as tk
 from tkinter import ttk, colorchooser as tkColorChooser
-from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
 import myNotebook as nb # type: ignore
 
 from config import config # type:ignore
@@ -14,6 +13,8 @@ from .debug import Debug
 
 # Unique name for this plugin.
 PLUGIN="EDMC-NeutronDancer"
+
+TAG_OVERLAY_HIGHLIGHT: str = "<H>"
 
 DEF_OVERLAY_WIDTH = 1280  # Virtual screen width of overlay
 DEF_OVERLAY_HEIGHT = 960  # Virtual screen height of overlay
@@ -27,19 +28,23 @@ DEF_PANEL_MAX_LINES = 30
 @dataclass
 class Frame:
     """ Details of a single overlay frame """
-    name:str
-    x:int
-    y:int
-    w:int
-    h:int
-    centered_x:bool
-    centered_y:bool
-    ttl:int
-    title_colour:str
-    text_colour:str
-    background:str
-    border:str
-    border_width:int
+    name:str = ''
+    enabled:bool = True
+    x:int = 0
+    y:int = 0
+    w:int = 0
+    h:int = 0
+    centered_x:bool = False
+    centered_y:bool = False
+    ttl:int = 0
+    title_colour:str = ''
+    text_colour:str = ''
+    background:str = ''
+    border:str = ''
+    border_colour:str = ''
+    border_width:int = 0
+    anchor:str = "nw"
+    justification:str = "left" if centered_x == False else "center"
     text_size:str = "normal"
 
 class OverlayManager:
@@ -245,28 +250,26 @@ class OverlayManager:
     def _setup_plugin_groups(self):
         """ One time setup for EDMCModernOverlay Groups """
         if self.is_legacy: return
-
-        overlay_frame_names = self.bgstally.config.overlay_frame_names()
+        
         background_color = None
         background_border_color = None
         background_border_width = 3 # This is a border that extends the background beyond the boundaries of the payload group.
         use_background = True
         progress_bar_frames = {"tw"}
 
-        for frame_name in overlay_frame_names:
-            id_prefix_group = f"BGS-Tally {frame_name.capitalize()}"
+        for frame_name, fi in self.frames.items():
+            id_prefix_group = f"{PLUGIN} {frame_name.capitalize()}"
             base_id_prefixes = [f"{PLUGIN}-msg-{frame_name}-"]
             if frame_name in progress_bar_frames:
                 base_id_prefixes.append(f"{PLUGIN}-bar-{frame_name}")
 
-            fi: dict | None = self.bgstally.config.overlay_frame(frame_name)
             if fi is not None:
-                background_color = fi['fill_colour']
-                background_border_color = fi['border_colour']
-                justification = fi.get("justification", "left")
-                anchor = fi.get("anchor", "nw")
-                x_center = fi.get("x_center", False)
-                y_center = fi.get("y_center", False)
+                background_color = fi.background
+                background_border_color = fi.border_colour
+                justification = fi.justification
+                anchor = fi.anchor
+                x_center = fi.centered_x
+                y_center = fi.centered_y
 
                 # Make anchor assumptions based on x_center and y_center configs
                 if x_center and y_center:
@@ -289,7 +292,7 @@ class OverlayManager:
             if use_background:
                 id_prefixes = list(base_id_prefixes)
                 if self._define_plugin_group(
-                    plugin_group=self.bgstally.plugin_name,
+                    plugin_group=PLUGIN,
                     matching_prefixes=["{PLUGIN}-"],
                     id_prefix_group=id_prefix_group,
                     id_prefixes=id_prefixes,
@@ -312,7 +315,7 @@ class OverlayManager:
             id_prefixes = list(base_id_prefixes)
             id_prefixes.append({"value": f"{PLUGIN}-frame-{frame_name}", "matchMode": "exact"}) # For older Modern Overlay versions without background support.
             if not self._define_plugin_group(
-                plugin_group=self.bgstally.plugin_name,
+                plugin_group=PLUGIN,
                 matching_prefixes=["{PLUGIN}-"],
                 id_prefix_group=id_prefix_group,
                 id_prefixes=id_prefixes,
@@ -421,55 +424,62 @@ class OverlayManager:
 
     def _load_frames(self):
         """ Read frame data from the EDMC config. """
-        prefs:dict = json.loads(config.get(f"{PLUGIN}_overlay_frames")):
+        prefs:dict = json.loads(config.get(f"{PLUGIN}_overlay_frames"))
         for name in self.frames.keys():
             if name in prefs: self.frames[name] = prefs[name]
 
 
     def prefs_display(self, parent:ttk.Notebook) -> nb.Frame:
         """ EDMC settings pane hook. Displays one frame per row. """
+    
+        if self.edmcoverlay == None or self.frames == {}: return
 
-        def color_picker() -> None:
-            (_, color) = tkColorChooser.askcolor(Context.overlay_color.get(), title='Overlay Color', parent=Context.parent)
+        def color_picker(parent:nb.Frame) -> None:
+            (_, color) = tkColorChooser.askcolor(fi.text_colour, title='Overlay Color', parent=parent)
 
             if color:
-                Context.overlay_color.set(color)
+                fi.text_colour = color
                 if colour_button is not None:
                     colour_button['foreground'] = color
 
         def validate_int(val:str) -> bool:
             return True if val.isdigit() or val == '' else False
 
-        if self.edmcoverlay == None or self.frames == {}: return
+        fr:nb.Frame = nb.Frame(parent)
+        for frame, fi in self.frames.items():
+            Debug.logger.debug(f"Overlay Frame: {prefsfr} - {fi}")
 
-        frame:nb.Frame = nb.Frame(parent)
-        frame.columnconfigure(6, weight=1)
-        frame.rowconfigure(60, weight=1)
+            prefsfr:nb.Frame = nb.Frame(fr)
+            prefsfr.columnconfigure(6, weight=1)
+            prefsfr.rowconfigure(60, weight=1)
 
-        validate:tuple = (frame.register(validate_int), '%P')
+            validate:tuple = (prefsfr.register(validate_int), '%P')
 
-        row:int = 0
-        nb.Label(frame, text=Context.plugin_name, justify=tk.LEFT, font=BOLD).grid(row=row, column=0, columnspan=2, padx=10, pady=10, sticky=tk.NW)
-        HyperlinkLabel(frame, text=f"{cnf['version']} {Context.plugin_version}", url=f"{GIT_RELEASES}/v{Context.plugin_version}", justify=tk.RIGHT).grid(row=row, column=2, columnspan=5, padx=10, pady=10, sticky=tk.NE)
+            row:int = 0
+            row += 1
+            ttk.Separator(prefsfr).grid(row=row, columnspan=7, pady=(0,5), sticky=tk.EW)
 
-        row += 1
-        ttk.Separator(frame).grid(row=row, columnspan=7, pady=(0,5), sticky=tk.EW)
+            row += 1
+            nb.Label(prefsfr, text=frame, justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW)
 
-        row += 1
-        nb.Label(frame, text=cnf['overlay'], justify=tk.LEFT, font=BOLD).grid(row=row, column=0, padx=10, sticky=tk.NW)
+            row += 1; col:int = 0
+            nb.Checkbutton(prefsfr, text="Enable", variable=fi.enabled).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W); col += 1
 
-        row += 1; col:int = 0
-        nb.Checkbutton(frame, text=cnf['overlay_enable'], variable=Context.overlay).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W); col += 1
+            nb.Label(prefsfr, text="Location").grid(row=row, column=col, padx=10, pady=5, sticky=tk.W); col += 1
 
-        nb.Label(frame, text=cnf['overlay_position']).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W); col += 1
+            nb.Label(prefsfr, text='X').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(prefsfr, text=fi.x, textvariable=fi.x, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-        nb.Label(frame, text=cnf['X']).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-        nb.EntryMenu(frame, text=Context.overlay_x.get(), textvariable=Context.overlay_x, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(prefsfr, text='Y').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(prefsfr, text=fi.y, textvariable=fi.y, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-        nb.Label(frame, text=cnf['Y']).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-        nb.EntryMenu(frame, text=Context.overlay_y.get(), textvariable=Context.overlay_y, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(prefsfr, text='W').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(prefsfr, text=fi.w, textvariable=fi.w, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-        colour_button:tk.Button = tk.Button(frame, text=cnf['overlay_colour'], foreground=Context.overlay_color.get(), command=lambda: color_picker())
-        colour_button.grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
+            nb.Label(prefsfr, text='H').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(prefsfr, text=fi.h, textvariable=fi.h, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-        return frame
+            colour_button:tk.Button = tk.Button(prefsfr, text="Color", foreground=fi.text_colour, background=fi.background, command=lambda: color_picker(prefsfr))
+            colour_button.grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
+
+        return prefsfr

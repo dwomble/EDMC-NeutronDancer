@@ -1,3 +1,5 @@
+<img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" />
+
 # Navl's Neutron Dancer
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
@@ -5,7 +7,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NEutronDancer/releases/latest)
 
-This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC]() and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
+This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC](https://github.com/EDCD/EDMarketConnector) and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
 The original goal of this fork was support for the new 6x overcharge of the Caspian and a cleaner UI. It has grown beyond that into a significant rewrite.
 
@@ -21,7 +23,9 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 ## Usage
 
-By default Neutron Dancer starts in a minimized mode to be unobtrusive when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
+<img width="481" height="53" alt="neutron_dance" src="https://github.com/user-attachments/assets/32a2034a-06f6-4805-87c6-dab7fbddd57a" />
+
+By default Neutron Dancer starts in a minimized mode in order to be as unobtrusive as possible when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
 
 Neutron dancer supports two route creation methods:
 1. Direct plotting from Spansh Neutron Router or Spansh Galaxy Router
@@ -39,7 +43,7 @@ Next click **Calculate** to query Spansh and plot your route.
 
 This works the same as the Neutron Plotter but Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
 
-<img width="437" height="232" alt="Screenshot 2025-12-27 165549" src="https://github.com/user-attachments/assets/7eb44a7e-5233-41b8-ada5-3dd39f9fd35a" />
+<img width="439" height="239" alt="Screenshot 2026-01-16 173246" src="https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f" />
 
 **Note** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
 
@@ -75,3 +79,6 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
+
+
+

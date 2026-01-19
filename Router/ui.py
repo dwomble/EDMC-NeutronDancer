@@ -128,10 +128,14 @@ class UI():
                 self.update_waypoint()
 
             case 'Neutron':
+                self.source_ac.set_text(self.gal_source_ac.get(), False) # Update when we switch views
+                self.dest_ac.set_text(self.gal_dest_ac.get(), False) # Update when we switch views
                 self.sub_fr = self.neutron_fr
                 self.router.set('Neutron')
 
             case 'Galaxy':
+                self.gal_source_ac.set_text(self.source_ac.get(), False) # Update when we switch views
+                self.gal_dest_ac.set_text(self.dest_ac.get(), False) # Update when we switch views
                 self.sub_fr = self.galaxy_fr
                 self.router.set('Galaxy')
 
@@ -328,7 +332,7 @@ class UI():
         params:dict = Context.router.neutron_params
 
         # Define the popup menu additions
-        srcmenu:dict = {}
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
         shipmenu:dict = {}
 

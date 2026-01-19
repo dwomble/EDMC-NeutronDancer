@@ -176,7 +176,7 @@ class UI():
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
-        r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, width=3, cursor="hand2", command=lambda: self._show_help())
+        r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 

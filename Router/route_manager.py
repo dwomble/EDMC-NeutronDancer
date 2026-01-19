@@ -6,8 +6,6 @@ from pathlib import Path
 from time import time, sleep
 from threading import Thread
 
-from sqlalchemy import case
-
 from config import config # type: ignore
 from utils.debug import Debug, catch_exceptions
 

@@ -1,4 +1,7 @@
+import subprocess
 import os
+import sys
+import shutil
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -167,13 +170,13 @@ class UI():
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
-        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_warning())
+        r3:tk.Button|ttk.Button = button(sfr, text="!", cursor="hand2", width=3, command=lambda:self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
 
     @catch_exceptions
-    def _show_warning(self) -> None:
+    def _show_help(self) -> None:
         """ Spiel about the galaxy plotter """
 
         if self.parent == None: return
@@ -187,10 +190,10 @@ class UI():
         with open(file, encoding="utf-8") as infile:
             html = infile.read()
 
-        self.warning:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
-        self.warning.title(f"{NAME} – {lbls['warning']}")
-        self.warning.geometry("550x650")
-        html_label = HTMLScrolledText(self.warning, html=html)
+        self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
+        self.help.title(f"{NAME} – {lbls['warning']}")
+        self.help.geometry("550x650")
+        html_label = HTMLScrolledText(self.help, html=html)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
 
@@ -748,6 +751,28 @@ class UI():
     def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
         if self.parent == None: return
+
+        # It's here and below so we don't have to go through all the checks on non-linux systems
+        if sys.platform not in ['linux', 'linux2']:
+            # Use the native clipboard method
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(text)
+            self.parent.update()
+            return
+
+        # Try to use a CLI clipboard tool first
+        clipboard_cli:str|None = os.getenv("EDMC_NEUTRON_DANCER_XCLIP")
+        if shutil.which("xclip"):
+            clipboard_cli = "xclip -selection c"
+        if shutil.which("wl-clip"):
+            clipboard_cli = "wl-copy"
+        if clipboard_cli != None:
+            commands:list = clipboard_cli.split()
+            command = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
+            subprocess.Popen(commands, stdin=command.stdout)
+            return
+
+        # Fallback to the tkinter version
         self.parent.clipboard_clear()
         self.parent.clipboard_append(text)
         self.parent.update()

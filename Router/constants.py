@@ -89,6 +89,7 @@ hdrs:dict = {
 # Text labels
 lbls:dict = {
     "warning": "Warning",
+    "help": "Help",
     "route": "Route",
     "plot_title": "I'm just burnin'…",
     "no_route": "No route planned",

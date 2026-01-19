@@ -4,14 +4,28 @@ from config import config  # type: ignore
 
 class Placeholder(tk.Entry):
     """
-        An Entry widget with placeholder text functionality
+        A reusable Entry widget with placeholder text and dropdown menu functionality.
         Borrowed/stolen and modified from https://github.com/CMDR-Kiel42/EDMC_SpanshRouter
+
+        It takes the same parameters as a tk.Entry object plus:
+            :param placeholder: The placeholder text to show when the entry is empty
+            :param menu: A dictionary of right click menu items in the form {'Menu Item': (function, arg1, arg2, ...)}
+            :param placeholder_color: The color of the placeholder text (default: grey)
+            :param error_color: The color of the text when in error state (default: red)
     """
     def __init__(self, parent, placeholder, **kw) -> None:
         menu:dict = {}
         if 'menu' in kw:
             menu = kw['menu']
             del kw['menu']
+        self.placeholder_color = "grey"
+        if kw.get('placeholder_color') != None:
+            self.placeholder_color = kw.get('placeholder_color')
+            del kw['placeholder_color']
+        self.error_color = "red"
+        if kw.get('error_color') != None:
+            self.error_color = kw.get('error_color')
+            del kw['error_color']
 
         if parent is not None:
             tk.Entry.__init__(self, parent, **kw)
@@ -20,9 +34,7 @@ class Placeholder(tk.Entry):
         self["textvariable"] = self.var
 
         self.placeholder = placeholder
-        self.placeholder_color = "grey"
         # Create right click menu
-        # @TODO: Use the _rc_menu_install function instead but generalize it for this and EntryPlus use
         self.menu:tk.Menu = tk.Menu(parent, tearoff=0)
         self.menu.add_command(label="Cut")
         self.menu.add_command(label="Copy")
@@ -68,7 +80,7 @@ class Placeholder(tk.Entry):
 
     def set_error_style(self, error=True) -> None:
         if error:
-            self['fg'] = "red"
+            self['fg'] = self.error_color
         else:
             self.set_default_style()
 

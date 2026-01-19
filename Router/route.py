@@ -146,7 +146,6 @@ class Route:
         """ Return whether we need to refuel at this waypoint """
         ind:int|None = self.colind('Refuel') or self.colind('Restock')
         if ind == None: return False
-        Debug.logger.debug(f"Refuel check at {self.get_waypoint()} = [{self.route[self.offset][ind]}] {type(self.route[self.offset][ind])}")
         return self.route[self.offset][ind] in [True, 'True', 'true', 'YES', 'Yes', 'yes', 1, '1']
 
 

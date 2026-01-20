@@ -595,36 +595,35 @@ class UI():
                         return
 
 
-    def set_entry(self, which, text:str) -> None:
-        """ Set a system """
+    def set_entry(self, which:Autocompleter|Placeholder|None, value:str) -> None:
+        """ Set an autocompleter or placeholder entry's text and style """
         if which == None: return
         which.delete(0, tk.END)
-        which.insert(0, text)
+        which.insert(0, value)
         which.set_default_style()
 
 
     def switch_ship(self, ship:Ship) -> None:
-        """ Set the range display """
+        """ Update the plotter items when the ship changes """
 
+        # Neutron plotter
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
-        # Update the ship dropdown but not for dark mode because tk sucks balls.
-        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
-        if isinstance(self.shipdd, ttk.Combobox):
-            self.shipdd['values'] = names
-        else:
-            menu:tk.Menu = self.shipdd["menu"]
-            menu.delete(0, "end")
-
-            for choice in names:
-                menu.add_command(label=choice,
-                                 command=lambda value=choice: self.ship.set(value))
-        #    self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(self.galaxy_fr, self.ship, values=names, width=10)
-        #    self.shipdd.grid(row=5, column=0, padx=5, pady=5)
-
+        # Galaxy plotter
         self.ship.set(ship.name)
         self.set_entry(self.cargo_entry, str(Context.router.cargo))
+
+        # Ship dropdown
+        ships:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        if isinstance(self.shipdd, ttk.Combobox):
+            self.shipdd['values'] = ships
+            return
+        
+        # TK OptionMenu sucks for updating values, so we have to do it manually
+        menu:tk.Menu = self.shipdd["menu"]
+        menu.delete(0, "end")
+        [menu.add_command(label=ship, command=lambda item=ship: self.ship.set(item)) for ship in ships]
 
 
     @catch_exceptions

@@ -10,6 +10,7 @@
 
 ### Bug Fixes
 * Ensured current system is always set and saved [Issue 11](https://github.com/dwomble/EDMC-NeutronDancer/issues/11)
+* Fixed runtime with changing optionmenu menu items that occurred in dark mode
 
 
 ## v1.6.1 2026-01-18

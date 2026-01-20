@@ -609,8 +609,20 @@ class UI():
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
+        # Update the ship dropdown but not for dark mode because tk sucks balls.
         names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
-        self.shipdd['values'] = names
+        if isinstance(self.shipdd, ttk.Combobox):
+            self.shipdd['values'] = names
+        else:
+            menu:tk.Menu = self.shipdd["menu"]
+            menu.delete(0, "end")
+
+            for choice in names:
+                menu.add_command(label=choice,
+                                 command=lambda value=choice: self.ship.set(value))
+        #    self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(self.galaxy_fr, self.ship, values=names, width=10)
+        #    self.shipdd.grid(row=5, column=0, padx=5, pady=5)
+
         self.ship.set(ship.name)
         self.set_entry(self.cargo_entry, str(Context.router.cargo))
 

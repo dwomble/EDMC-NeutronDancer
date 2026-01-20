@@ -288,6 +288,7 @@ class UI():
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         Tooltip(self.cargo_entry, tts["cargo"])
 
+        # Row 4
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
@@ -308,8 +309,7 @@ class UI():
         self.time_limit.grid(row=row, column=col, pady=5)
         self.time_limit.set(params.get('max_time', 60))
 
-
-        # Row ?
+        # Row 5
         row += 1; col = 0
         btn_frame:tk.Frame = frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)

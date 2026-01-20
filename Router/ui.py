@@ -170,9 +170,9 @@ class UI():
 
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:tk.Frame = frame(parent)
-        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"], justify=tk.CENTER, font=BOLD)
+        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
         lbl.pack(anchor=tk.CENTER)
-        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0])
+        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
         cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
         cancel.pack(anchor=tk.CENTER)
@@ -757,14 +757,14 @@ class UI():
         """ Activate/deactivate the plot gui (show a progress icon) """
         def update(ind) -> None:
             if self.busy_fr == None or self.show_spinner == False: return
-            self.busyimg.configure(image=self.frames[ind])
+            self.busyimg.configure(image=self.frames[ind], anchor=tk.CENTER)
             self.busy_fr.after(self.frameSpd, update, (ind + 1) % self.frameCnt)
 
         self.show_spinner:bool = enable
         # Show the busy image
         if enable == True:
             self.sub_fr.grid_remove()
-            self.busy_fr.grid(row=2, column=0, padx=150, pady=10)
+            self.busy_fr.grid(row=2, column=0, padx=10, pady=10,sticky=tk.NSEW)
             self.busy_fr.after(250, update, 0)
             return
 

@@ -170,8 +170,8 @@ class UI():
 
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:tk.Frame = frame(parent)
-        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
-        lbl.pack(anchor=tk.CENTER)
+        self.route_lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
+        self.route_lbl.pack(anchor=tk.CENTER)
         self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
         cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
@@ -775,7 +775,8 @@ class UI():
         # Show the busy image
         if enable == True:
             self.sub_fr.grid_remove()
-            self.busy_fr.grid(row=2, column=0, padx=10, pady=10,sticky=tk.NSEW)
+            self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
+            self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)
             self.busy_fr.after(250, update, 0)
             return
 

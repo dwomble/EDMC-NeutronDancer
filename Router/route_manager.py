@@ -153,12 +153,15 @@ class Router():
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
-
+        Debug.logger.debug(f"Storing route history {self.src}, {self.dest}")
         if self.src != '' and self.src:
-            self.history.insert(0, Context.route.source())
+            self.history.insert(0, self.src)
         if self.dest != '' and self.dest not in self.history:
-            self.history.insert(0, Context.route.destination())
+            self.history.insert(0, self.dest)
+        if "" in self.history:
+            self.history.remove("")
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
+        Debug.logger.debug(f"Route history updated: {self.history}")
 
 
     def plot_route(self, which:str, params:dict) -> bool:
@@ -241,13 +244,14 @@ class Router():
                     r.append(waypoint[c])
                 rte.append(r)
 
+            self._store_history()
+
             Context.route = Route(hdrs, rte)
             Context.route.offset = 1 if Context.route.source() == self.system else 0
 
             Context.ui.ctc(Context.route.next_stop())
             Context.ui.show_frame('Route')
             self.save()
-            Debug.logger.debug(f" Route plotted {Context.route}")
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)

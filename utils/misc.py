@@ -38,7 +38,7 @@ def labelframe(parent:tk.Widget, **kw) -> tk.LabelFrame:
 def button(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Button|ttk.Button:
     """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
     if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
-    return tk.Button(fr, **kw)
+    return tk.Button(fr, padx=10,**kw)
 
 
 def label(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Label|ttk.Label:

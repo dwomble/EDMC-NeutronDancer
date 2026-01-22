@@ -1,4 +1,4 @@
-# Navl's Neutron Dancer Guide [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
+# Guide to Navl's Neutron Dancer [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
 
 ## Neutron Plotter
 

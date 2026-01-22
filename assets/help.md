@@ -1,3 +1,5 @@
+# Navl's Neutron Dancer Guide [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
+
 ## Neutron Plotter
 
 This is the simple neutron route plotter. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
@@ -50,7 +52,7 @@ The **Export** button will allow you to save the route as a CSV.
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
 
-### Fleet carrier routes
+## Fleet carrier routes
 
 The Neutron Dancer doesn't (yet) directly plot fleet carrier routes but it can import and monitor them. When it does it functions just like for a Neutron route. It will also notify you when the jump cooldown is finished.
 

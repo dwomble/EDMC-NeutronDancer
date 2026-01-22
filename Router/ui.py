@@ -131,14 +131,14 @@ class UI():
                 self.update_waypoint()
 
             case 'Neutron':
-                self.source_ac.set_text(self.gal_source_ac.get(), False) # Update when we switch views
-                self.dest_ac.set_text(self.gal_dest_ac.get(), False) # Update when we switch views
+                self.source_ac.set_text(self.gal_source_ac.get(), self.gal_source_ac.get() == lbls["source_system"]) # Update when we switch views
+                self.dest_ac.set_text(self.gal_dest_ac.get(), self.gal_dest_ac.get() == lbls["dest_system"]) # Update when we switch views
                 self.sub_fr = self.neutron_fr
                 self.router.set('Neutron')
 
             case 'Galaxy':
-                self.gal_source_ac.set_text(self.source_ac.get(), False) # Update when we switch views
-                self.gal_dest_ac.set_text(self.dest_ac.get(), False) # Update when we switch views
+                self.gal_source_ac.set_text(self.source_ac.get(), self.source_ac.get() == lbls["source_system"]) # Update when we switch views
+                self.gal_dest_ac.set_text(self.dest_ac.get(), self.dest_ac.get() == lbls["dest_system"]) # Update when we switch views
                 self.sub_fr = self.galaxy_fr
                 self.router.set('Galaxy')
 
@@ -210,7 +210,7 @@ class UI():
         text:str = ""
         with open(file, encoding="utf-8") as infile:
             text = infile.read()
-
+        text = text.replace("{version}", str(Context.plugin_version))
         html_label:HTMLScrolledText = MDScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
@@ -374,7 +374,7 @@ class UI():
         Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
         self.range_entry.var.trace_add('write', self.check_range)
-        self.range_entry.set_text(str(params.get('range', None)), False)
+        self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
 
         row += 1; col = 0
         self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
@@ -619,7 +619,7 @@ class UI():
         if isinstance(self.shipdd, ttk.Combobox):
             self.shipdd['values'] = ships
             return
-        
+
         # TK OptionMenu sucks for updating values, so we have to do it manually
         menu:tk.Menu = self.shipdd["menu"]
         menu.delete(0, "end")

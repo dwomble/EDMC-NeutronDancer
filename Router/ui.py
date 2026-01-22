@@ -510,12 +510,11 @@ class UI():
             wp = f"{lbls['carrier_cooldown']}"
 
         # Set an icon if appropriate
-        #width:int = max(len(wp)-2, 40)
         image:tk.PhotoImage|str = ''  # Empty image
         if Context.route.refuel() == True:
             image=self.fuel_img
-
-        self.waypoint_btn.configure(text=wp + ' ', image=image, compound=tk.RIGHT)
+            wp = ' ' + wp + ' '
+        self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:

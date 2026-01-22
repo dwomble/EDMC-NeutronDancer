@@ -1,5 +1,24 @@
 # EDMC-NeutronDancer Changelog
 
+## v1.6.? ???-??-??
+
+### Changes
+* Improved layout especially for dark mode
+* Switched up the busy animation
+* Improved handling of src & dest systems between Neutron and Galaxy plotters
+* Added current system at the top of the source dropdown
+
+### Bug Fixes
+* Ensured current system is always set and saved [Issue 11](https://github.com/dwomble/EDMC-NeutronDancer/issues/11)
+* Fixed runtime with changing optionmenu menu items that occurred in dark mode
+
+
+## v1.6.1 2026-01-18
+
+### Bug fixes
+* Removed erroneous import statement
+
+
 ## v1.6.0 2026-01-16
 
 ### New Features

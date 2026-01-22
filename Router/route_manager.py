@@ -103,8 +103,6 @@ class Router():
         """ Called after a carrier jump in order to update the route, the UI etc."""
 
         if Context.route.route == [] or Context.route.fleetcarrer == True: return
-
-        Context.router.system = entry.get('StarSystem', system)
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
         # End of the line?

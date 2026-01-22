@@ -11,6 +11,8 @@ import re
 import requests
 import json
 
+from config import config # type: ignore
+
 from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
@@ -50,8 +52,11 @@ class UI():
             Debug.logger.info(f"No parent")
             return
 
+        self.frwidth:int = int(375 * (config.get_int('ui_scale') / 100))
+        Debug.logger.info(f"Frame width set to {self.frwidth}")
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
+
         self.frame:tk.Frame = frame(parent, borderwidth=2)
         self.frame.grid(sticky=tk.NSEW)
 
@@ -61,7 +66,6 @@ class UI():
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
         #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
         #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
-
 
         self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
@@ -75,7 +79,6 @@ class UI():
         self.title_fr:tk.Frame = self._create_title_fr(self.frame)
         self.neutron_fr:tk.Frame = self._create_neutron_fr(self.frame)
         self.galaxy_fr:tk.Frame = self._create_galaxy_fr(self.frame)
-        self.frameCnt:int = 12
         self.busy_fr:tk.Frame = self._create_busy_fr(self.frame)
         self.route_fr:tk.Frame = self._create_route_fr(self.frame)
 
@@ -128,17 +131,21 @@ class UI():
                 self.update_waypoint()
 
             case 'Neutron':
+                self.source_ac.set_text(self.gal_source_ac.get(), False) # Update when we switch views
+                self.dest_ac.set_text(self.gal_dest_ac.get(), False) # Update when we switch views
                 self.sub_fr = self.neutron_fr
                 self.router.set('Neutron')
 
             case 'Galaxy':
+                self.gal_source_ac.set_text(self.source_ac.get(), False) # Update when we switch views
+                self.gal_dest_ac.set_text(self.dest_ac.get(), False) # Update when we switch views
                 self.sub_fr = self.galaxy_fr
                 self.router.set('Galaxy')
 
             case _:
                 self.sub_fr = self.title_fr
 
-        self.sub_fr.grid(row=2, column=0)
+        self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
 
 
     def _create_title_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -156,12 +163,16 @@ class UI():
 
     def _create_busy_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Spinner image for route plotting """
-        image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation.gif")
+
+        image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
+        self.frameCnt:int = 44
+        self.frameSpd:int = 50
+
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:tk.Frame = frame(parent)
-        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"], justify=tk.CENTER, font=BOLD)
+        lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
         lbl.pack(anchor=tk.CENTER)
-        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0])
+        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
         cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
         cancel.pack(anchor=tk.CENTER)
@@ -170,7 +181,7 @@ class UI():
 
     def _plot_switcher(self, fr:tk.Frame, row:int, col:int) -> None:
         """ Switch between the two route plotters """
-        sfr:tk.Frame = frame(fr)
+        sfr:tk.Frame = frame(fr, width=self.frwidth)
         r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron', command=lambda: self.show_frame('Neutron'))
         r1.grid(row=0, column=0, padx=5, pady=5)
         r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
@@ -178,7 +189,7 @@ class UI():
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
-        sfr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+        sfr.grid(row=row, column=col, columnspan=3, sticky=tk.EW)
 
 
     @catch_exceptions
@@ -208,14 +219,14 @@ class UI():
     def _create_galaxy_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the galaxy route plotting frame """
 
-        plot_fr:tk.Frame = frame(parent)
+        plot_fr:tk.Frame = frame(parent, width=self.frwidth)
         row:int = 2
         col:int = 0
 
         params:dict = Context.router.galaxy_params
 
         # Define the popup menu additions
-        srcmenu:dict = {}
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
 
         if Context.router.system != '':
@@ -277,6 +288,7 @@ class UI():
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         Tooltip(self.cargo_entry, tts["cargo"])
 
+        # Row 4
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
@@ -297,8 +309,7 @@ class UI():
         self.time_limit.grid(row=row, column=col, pady=5)
         self.time_limit.set(params.get('max_time', 60))
 
-
-        # Row ?
+        # Row 5
         row += 1; col = 0
         btn_frame:tk.Frame = frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
@@ -321,14 +332,14 @@ class UI():
     def _create_neutron_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the neutron route plotting frame """
 
-        plot_fr:tk.Frame = frame(parent)
+        plot_fr:tk.Frame = frame(parent, width=self.frwidth)
         row:int = 2
         col:int = 0
 
         params:dict = Context.router.neutron_params
 
         # Define the popup menu additions
-        srcmenu:dict = {}
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
         shipmenu:dict = {}
 
@@ -466,9 +477,7 @@ class UI():
 
         Tooltip(self.progbar, tt)
 
-        # Update the progress bar's width to match our frame
-        self.bar_fr.configure(width=self.route_fr.winfo_width()-5)
-        self.progbar.configure(length=self.route_fr.winfo_width()-5, value=self._progress())
+        self.progbar.configure(length=self.frwidth-3, value=self._progress())
 
 
     @catch_exceptions
@@ -501,25 +510,24 @@ class UI():
             wp = f"{lbls['carrier_cooldown']}"
 
         # Set an icon if appropriate
-        width:int = max(len(wp)-2, 40)
+        #width:int = max(len(wp)-2, 40)
         image:tk.PhotoImage|str = ''  # Empty image
         if Context.route.refuel() == True:
-            width = max(len(wp)-2, 37)
             image=self.fuel_img
 
-        self.waypoint_btn.configure(text=wp, width=width, image=image, compound=tk.RIGHT)
+        self.waypoint_btn.configure(text=wp + ' ', image=image, compound=tk.RIGHT)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """
 
         route_fr:tk.Frame = frame(parent)
-        self.bar_fr:tk.LabelFrame = labelframe(route_fr, border=0, height=10, width=400)
+        self.bar_fr:tk.LabelFrame = labelframe(route_fr, border=0, height=10, width=self.frwidth)
         self.bar_fr.grid_rowconfigure(0, weight=1)
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
 
-        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=400)
+        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=self.frwidth-3)
         self.progtt:Tooltip = Tooltip(self.progbar, text=tts["progress"])
         self.progbar.rowconfigure(0, weight=1)
         self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
@@ -527,12 +535,11 @@ class UI():
 
         parent.after(5000, self._update_progbar) # We may need to wait til TK has finished loading before updating the progress bar
 
-        fr1:tk.Frame = frame(route_fr)
+        fr1:tk.Frame = frame(route_fr, width=self.frwidth-10)
         fr1.grid_columnconfigure(0, weight=0)
         fr1.grid_columnconfigure(1, weight=1)
         fr1.grid_columnconfigure(2, weight=0)
-        fr1.grid_columnconfigure(3, weight=0)
-        fr1.grid(row=1, column=0, sticky=tk.W)
+        fr1.grid(row=1, column=0, sticky=tk.EW)
 
         row:int = 0; col:int = 0
         self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
@@ -542,7 +549,7 @@ class UI():
         col += 1
         self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40, command=lambda: self.ctc(Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
-        self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+        self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
 
         col += 1
         self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
@@ -588,24 +595,35 @@ class UI():
                         return
 
 
-    def set_entry(self, which, text:str) -> None:
-        """ Set a system """
+    def set_entry(self, which:Autocompleter|Placeholder|None, value:str) -> None:
+        """ Set an autocompleter or placeholder entry's text and style """
         if which == None: return
         which.delete(0, tk.END)
-        which.insert(0, text)
+        which.insert(0, value)
         which.set_default_style()
 
 
     def switch_ship(self, ship:Ship) -> None:
-        """ Set the range display """
+        """ Update the plotter items when the ship changes """
 
+        # Neutron plotter
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
-        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
-        self.shipdd['values'] = names
+        # Galaxy plotter
         self.ship.set(ship.name)
         self.set_entry(self.cargo_entry, str(Context.router.cargo))
+
+        # Ship dropdown
+        ships:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        if isinstance(self.shipdd, ttk.Combobox):
+            self.shipdd['values'] = ships
+            return
+        
+        # TK OptionMenu sucks for updating values, so we have to do it manually
+        menu:tk.Menu = self.shipdd["menu"]
+        menu.delete(0, "end")
+        [menu.add_command(label=ship, command=lambda item=ship: self.ship.set(item)) for ship in ships]
 
 
     @catch_exceptions
@@ -750,14 +768,14 @@ class UI():
         """ Activate/deactivate the plot gui (show a progress icon) """
         def update(ind) -> None:
             if self.busy_fr == None or self.show_spinner == False: return
-            self.busyimg.configure(image=self.frames[ind])
-            self.busy_fr.after(150, update, (ind + 1) % self.frameCnt)
+            self.busyimg.configure(image=self.frames[ind], anchor=tk.CENTER)
+            self.busy_fr.after(self.frameSpd, update, (ind + 1) % self.frameCnt)
 
         self.show_spinner:bool = enable
         # Show the busy image
         if enable == True:
             self.sub_fr.grid_remove()
-            self.busy_fr.grid(row=2, column=0, padx=150, pady=10)
+            self.busy_fr.grid(row=2, column=0, padx=10, pady=10,sticky=tk.NSEW)
             self.busy_fr.after(250, update, 0)
             return
 

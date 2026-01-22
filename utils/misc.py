@@ -8,7 +8,6 @@ from functools import reduce
 import operator
 
 from config import config # type: ignore
-from theme import theme #type: ignore
 
 from utils.debug import Debug
 

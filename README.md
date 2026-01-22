@@ -50,7 +50,11 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 
 ### CSV Import
 
-Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters. Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
+
+Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
+
+To import a CSV click **Import** and select an appropriate file such as that exported by the various Spansh route plotters.
+
 
 ### Following the route
 

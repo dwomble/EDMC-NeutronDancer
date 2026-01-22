@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.6.? ???-??-??
+## v1.6.2 2026-01-21
 
 ### Changes
 * Improved layout especially for dark mode

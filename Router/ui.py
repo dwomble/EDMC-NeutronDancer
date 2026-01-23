@@ -609,6 +609,11 @@ class UI():
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
         self.multiplier.set(ship.supercharge_mult)
 
+        shipmenu:dict = {}
+        for id in Context.router.shiplist[:10]:
+            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+        self.range_entry.set_menu(shipmenu)
+
         # Galaxy plotter
         self.ship.set(ship.name)
         self.set_entry(self.cargo_entry, str(Context.router.cargo))

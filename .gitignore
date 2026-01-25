@@ -12,7 +12,6 @@ __pycache__/
 .venv/
 
 # Development garbage
-test*.*
 deploy.sh
 
 */.DS_Store

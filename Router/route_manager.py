@@ -31,7 +31,7 @@ class Router():
         return cls._instance
 
 
-    def __init__(self) -> None:
+    def __init__(self, test:bool = False) -> None:
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
@@ -61,6 +61,7 @@ class Router():
         self.carrier_state:str = 'Idle'
 
         self._load()
+
         self._initialized = True
 
 
@@ -190,7 +191,7 @@ class Router():
 
     def _plotter(self, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
-        Debug.logger.debug(f"Plotting route")
+        Debug.logger.debug(f"Plotting route {params} to {url}")
 
         self.cancel_plot = False
         try:

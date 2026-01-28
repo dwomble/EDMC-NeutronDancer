@@ -58,7 +58,6 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 
 ### CSV Import
 
-
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
 
 To import a CSV click **Import** and select an appropriate file such as that exported by the various Spansh route plotters.
@@ -74,11 +73,19 @@ If for some reason, your clipboard should be empty or contain other stuff that y
 
 The progress bar has a Tooltip that provides the number of jumps remaining and distance remaining if those values are known.
 
-The **Show route** button will bring up a window showing the details of the plotted route.
+### Show Route
 
-The **Export route** button will allow you to save the route as a CSV.
+The **Show route** button will open a window showing progress and the details of the plotted route. The current waypoint is hightlighted and progress includes waypoints completed and remaining, distance completed and remaining, jumps and lightyears per hour. For each jump the details include waypoints, distance traveled and remaining, fuel used and remaining, tritium used and remaining, whether to refueld and whether a star is a neutron star or scoopable depending on the type of route being followed.
 
-If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
+### Export Route
+
+The **Export route** button will open a file dialog allowing you to save the current route as a CSV.
+
+### Saving State
+
+If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off and catch up any jumps made while EDMC was inactive.
+
+It also saves ship details and source and destination systems for easy entry.
 
 ## Credits
 

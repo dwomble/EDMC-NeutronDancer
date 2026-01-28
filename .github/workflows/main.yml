@@ -5,6 +5,9 @@ on:
 
 jobs:
   vt_scan:
+    permissions:
+      contents: read
+      pull-requests: write  
     runs-on: ubuntu-latest
     steps:
       - name: VirusTotal Scan
@@ -12,5 +15,4 @@ jobs:
         with:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           # Scan all files in the 'dist' folder
-          file_globs: ./*
           update_release: true

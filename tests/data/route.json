@@ -1,0 +1,111 @@
+{
+    "system": "",
+    "src": "Apurui",
+    "dest": "Bleae Thua NI-B b27-5",
+    "last_plot": "Neutron",
+    "carrier_id": "",
+    "carrier_state": "Idle",
+    "neutron_params": {
+        "from": "Apurui",
+        "to": "Bleae Thua NI-B b27-5",
+        "range": "60.00",
+        "efficiency": "60",
+        "supercharge_mult": "4"
+    },
+    "galaxy_params": {},
+    "ship_id": "",
+    "cargo": 0,
+    "shiplist": [],
+    "history": [
+        "Apurui",
+        "Bleae Thua NI-B b27-5"
+    ],
+    "ship": {},
+    "ships": {},
+    "route": [
+        [
+            "System Name",
+            "Jumps",
+            "Jumps Rem",
+            "Neutron",
+            "Distance Jumped",
+            "Distance Rem"
+        ],
+        [
+            [
+                "Apurui",
+                0,
+                31,
+                false,
+                0,
+                2025.12
+            ],
+            [
+                "PSR J1752-2806",
+                7,
+                31,
+                true,
+                349.79,
+                1686.04
+            ],
+            [
+                "Col 359 Sector NN-T e3-3",
+                7,
+                24,
+                true,
+                534.35,
+                1323.91
+            ],
+            [
+                "B133 Sector DB-X d1-30",
+                1,
+                17,
+                true,
+                140.95,
+                1236.21
+            ],
+            [
+                "Col 359 Sector TU-F d11-89",
+                1,
+                16,
+                true,
+                223.56,
+                1019.79
+            ],
+            [
+                "Swoiwns HY-F d12-37",
+                2,
+                15,
+                true,
+                243.82,
+                822.16
+            ],
+            [
+                "Bleia Eohn JC-B d1-6",
+                4,
+                13,
+                true,
+                373.42,
+                568.06
+            ],
+            [
+                "M25 Sector PI-T d3-51",
+                6,
+                9,
+                true,
+                477.18,
+                279.96
+            ],
+            [
+                "Bleae Thua NI-B b27-5",
+                3,
+                0,
+                false,
+                279.96,
+                0
+            ]
+        ],
+        0,
+        []
+    ]
+}

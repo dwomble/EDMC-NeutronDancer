@@ -1,5 +1,37 @@
 # EDMC-NeutronDancer Changelog
 
+## v1.6.2 2026-01-21
+
+### Changes
+* Improved layout especially for dark mode
+* Switched up the busy animation
+* Improved handling of src & dest systems between Neutron and Galaxy plotters
+* Added current system at the top of the source dropdown
+
+### Bug Fixes
+* Ensured current system is always set and saved [Issue 11](https://github.com/dwomble/EDMC-NeutronDancer/issues/11)
+* Fixed runtime with changing optionmenu menu items that occurred in dark mode
+
+
+## v1.6.1 2026-01-18
+
+### Bug fixes
+* Removed erroneous import statement
+
+
+## v1.6.0 2026-01-16
+
+### New Features
+* Improved fleetcarrier support with jump cooldown notification
+* More detailed help
+* Added a refuel reminder icon
+
+### Bug Fixes
+* Fixed error with displaying booleans on imported routes [Issue 8](https://github.com/dwomble/EDMC-NeutronDancer/issues/8)
+* Yet another go at Linux copy to clipboard [Issue 8](https://github.com/dwomble/EDMC-NeutronDancer/issues/8)
+* Made ship menus update dynamically
+
+
 ## v1.5.3 - 2026-01-03
 
 ### Bug fixes
@@ -14,7 +46,7 @@
 
 ## v1.5.1 - 2025-12-31
 
-### Bug fixes
+### Bug Fixes
 * Fixed galaxy router error in dark mode when ships hadn't been switched
 * Addressed more dark and transparent mode craziness
 
@@ -67,12 +99,12 @@
 ### New Features
 * Added CSV importing of various formats
 
-### Bug fixes
+### Bug Fixes
 * Fixed Linux copy to clipboard
 
 ## v0.3.1 - 2025-12-14
 
-### Bug fixes
+### Bug Fixes
 * Fixed the updater and version identification
 
 
@@ -90,7 +122,7 @@
 ### Changes
 * Work on the autoupdater
 
-### Bug fixes
+### Bug Fixes
 * Autocreation of data directory
 * Clearing of placeholder text on click
 

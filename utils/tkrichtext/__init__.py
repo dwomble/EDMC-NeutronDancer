@@ -5,6 +5,7 @@ import sys
 import tkinter as tk
 from . import html_parser
 from .utils import RenderHTML
+from .markdown_converter import markdown_to_html
 
 VERSION = "0.3.1"
 
@@ -29,6 +30,12 @@ class _ScrolledText(tk.Text):
         self.vbar["command"] = self.yview
 
         tk.Text.__init__(self, self.frame, **kw)
+        if 'spacing1' not in kw: self.configure(spacing1=6)
+        if 'spacing2' not in kw: self.configure(spacing2=2)
+        if 'spacing3' not in kw: self.configure(spacing3=4)
+        if 'padx' not in kw: self.configure(padx=5)
+        if 'pady' not in kw: self.configure(pady=5)
+
         self.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         text_meths = vars(tk.Text).keys()
@@ -43,16 +50,29 @@ class _ScrolledText(tk.Text):
         return str(self.frame)
 
 
-class HTMLScrolledText(_ScrolledText):
+class RichScrolledText(_ScrolledText):
 
     """
     HTML scrolled text widget
     """
 
-    def __init__(self, *args, html=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        html = None
+        if 'html' in kwargs:
+            html = kwargs['html']
+            del kwargs['html']
+        md = None
+        if 'markdown' in kwargs:
+            md = kwargs['markdown']
+            del kwargs['markdown']
+
         super().__init__(*args, **kwargs)
         self._w_init(kwargs)
+
         self.html_parser = html_parser.HTMLTextParser()
+
+        if isinstance(md, str):
+            html = markdown_to_html(md)
         if isinstance(html, str):
             self.set_html(html)
         elif isinstance(html, RenderHTML):
@@ -93,7 +113,7 @@ class HTMLScrolledText(_ScrolledText):
         self.config(state=prev_state)
 
 
-class HTMLText(HTMLScrolledText):
+class RichText(RichScrolledText):
 
     """
     HTML text widget
@@ -109,7 +129,7 @@ class HTMLText(HTMLScrolledText):
         self.vbar.pack_forget()
 
 
-class HTMLLabel(HTMLText):
+class RichLabel(RichText):
 
     """
     HTML label widget
@@ -132,4 +152,3 @@ class HTMLLabel(HTMLText):
     def set_html(self, *args, **kwargs):
         super().set_html(*args, **kwargs)
         self.config(state=tk.DISABLED)
-

@@ -37,12 +37,22 @@ sys.modules['config'] = type('module', (), {
 	'shutting_down': False
 })()
 
+# Mock myNotebook before importing modules that use it
+sys.modules['myNotebook'] = type('module', (), {})()
+
+# Mock PIL (Pillow) before importing modules that use it
+mock_image = type('Image', (), {})()
+mock_image_tk = type('ImageTk', (), {})()
+sys.modules['PIL'] = type('module', (), {'Image': mock_image, 'ImageTk': mock_image_tk})()
+sys.modules['PIL.Image'] = mock_image
+sys.modules['PIL.ImageTk'] = mock_image_tk
+
 # Minimal EDMC `theme` module emulator so `from theme import theme` works in tests
 import types
 from types import SimpleNamespace
 theme_mod = types.ModuleType("theme")
 # Provide a simple `theme` object; plugins expect `from theme import theme`
-theme_mod.theme = SimpleNamespace()
+theme_mod.theme = SimpleNamespace() #type: ignore
 # Optional defaults commonly used by plugins (can be extended as needed)
 theme_mod.theme.name = "default"
 theme_mod.theme.dark = False
@@ -92,7 +102,7 @@ try:
 		def _show_busy_gui(self, busy:bool):
 			return None
 
-	Context.ui = _StubUI()
+	Context.ui = _StubUI() #type: ignore
 except Exception:
 	pass
 

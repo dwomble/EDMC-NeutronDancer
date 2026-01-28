@@ -36,13 +36,8 @@ class Placeholder(tk.Entry):
         self.placeholder = placeholder
         # Create right click menu
         self.menu:tk.Menu = tk.Menu(parent, tearoff=0)
-        self.menu.add_command(label="Cut")
-        self.menu.add_command(label="Copy")
-        self.menu.add_command(label="Paste")
-        if menu != {}:
-            self.menu.add_separator()
-            for m, f in menu.items():
-                self.menu.add_command(label=m, command=partial(*f, m))
+        self.set_menu(menu)
+
         self.bind('<Button-3>', partial(self.show_menu))
 
         self.bind("<FocusIn>", self.focus_in)
@@ -50,6 +45,15 @@ class Placeholder(tk.Entry):
         self.bind('<Control-KeyRelease-a>', self.select_all)
         self.bind('<Control-KeyRelease-c>', self.copy)
         self.put_placeholder()
+
+    def set_menu(self, menu:dict = {}) -> None:
+        self.menu.delete(0, "end")
+        self.menu.add_command(label="Cut")
+        self.menu.add_command(label="Copy")
+        self.menu.add_command(label="Paste")
+        self.menu.add_separator()
+        for m, f in menu.items():
+            self.menu.add_command(label=m, command=partial(*f, m))
 
     def show_menu(self, e) -> None:
         self.focus_in(e)

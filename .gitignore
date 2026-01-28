@@ -1,4 +1,3 @@
-# Route files
 *.csv
 
 # Python cache/compiled files
@@ -13,7 +12,6 @@ __pycache__/
 .venv/
 
 # Development garbage
-test*.*
 deploy.sh
 
 */.DS_Store
@@ -22,3 +20,4 @@ data/*
 routes/*
 updates/*
 
+.DS_Store

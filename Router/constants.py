@@ -2,15 +2,17 @@ from config import config  # type: ignore
 
 # Project information
 NAME="Navl's Neutron Dancer"
-GIT_USER="dwomble"
-GIT_PROJECT="EDMC-NeutronDancer"
+GH_USER="dwomble"
+GH_PROJECT="EDMC-NeutronDancer"
 
 # GIT info and URLs
-GIT_LATEST:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_DOWNLOAD:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/releases/download"
-GIT_VERSION:str = f"https://raw.githubusercontent.com/{GIT_USER}/{GIT_PROJECT}/master/version"
-GIT_RELEASE_INFO:str = f"https://api.github.com/repos/{GIT_USER}/{GIT_PROJECT}/releases/latest"
-GIT_CHANGELOG:str = f"https://github.com/{GIT_USER}/{GIT_PROJECT}/blob/master/CHANGELOG.md#"
+GH_BASE:str = f"https://github.com/{GH_USER}/{GH_PROJECT}"
+GH_RELEASES:str = f"{GH_BASE}/releases"
+GH_LATEST:str = f"{GH_RELEASES}/latest"
+GH_DOWNLOAD:str = f"{GH_RELEASES}/download"
+GH_VERSION:str = f"https://raw.githubusercontent.com/{GH_USER}/{GH_PROJECT}/master/version"
+GH_RELEASE_INFO:str = f"https://api.github.com/repos/{GH_USER}/{GH_PROJECT}/releases/latest"
+GH_CHANGELOG:str = f"{GH_BASE}/blob/master/CHANGELOG.md#"
 
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
@@ -56,15 +58,15 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Body Name": ["str", ""],
                     "Body Subtype": ["str", ""],
                     "Is Terraformable": ["bool", ""],
-                    "Distance To Arrival": ["float", "", " Ls"],
+                    "Distance To Arrival": ["float", "", " ls"],
                     "Estimated Scan Value": ["float", "", " Cr"],
                     "Estimated Mapping Value": ["float", "", " Cr"],
-                    "Distance": ["float", "", " Ly"],
-                    "Distance Jumped": ["float", "", " Ly"],
-                    "Distance Rem": ["float", "", " Ly"],
-                    "Distance Remaining": ["float", "", " Ly"],
-                    "Fuel Left": ["float", "", " T"],
-                    "Fuel Used": ["float", "", " T"],
+                    "Distance": ["float", "", " ly"],
+                    "Distance Jumped": ["float", "", " ly"],
+                    "Distance Rem": ["float", "", " ly"],
+                    "Distance Remaining": ["float", "", " ly"],
+                    "Fuel Left": ["float", "", " t"],
+                    "Fuel Used": ["float", "", " t"],
                     "Refuel": ["bool", ""],
                     "Scoopable": ["bool", ""],
                     "Neutron Star": ["bool", ""],
@@ -83,12 +85,12 @@ hdrs:dict = {
     "jumps": "Jumps",
     "system_name": "System Name",
     "body_subtype": "Body Subtype",
-    "body_name": "Body Name"
+    "body_name": "Body Name",
+    "cooldown_title": "Cooldown Complete"
 }
 
 # Text labels
 lbls:dict = {
-    "warning": "Warning",
     "help": "Help",
     "route": "Route",
     "plot_title": "I'm just burnin'…",
@@ -102,7 +104,6 @@ lbls:dict = {
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
-    "plotting_route": "Plotting route...",
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
@@ -120,11 +121,15 @@ lbls:dict = {
     "use_injections": "Use FSD Injections?",
     "exclude_secondary": "Exclude Secondary Stars?",
     "refuel_every_scoopable": "Refuel Every scoopable?",
-    "plotting": "Plotting route",
+    "cooldown_complete": "Fleet carrier cooldown has completed.",
+    "plotting": "Plotting route {s} to {d}",
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": "Jumps/hr",
-    "dist_per_hour": "Ly/hr"
+    "dist_per_hour": "Ly/hr",
+    "refuel": "Refuel",
+    "carrier_jumping": "Carrier Jump Scheduled",
+    "carrier_cooldown": "Carrier Cooldown"
 }
 
 # Tooltips
@@ -132,7 +137,7 @@ tts:dict = {
     'source_system': "Source system name, right click for menu",
     'dest_system': "Destination system name, right click for menu",
     "range": "Ship jump range in light years, right click for menu",
-    "efficiency": "Routing efficiency (%), right click for menu",
+    "efficiency": "Routing efficiency (%)",
     "standard_multiplier": "Standard range increase (4x), right click for menu",
     "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
     "copy_to_clipboard": "Click to copy to clipboard",
@@ -180,4 +185,14 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected"
+}
+
+cnf:dict = {
+    "version": "Version",
+    "overlay": "Overlay",
+    "overlay_enable": "Enable overlay",
+    "overlay_position": "Overlay Position",
+    "X": "X",
+    "Y": "Y",
+    "overlay_colour": "Overlay Colour"
 }

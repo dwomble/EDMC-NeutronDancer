@@ -90,7 +90,7 @@ class RouteWindow:
             ttl.pack(side=tk.LEFT, padx=5)
 
             dist:tuple = tuple([route.total_dist() - route.dist_remaining(), 'float', '0', ''])
-            dstr:str = f"{hfplus(dist)} / {hfplus(route.total_dist())} Ly"
+            dstr:str = f"{hfplus(dist)} / {hfplus(route.total_dist())} ly"
             lbl = ttk.Label(frm, text=dstr, font=FONT)
             lbl.pack(side=tk.LEFT, padx=5)
 

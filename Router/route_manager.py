@@ -14,9 +14,10 @@ from .context import Context
 from .ship import Ship
 from .route import Route
 
-SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot':
-                  'Neutron', 'neutron_params': {}, 'galaxy_params': {},
-                  'ship_id': '', 'cargo': 0, 'used_ships': [], 'history': []}
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
+                  'carrier_id': '', 'carrier_state': 'Idle',
+                  'neutron_params': {}, 'galaxy_params': {},
+                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': []}
 class Router():
     """
     Class to manage routes, all the route data and state information.
@@ -30,7 +31,7 @@ class Router():
         return cls._instance
 
 
-    def __init__(self) -> None:
+    def __init__(self, test:bool = False) -> None:
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
@@ -45,7 +46,7 @@ class Router():
         self.ship:Ship|None = None
 
         # Record of used ships and shipyard
-        self.used_ships:list = []
+        self.shiplist:list = []
         self.ships:dict[str, Ship] = {}
         self.history:list = []
 
@@ -53,9 +54,14 @@ class Router():
         self.last_plot:str = "Neutron"
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
-
         self.cancel_plot:bool = False
+
+        # Carrier
+        self.carrier_id:str = ''
+        self.carrier_state:str = 'Idle'
+
         self._load()
+
         self._initialized = True
 
 
@@ -67,7 +73,7 @@ class Router():
         # Normalize ship_id to string since stored keys are strings
         sid = str(ship_id)
         if sid not in self.ships.keys():
-            Debug.logger.debug(f"ShipID {sid} not found in shipyard")
+            Debug.logger.info(f"ShipID {sid} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
@@ -81,25 +87,24 @@ class Router():
 
     def set_ship(self, entry:dict) -> None:
         """ Set the current ship details and update the UI """
-        Debug.logger.debug(f"Setting current ship to {entry.get('ShipID', '')} {entry.get('ShipName', '')} {entry.get('Ship', '')}")
         ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
         self.neutron_params['supercharge_mult'] = ship.supercharge_mult
         self.neutron_params['range'] = ship.range
         self.ships[self.ship_id] = ship
+
+        if self.ship_id in self.shiplist:
+            self.shiplist.remove(self.ship_id)
+        self.shiplist.insert(0, self.ship_id)
         Context.ui.switch_ship(self.ship)
 
 
     def jumped(self, system:str, entry:dict) -> None:
-        """ Called after a jump in order to update the route, the UI etc."""
+        """ Called after a carrier jump in order to update the route, the UI etc."""
 
-        Debug.logger.debug(f"Jumped called")
-
-        Context.router.system = entry.get('StarSystem', system)
+        if Context.route.route == [] or Context.route.fleetcarrer == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
-
-        Debug.logger.debug(f"System: {Context.router.system} Destination: {Context.route.destination()}")
 
         # End of the line?
         if Context.router.system == Context.route.destination():
@@ -110,22 +115,54 @@ class Router():
             Context.ui.update_waypoint()
 
 
+    def carrier_event(self, entry:dict) -> None:
+        """ Note carrier jumps for a cooldown notification """
+        if Context.route.route == [] or Context.route.fleetcarrer == False: return
+
+        match entry.get('event'):
+            case 'CarrierJumpRequest' if entry.get('SystemName', '') == Context.route.next_stop():
+                self.carrier_id = entry.get('CarrierID', '')
+                self.carrier_state = 'Jumping'
+                Debug.logger.debug(f"Carrier {self.carrier_id} jumping to {entry.get('SystemName', '')}")
+
+            case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
+                self.carrier_state = 'Cooldown'
+                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+
+            case 'CarrierLocation' if self.carrier_state == 'Jumping' and self.carrier_id == entry.get('CarrierID', '') and Context.ui.parent != None:
+                system:str = entry.get('StarSystem', '')
+                Debug.logger.debug(f"Carrier is in {system}")
+                if Context.route.update_route(0, system) < 0: return
+
+                Debug.logger.debug(f"Updated route")
+                self.carrier_state = 'Cooldown'
+                self.system = system
+                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.update_waypoint()
+
+            #case _ if self.carrier_id == entry.get('CarrierID', ''):
+            #    self.carrier_state = 'Idle'
+
+
+    def cooldown_complete(self) -> None:
+        """ Show an informational messagebox indicating a carrier cooldown has completed. """
+        Debug.logger.debug(f"Cooldown complete notification triggered.")
+        if Context.ui.parent == None: return
+        self.carrier_state = 'Idle'
+        Context.ui.cooldown_complete()
+
+
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
-
+        Debug.logger.debug(f"Storing route history {self.src}, {self.dest}")
         if self.src != '' and self.src:
-            self.history.insert(0, Context.route.source())
+            self.history.insert(0, self.src)
         if self.dest != '' and self.dest not in self.history:
-            self.history.insert(0, Context.route.destination())
+            self.history.insert(0, self.dest)
+        if "" in self.history:
+            self.history.remove("")
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
-
-        if self.ship_id == None or self.ship == None:
-            Debug.logger.debug(f"No ship to store")
-            return
-
-        if self.ship_id not in self.used_ships:
-            self.used_ships.append(self.ship_id)
-        Debug.logger.debug(f"Storing ship {str(self.ship)}")
+        Debug.logger.debug(f"Route history updated: {self.history}")
 
 
     def plot_route(self, which:str, params:dict) -> bool:
@@ -143,7 +180,7 @@ class Router():
                 self.dest = params['to']
                 self.neutron_params = params
             case _:
-                Debug.logger.debug(f"Unknown route type {which}")
+                Debug.logger.error(f"Unknown route type {which}")
                 return False
 
         self.last_plot = which
@@ -154,13 +191,14 @@ class Router():
 
     def _plotter(self, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
-        Debug.logger.debug(f"Plotting route")
+        Debug.logger.debug(f"Plotting route {params} to {url}")
 
         self.cancel_plot = False
         try:
             limit:int = int(params.get('max_time', 20))
-            results:Response = requests.post(url, data=params, headers={'User-Agent': Context.plugin_useragent,
-                                                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+            results:Response = requests.post(url, data=params,
+                                             headers={'User-Agent': Context.plugin_useragent,
+                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
             if results.status_code != 202:
                 self.plot_error(results)
@@ -186,9 +224,7 @@ class Router():
             result:dict = json.loads(route_response.content)["result"]
             res:list = result.get('jumps', result.get('system_jumps', []))
 
-            cols:list = []
-            hdrs:list = []
-            h:str
+            cols:list = []; hdrs:list = []; h:str
             for h in HEADERS:
                 k:str
                 for k in res[0].keys():
@@ -209,13 +245,14 @@ class Router():
                     r.append(waypoint[c])
                 rte.append(r)
 
+            self._store_history()
+
             Context.route = Route(hdrs, rte)
             Context.route.offset = 1 if Context.route.source() == self.system else 0
 
             Context.ui.ctc(Context.route.next_stop())
             Context.ui.show_frame('Route')
             self.save()
-            Debug.logger.debug(f" Route plotted {Context.route}")
 
         except Exception as e:
             Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
@@ -271,7 +308,7 @@ class Router():
         """ Save a route to a CSV file """
         try:
             if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
-                Debug.logger.debug(f"Failed to save route")
+                Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False
             return True
@@ -317,6 +354,8 @@ class Router():
             })
 
             Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
+            dir:Path = Path(Context.plugin_dir) / DATA_DIR
+            dir.mkdir(parents=True, exist_ok=True)
             file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
 
             with open(file, 'w') as outfile:
@@ -378,5 +417,9 @@ class Router():
         Context.route = Route(hdrs, route, offset, jumps)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
+
+        # Migrate
+        if self.shiplist == [] and self.ships != {}:
+            self.shiplist = [id for id in self.ships.keys()]
 
 

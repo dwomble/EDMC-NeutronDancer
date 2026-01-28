@@ -10,6 +10,7 @@ from semantic_version import Version #type: ignore
 # to avoid circular imports, local imports go here
 if TYPE_CHECKING:
     from utils.updater import Updater
+    from utils.overlay import OverlayManager
     from .route_manager import Router
     from .ui import UI
     from .csv import CSV
@@ -25,10 +26,10 @@ class Context:
 
     # Config variables
     parent:tkWidget = None
-    overlay:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=False))
-    overlay_color:tk.StringVar = field(default_factory=lambda: tk.StringVar(value='#000000'))
-    overlay_x:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=300))
-    overlay_y:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=900))
+    #overlay:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=False))
+    #overlay_color:tk.StringVar = field(default_factory=lambda: tk.StringVar(value='#000000'))
+    #overlay_x:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=300))
+    #overlay_y:tk.IntVar = field(default_factory=lambda: tk.IntVar(value=900))
 
     # Global variables
     modules:list = field(default_factory=list) # Module details from Coriolis
@@ -39,4 +40,5 @@ class Context:
     csv:'CSV' = None
     ui:'UI' = None
     updater:'Updater' = None
+    overlay:'OverlayManager' = None
 

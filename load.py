@@ -69,12 +69,12 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.cargo = entry.get('Count', 0)
 
 
-#def plugin_prefs(parent: ttk.Notebook, cmdr: str, is_beta: bool) -> nb.Frame:
-#    return prefs_display(parent)
+def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
+    return Context.ui.prefs_frame(parent)
 
 
-#def prefs_changed(cmdr: str, is_beta: bool) -> None:
-#    prefs_save()
+def prefs_changed(cmdr: str, is_beta: bool) -> None:
+    Context.ui.save_prefs()
 
 
 def __version__() -> str:

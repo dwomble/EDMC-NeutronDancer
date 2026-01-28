@@ -2,6 +2,7 @@ import textwrap
 import json
 import re
 from dataclasses import dataclass, asdict
+from functools import partial
 
 import tkinter as tk
 from tkinter import ttk, colorchooser as tkColorChooser
@@ -37,9 +38,9 @@ class Frame:
     centered_x:bool = False
     centered_y:bool = False
     ttl:int = 0
-    title_colour:str = ''
-    text_colour:str = ''
-    background:str = ''
+    title_colour:str = 'white'
+    text_colour:str = 'white'
+    background:str = 'grey'
     border:str = ''
     border_colour:str = ''
     border_width:int = 0
@@ -54,6 +55,14 @@ class OverlayManager:
         * Provides functions to display information and data in frames on screen
         * Handles loading and saving of frame preferences.
     """
+    # Singleton pattern
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, **kw):
         self.edmcoverlay:Overlay|None = None # type: ignore
         self.is_legacy:bool = False
@@ -70,19 +79,24 @@ class OverlayManager:
         self.frames:dict[str, Frame] = {}
 
         self._check_overlay()
-        self._load_frames()
-        self._setup_plugin_groups() # Setup plugin groups for EDMCModernOverlay if available
+
+        #self._setup_plugin_groups() # Setup plugin groups for EDMCModernOverlay if available
         self._declare_ready()
 
+        self._initialized = True
 
-    def register_frame(self, **kw) -> None:
+
+    def register_frame(self, name:str, **kw) -> None:
         """ Register a frame with the overlay handler. """
+        Debug.logger.debug(f"Registering frame {name}")
         try:
-            self.frames[kw['name']] = Frame(**kw)
-            Debug.logger.debug(f"Registered frame: {kw['name']}")
-            self._load_frames()
+            self.frames[name] = Frame(name, **kw)
+            Debug.logger.debug(f"Registered frame: {name}")
+            self._load_frame(name)
         except TypeError as e:
             Debug.logger.warning(f"Cannot register frame: {e}")
+
+        Debug.logger.debug(f"{self.frames}")
 
 
     """
@@ -250,7 +264,7 @@ class OverlayManager:
     def _setup_plugin_groups(self):
         """ One time setup for EDMCModernOverlay Groups """
         if self.is_legacy: return
-        
+
         background_color = None
         background_border_color = None
         background_border_width = 3 # This is a border that extends the background beyond the boundaries of the payload group.
@@ -259,9 +273,9 @@ class OverlayManager:
 
         for frame_name, fi in self.frames.items():
             id_prefix_group = f"{PLUGIN} {frame_name.capitalize()}"
-            base_id_prefixes = [f"{PLUGIN}-msg-{frame_name}-"]
+            id_prefixes:list[str | dict[str, object]] = [f"{PLUGIN}-msg-{frame_name}-"]
             if frame_name in progress_bar_frames:
-                base_id_prefixes.append(f"{PLUGIN}-bar-{frame_name}")
+                id_prefixes.append(f"{PLUGIN}-bar-{frame_name}")
 
             if fi is not None:
                 background_color = fi.background
@@ -290,7 +304,6 @@ class OverlayManager:
                 id_prefix_offset_x = None
 
             if use_background:
-                id_prefixes = list(base_id_prefixes)
                 if self._define_plugin_group(
                     plugin_group=PLUGIN,
                     matching_prefixes=["{PLUGIN}-"],
@@ -312,7 +325,6 @@ class OverlayManager:
                 use_background = False
                 self.supports_modern_overlay_backgrounds = False
 
-            id_prefixes = list(base_id_prefixes)
             id_prefixes.append({"value": f"{PLUGIN}-frame-{frame_name}", "matchMode": "exact"}) # For older Modern Overlay versions without background support.
             if not self._define_plugin_group(
                 plugin_group=PLUGIN,
@@ -334,7 +346,7 @@ class OverlayManager:
 
     def _declare_ready(self):
         """ Declare to the overlay that we're ready by displaying a message """
-        if self.edmcoverlay == None or self.frames == {}: return
+        if self.edmcoverlay == None: return
 
         try:
             self.display_message("info", f"{PLUGIN} Ready", True, 30) # LANG: Overlay message
@@ -422,23 +434,29 @@ class OverlayManager:
         return True
 
 
-    def _load_frames(self):
+    def _load_frame(self, name:str):
         """ Read frame data from the EDMC config. """
-        prefs:dict = json.loads(config.get(f"{PLUGIN}_overlay_frames"))
-        for name in self.frames.keys():
-            if name in prefs: self.frames[name] = prefs[name]
+
+        conf = config.get(f"{PLUGIN}_overlay_frames")
+        if conf == None:
+            return
+        Debug.logger.debug(f"{conf}")
+        prefs:dict = json.loads(conf)
+        if name in prefs:
+            self.frames[name] = prefs[name]
 
 
     def prefs_display(self, parent:ttk.Notebook) -> nb.Frame:
         """ EDMC settings pane hook. Displays one frame per row. """
-    
+
+        Debug.logger.debug(f"{self.edmcoverlay} {self.frames}")
         if self.edmcoverlay == None or self.frames == {}: return
 
-        def color_picker(parent:nb.Frame) -> None:
-            (_, color) = tkColorChooser.askcolor(fi.text_colour, title='Overlay Color', parent=parent)
+        def color_picker(parent:nb.Frame, col:str) -> None:
+            (_, color) = tkColorChooser.askcolor(col, title='Overlay Color', parent=parent)
 
             if color:
-                fi.text_colour = color
+                col = color
                 if colour_button is not None:
                     colour_button['foreground'] = color
 
@@ -447,7 +465,7 @@ class OverlayManager:
 
         fr:nb.Frame = nb.Frame(parent)
         for frame, fi in self.frames.items():
-            Debug.logger.debug(f"Overlay Frame: {prefsfr} - {fi}")
+            Debug.logger.debug(f"Overlay Frame: {frame} - {fi}")
 
             prefsfr:nb.Frame = nb.Frame(fr)
             prefsfr.columnconfigure(6, weight=1)
@@ -479,7 +497,10 @@ class OverlayManager:
             nb.Label(prefsfr, text='H').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
             nb.EntryMenu(prefsfr, text=fi.h, textvariable=fi.h, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-            colour_button:tk.Button = tk.Button(prefsfr, text="Color", foreground=fi.text_colour, background=fi.background, command=lambda: color_picker(prefsfr))
+            colour_button:tk.Button = tk.Button(prefsfr, text="Color", foreground=fi.text_colour, background=fi.background, command=partial(color_picker, prefsfr, fi.text_colour))
             colour_button.grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
 
         return prefsfr
+
+    def prefs_save(self) -> None:
+        return

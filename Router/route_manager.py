@@ -127,7 +127,7 @@ class Router():
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = 'Cooldown'
-                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == 'Jumping' and self.carrier_id == entry.get('CarrierID', '') and Context.ui.parent != None:
                 system:str = entry.get('StarSystem', '')
@@ -137,7 +137,7 @@ class Router():
                 Debug.logger.debug(f"Updated route")
                 self.carrier_state = 'Cooldown'
                 self.system = system
-                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.ui.update_waypoint()
 
             #case _ if self.carrier_id == entry.get('CarrierID', ''):

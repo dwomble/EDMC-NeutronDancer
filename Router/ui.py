@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import requests
 import json
+import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
 
@@ -20,6 +21,7 @@ from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
 from utils.tkrichtext import RichScrolledText
+from utils.overlay import OverlayManager
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
@@ -54,7 +56,6 @@ class UI():
             return
 
         self.frwidth:int = int(375 * (config.get_int('ui_scale') / 100))
-        Debug.logger.info(f"Frame width set to {self.frwidth}")
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
 
@@ -85,6 +86,10 @@ class UI():
 
         self.sub_fr:tk.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
+
+        Context.overlay = OverlayManager()
+        Context.overlay.__init__()
+        Context.overlay.register_frame('Default')
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_update())
@@ -866,3 +871,19 @@ class UI():
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
         confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())
+
+
+    @catch_exceptions
+    def prefs_frame(self, parent:tk.Frame) -> nb.Frame:
+        """
+        Return a TK Frame for adding to the EDMC settings dialog
+        """
+        self.plugin_frame:tk.Frame = parent
+        frame = nb.Frame(parent)
+        # Make the second column fill available space
+        frame.columnconfigure(1, weight=1)
+        Context.overlay.prefs_display(frame)
+        return frame
+
+    def save_prefs(self) -> None:
+        return

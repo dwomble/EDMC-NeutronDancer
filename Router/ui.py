@@ -18,7 +18,7 @@ from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
-from utils.tkhtmlview import HTMLScrolledText, MDScrolledText
+from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
@@ -171,7 +171,7 @@ class UI():
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:tk.Frame = frame(parent)
         self.route_lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
-        self.route_lbl.pack(anchor=tk.CENTER)
+        self.route_lbl.pack(pady=5, anchor=tk.CENTER)
         self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
         cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
@@ -211,7 +211,7 @@ class UI():
         with open(file, encoding="utf-8") as infile:
             text = infile.read()
         text = text.replace("{version}", str(Context.plugin_version))
-        html_label:HTMLScrolledText = MDScrolledText(self.help, markdown=text)
+        html_label:RichScrolledText = RichScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
 

@@ -90,6 +90,8 @@ class TestHarness:
         self.router = Router()
         Context.router = self.router
 
+        self.context = Context
+
         # Ensure minimal module data present for ship calculations during tests
         try:
             # Add FSD entry if missing or missing necessary fields

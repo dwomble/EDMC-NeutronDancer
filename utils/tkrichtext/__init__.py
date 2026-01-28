@@ -50,16 +50,29 @@ class _ScrolledText(tk.Text):
         return str(self.frame)
 
 
-class HTMLScrolledText(_ScrolledText):
+class RichScrolledText(_ScrolledText):
 
     """
     HTML scrolled text widget
     """
 
-    def __init__(self, *args, html=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        html = None
+        if 'html' in kwargs:
+            html = kwargs['html']
+            del kwargs['html']
+        md = None
+        if 'markdown' in kwargs:
+            md = kwargs['markdown']
+            del kwargs['markdown']
+
         super().__init__(*args, **kwargs)
         self._w_init(kwargs)
+
         self.html_parser = html_parser.HTMLTextParser()
+
+        if isinstance(md, str):
+            html = markdown_to_html(md)
         if isinstance(html, str):
             self.set_html(html)
         elif isinstance(html, RenderHTML):
@@ -100,7 +113,7 @@ class HTMLScrolledText(_ScrolledText):
         self.config(state=prev_state)
 
 
-class HTMLText(HTMLScrolledText):
+class RichText(RichScrolledText):
 
     """
     HTML text widget
@@ -116,7 +129,7 @@ class HTMLText(HTMLScrolledText):
         self.vbar.pack_forget()
 
 
-class HTMLLabel(HTMLText):
+class RichLabel(RichText):
 
     """
     HTML label widget
@@ -139,54 +152,3 @@ class HTMLLabel(HTMLText):
     def set_html(self, *args, **kwargs):
         super().set_html(*args, **kwargs)
         self.config(state=tk.DISABLED)
-
-
-def MDScrolledText(*args, markdown=None, **kwargs):
-    """
-    Create an HTML scrolled text widget from Markdown text.
-
-    Parameters:
-    - markdown: Markdown formatted string to convert and display.
-    - other args/kwargs are forwarded to HTMLScrolledText.
-    """
-    html = ""
-    if isinstance(markdown, str):
-        html = markdown_to_html(markdown)
-    elif isinstance(markdown, RenderHTML):
-        html = markdown.get_html()
-
-    return HTMLScrolledText(*args, html=html, **kwargs)
-
-
-def MDText(*args, markdown=None, **kwargs):
-    """
-    Create an HTML text widget from Markdown text.
-
-    Parameters:
-    - markdown: Markdown formatted string to convert and display.
-    - other args/kwargs are forwarded to HTMLText.
-    """
-    html = ""
-    if isinstance(markdown, str):
-        html = markdown_to_html(markdown)
-    elif isinstance(markdown, RenderHTML):
-        html = markdown.get_html()
-
-    return HTMLText(*args, html=html, **kwargs)
-
-
-def MDLabel(*args, markdown=None, **kwargs):
-    """
-    Create an HTML label widget from Markdown text.
-
-    Parameters:
-    - markdown: Markdown formatted string to convert and display.
-    - other args/kwargs are forwarded to HTMLLabel.
-    """
-    html = ""
-    if isinstance(markdown, str):
-        html = markdown_to_html(markdown)
-    elif isinstance(markdown, RenderHTML):
-        html = markdown.get_html()
-
-    return HTMLLabel(*args, html=html, **kwargs)

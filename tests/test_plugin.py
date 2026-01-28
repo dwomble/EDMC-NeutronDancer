@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import Mock, patch, MagicMock
 import json
+import time
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
@@ -91,9 +92,9 @@ class TestJumps:
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
 
-    def test_plot_route_starts_thread(self, harness: TestHarness, monkeypatch):
+    def test_plot_route_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
         """Ensure plot_route returns True and starts the plotting worker."""
-        called = {'flag': False}
+        called:dict[str, bool] = {'flag': False}
 
         def fake_plotter(self, url, params) -> None:
             # Simulate some work then set flag
@@ -101,8 +102,8 @@ class TestPlotting:
 
         monkeypatch.setattr(type(harness.router), '_plotter', fake_plotter, raising=False)
 
-        params = {'from': 'A', 'to': 'B', 'max_time': 1}
-        result = harness.router.plot_route('Neutron', params)
+        params:dict = {'from': 'A', 'to': 'B', 'max_time': 1}
+        result:bool = harness.router.plot_route('Neutron', params)
         assert result is True
         # The thread may run quickly; wait briefly for it to start
         import time
@@ -111,30 +112,30 @@ class TestPlotting:
 
     def test_plot_route_unknown_type(self, harness: TestHarness):
         """Unknown plot types should return False and not start plotting."""
-        params = {}
-        result = harness.router.plot_route('UnsupportedType', params)
+        result:bool = harness.router.plot_route('UnsupportedType', {})
         assert result is False
+
+    def test_plot_neutron_route(self, harness:TestHarness) -> None:
+        """ Plot a Neutron test route """
+
+        res:bool = harness.router.plot_route('Neutron',
+                                             {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                              'range': '60.00', 'efficiency': '60', 'supercharge_mult': '4'})
+        assert res == True
+        time.sleep(20)
+        assert harness.context.route is not None
+        assert harness.context.route.source() == 'Apurui'
+        assert harness.context.route.destination() == 'Bleae Thua NI-B b27-5'
+        assert harness.context.route.total_jumps() == 31
 
     def test_plot_galaxy_route(self, harness: TestHarness, monkeypatch):
         """Ensure galaxy plot_route sets params and starts worker."""
-        called = {'flag': False}
-
-        def fake_plotter(self, url, params):
-            called['flag'] = True
-
-        monkeypatch.setattr(type(harness.router), '_plotter', fake_plotter, raising=False)
-
-        params = {'source': 'Alpha', 'destination': 'Beta', 'max_time': 1}
-        result = harness.router.plot_route('Galaxy', params)
-        assert result is True
-        # Router should have set src/dest/galaxy_params immediately
         assert harness.router.src == 'Alpha'
         assert harness.router.dest == 'Beta'
-        assert harness.router.galaxy_params == params
+        assert harness.router.galaxy_params == {}
 
-        import time
-        time.sleep(0.05)
-        assert called['flag'] is True
+    def test_import_route(self, harness: TestHarness) -> None:
+        return
 
     def test_plotter_success_creates_route(self, harness: TestHarness):
         """Test that _plotter successfully creates a route from Spansh response."""

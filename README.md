@@ -7,11 +7,19 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NEutronDancer/releases/latest)
 
-This plugin makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC](https://github.com/EDCD/EDMarketConnector) and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC](https://github.com/EDCD/EDMarketConnector) and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
 The original goal of this fork was support for the new 6x overcharge of the Caspian and a cleaner UI. It has grown beyond that into a significant rewrite.
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984" />
+
+## Key Features
+
+- Spansh **Galaxy Plotting** and **Neutron Plotting** directly from within EDMC
+- CSV import supports almost any route file including Road to Riches, Expressway to Exomastery, Tourist planner, and Fleetcarrier plotter
+- History tracking remembers your current waypoint as well as ships, loadouts, and destinations
+- Route export makes it easy to save a route for later reuse
+- Fleet carrier support includes jump cooldown tracking and notification
 
 ## Installation
 

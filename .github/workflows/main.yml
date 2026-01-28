@@ -5,6 +5,9 @@ on:
 
 jobs:
   vt_scan:
+    permissions:
+      contents: read
+      pull-requests: write  
     runs-on: ubuntu-latest
     steps:
       - name: VirusTotal Scan

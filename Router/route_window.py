@@ -9,7 +9,7 @@ from utils.treeviewplus import TreeviewPlus
 
 from .constants import FONT, BOLD, NAME, HEADER_TYPES, lbls
 from .route import Route
-
+from .context import Context
 class RouteWindow:
     """
     Display of the current route in a separate window with overview and details
@@ -38,17 +38,22 @@ class RouteWindow:
         """ Show our window """
 
         if self.window is not None and self.window.winfo_exists():
-            self.window.destroy()
+            self.close()
             self.window = None
 
         if route.hdrs == [] or route.route == []:
             return
 
-        scale = config.get_int('ui_scale') / 100.00
+        scale:float = config.get_int('ui_scale') / 100.00
 
         self.window = tk.Toplevel(self.root)
         self.window.title(f"{NAME} – {lbls['route']}")
-        self.window.geometry(f"{int(600*scale)}x{int(300*scale)}")
+        geometry:str = Context.router.routewindow_geometry
+        if geometry == "":
+            geometry = f"{int(600*scale)}x{int(300*scale)}"
+
+        self.window.geometry(geometry)
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
 
         frame = tk.Frame(self.window, borderwidth=2)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -56,7 +61,16 @@ class RouteWindow:
         self._summary(frame, route, scale)
         w:int = self._table(frame, route, scale)
 
-        self.window.geometry(f"{int(w)}x{int(300*scale)}")
+        # Make sure it's wide enough
+        if self.window.winfo_width() < int(w) and self.window.winfo_height() > 1:
+            self.window.geometry(f"{int(w)}x{self.window.winfo_height()}")
+
+
+    def close(self) -> None:
+        """ On close save our geometry """
+        Context.router.routewindow_geometry = self.window.winfo_geometry()
+        self.window.destroy()
+        return
 
 
     def _summary(self, parent:tk.Frame, route:Route, scale:float) -> None:

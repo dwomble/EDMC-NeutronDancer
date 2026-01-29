@@ -17,7 +17,8 @@ from .route import Route
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_state': 'Idle',
                   'neutron_params': {}, 'galaxy_params': {},
-                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': []}
+                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
+                  'routewindow_geometry' : '', 'helpwindow_geometry': ''}
 class Router():
     """
     Class to manage routes, all the route data and state information.
@@ -59,6 +60,9 @@ class Router():
         # Carrier
         self.carrier_id:str = ''
         self.carrier_state:str = 'Idle'
+
+        self.routewindow_geometry:str = ''
+        self.helpwindow_geometry:str = ''
 
         self._load()
 

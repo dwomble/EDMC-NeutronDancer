@@ -210,7 +210,11 @@ class UI():
 
         self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.help.title(f"{NAME} – {lbls['help']}")
-        self.help.geometry("650x750")
+        geometry:str = Context.router.helpwindow_geometry
+        if geometry == '':
+            geometry = "650x750"
+        self.help.geometry(geometry)
+        self.help.protocol("WM_DELETE_WINDOW", self.close)
 
         file:Path = Path(Context.plugin_dir, ASSET_DIR, "help.md")
         text:str = ""
@@ -220,6 +224,12 @@ class UI():
         html_label:RichScrolledText = RichScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
+
+    def close(self) -> None:
+        """ On close save our geometry """
+        Context.router.helpwindow_geometry = self.help.winfo_geometry()
+        self.help.destroy()
+        return
 
 
     def _create_galaxy_fr(self, parent:tk.Frame) -> tk.Frame:

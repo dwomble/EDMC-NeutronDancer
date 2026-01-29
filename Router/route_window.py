@@ -48,9 +48,7 @@ class RouteWindow:
 
         self.window = tk.Toplevel(self.root)
         self.window.title(f"{NAME} – {lbls['route']}")
-        geometry:str = Context.router.routewindow_geometry
-        if geometry == "":
-            geometry = f"{int(600*scale)}x{int(300*scale)}"
+        geometry:str = Context.router.window_geometries.get('route', f"{int(600*scale)}x{int(300*scale)}")
 
         self.window.geometry(geometry)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
@@ -68,7 +66,7 @@ class RouteWindow:
 
     def close(self) -> None:
         """ On close save our geometry """
-        Context.router.routewindow_geometry = self.window.winfo_geometry()
+        Context.router.window_geometries['route'] = self.window.winfo_geometry()
         self.window.destroy()
         return
 

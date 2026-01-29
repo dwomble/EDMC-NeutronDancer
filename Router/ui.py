@@ -210,9 +210,7 @@ class UI():
 
         self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.help.title(f"{NAME} – {lbls['help']}")
-        geometry:str = Context.router.helpwindow_geometry
-        if geometry == '':
-            geometry = "650x750"
+        geometry:str = Context.router.window_geometries.get('help', "650x750")
         self.help.geometry(geometry)
         self.help.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -227,7 +225,7 @@ class UI():
 
     def close(self) -> None:
         """ On close save our geometry """
-        Context.router.helpwindow_geometry = self.help.winfo_geometry()
+        Context.router.window_geometries['help'] = self.help.winfo_geometry()
         self.help.destroy()
         return
 

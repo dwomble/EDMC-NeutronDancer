@@ -20,6 +20,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 - History tracking remembers your current waypoint as well as ships, loadouts, and destinations
 - Route export makes it easy to save a route for later reuse
 - Fleet carrier support includes jump cooldown tracking and notification
+- Tracks and reports statistics including jumps and distance per hour
 
 ## Installation
 
@@ -98,6 +99,7 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a star.
 
 Fly dangerous! o7
+
 
 
 

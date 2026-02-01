@@ -467,40 +467,37 @@ class OverlayManager:
         for frame, fi in self.frames.items():
             Debug.logger.debug(f"Overlay Frame: {frame} - {fi}")
 
-            prefsfr:nb.Frame = nb.Frame(fr)
-            prefsfr.columnconfigure(6, weight=1)
-            prefsfr.rowconfigure(60, weight=1)
+            ovprefs:nb.Frame = nb.Frame(fr)
+            ovprefs.columnconfigure(6, weight=1)
+            ovprefs.rowconfigure(60, weight=1)
 
-            validate:tuple = (prefsfr.register(validate_int), '%P')
+            validate:tuple = (ovprefs.register(validate_int), '%P')
 
             row:int = 0
             row += 1
-            ttk.Separator(prefsfr).grid(row=row, columnspan=7, pady=(0,5), sticky=tk.EW)
-
-            row += 1
-            nb.Label(prefsfr, text=frame, justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW)
+            nb.Label(ovprefs, text=frame, justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW)
 
             row += 1; col:int = 0
-            nb.Checkbutton(prefsfr, text="Enable", variable=fi.enabled).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W); col += 1
+            nb.Checkbutton(ovprefs, text="Enable", variable=fi.enabled).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W); col += 1
 
-            nb.Label(prefsfr, text="Location").grid(row=row, column=col, padx=10, pady=5, sticky=tk.W); col += 1
+            nb.Label(ovprefs, text="Location").grid(row=row, column=col, padx=10, pady=5, sticky=tk.W); col += 1
 
-            nb.Label(prefsfr, text='X').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-            nb.EntryMenu(prefsfr, text=fi.x, textvariable=fi.x, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(ovprefs, text='X').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(ovprefs, text=fi.x, textvariable=fi.x, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-            nb.Label(prefsfr, text='Y').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-            nb.EntryMenu(prefsfr, text=fi.y, textvariable=fi.y, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(ovprefs, text='Y').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(ovprefs, text=fi.y, textvariable=fi.y, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-            nb.Label(prefsfr, text='W').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-            nb.EntryMenu(prefsfr, text=fi.w, textvariable=fi.w, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(ovprefs, text='W').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(ovprefs, text=fi.w, textvariable=fi.w, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-            nb.Label(prefsfr, text='H').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
-            nb.EntryMenu(prefsfr, text=fi.h, textvariable=fi.h, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.Label(ovprefs, text='H').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
+            nb.EntryMenu(ovprefs, text=fi.h, textvariable=fi.h, width=8, validate='all', validatecommand=(validate, '%P')).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W); col += 1
 
-            colour_button:tk.Button = tk.Button(prefsfr, text="Color", foreground=fi.text_colour, background=fi.background, command=partial(color_picker, prefsfr, fi.text_colour))
+            colour_button:tk.Button = tk.Button(ovprefs, text="Color", foreground=fi.text_colour, background=fi.background, command=partial(color_picker, ovprefs, fi.text_colour))
             colour_button.grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
 
-        return prefsfr
+        return ovprefs
 
     def prefs_save(self) -> None:
         return

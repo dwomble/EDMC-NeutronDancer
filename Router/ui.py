@@ -1,5 +1,4 @@
 import subprocess
-import subprocess
 import os
 import sys
 import shutil
@@ -19,16 +18,15 @@ from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
-from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
+from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice
 from utils.tkrichtext import RichScrolledText
-from utils.overlay import OverlayManager
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
-
+from .overlay import Overlay
 class UI():
     """
         The main UI for the router.
@@ -87,10 +85,6 @@ class UI():
         self.sub_fr:tk.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
 
-        Context.overlay = OverlayManager()
-        Context.overlay.__init__()
-        Context.overlay.register_frame('Default')
-
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_update())
         self._initialized = True
@@ -124,6 +118,7 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
+        Overlay().send_message('Default', ["title", "", "normal", ""], ttl=1)
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -504,7 +499,6 @@ class UI():
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
 
-
         # We check if we're there rather than if there are no jumps remaining so
         # we don't show end of the road when someone steps forward/backward.
         if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
@@ -529,6 +523,19 @@ class UI():
             image=self.fuel_img
             wp = ' ' + wp + ' '
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
+
+        message:list = ['large', "Next: " + wp]
+        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
+        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
+        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
+        if Context.route.total_dist() > 0:
+            jstr += f", {lbls['distance']} "
+            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
+            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
+
+        message.extend(["normal", f"{jstr}"])
+        Overlay().send_message('Default', message, ttl=60)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -878,7 +885,8 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())
+        Overlay().clear_message('Default')
+        PopupNotice(title + "\n" + message, 20000, self.parent)
 
 
     @catch_exceptions
@@ -887,11 +895,12 @@ class UI():
         Return a TK Frame for adding to the EDMC settings dialog
         """
         self.plugin_frame:tk.Frame = parent
-        frame = nb.Frame(parent)
+        frame:nb.Frame = nb.Frame(parent)
         # Make the second column fill available space
         frame.columnconfigure(1, weight=1)
-        Context.overlay.prefs_display(frame)
+        Overlay().prefs_display(frame)
         return frame
 
     def save_prefs(self) -> None:
+        Overlay().save_prefs()
         return

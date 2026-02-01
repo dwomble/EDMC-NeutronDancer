@@ -95,9 +95,10 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 
 ## Suggestions
 
-Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer please give it a star.
+Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle and am plenty caffeinated already), but please give it a star.
 
 Fly dangerous! o7
+
 
 
 

@@ -1,4 +1,5 @@
 import textwrap
+import copy
 import json
 from dataclasses import field, dataclass, asdict
 from functools import partial
@@ -61,7 +62,7 @@ class Overlay():
         self.ovf:OvFrame = OvFrame()
         self._load_prefs()
         self.ovf.name = 'Default'
-        self.messages:dict
+        self.messages:dict = {}
         self._initialized = True
 
 
@@ -79,16 +80,24 @@ class Overlay():
             Debug.logger.warning(f"EDMCOverlay is not running")
             return
 
+    def clear_messages(self) -> None:
+        """ Clear all overlay messages """
+        Debug.logger.debug(f"Clearing {self.messages}")
+        #messages:list = copy.copy([self.messages.keys()])
+        [self.clear_message(m) for m in list(self.messages)]
 
     @catch_exceptions
     def clear_message(self, msgid:str = "") -> bool:
         """ Clear a message """
         if msgid not in self.messages: return False
+        status:bool = self.ovf.enabled
+        self.ovf.enabled = True
         msg:list = self.messages[msgid]
         for i in range(1, len(msg), 2):
             msg[i] = ""
         self.send_message(msgid, msg, ttl=1)
         del self.messages[msgid]
+        self.ovf.enabled = status
         return True
 
 
@@ -96,6 +105,9 @@ class Overlay():
     def send_message(self, msgid:str = "", text:str|list = "", size:str = "normal", ttl=120) -> None:
         overlay = self._get_overlay()
         if not overlay: return
+        Debug.logger.debug(f"Overlay enabled: {self.ovf.enabled}")
+        if self.ovf.enabled == False: return
+
         if isinstance(text, str): text = [size, text]
         y:int = self.ovf.y
         for i in range(0, len(text), 2):
@@ -152,11 +164,12 @@ class Overlay():
         for k in [('enabled', 'Enable', tk.BooleanVar, tk.Checkbutton),
                   ('x', 'X', tk.IntVar, tk.Entry),
                   ('y', 'Y', tk.IntVar, tk.Entry),
-                  ('w', 'W', tk.IntVar, tk.Entry),
-                  ('h', 'H', tk.IntVar, tk.Entry),
+                  #('w', 'W', tk.IntVar, tk.Entry),
+                  #('h', 'H', tk.IntVar, tk.Entry),
                   ('text_colour', 'Foreground', tk.StringVar, 'ColorPicker'),
-                  ('bgenabled', 'Use Background', tk.BooleanVar, tk.Checkbutton),
-                  ('background', 'Background', tk.StringVar, 'ColorPicker')]:
+                  #('bgenabled', 'Use Background', tk.BooleanVar, tk.Checkbutton),
+                  #('background', 'Background', tk.StringVar, 'ColorPicker')
+                  ]:
 
             vars[k[0]] = bind_var(self.ovf, k[0], k[2](value=getattr(self.ovf, k[0])))
             match k[3]:
@@ -180,16 +193,16 @@ class Overlay():
         # Store the serialized frames in the config
         self.send_message("Test", "", "normal", ttl=1)
         config.set(f"{NAME}_overlay", json.dumps(asdict(self.ovf)))
+        if self.ovf.enabled == False:
+            self.clear_messages()
         Debug.logger.info(f"Saved {self.ovf} frames to EDMC config")
         return True
 
 
     def _load_prefs(self):
         """ Read frame data from the EDMC config. """
-        Debug.logger.debug(f"Loading prefs")
         conf = config.get(f"{NAME}_overlay")
         Debug.logger.debug(f"{conf}")
         if conf == None: return
         data:dict = json.loads(conf)
         self.ovf = OvFrame(**data)
-        Debug.logger.debug(f"Ovf: {self.ovf}")

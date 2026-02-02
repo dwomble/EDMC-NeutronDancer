@@ -20,6 +20,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 - History tracking remembers your current waypoint as well as ships, loadouts, and destinations
 - Route export makes it easy to save a route for later reuse
 - Fleet carrier support includes jump cooldown tracking and notification
+- Tracks and reports statistics including jumps and distance per hour
 
 ## Installation
 
@@ -49,7 +50,7 @@ Next click **Calculate** to query Spansh and plot your route.
 
 ### Galaxy Plotting
 
-This works the same as the Neutron Plotter but Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
+This works the same as the Neutron Plotter but because the Galaxy Plotter is much more sophisticated Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate all the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
 
 <img width="439" height="239" alt="Screenshot 2026-01-16 173246" src="https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f" />
 
@@ -95,9 +96,10 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 
 ## Suggestions
 
-Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer please give it a star.
+Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a star.
 
 Fly dangerous! o7
+
 
 
 

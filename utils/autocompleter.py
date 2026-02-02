@@ -8,10 +8,13 @@ from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
     """
-        An Entry widget with autocompletion functionality for system names
+        An Entry widget with autocompletion functionality for system names.
         Borrowed/stolen and modified from https://github.com/CMDR-Kiel42/EDMC_SpanshRouter
 
-        @TODO: Modify to support a configurable function to query an API and return a list
+        Uses the placeholder Entry as a base class and adds autocompletion on top.
+        It takes the same parameters as a tk.Entry object plus:
+            :param func: The function to call to get a list of suggestions which should
+                            take a single string argument (the current input) and return a list of suggestions.
     """
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
@@ -30,10 +33,6 @@ class Autocompleter(Placeholder):
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
-
-        #if config.get_int('theme') > 1: self.lb.configure(fg=config.get("dark_text"))
-        #elif config.get_int('theme') > 0:
-        #    self.lb.configure(fg=config.get("dark_text"), bg='black')
 
         self.lb.pack(fill=tk.BOTH, expand=True)
         self.popup.withdraw()
@@ -144,7 +143,7 @@ class Autocompleter(Placeholder):
     def get_list(self, inp:str) -> None:
         inp = inp.strip()
         if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
-            lista = self.func(inp)
+            lista:list = self.func(inp)
             if lista:
                 self.queue.put(lista)
 

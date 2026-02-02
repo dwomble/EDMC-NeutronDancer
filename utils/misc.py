@@ -180,3 +180,38 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
             ret = str(value).title() if str(value).count(' ') < 2 and re.search(r"[A-Z0-9]", str(value)) == None else str(value)
 
     return ret + units
+
+class PopupNotice:
+    """ Create a temporary popup window """
+    def __init__(self, notice:str = '', timeout:int = 0, config = None) -> None:
+        self.config = config
+        self.root = tk.Tk()
+        self.root.overrideredirect(True)
+        self.root.attributes("-alpha", 0.6)
+        self.root.geometry(config.window_geometries.get('Alert', "300x150-1+0"))
+        self.root.attributes("-topmost", True)
+        self.frame = tk.Frame(self.root, bg='red4', relief="raised")
+        self.frame.pack(fill="both", expand=True)
+        label = tk.Label(self.frame, text=notice, fg="white", bg="red4", font=("Helvetica", 12, "bold"), justify=tk.CENTER)
+        label.pack(pady=20, anchor=tk.CENTER)
+        exit_btn = tk.Button(self.frame, text="Close", fg="white", bg="red4", command=self.close)
+        exit_btn.pack(pady=10)
+        if timeout > 0: self.root.after(timeout, self.close)
+        self.frame.bind("<Button-1>", self.start_move)
+        self.frame.bind("<B1-Motion>", self.do_move)
+
+    def start_move(self, event) -> None:
+        self.x:int = event.x
+        self.y:int = event.y
+
+    def do_move(self, event) -> None:
+        deltax:int = event.x - self.x
+        deltay:int = event.y - self.y
+        x:int = self.root.winfo_x() + deltax
+        y:int = self.root.winfo_y() + deltay
+        self.root.geometry(f"+{x}+{y}")
+
+    def close(self) -> None:
+        if self.root and self.root.winfo_exists():
+            self.config.window_geometries['Alert'] = self.root.winfo_geometry()
+            self.root.destroy()

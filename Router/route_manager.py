@@ -17,7 +17,8 @@ from .route import Route
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_state': 'Idle',
                   'neutron_params': {}, 'galaxy_params': {},
-                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': []}
+                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
+                  'window_geometries' : {}}
 class Router():
     """
     Class to manage routes, all the route data and state information.
@@ -59,6 +60,8 @@ class Router():
         # Carrier
         self.carrier_id:str = ''
         self.carrier_state:str = 'Idle'
+
+        self.window_geometries:dict = {}
 
         self._load()
 
@@ -127,7 +130,7 @@ class Router():
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = 'Cooldown'
-                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == 'Jumping' and self.carrier_id == entry.get('CarrierID', '') and Context.ui.parent != None:
                 system:str = entry.get('StarSystem', '')
@@ -137,7 +140,7 @@ class Router():
                 Debug.logger.debug(f"Updated route")
                 self.carrier_state = 'Cooldown'
                 self.system = system
-                Context.ui.parent.after(300000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.ui.update_waypoint()
 
             #case _ if self.carrier_id == entry.get('CarrierID', ''):

@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import requests
 import json
+import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
 
@@ -17,7 +18,7 @@ from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
-from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus
+from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice
 from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
@@ -25,7 +26,7 @@ from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
-
+from .overlay import Overlay
 class UI():
     """
         The main UI for the router.
@@ -53,7 +54,6 @@ class UI():
             return
 
         self.frwidth:int = int(375 * (config.get_int('ui_scale') / 100))
-        Debug.logger.info(f"Frame width set to {self.frwidth}")
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
 
@@ -118,6 +118,7 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
+        Overlay().send_message('Default', ["title", "", "normal", ""], ttl=1)
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -204,7 +205,9 @@ class UI():
 
         self.help:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.help.title(f"{NAME} – {lbls['help']}")
-        self.help.geometry("650x750")
+        geometry:str = Context.router.window_geometries.get('help', "650x750")
+        self.help.geometry(geometry)
+        self.help.protocol("WM_DELETE_WINDOW", self.close)
 
         file:Path = Path(Context.plugin_dir, ASSET_DIR, "help.md")
         text:str = ""
@@ -214,6 +217,12 @@ class UI():
         html_label:RichScrolledText = RichScrolledText(self.help, markdown=text)
         html_label.pack(fill="both", expand=True, ipadx=5, ipady=5)
         html_label.fit_height()
+
+    def close(self) -> None:
+        """ On close save our geometry """
+        Context.router.window_geometries['help'] = self.help.winfo_geometry()
+        self.help.destroy()
+        return
 
 
     def _create_galaxy_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -490,7 +499,6 @@ class UI():
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
 
-
         # We check if we're there rather than if there are no jumps remaining so
         # we don't show end of the road when someone steps forward/backward.
         if Context.router.system == Context.route.destination() and Context.route.jumps_remaining() == 0:
@@ -515,6 +523,19 @@ class UI():
             image=self.fuel_img
             wp = ' ' + wp + ' '
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
+
+        message:list = ['large', "Next: " + wp]
+        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
+        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
+        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
+        if Context.route.total_dist() > 0:
+            jstr += f", {lbls['distance']} "
+            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
+            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
+
+        message.extend(["normal", f"{jstr}"])
+        Overlay().send_message('Default', message, ttl=60)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -850,7 +871,10 @@ class UI():
     @catch_exceptions
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
-        results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        try:
+            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        except:
+            return [inp]
         return json.loads(results.content)
 
 
@@ -864,4 +888,22 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        confirmDialog.showinfo(title, message, parent=self.parent.winfo_toplevel())
+        Overlay().clear_message('Default')
+        PopupNotice(title + "\n" + message, 20000, self.parent)
+
+
+    @catch_exceptions
+    def prefs_frame(self, parent:tk.Frame) -> nb.Frame:
+        """
+        Return a TK Frame for adding to the EDMC settings dialog
+        """
+        self.plugin_frame:tk.Frame = parent
+        frame:nb.Frame = nb.Frame(parent)
+        # Make the second column fill available space
+        frame.columnconfigure(1, weight=1)
+        Overlay().prefs_display(frame)
+        return frame
+
+    def save_prefs(self) -> None:
+        Overlay().save_prefs()
+        return

@@ -1,11 +1,10 @@
-import tkinter as tk
-from tkinter import ttk
-import myNotebook as nb # type: ignore
 
 from pathlib import Path
 from semantic_version import Version #type: ignore
+import tkinter as tk
 
-from config import appname  # type: ignore
+import myNotebook as nb  #type: ignore
+from config import appname  #type: ignore
 
 from Router.constants import GH_PROJECT, NAME, errs
 from utils.debug import Debug, catch_exceptions
@@ -32,7 +31,6 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.updater.check_for_update(Context.plugin_version)
 
     return NAME
-
 
 def plugin_start(plugin_dir: str) -> None:
     """EDMC calls this function when running in Python 2 mode."""
@@ -68,6 +66,23 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
+        case 'SendText':
+            if entry.get('Message').startswith("!nd "):
+                match entry.get('Message', '')[4:]:
+                    case "prev" | "previous":
+                        Context.ui.goto_prev_waypoint()
+                    case "next":
+                        Context.ui.goto_next_waypoint()
+                    case _:
+                        Context.ui.ctc(Context.route.next_stop())
+
+
+def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
+    return Context.ui.prefs_frame(parent)
+
+
+def prefs_changed(cmdr: str, is_beta: bool) -> None:
+    Context.ui.save_prefs()
 
 
 def __version__() -> str:

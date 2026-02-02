@@ -3,7 +3,8 @@ from pathlib import Path
 from semantic_version import Version #type: ignore
 import tkinter as tk
 
-from config import appname  # type: ignore
+import myNotebook as nb  #type: ignore
+from config import appname  #type: ignore
 
 from Router.constants import GH_PROJECT, NAME, errs
 from utils.debug import Debug, catch_exceptions

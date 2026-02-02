@@ -140,7 +140,6 @@
 * Autocreation of data directory
 * Clearing of placeholder text on click
 
-
 ## v0.1.0 – 2025-12-12
 
 ### New Features

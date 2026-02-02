@@ -1,9 +1,7 @@
-import tkinter as tk
-from tkinter import ttk
-import myNotebook as nb # type: ignore
 
 from pathlib import Path
 from semantic_version import Version #type: ignore
+import tkinter as tk
 
 from config import appname  # type: ignore
 
@@ -67,6 +65,15 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
+        case 'SendText':
+            if entry.get('Message').startswith("!nd "):
+                match entry.get('Message', '')[4:]:
+                    case "prev" | "previous":
+                        Context.ui.goto_prev_waypoint()
+                    case "next":
+                        Context.ui.goto_next_waypoint()
+                    case _:
+                        Context.ui.ctc(Context.route.next_stop())
 
 
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:

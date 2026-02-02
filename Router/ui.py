@@ -850,7 +850,10 @@ class UI():
     @catch_exceptions
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
-        results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        try:
+            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+        except:
+            return [inp]
         return json.loads(results.content)
 
 

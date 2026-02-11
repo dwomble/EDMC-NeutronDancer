@@ -354,7 +354,7 @@ class Router():
                 "class": 8,
                 "cost": 82042060,
                 "fuelmul": 0.011,
-                "fuelpower": 2.505,
+                "fuelpower": 2.5025,
                 "mass": 160,
                 "maxfuel": 6.8,
                 "optmass": 4670,

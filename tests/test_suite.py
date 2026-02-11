@@ -47,7 +47,6 @@ class TestStartup:
         """Test that startup event sets system correctly."""
 
         assert harness.router is not None
-
         for event in harness.events.get('startup', []):
             harness.fire_event(event)
 
@@ -63,11 +62,11 @@ class TestShipLoadout:
         for event in harness.events.get('loadout', []):
             harness.fire_event(event)
 
-        shipid:str = str(event.get('ShipID', '1'))
+        shipid:str = str(event.get('ShipID', '87'))
         assert harness.router.ship_id == shipid
         assert harness.router.ship is not None
-        assert harness.router.ship.type == event.get('Ship', 'Anaconda')
-        assert harness.router.ship.name == event.get('ShipName', 'Test Ship')
+        assert harness.router.ship.type == event.get('Ship', 'mandalay')
+        assert harness.router.ship.name == event.get('ShipName', 'Long Delay')
         assert harness.router.neutron_params['supercharge_multiplier'] == harness.router.ship.supercharge_multiplier
         assert harness.router.neutron_params['range'] == harness.router.ship.range
         assert harness.router.ships[shipid] is harness.router.ship
@@ -92,17 +91,27 @@ class TestJumps:
 class TestImporting:
     """Test importing functionality for different route types."""
 
-    def test_import_route_basic(self, harness: TestHarness) -> None:
-        filename:str = str(Path(__file__).parent / "data" / "route-Blae-Voqooe.csv")
+    def test_import_route_neutron(self, harness: TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
         assert res == True
         assert harness.router.src == 'Bleae Thua NI-B b27-5'
         assert harness.router.dest == 'Voqooe BI-H d11-864'
-        assert harness.context.route.total_jumps() == 40
+        assert harness.context.route.total_jumps() == 399
+
+    def test_import_route_galaxy(self, harness: TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
+        res:bool = harness.router.import_route(filename)
+
+        assert res == True
+        assert harness.router.src == 'Bleae Thua NI-B b27-5'
+        assert harness.router.dest == 'Voqooe BI-H d11-864'
+        assert harness.context.route.total_jumps() == 74
+
 
     def test_import_route_fc(self, harness: TestHarness) -> None:
-        filename:str = str(Path(__file__).parent / "data" / "fc-Blae-Voqooe.csv")
+        filename:str = str(Path(__file__).parent / "config" / "fc-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
         assert res == True
@@ -113,7 +122,7 @@ class TestImporting:
         assert harness.router.dest == 'Voqooe BI-H d11-864'
 
     def test_import_route_riches(self, harness: TestHarness) -> None:
-        filename:str = str(Path(__file__).parent / "data" / "riches-apurui-M23.csv")
+        filename:str = str(Path(__file__).parent / "config" / "riches-apurui-M23.csv")
         res:bool = harness.router.import_route(filename)
 
         assert res == True
@@ -135,8 +144,8 @@ class TestCargo:
 
         assert harness.router.cargo == 0
 
-class TestComplexScenarios:
-    """Test complex multi-step scenarios."""
+class TestEventSequences:
+    """Test complex multi-step event scenarios."""
 
     def test_full_route_scenario(self, harness: TestHarness):
         """Test a complete route scenario with jumps and cargo."""
@@ -199,6 +208,40 @@ class TestComplexScenarios:
     def test_location_event(self, harness: TestHarness):
         """Test location event."""
 
+class TestShipyardSwap:
+    """Test ship swapping from shipyard."""
+
+    def test_swap_existing_ship(self, harness: TestHarness):
+        """Test swapping to a previously loaded ship."""
+        # Load multiple ships
+        for event in harness.events.get('shipyard_swap', []):
+            harness.fire_event(event)
+
+        assert harness.router.ship_id == str(event.get('ShipID'))
+
+    def test_swap_unknown_ship(self, harness: TestHarness):
+        """Test swapping to an unknown ship."""
+        for event in harness.events.get('shipyard_swap_unknown', []):
+            harness.fire_event(event)
+
+        assert harness.router.ship_id == str(event.get('ShipID'))
+
+class TestStateManagement:
+    """Test router state management."""
+
+    def test_router_singleton(self, harness: TestHarness) -> None:
+        """Test that Router is a singleton."""
+
+        # Create another harness - should share same router instance
+        harness2 = TestHarness()
+        assert harness.router is harness2.router
+
+    def test_save_load_parameters(self, harness: TestHarness) -> None:
+        """Test that route parameters are saved."""
+        for event in harness.events.get('startup', []):
+            harness.fire_event(event)
+
+        # Should do a save and verify the json result
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
 
@@ -304,7 +347,8 @@ class TestPlotting:
 
         res:bool = harness.router.plot_route('Neutron',
                                              {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                              'range': '60.00', 'efficiency': '60', 'supercharge_multiplier': '4'})
+                                              'range': '60.00', 'efficiency': '60',
+                                              'supercharge_multiplier': '4'})
         assert res == True
         time.sleep(20)
         assert harness.context.route is not None
@@ -317,7 +361,8 @@ class TestPlotting:
 
         res:bool = harness.router.plot_route('Neutron',
                                              {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                              'range': '60.00', 'efficiency': '60', 'supercharge_multiplier': '6'})
+                                              'range': '60.00', 'efficiency': '60',
+                                              'supercharge_multiplier': '6'})
         assert res == True
         time.sleep(20)
         assert harness.context.route is not None
@@ -328,6 +373,9 @@ class TestPlotting:
 
     def test_plot_galaxy_route(self, harness: TestHarness) -> None:
         """Ensure galaxy plot_route sets params and starts worker."""
+        
+        harness.set_ship('Shipping Delay')
+
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
@@ -338,17 +386,17 @@ class TestPlotting:
             "use_injections": 0,
             "exclude_secondary": 1,
             "refuel_every_scoopable": 1,
-            "fuel_power": 2.45,
-            "fuel_multiplier": 0.013,
-            "optimal_mass": 1894.1,
-            "base_mass": 286.3,
-            "tank_size": 32,
-            "internal_tank_size": 0.5,
-            "max_fuel_per_jump": 5.2,
+            "fuel_power": harness.router.ship.fuel_power,
+            "fuel_multiplier": harness.router.ship.fuel_multiplier,
+            "optimal_mass": harness.router.ship.optimal_mass,
+            "base_mass": harness.router.ship.base_mass,
+            "tank_size": harness.router.ship.tank_size,
+            "internal_tank_size": harness.router.ship.internal_tank_size,
+            "max_fuel_per_jump": harness.router.ship.max_fuel_per_jump,
             "range_boost": 10.5,
-            "ship_build": harness.loadouts.get('Shipping Delay', {}),
-            "supercharge_multiplier": 4,
-            "injection_multiplier": 2,
+            "ship_build": harness.router.ship.loadout,
+            "supercharge_multiplier": harness.router.ship.supercharge_multiplier,
+            "injection_multiplier": harness.router.ship.injection_multiplier,
             "source": "Apurui",
             "destination": "Bleae Thua NI-B b27-5"
         }
@@ -357,13 +405,20 @@ class TestPlotting:
         assert res == True
         time.sleep(62)
 
+        assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
         assert harness.context.route.total_jumps() == 18
+        harness.context.route.offset = 8
+        assert harness.context.route.next_stop() == 'Col 359 Sector DB-S b32-3'
+        
 
 
     def test_plot_galaxy_route_caspian(self, harness: TestHarness) -> None:
         """Ensure galaxy plot_route sets params and starts worker."""
+
+        harness.set_ship('Perviy')
+
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
@@ -374,17 +429,17 @@ class TestPlotting:
             "use_injections": 0,
             "exclude_secondary": 1,
             "refuel_every_scoopable": 1,
-            "fuel_power": 2.505,
-            "fuel_multiplier": 0.011,
-            "optimal_mass": 7528.04,
-            "base_mass": 1366.44,
-            "tank_size": 128,
-            "internal_tank_size": 1.14,
-            "max_fuel_per_jump": 6.8,
+            "fuel_power": harness.router.ship.fuel_power,
+            "fuel_multiplier": harness.router.ship.fuel_multiplier,
+            "optimal_mass": harness.router.ship.optimal_mass,
+            "base_mass": harness.router.ship.base_mass,
+            "tank_size": harness.router.ship.tank_size,
+            "internal_tank_size": harness.router.ship.internal_tank_size,
+            "max_fuel_per_jump": harness.router.ship.max_fuel_per_jump,
             "range_boost": 10.5,
-            "ship_build": harness.loadouts.get('Perviy', {}),
-            "supercharge_multiplier": 6,
-            "injection_multiplier": 2,
+            "ship_build": harness.router.ship.loadout,
+            "supercharge_multiplier": harness.router.ship.supercharge_multiplier,
+            "injection_multiplier": harness.router.ship.injection_multiplier,
             "source": "Apurui",
             "destination": "Bleae Thua NI-B b27-5"
         }
@@ -393,46 +448,13 @@ class TestPlotting:
         assert res == True
         time.sleep(62)
 
+        assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
-        assert harness.context.route.total_jumps() == 12
-
-class TestShipyardSwap:
-    """Test ship swapping from shipyard."""
-
-    def test_swap_existing_ship(self, harness: TestHarness):
-        """Test swapping to a previously loaded ship."""
-        # Load multiple ships
-        for event in harness.events.get('shipyard_swap', []):
-            harness.fire_event(event)
-
-        assert harness.router.ship_id == str(event.get('ShipID'))
-
-    def test_swap_unknown_ship(self, harness: TestHarness):
-        """Test swapping to an unknown ship."""
-        for event in harness.events.get('shipyard_swap_unknown', []):
-            harness.fire_event(event)
-
-        assert harness.router.ship_id == str(event.get('ShipID'))
-
-class TestStateManagement:
-    """Test router state management."""
-
-    def test_router_singleton(self, harness: TestHarness) -> None:
-        """Test that Router is a singleton."""
-
-        # Create another harness - should share same router instance
-        harness2 = TestHarness()
-        assert harness.router is harness2.router
-
-    def test_save_load_parameters(self, harness: TestHarness) -> None:
-        """Test that route parameters are saved."""
-        for event in harness.events.get('startup', []):
-            harness.fire_event(event)
-
-        # Should do a save and verify the json result
-
-
+        assert harness.context.route.total_jumps() == 11
+        harness.context.route.offset = 6
+        assert harness.context.route.next_stop() == 'Col 359 Sector ZZ-P d5-52'
+        
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

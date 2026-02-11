@@ -1,5 +1,3 @@
-*.csv
-
 # Python cache/compiled files
 *.pyo
 *.pyc

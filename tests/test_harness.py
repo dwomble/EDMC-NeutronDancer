@@ -347,6 +347,15 @@ class TestHarness:
                 print(f"Error in journal handler: {e}")
                 raise
 
+    def set_ship(self, ship_name:str) -> None:
+        """ Set the current ship in the router context. """
+        ship_info:dict = self.loadouts.get(ship_name, {})
+        if ship_info == {}:
+            print(f"Warning: No loadout info found for ship '{ship_name}' in loadouts.json")
+        self.router.ship = Ship(ship_info)
+        self.router.ship_id = str(ship_info.get('ShipID', '1'))
+        self.router.ships[self.router.ship_id] = self.router.ship        
+            
     def _load_events(self) -> Dict[str, list]:
         """Load journal events from events.json file."""
         events:Dict[str, list] = {}

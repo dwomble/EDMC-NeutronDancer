@@ -9,7 +9,7 @@ class Ship:
         # The journal loadout entry
         self.loadout:dict = {}
         self.supercharge_multiplier:int = 4
-        self.injection_mult:int = 2
+        self.injection_multiplier:int = 2
 
         if entry.get('event', None) != 'Loadout':
             Debug.logger.debug(f"Not an event")

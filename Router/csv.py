@@ -58,55 +58,61 @@ class CSV:
             Debug.logger.debug(f"No filename selected")
             return False
 
-        with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
-            self.roadtoriches = False
-            self.fleetcarrier = False
+        try:
+            with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
+                self.roadtoriches = False
+                self.fleetcarrier = False
 
-            route_reader:csv.DictReader[str] = csv.DictReader(csvfile)
-            # Check it has column headings
-            if not route_reader.fieldnames:
-                self.error = errs["empty_file"]
-                Debug.logger.error(f"File {filename} is empty or doesn't have a header row")
-                return False
+                route_reader:csv.DictReader[str] = csv.DictReader(csvfile)
+                # Check it has column headings
+                if not route_reader.fieldnames:
+                    self.error = errs["empty_file"]
+                    Debug.logger.error(f"File {filename} is empty or doesn't have a header row")
+                    return False
 
-            fields:list = list(route_reader.fieldnames)
-            hdrs:list = []
-            hdrs = [h for h in HEADERS if h in fields]
+                fields:list = list(route_reader.fieldnames)
+                hdrs:list = []
+                hdrs = [h for h in HEADERS if h in fields]
 
-            # Append any remaining fields
-            for f in fields:
-                if f not in HEADERS:
-                    hdrs.append(f)
+                # Append any remaining fields
+                for f in fields:
+                    if f not in HEADERS:
+                        hdrs.append(f)
 
-            if hdrs == [] or "System Name" not in hdrs:
-                self.error = errs["invalid_file"]
-                Debug.logger.error(f"File {filename} is of unsupported format")
-                return False
+                if hdrs == [] or "System Name" not in hdrs:
+                    self.error = errs["invalid_file"]
+                    Debug.logger.error(f"File {filename} is of unsupported format")
+                    return False
 
-            route:list = []
-            for row in route_reader:
-                r:list = []
-                if row in (None, "", []): continue
-                for col in hdrs:
-                    if col not in row: continue
-                    if col in ["body_name", "body_subtype"]:
-                        r.append(ast.literal_eval(row[col]))
-                        continue
-                    if re.match(r"^(\d+)$", str(row[col])):
-                        r.append(round(int(row[col]), 2))
-                        continue
-                    if re.match(r"^\d+\.(\d+)?$", str(row[col])):
-                        r.append(round(float(row[col]), 2))
-                        continue
-                    r.append(row[col])
-                route.append(r)
+                route:list = []
+                for row in route_reader:
+                    r:list = []
+                    if row in (None, "", []): continue
+                    for col in hdrs:
+                        if col not in row: continue
+                        if col in ["body_name", "body_subtype"]:
+                            r.append(ast.literal_eval(row[col]))
+                            continue
+                        if re.match(r"^(\d+)$", str(row[col])):
+                            r.append(round(int(row[col]), 2))
+                            continue
+                        if re.match(r"^\d+\.(\d+)?$", str(row[col])):
+                            r.append(round(float(row[col]), 2))
+                            continue
+                        r.append(row[col])
+                    route.append(r)
 
-            #self.fleetcarrier = True if "Fuel Used" in hdrs else False
-            #self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
-            self.headers = hdrs
-            self.route = route
-            return True
-
+                #self.fleetcarrier = True if "Fuel Used" in hdrs else False
+                #self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
+                self.headers = hdrs
+                self.route = route
+                Debug.logger.debug(f"Successfully imported route with {len(route)} rows and headers: {hdrs}")
+                return True
+        except Exception as e:
+            self.error = errs["invalid_file"]
+            Debug.logger.error(f"Failed to read file {filename}, exception info:", exc_info=e)
+            return False
+        
 
     def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """

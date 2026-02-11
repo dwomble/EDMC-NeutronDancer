@@ -757,7 +757,7 @@ class UI():
             'range_boost': Context.router.ships[ship_id].range_boost,
             'ship_build': Context.router.ships[ship_id].loadout,
             'supercharge_multiplier': Context.router.ships[ship_id].supercharge_multiplier,
-            'injection_multiplier': Context.router.ships[ship_id].injection_mult
+            'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
             }
 
         params['source'] = self.gal_source_ac.get().strip()

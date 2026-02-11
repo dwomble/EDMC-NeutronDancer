@@ -7,6 +7,11 @@
 * Added !nd chat commands for next, previous, and copy. [Issue 14](https://github.com/dwomble/EDMC-NeutronDancer/issues/14)
 * Added overlay support [Issue 6](https://github.com/dwomble/EDMC-NeutronDancer/issues/6)
 
+### Changes
+
+* Lots of test suite enhancements.
+* Test suite now runs live neutron and galaxy plots and compares the results against direct routes from Spansh
+
 ### Bug Fixes
 
 * Addressed change to Spansh api that caused boost multiplier to be ignored [Issue 16](https://github.com/dwomble/EDMC-NeutronDancer/issues/16)

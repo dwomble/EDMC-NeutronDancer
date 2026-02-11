@@ -35,6 +35,7 @@ class Route:
             self.sc:int|None = self.colind()
             self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
+
     def source(self) -> str:
         if self.route == []: return ''
         return self.route[0][self.sc]
@@ -56,6 +57,7 @@ class Route:
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
+        if self.offset >= len(self.route): return ''
         Debug.logger.debug(f"Next stop: {self.sc} {self.route[self.offset][self.sc]}")
         return self.route[self.offset][self.sc]
 
@@ -78,8 +80,11 @@ class Route:
         if offset >= len(self.route)-1: return 0
 
         # No jump count column
-        if self.jc == None: return len(self.route[offset:])
-        return sum([j[self.jc] for i, j in enumerate(self.route[offset:]) if i == 0 or self.route[i-1][self.sc] != j[self.sc]])
+        if self.jc == None: return len(self.route[offset:-1])
+
+        syscol:int|None = self.colind('System Name')  # We want to use the system name rather than the body name to count jumps
+        if syscol == None: syscol = self.sc # Fallback to whatever column we use for the system if we don't have a system name column
+        return sum([j[self.jc] for i, j in enumerate(self.route[offset:]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
 
 
     def perc_jumps_rem(self, offset:int|None = None) -> float:
@@ -196,8 +201,10 @@ class Route:
         if self.route == []: return "No route"
         return f"{self.route[0][self.sc]} to {self.route[-1][self.sc]}"
 
+
     def __str__(self) -> str:
         return self.__repr__()
+
 
     def to_dict(self) -> list:
         return [self.hdrs, self.route, self.offset, self.jumps]

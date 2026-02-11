@@ -118,11 +118,11 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
-        Overlay().send_message('Default', ["title", "", "normal", ""], ttl=1)
+        Overlay().show_message('Default', ["title", "", "normal", ""], ttl=1)
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
-        Context.router.neutron_params['supercharge_mult'] = Context.router.ship.supercharge_mult if Context.router.ship else 4
+        Context.router.neutron_params['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
         if Context.router.cargo != 0 and Context.router.cargo != Context.router.galaxy_params.get('cargo', 0):
             Context.router.galaxy_params['cargo'] = Context.router.cargo
 
@@ -399,7 +399,7 @@ class UI():
 
         row += 1; col = 0
         self.multiplier = tk.IntVar() # Or StringVar() for string values
-        self.multiplier.set(params.get('supercharge_mult', 4))  # Set default value
+        self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
 
         # Create radio buttons
         l1:tk.Label|ttk.Label = label(plot_fr, text=lbls["supercharge_label"])
@@ -524,7 +524,7 @@ class UI():
             wp = ' ' + wp + ' '
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
 
-        message:list = ['large', "Next: " + wp]
+        message:list = ['large', "Next: " + str(wp)]
         jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
         tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
         txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
@@ -535,7 +535,7 @@ class UI():
             jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
 
         message.extend(["normal", f"{jstr}"])
-        Overlay().send_message('Default', message, ttl=60)
+        Overlay().show_message('Default', message, ttl=60)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -610,7 +610,7 @@ class UI():
                 for ship in Context.router.ships.values():
                     if ship.name == param:
                         self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
-                        self.multiplier.set(ship.supercharge_mult)
+                        self.multiplier.set(ship.supercharge_multiplier)
                         # Set ship in the galaxy form
                         return
 
@@ -628,7 +628,7 @@ class UI():
 
         # Neutron plotter
         self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
-        self.multiplier.set(ship.supercharge_mult)
+        self.multiplier.set(ship.supercharge_multiplier)
 
         shipmenu:dict = {}
         for id in Context.router.shiplist[:10]:
@@ -706,7 +706,7 @@ class UI():
             return
 
         params['efficiency'] = int(self.efficiency_slider.get())
-        params['supercharge_mult'] = self.multiplier.get()
+        params['supercharge_multiplier'] = self.multiplier.get()
         params['range'] = self.range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
@@ -756,7 +756,7 @@ class UI():
             'max_fuel_per_jump': Context.router.ships[ship_id].max_fuel_per_jump,
             'range_boost': Context.router.ships[ship_id].range_boost,
             'ship_build': Context.router.ships[ship_id].loadout,
-            'supercharge_multiplier': Context.router.ships[ship_id].supercharge_mult,
+            'supercharge_multiplier': Context.router.ships[ship_id].supercharge_multiplier,
             'injection_multiplier': Context.router.ships[ship_id].injection_mult
             }
 
@@ -888,7 +888,7 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        Overlay().clear_message('Default')
+        Overlay().show_message("Default", lbls['cooldown_complete'], "title")
         PopupNotice(title + "\n" + message, 20000, self.parent)
 
 

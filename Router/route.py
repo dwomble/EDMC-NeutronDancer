@@ -31,6 +31,9 @@ class Route:
             for i in range(0, len(cols)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
+            # Recalc, they may have moved.
+            self.sc:int|None = self.colind()
+            self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
     def source(self) -> str:
         if self.route == []: return ''
@@ -53,6 +56,7 @@ class Route:
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
+        Debug.logger.debug(f"Next stop: {self.sc} {self.route[self.offset][self.sc]}")
         return self.route[self.offset][self.sc]
 
 
@@ -120,9 +124,11 @@ class Route:
         """ Return the index of a given column, by default the system name column """
         if self.hdrs == []: return None
 
+        Debug.logger.debug(f"{self.hdrs}")
         if which == '':
             for h in ['Body Name', 'body', 'System Name', 'system', 'name']:
                 if h in self.hdrs:
+                    Debug.logger.debug(f"{h} {self.hdrs.index(h)}")
                     return self.hdrs.index(h)
             return 0
 

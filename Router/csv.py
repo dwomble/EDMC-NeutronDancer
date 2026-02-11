@@ -33,11 +33,7 @@ class CSV:
         self._initialized = True
 
 
-    @catch_exceptions
-    def read(self) -> bool:
-        """ Import a csv file """
-        self.error = ""
-
+    def choose_file(self) -> str:
         ftypes:list = [
             ('All supported files', '*.csv *.txt'),
             ('CSV files', '*.csv'),
@@ -46,7 +42,17 @@ class CSV:
         dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
         dir.mkdir(parents=True, exist_ok=True)
         filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=dir)
+        return filename
 
+    @catch_exceptions
+    def read(self, filename:str = '') -> bool:
+        """ Import a csv file """
+        self.error = ""
+
+        if len(filename) == 0:
+            filename = self.choose_file()
+
+        Debug.logger.info(f"Importing route from file: {filename}")
         if len(filename) == 0:
             self.error = errs["no_file"]
             Debug.logger.debug(f"No filename selected")

@@ -2,7 +2,7 @@
 Test suite for EDMC Neutron Dancer plugin using pytest.
 
 Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
-Run with: .venv_win\Scripts\python.exe -m pytest tests\test_plugin.py -v --tb=short
+Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb=short
 """
 
 import pytest # type: ignore
@@ -89,6 +89,115 @@ class TestJumps:
         for event in harness.events.get('jump_sequence', []):
             harness.fire_event(event)
             assert harness.router.system == event.get("StarSystem", event.get("System", ''))
+class TestImporting:
+    """Test importing functionality for different route types."""
+
+    def test_import_route_basic(self, harness: TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "data" / "route-Blae-Voqooe.csv")
+        res:bool = harness.router.import_route(filename)
+
+        assert res == True
+        assert harness.router.src == 'Bleae Thua NI-B b27-5'
+        assert harness.router.dest == 'Voqooe BI-H d11-864'
+        assert harness.context.route.total_jumps() == 40
+
+    def test_import_route_fc(self, harness: TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "data" / "fc-Blae-Voqooe.csv")
+        res:bool = harness.router.import_route(filename)
+
+        assert res == True
+        assert harness.context.route.fleetcarrier == True
+        assert harness.router.src == 'Bleae Thua NI-B b27-5'
+        harness.context.route.offset = 10
+        assert harness.context.route.next_stop() == 'Nyeajeau IQ-U c4-7'
+        assert harness.router.dest == 'Voqooe BI-H d11-864'
+
+    def test_import_route_riches(self, harness: TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "data" / "riches-apurui-M23.csv")
+        res:bool = harness.router.import_route(filename)
+
+        assert res == True
+        assert harness.router.src == 'HIP 89264 6'
+        assert harness.router.dest == 'Bleae Thua HF-R d4-116 B 7'
+
+class TestCargo:
+    """Test cargo management."""
+
+    def test_cargo_event(self, harness: TestHarness):
+        """Test cargo event updates."""
+        for event in harness.events.get('add_cargo', []):
+            harness.fire_event(event)
+
+        assert harness.router.cargo == 200
+
+        for event in harness.events.get('remove_cargo', []):
+            harness.fire_event(event)
+
+        assert harness.router.cargo == 0
+
+class TestComplexScenarios:
+    """Test complex multi-step scenarios."""
+
+    def test_full_route_scenario(self, harness: TestHarness):
+        """Test a complete route scenario with jumps and cargo."""
+        # Setup
+        #harness.startup("Sol")
+        #harness.loadout(ship_id="1", ship_type="Anaconda", ship_name="Route Runner", use_real_loadout=False)
+        #harness.cargo(0)
+
+        # Simulate route
+        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
+        #distances = [8.6, 11.4, 10.4]
+
+        #for i, system in enumerate(route_systems[1:], 1):
+        #    harness.jump(system, jump_distance=distances[i-1])
+        #    assert harness.router.system == system
+
+        # Final state check
+        #state = harness.get_router_state()
+        #assert state['system'] == "Altair"
+        #assert state['cargo'] == 0
+
+        # Simulate route
+        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
+        #distances = [8.6, 11.4, 10.4]
+
+        #for i, system in enumerate(route_systems[1:], 1):
+        #    harness.jump(system, jump_distance=distances[i-1])
+        #    assert harness.router.system == system
+
+        # Final state check
+        #state = harness.get_router_state()
+        #assert state['system'] == "Altair"
+        #assert state['cargo'] == 0
+
+    def test_carrier_jump_noroute(self, harness: TestHarness) -> None:
+        """Test carrier jump with docking."""
+        # { "timestamp":"2026-01-24T07:06:27Z", "event":"CarrierLocation", "CarrierType":"FleetCarrier", "CarrierID":3709409280, "StarSystem":"Kuk", "SystemAddress":24859942069665, "BodyID":12 }
+        #harness.startup("Sol")
+        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
+
+        #assert harness.router.system == "Sol"
+
+    def test_carrier_jump_route(self, harness: TestHarness):
+        """Test carrier jump with docking."""
+        #harness.startup("Sol")
+        #harness.router.carrier_id = "FC-12345"
+        #harness.router.carrier_state = "Jumping"
+        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
+
+        #assert harness.router.system == "Sol"
+
+    def test_supercruise_exit(self, harness: TestHarness):
+        """Test supercruise exit event."""
+        #harness.startup("Sol")
+        #harness.supercruise_exit("Sirius", body="A", position=[0, 0, 0])
+
+        # System should be updated
+        #assert harness.router.system == "Sirius"
+
+    def test_location_event(self, harness: TestHarness):
+        """Test location event."""
 
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
@@ -110,6 +219,80 @@ class TestPlotting:
         import time
         time.sleep(0.05)
         assert called['flag'] is True
+
+    def test_plotter_success_creates_route(self, harness: TestHarness) -> None:
+        """Test that _plotter successfully creates a route from Spansh response."""
+        # Mock Spansh response for job submission
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        # Mock route results response
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": {
+                "jumps": [
+                    {"system": "System1", "distance": 20.5},
+                    {"system": "System2", "distance": 19.3},
+                ]
+            }
+        }).encode()
+
+        # Track the thread so we can join it
+        plotter_thread = None
+        original_thread = __import__('threading').Thread
+
+        def capture_thread(*args, **kwargs):
+            nonlocal plotter_thread
+            thread = original_thread(*args, **kwargs)
+            if "route plotting worker" in thread.name:
+                plotter_thread = thread
+            return thread
+
+        with patch('threading.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'from': 'Start', 'to': 'End', 'max_time': 1}
+                    harness.router.plot_route('Neutron', params)
+
+                    # Join the plotter thread if captured
+                    if plotter_thread:
+                        plotter_thread.join(timeout=120)
+
+                    # Route should be created and have at least 2 waypoints
+                    assert Context.route is not None
+                    assert len(Context.route.route) >= 2
+
+    def test_plotter_error_response_shows_error(self, harness: TestHarness):
+        """Test that _plotter handles error responses without crashing."""
+        # Mock error response
+        error_response = Mock()
+        error_response.status_code = 500
+        error_response.content = json.dumps({"error": "Server error"}).encode()
+
+        # Track the thread so we can join it
+        plotter_thread = None
+        original_thread = __import__('threading').Thread
+
+        def capture_thread(*args, **kwargs):
+            nonlocal plotter_thread
+            thread = original_thread(*args, **kwargs)
+            if "route plotting worker" in thread.name:
+                plotter_thread = thread
+            return thread
+
+        with patch('threading.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=error_response):
+                params = {'from': 'Start', 'to': 'End', 'max_time': 1}
+                # Should not raise exception, just handle error gracefully
+                harness.router.plot_route('Neutron', params)
+
+                # Join the plotter thread if captured
+                if plotter_thread:
+                    plotter_thread.join(timeout=120)
+
+                # No exception should be raised; Context.ui.show_error would be called
 
     def test_plot_route_unknown_type(self, harness: TestHarness):
         """Unknown plot types should return False and not start plotting."""
@@ -213,166 +396,6 @@ class TestPlotting:
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
         assert harness.context.route.total_jumps() == 12
-
-
-    def test_import_route(self, harness: TestHarness) -> None:
-        return
-
-    def test_plotter_success_creates_route(self, harness: TestHarness) -> None:
-        """Test that _plotter successfully creates a route from Spansh response."""
-        # Mock Spansh response for job submission
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        # Mock route results response
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": {
-                "jumps": [
-                    {"system": "System1", "distance": 20.5},
-                    {"system": "System2", "distance": 19.3},
-                ]
-            }
-        }).encode()
-
-        # Track the thread so we can join it
-        plotter_thread = None
-        original_thread = __import__('threading').Thread
-
-        def capture_thread(*args, **kwargs):
-            nonlocal plotter_thread
-            thread = original_thread(*args, **kwargs)
-            if "route plotting worker" in thread.name:
-                plotter_thread = thread
-            return thread
-
-        with patch('threading.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'from': 'Start', 'to': 'End', 'max_time': 1}
-                    harness.router.plot_route('Neutron', params)
-
-                    # Join the plotter thread if captured
-                    if plotter_thread:
-                        plotter_thread.join(timeout=120)
-
-                    # Route should be created and have at least 2 waypoints
-                    assert Context.route is not None
-                    assert len(Context.route.route) >= 2
-
-    def test_plotter_error_response_shows_error(self, harness: TestHarness):
-        """Test that _plotter handles error responses without crashing."""
-        # Mock error response
-        error_response = Mock()
-        error_response.status_code = 500
-        error_response.content = json.dumps({"error": "Server error"}).encode()
-
-        # Track the thread so we can join it
-        plotter_thread = None
-        original_thread = __import__('threading').Thread
-
-        def capture_thread(*args, **kwargs):
-            nonlocal plotter_thread
-            thread = original_thread(*args, **kwargs)
-            if "route plotting worker" in thread.name:
-                plotter_thread = thread
-            return thread
-
-        with patch('threading.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=error_response):
-                params = {'from': 'Start', 'to': 'End', 'max_time': 1}
-                # Should not raise exception, just handle error gracefully
-                harness.router.plot_route('Neutron', params)
-
-                # Join the plotter thread if captured
-                if plotter_thread:
-                    plotter_thread.join(timeout=120)
-
-                # No exception should be raised; Context.ui.show_error would be called
-
-
-class TestCargo:
-    """Test cargo management."""
-
-    def test_cargo_event(self, harness: TestHarness):
-        """Test cargo event updates."""
-        for event in harness.events.get('add_cargo', []):
-            harness.fire_event(event)
-
-        assert harness.router.cargo == 200
-
-        for event in harness.events.get('remove_cargo', []):
-            harness.fire_event(event)
-
-        assert harness.router.cargo == 0
-
-class TestComplexScenarios:
-    """Test complex multi-step scenarios."""
-
-    def test_full_route_scenario(self, harness: TestHarness):
-        """Test a complete route scenario with jumps and cargo."""
-        # Setup
-        #harness.startup("Sol")
-        #harness.loadout(ship_id="1", ship_type="Anaconda", ship_name="Route Runner", use_real_loadout=False)
-        #harness.cargo(0)
-
-        # Simulate route
-        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
-        #distances = [8.6, 11.4, 10.4]
-
-        #for i, system in enumerate(route_systems[1:], 1):
-        #    harness.jump(system, jump_distance=distances[i-1])
-        #    assert harness.router.system == system
-
-        # Final state check
-        #state = harness.get_router_state()
-        #assert state['system'] == "Altair"
-        #assert state['cargo'] == 0
-
-        # Simulate route
-        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
-        #distances = [8.6, 11.4, 10.4]
-
-        #for i, system in enumerate(route_systems[1:], 1):
-        #    harness.jump(system, jump_distance=distances[i-1])
-        #    assert harness.router.system == system
-
-        # Final state check
-        #state = harness.get_router_state()
-        #assert state['system'] == "Altair"
-        #assert state['cargo'] == 0
-
-    def test_carrier_jump_noroute(self, harness: TestHarness) -> None:
-        """Test carrier jump with docking."""
-        # { "timestamp":"2026-01-24T07:06:27Z", "event":"CarrierLocation", "CarrierType":"FleetCarrier", "CarrierID":3709409280, "StarSystem":"Kuk", "SystemAddress":24859942069665, "BodyID":12 }
-        #harness.startup("Sol")
-        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
-
-        #assert harness.router.system == "Sol"
-
-    def test_carrier_jump_route(self, harness: TestHarness):
-        """Test carrier jump with docking."""
-        #harness.startup("Sol")
-        #harness.router.carrier_id = "FC-12345"
-        #harness.router.carrier_state = "Jumping"
-        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
-
-        #assert harness.router.system == "Sol"
-
-    def test_supercruise_exit(self, harness: TestHarness):
-        """Test supercruise exit event."""
-        #harness.startup("Sol")
-        #harness.supercruise_exit("Sirius", body="A", position=[0, 0, 0])
-
-        # System should be updated
-        #assert harness.router.system == "Sirius"
-
-    def test_location_event(self, harness: TestHarness):
-        """Test location event."""
-
-
 
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""

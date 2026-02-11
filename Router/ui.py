@@ -512,9 +512,9 @@ class UI():
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
 
-        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Jumping' and Context.route.get_waypoint(-1) == Context.router.system:
+        if Context.route.fleetcarrier == True and Context.router.carrier_state == 'Jumping' and Context.route.get_waypoint(-1) == Context.router.system:
             wp = f"{lbls['carrier_jumping']}"
-        if Context.route.fleetcarrer == True and Context.router.carrier_state == 'Cooldown' and Context.route.get_waypoint(-1) == Context.router.system:
+        if Context.route.fleetcarrier == True and Context.router.carrier_state == 'Cooldown' and Context.route.get_waypoint(-1) == Context.router.system:
             wp = f"{lbls['carrier_cooldown']}"
 
         # Set an icon if appropriate

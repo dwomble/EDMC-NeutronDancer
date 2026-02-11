@@ -43,9 +43,9 @@ if 'config' not in sys.modules:
 
     import types as _types
     _cfg = _types.ModuleType('config')
-    _cfg.appname = 'EDMC'
-    _cfg.config = MockConfig()
-    _cfg.shutting_down = False
+    _cfg.appname = 'EDMC' # type:ignore
+    _cfg.config = MockConfig() # type:ignore
+    _cfg.shutting_down = False # type:ignore
     sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
@@ -156,11 +156,11 @@ except ImportError:
 
     _msg_mod = _types.ModuleType('tkinter.messagebox')
     # copy static methods from MockMessagebox to module-level callables
-    _msg_mod.showinfo = MockMessagebox.showinfo
-    _msg_mod.showerror = MockMessagebox.showerror
-    _msg_mod.showwarning = MockMessagebox.showwarning
-    _msg_mod.askyesno = MockMessagebox.askyesno
-    _msg_mod.askokcancel = MockMessagebox.askokcancel
+    _msg_mod.showinfo = MockMessagebox.showinfo # type:ignore
+    _msg_mod.showerror = MockMessagebox.showerror # type:ignore
+    _msg_mod.showwarning = MockMessagebox.showwarning # type:ignore
+    _msg_mod.askyesno = MockMessagebox.askyesno # type:ignore
+    _msg_mod.askokcancel = MockMessagebox.askokcancel # type:ignore
 
     sys.modules['tkinter'] = _tk_mod
     sys.modules['tkinter.ttk'] = _ttk_mod
@@ -203,7 +203,7 @@ from Router.context import Context
 from Router.route_manager import Router
 from Router.route import Route
 from Router.ship import Ship
-
+from Router.csv import CSV
 
 class TestHarness:
     """Main test harness for the Neutron Dancer plugin."""
@@ -233,6 +233,8 @@ class TestHarness:
         self.router = Router()
         Context.router = self.router
 
+        self.csv = CSV()
+        Context.csv = self.csv
         self.context = Context
 
         # Ensure minimal module data present for ship calculations during tests

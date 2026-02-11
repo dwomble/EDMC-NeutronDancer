@@ -11,19 +11,19 @@ class Route:
         self.route:list = cols
         self.jumps:list = jumps
         self.offset:int = offset
-        self.fleetcarrer:bool = False
+        self.fleetcarrier:bool = False
 
         if hdrs == [] or cols == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
-        self.fleetcarrer = any('tritium' in h.lower() for h in hdrs)
+        self.fleetcarrier = any('tritium' in h.lower() for h in hdrs)
 
         self.sc:int|None = self.colind()
         self.jc:int|None = self.colind('Jumps')
         self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
-        if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrer == False:
+        if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrier == False:
             jr:int = len(hdrs)
             if self.jc != None: jr = self.jc+1
 

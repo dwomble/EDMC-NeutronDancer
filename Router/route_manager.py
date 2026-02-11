@@ -113,7 +113,7 @@ class Router():
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a carrier jump in order to update the route, the UI etc."""
 
-        if Context.route.route == [] or Context.route.fleetcarrer == True: return
+        if Context.route.route == [] or Context.route.fleetcarrier == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
         # End of the line?
@@ -127,7 +127,7 @@ class Router():
 
     def carrier_event(self, entry:dict) -> None:
         """ Note carrier jumps for a cooldown notification """
-        if Context.route.route == [] or Context.route.fleetcarrer == False: return
+        if Context.route.route == [] or Context.route.fleetcarrier == False: return
 
         match entry.get('event'):
             case 'CarrierJumpRequest' if entry.get('SystemName', '') == Context.route.next_stop():
@@ -290,11 +290,11 @@ class Router():
 
 
     @catch_exceptions
-    def import_route(self) -> bool:
+    def import_route(self, filename:str = '') -> bool:
         """ Load a route from a CSV """
         try:
             Debug.logger.info("Importing route")
-            if Context.csv == None or Context.csv.read() == False:
+            if Context.csv == None or Context.csv.read(filename) == False:
                 Debug.logger.info(f"Failed to load route")
                 Context.ui.show_error(errs['no_filename'] if not Context.csv else Context.csv.error)
                 return False

@@ -1,10 +1,16 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.?.? ????-??-??
+## v1.7.0 2026-02-12
 
 ### New Features
 
-* Added !nd chat commands for next, previous, and copy.
+* Added !nd chat commands for next, previous, and copy. [Issue 14](https://github.com/dwomble/EDMC-NeutronDancer/issues/14)
+* Added overlay support [Issue 6](https://github.com/dwomble/EDMC-NeutronDancer/issues/6)
+
+### Bug Fixes
+
+* Addressed change to Spansh api that caused boost multiplier to be ignored [Issue 16](https://github.com/dwomble/EDMC-NeutronDancer/issues/16)
+* Fixed error parsing Road to Riches files [Issue 17](https://github.com/dwomble/EDMC-NeutronDancer/issues/17)
 
 ## v1.6.2 2026-01-21
 

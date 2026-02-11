@@ -84,7 +84,7 @@ class Router():
         self.ship_id = sid
 
         self.neutron_params['range'] = self.ships[sid].range
-        self.neutron_params['supercharge_mult'] = self.ships[sid].supercharge_mult
+        self.neutron_params['supercharge_multiplier'] = self.ships[sid].supercharge_multiplier
         self.ship = self.ships[sid]
 
 
@@ -93,7 +93,7 @@ class Router():
         ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
-        self.neutron_params['supercharge_mult'] = ship.supercharge_mult
+        self.neutron_params['supercharge_multiplier'] = ship.supercharge_multiplier
         self.neutron_params['range'] = ship.range
         self.ships[self.ship_id] = ship
 

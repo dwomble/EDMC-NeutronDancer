@@ -1,7 +1,8 @@
 import textwrap
 import copy
 import json
-from dataclasses import field, dataclass, asdict
+import re
+from dataclasses import dataclass, asdict
 from functools import partial
 
 import tkinter as tk
@@ -10,9 +11,11 @@ import myNotebook as nb # type: ignore
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
+    from overlay_plugin.overlay_api import define_plugin_group as _define_plugin_group #type: ignore
 except ImportError:
     try:
         from edmcoverlay import edmcoverlay # type: ignore
+
     except ImportError:
         edmcoverlay = None
 
@@ -21,12 +24,12 @@ from config import config # type:ignore
 from utils.debug import Debug, catch_exceptions
 from utils.placeholder import Placeholder
 from .context import Context
-from .constants import NAME
+from .constants import OVERLAY_NAME
 
 @dataclass
 class OvFrame:
     """ Overlay frame details """
-    name:str = ''
+    name:str = 'Default'
     enabled:bool = True
     x:int = 0
     y:int = 0
@@ -60,15 +63,29 @@ class Overlay():
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
         self.ovf:OvFrame = OvFrame()
+        overlay = self._get_overlay()
+
+        if overlay:
+            _define_plugin_group(
+                plugin_group=OVERLAY_NAME,
+                matching_prefixes=[f"{OVERLAY_NAME}-"],
+                id_prefix_group=f"{self.ovf.name}",
+                id_prefixes=[f"{OVERLAY_NAME}-{self.ovf.name}-"],
+                id_prefix_group_anchor="nw",
+                marker_label_position="below",
+                controller_preview_box_mode="last",
+                background_color="#00000000",
+                background_border_width=2,
+            )
         self._load_prefs()
-        self.ovf.name = 'Default'
-        self.messages:dict = {}
+
+        self.src_msgs:dict = {}
+        self.msgs:dict = {}
         self._initialized = True
 
 
     def _get_overlay(self):
         """ Is an overlay installed and running? """
-        Debug.logger.debug(f"Get overlay")
         if not edmcoverlay:
             Debug.logger.warning(f"edmcoverlay plugin is not installed")
             return
@@ -80,50 +97,57 @@ class Overlay():
             Debug.logger.warning(f"EDMCOverlay is not running")
             return
 
+    def redraw_messages(self) -> None:
+        """ Clear all overlay messages """
+        Debug.logger.debug(f"Redrawing mesages")
+        [self.show_message(m, text) for m, text in self.src_msgs.items()]
+
+
     def clear_messages(self) -> None:
         """ Clear all overlay messages """
-        Debug.logger.debug(f"Clearing {self.messages}")
-        #messages:list = copy.copy([self.messages.keys()])
-        [self.clear_message(m) for m in list(self.messages)]
+        Debug.logger.debug(f"Clearing {self.msgs.keys()}")
+        [self.clear_message(m) for m in list(self.msgs)]
 
     @catch_exceptions
     def clear_message(self, msgid:str = "") -> bool:
         """ Clear a message """
-        if msgid not in self.messages: return False
+
+        overlay = self._get_overlay()
+        if not overlay or msgid not in self.msgs: return False
+
         status:bool = self.ovf.enabled
         self.ovf.enabled = True
-        msg:list = self.messages[msgid]
-        for i in range(1, len(msg), 2):
-            msg[i] = ""
-        self.send_message(msgid, msg, ttl=1)
-        del self.messages[msgid]
+
+        msg:dict = self.msgs[msgid]
+        msg['ttl'] = 1
+        overlay.send_message(**msg)
+        del self.msgs[msgid]
         self.ovf.enabled = status
         return True
 
 
     @catch_exceptions
-    def send_message(self, msgid:str = "", text:str|list = "", size:str = "normal", ttl=120) -> None:
+    def show_message(self, msgid:str = "", text:str|list = "", size:str = "normal", ttl=120) -> None:
         overlay = self._get_overlay()
-        if not overlay: return
-        Debug.logger.debug(f"Overlay enabled: {self.ovf.enabled}")
-        if self.ovf.enabled == False: return
+        if not overlay or not self.ovf.enabled: return
 
         if isinstance(text, str): text = [size, text]
         y:int = self.ovf.y
         for i in range(0, len(text), 2):
             args:dict = {
-                'msgid': f"ND-{msgid}-{i}",
+                'msgid': f"{OVERLAY_NAME}-{msgid}-{i}",
                 'text': text[i+1],
                 'color': self.ovf.text_colour,
                 'x': self.ovf.x,
                 'y': y,
-                'ttl': self.ovf.ttl,
+                'ttl': ttl,
                 'size': text[i]
             }
             Debug.logger.debug(f"Sending overlay message {args}")
             overlay.send_message(**args)
+            self.msgs[f"{OVERLAY_NAME}-{msgid}-{i}"] = args
             y += 20
-        self.messages[msgid] = text
+        self.src_msgs[msgid] = text
 
     @catch_exceptions
     def prefs_display(self, parent:nb.Frame) -> nb.Frame:
@@ -133,7 +157,6 @@ class Overlay():
             # Update dataclass whenever the UI changes
             def update_obj(*args) -> None:
                 setattr(data_obj, attribute, tk_var.get())
-                self.send_message("Test", "Test Message", "normal", 10)
 
             tk_var.trace_add("write", update_obj)
             return tk_var
@@ -146,10 +169,12 @@ class Overlay():
                 Debug.logger.debug(f"{len(cbtns)} {cbtns}")
                 for b in cbtns:
                     b.config(**{which.lower(): color})
-                self.send_message("Test", "Test Message", "normal", ttl=10)
 
         def validate_int(val:str) -> bool:
             return True if val.isdigit() or val == '' else False
+
+        # Hide existing messages. Redraw them in the new location when the user clicks save
+        self.clear_messages()
 
         prefsfr:nb.Frame = nb.Frame(parent)
         prefsfr.columnconfigure(6, weight=1)
@@ -191,18 +216,20 @@ class Overlay():
     def save_prefs(self) -> bool:
         """ Serialize and save the frames dictionary to EDMC config. """
         # Store the serialized frames in the config
-        self.send_message("Test", "", "normal", ttl=1)
-        config.set(f"{NAME}_overlay", json.dumps(asdict(self.ovf)))
-        if self.ovf.enabled == False:
-            self.clear_messages()
+
+        config.set(f"{OVERLAY_NAME}_overlay", json.dumps(asdict(self.ovf)))
+        if self.ovf.enabled == True:
+            self.redraw_messages()
+
         Debug.logger.info(f"Saved {self.ovf} frames to EDMC config")
         return True
 
 
-    def _load_prefs(self):
+    def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
-        conf = config.get(f"{NAME}_overlay")
-        Debug.logger.debug(f"{conf}")
+
+        conf = config.get(f"{OVERLAY_NAME}_overlay")
+        Debug.logger.debug(f"Loading config: {conf}")
         if conf == None: return
         data:dict = json.loads(conf)
         self.ovf = OvFrame(**data)

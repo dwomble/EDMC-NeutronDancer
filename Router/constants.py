@@ -2,6 +2,7 @@ from config import config  # type: ignore
 
 # Project information
 NAME="Navl's Neutron Dancer"
+OVERLAY_NAME="NeutronDancer"
 GH_USER="dwomble"
 GH_PROJECT="EDMC-NeutronDancer"
 

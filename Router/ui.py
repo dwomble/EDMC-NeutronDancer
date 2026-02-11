@@ -888,7 +888,7 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        Overlay().show_message("cooldown", lbls['cooldown_complete'], "title")
+        Overlay().show_message("Default", lbls['cooldown_complete'], "title")
         PopupNotice(title + "\n" + message, 20000, self.parent)
 
 

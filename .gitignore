@@ -9,7 +9,7 @@ __pycache__/
 .vscode/
 
 # Virtual environment
-.venv/
+.venv*/
 
 # Development garbage
 deploy.sh

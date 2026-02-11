@@ -31,21 +31,28 @@ class MockConfig:
 	def set(self, key, value):
 		self.data[key] = value
 
-sys.modules['config'] = type('module', (), {
-	'appname': 'EDMC',
-	'config': MockConfig(),
-	'shutting_down': False
-})()
+import types as _types
+
+# Use a real ModuleType so static type checkers accept the assignment
+_config_mod = _types.ModuleType('config')
+_config_mod.appname = 'EDMC'
+_config_mod.config = MockConfig()
+_config_mod.shutting_down = False
+sys.modules['config'] = _config_mod
 
 # Mock myNotebook before importing modules that use it
-sys.modules['myNotebook'] = type('module', (), {})()
+sys.modules['myNotebook'] = _types.ModuleType('myNotebook')
 
 # Mock PIL (Pillow) before importing modules that use it
-mock_image = type('Image', (), {})()
-mock_image_tk = type('ImageTk', (), {})()
-sys.modules['PIL'] = type('module', (), {'Image': mock_image, 'ImageTk': mock_image_tk})()
-sys.modules['PIL.Image'] = mock_image
-sys.modules['PIL.ImageTk'] = mock_image_tk
+# Provide simple placeholders for Image and ImageTk while keeping modules as ModuleType
+mock_image = object()
+mock_image_tk = object()
+_pil_mod = _types.ModuleType('PIL')
+setattr(_pil_mod, 'Image', mock_image)
+setattr(_pil_mod, 'ImageTk', mock_image_tk)
+sys.modules['PIL'] = _pil_mod
+sys.modules['PIL.Image'] = _types.ModuleType('PIL.Image')
+sys.modules['PIL.ImageTk'] = _types.ModuleType('PIL.ImageTk')
 
 # Minimal EDMC `theme` module emulator so `from theme import theme` works in tests
 import types

@@ -33,3 +33,10 @@ def catch_exceptions(func):
             Debug.logger.error(trace[0] + "\n" + "\n".join(trace[4:]))
     return wrapper
 
+# Ensure `Debug.logger` exists even if no `Debug` instance was created.
+# This prevents attribute errors in tests or modules that reference
+# `Debug.logger` before plugin initialization.
+Debug.logger = logging.getLogger(appname)
+Debug.logger.addHandler(logging.NullHandler())
+Debug.logger.setLevel(logging.INFO)
+

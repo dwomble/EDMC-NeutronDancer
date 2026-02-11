@@ -1,10 +1,11 @@
 """
-Advanced test suite for EDMC Neutron Dancer plugin using pytest.
+Test suite for EDMC Neutron Dancer plugin using pytest.
 
 Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
+Run with: .venv_win\Scripts\python.exe -m pytest tests\test_plugin.py -v --tb=short
 """
 
-import pytest
+import pytest # type: ignore
 import sys
 from pathlib import Path
 from typing import Generator, Optional
@@ -154,16 +155,16 @@ class TestPlotting:
             "use_injections": 0,
             "exclude_secondary": 1,
             "refuel_every_scoopable": 1,
-            "fuel_power": 2.505,
-            "fuel_multiplier": 0.011,
-            "optimal_mass": 7528.04,
-            "base_mass": 1366.44,
-            "tank_size": 128,
-            "internal_tank_size": 1.14,
-            "max_fuel_per_jump": 6.8,
+            "fuel_power": 2.45,
+            "fuel_multiplier": 0.013,
+            "optimal_mass": 1894.1,
+            "base_mass": 286.3,
+            "tank_size": 32,
+            "internal_tank_size": 0.5,
+            "max_fuel_per_jump": 5.2,
             "range_boost": 10.5,
             "ship_build": harness.loadouts.get('Shipping Delay', {}),
-            "supercharge_multiplier": 6,
+            "supercharge_multiplier": 4,
             "injection_multiplier": 2,
             "source": "Apurui",
             "destination": "Bleae Thua NI-B b27-5"
@@ -190,13 +191,13 @@ class TestPlotting:
             "use_injections": 0,
             "exclude_secondary": 1,
             "refuel_every_scoopable": 1,
-            "fuel_power": 2.45,
-            "fuel_multiplier": 0.013,
-            "optimal_mass": 1894.1,
-            "base_mass": 286.3,
-            "tank_size": 32,
-            "internal_tank_size": 0.5,
-            "max_fuel_per_jump": 5.2,
+            "fuel_power": 2.505,
+            "fuel_multiplier": 0.011,
+            "optimal_mass": 7528.04,
+            "base_mass": 1366.44,
+            "tank_size": 128,
+            "internal_tank_size": 1.14,
+            "max_fuel_per_jump": 6.8,
             "range_boost": 10.5,
             "ship_build": harness.loadouts.get('Perviy', {}),
             "supercharge_multiplier": 6,
@@ -412,3 +413,4 @@ class TestStateManagement:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+

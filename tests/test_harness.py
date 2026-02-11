@@ -41,11 +41,12 @@ if 'config' not in sys.modules:
         def set(self, key, value):
             self.data[key] = value
 
-    sys.modules['config'] = type('module', (), {
-        'appname': 'EDMC',
-        'config': MockConfig(),
-        'shutting_down': False
-    })()
+    import types as _types
+    _cfg = _types.ModuleType('config')
+    _cfg.appname = 'EDMC'
+    _cfg.config = MockConfig()
+    _cfg.shutting_down = False
+    sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
 import types
@@ -140,9 +141,30 @@ except ImportError:
         @staticmethod
         def askokcancel(title, message): return False
 
-    sys.modules['tkinter'] = MockTk()
-    sys.modules['tkinter.ttk'] = MockTtk()
-    sys.modules['tkinter.messagebox'] = MockMessagebox()
+    import types as _types
+
+    _tk_mod = _types.ModuleType('tkinter')
+    # attach classes and constants from MockTk to the module
+    for name, val in MockTk.__dict__.items():
+        if not name.startswith('__'):
+            setattr(_tk_mod, name, val)
+
+    _ttk_mod = _types.ModuleType('tkinter.ttk')
+    for name, val in MockTtk.__dict__.items():
+        if not name.startswith('__'):
+            setattr(_ttk_mod, name, val)
+
+    _msg_mod = _types.ModuleType('tkinter.messagebox')
+    # copy static methods from MockMessagebox to module-level callables
+    _msg_mod.showinfo = MockMessagebox.showinfo
+    _msg_mod.showerror = MockMessagebox.showerror
+    _msg_mod.showwarning = MockMessagebox.showwarning
+    _msg_mod.askyesno = MockMessagebox.askyesno
+    _msg_mod.askokcancel = MockMessagebox.askokcancel
+
+    sys.modules['tkinter'] = _tk_mod
+    sys.modules['tkinter.ttk'] = _ttk_mod
+    sys.modules['tkinter.messagebox'] = _msg_mod
 
 # Mock myNotebook module
 class MockNotebook:
@@ -168,7 +190,13 @@ class MockNotebook:
     class Notebook:
         def __init__(self, parent=None, **kw): pass
 
-sys.modules['myNotebook'] = MockNotebook()
+import types as _types
+_nb_mod = _types.ModuleType('myNotebook')
+# attach classes from MockNotebook to module
+for name, val in MockNotebook.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_nb_mod, name, val)
+sys.modules['myNotebook'] = _nb_mod
 
 # Now we can import Router modules
 from Router.context import Context
@@ -237,6 +265,41 @@ class TestHarness:
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
         self.state_change_handlers: list[Callable] = []
+
+        # Ensure a minimal UI stub exists for headless/test environments
+        try:
+            if getattr(Context, 'ui', None) is None:
+                class _StubUI:
+                    def __init__(self):
+                        self.frame = SimpleNamespace()
+                        # simple after() implementation used by Router
+                        def after(ms, cb):
+                            # don't schedule background calls during tests
+                            return None
+                        self.frame.after = after
+                        self.parent = None
+
+                    def switch_ship(self, ship):
+                        return None
+
+                    def update_waypoint(self):
+                        return None
+
+                    def ctc(self, arg=None):
+                        return None
+
+                    def show_frame(self, which=None):
+                        return None
+
+                    def show_error(self, msg=None):
+                        return None
+
+                    def cooldown_complete(self):
+                        return None
+
+                Context.ui = _StubUI()  # type: ignore
+        except Exception:
+            pass
 
     def setup(self, config_file:str = "test_config.json") -> None:
         """ Setup the harness with a given config file. """

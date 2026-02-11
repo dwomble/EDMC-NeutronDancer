@@ -100,7 +100,14 @@ class Router():
         if self.ship_id in self.shiplist:
             self.shiplist.remove(self.ship_id)
         self.shiplist.insert(0, self.ship_id)
-        Context.ui.switch_ship(self.ship)
+        # Context.ui may be None in headless/test environments; guard the call.
+        if getattr(Context, 'ui', None) is not None and hasattr(Context.ui, 'switch_ship'):
+            try:
+                Context.ui.switch_ship(self.ship)
+            except Exception as e:
+                Debug.logger.exception(f"Error switching ship in UI: {e}")
+        else:
+            Debug.logger.debug("No UI available to switch ship; skipping UI update.")
 
 
     def jumped(self, system:str, entry:dict) -> None:

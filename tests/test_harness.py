@@ -56,6 +56,120 @@ theme_mod.theme.name = "default"
 theme_mod.theme.dark = False
 sys.modules['theme'] = theme_mod
 
+# Mock tkinter modules for testing
+try:
+    import tkinter as tk
+    from tkinter import ttk
+    import tkinter.messagebox
+except ImportError:
+    # If tkinter is not available, create mock modules
+    class MockTk:
+        """Mock tkinter module"""
+        class Widget: pass
+        class Frame(Widget): pass
+        class Toplevel(Widget): pass
+        class Label(Widget): pass
+        class Button(Widget): pass
+        class Radiobutton(Widget): pass
+        class Checkbutton(Widget): pass
+        class Entry(Widget): pass
+        class Text(Widget): pass
+        class Canvas(Widget): pass
+        class Listbox(Widget): pass
+        class Scale(Widget): pass
+        class Spinbox(Widget): pass
+        class LabelFrame(Widget): pass
+        class Message(Widget): pass
+        class Scrollbar(Widget): pass
+        class OptionMenu(Widget): pass
+        class Menubutton(Widget): pass
+        class Menu(Widget): pass
+
+        # Constants
+        NSEW = "nsew"
+        NW = "nw"
+        N = "n"
+        NE = "ne"
+        W = "w"
+        CENTER = "center"
+        E = "e"
+        SW = "sw"
+        S = "s"
+        SE = "se"
+        LEFT = "left"
+        RIGHT = "right"
+        TOP = "top"
+        BOTTOM = "bottom"
+        BOTH = "both"
+        NONE = "none"
+        X = "x"
+        Y = "y"
+        END = "end"
+        DISABLED = "disabled"
+        NORMAL = "normal"
+
+        StringVar: Callable[[], None] = lambda: None
+        IntVar: Callable[[], None] = lambda: None
+        BooleanVar: Callable[[], None] = lambda: None
+
+    class MockTtk:
+        """Mock tkinter.ttk module"""
+        class Frame(MockTk.Frame): pass
+        class Label(MockTk.Label): pass
+        class Button(MockTk.Button): pass
+        class Entry(MockTk.Entry): pass
+        class Combobox(MockTk.Entry): pass
+        class Checkbutton(MockTk.Checkbutton): pass
+        class Radiobutton(MockTk.Radiobutton): pass
+        class Scrollbar(MockTk.Scrollbar): pass
+        class LabelFrame(MockTk.LabelFrame): pass
+        class Notebook(MockTk.Frame): pass
+        class Scale(MockTk.Scale): pass
+        class Progressbar(MockTk.Canvas): pass
+
+    class MockMessagebox:
+        """Mock tkinter.messagebox module"""
+        @staticmethod
+        def showinfo(title, message): pass
+        @staticmethod
+        def showerror(title, message): pass
+        @staticmethod
+        def showwarning(title, message): pass
+        @staticmethod
+        def askyesno(title, message): return False
+        @staticmethod
+        def askokcancel(title, message): return False
+
+    sys.modules['tkinter'] = MockTk()
+    sys.modules['tkinter.ttk'] = MockTtk()
+    sys.modules['tkinter.messagebox'] = MockMessagebox()
+
+# Mock myNotebook module
+class MockNotebook:
+    """Mock myNotebook (nb) module"""
+    class Frame:
+        def __init__(self, parent=None, **kw): pass
+    class Label:
+        def __init__(self, parent=None, **kw): pass
+    class Button:
+        def __init__(self, parent=None, **kw): pass
+    class Entry:
+        def __init__(self, parent=None, **kw): pass
+    class Combobox:
+        def __init__(self, parent=None, **kw): pass
+    class Checkbutton:
+        def __init__(self, parent=None, **kw): pass
+    class Radiobutton:
+        def __init__(self, parent=None, **kw): pass
+    class Scrollbar:
+        def __init__(self, parent=None, **kw): pass
+    class LabelFrame:
+        def __init__(self, parent=None, **kw): pass
+    class Notebook:
+        def __init__(self, parent=None, **kw): pass
+
+sys.modules['myNotebook'] = MockNotebook()
+
 # Now we can import Router modules
 from Router.context import Context
 from Router.route_manager import Router
@@ -80,6 +194,7 @@ class TestHarness:
 
         # Load our event sequences
         self.events:Dict[str, list] = self._load_events()
+        self.loadouts:Dict[str, dict] = self._load_loadouts()
 
         # Initialize context
         Context.plugin_dir = self.plugin_dir
@@ -183,3 +298,20 @@ class TestHarness:
             print(f"Warning: Could not load journal_events.json: {e}")
 
         return events
+
+    def _load_loadouts(self) -> Dict[str, dict]:
+        """Load ship loadouts from loadouts.json file."""
+        loadouts:Dict[str, dict] = {}
+
+        LOADOUTS_FILE = Path(self.plugin_dir, "config", "loadouts.json")
+        logging.info(f"Loadouts file: {LOADOUTS_FILE}")
+        if not LOADOUTS_FILE.exists():
+            return loadouts
+
+        try:
+            with open(LOADOUTS_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load loadouts.json: {e}")
+
+        return loadouts

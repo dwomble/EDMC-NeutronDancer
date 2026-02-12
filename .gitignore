@@ -17,4 +17,4 @@ deploy.sh
 data/*
 routes/*
 updates/*
-
+tests/data/*

@@ -276,7 +276,7 @@ class UI():
         # Row three
         row += 1; col = 0
         if Context.router.shiplist == []: self.show_error(errs["no_ships"])
-        names:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        names:list = [Context.router.ships[id].name for id in Context.router.shiplist if id in Context.router.ships]
         init:str = params.get('ship_build', {}).get('ShipName', '')
         if init == "" and names != []:
             init = names[0]
@@ -362,7 +362,8 @@ class UI():
 
         # Create right click menu
         for id in Context.router.shiplist[:10]:
-            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+            if id in Context.router.ships:
+                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
 
         if shipmenu != {}:
             self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)

@@ -373,19 +373,19 @@ class TestPlotting:
 
     def test_plot_galaxy_route(self, harness: TestHarness) -> None:
         """Ensure galaxy plot_route sets params and starts worker."""
-        
+
         harness.set_ship('Shipping Delay')
 
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
             "algorithm": "Optimistic",
-            "fuel_reserve": 12,
+            "fuel_reserve": 4,
             "is_supercharged": 0,
             "use_supercharge": 1,
             "use_injections": 0,
             "exclude_secondary": 1,
-            "refuel_every_scoopable": 1,
+            "refuel_every_scoopable": 0,
             "fuel_power": harness.router.ship.fuel_power,
             "fuel_multiplier": harness.router.ship.fuel_multiplier,
             "optimal_mass": harness.router.ship.optimal_mass,
@@ -410,8 +410,8 @@ class TestPlotting:
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
         assert harness.context.route.total_jumps() == 18
         harness.context.route.offset = 8
-        assert harness.context.route.next_stop() == 'Col 359 Sector DB-S b32-3'
-        
+        assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
+
 
 
     def test_plot_galaxy_route_caspian(self, harness: TestHarness) -> None:
@@ -428,7 +428,7 @@ class TestPlotting:
             "use_supercharge": 1,
             "use_injections": 0,
             "exclude_secondary": 1,
-            "refuel_every_scoopable": 1,
+            "refuel_every_scoopable": 0,
             "fuel_power": harness.router.ship.fuel_power,
             "fuel_multiplier": harness.router.ship.fuel_multiplier,
             "optimal_mass": harness.router.ship.optimal_mass,
@@ -454,7 +454,7 @@ class TestPlotting:
         assert harness.context.route.total_jumps() == 11
         harness.context.route.offset = 6
         assert harness.context.route.next_stop() == 'Col 359 Sector ZZ-P d5-52'
-        
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

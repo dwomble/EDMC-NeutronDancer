@@ -244,7 +244,7 @@ class TestHarness:
             # Replace any existing FSD entries with a known-good one so it's chosen first
             fsd_entry = {
                 'symbol': 'Int_Hyperdrive_Size8_Class5',
-                'fuelpower': 2.505,
+                'fuelpower': 2.5025,
                 'fuelmul': 0.011,
                 'maxfuel': 6.8,
                 'optmass': 4670,
@@ -354,8 +354,8 @@ class TestHarness:
             print(f"Warning: No loadout info found for ship '{ship_name}' in loadouts.json")
         self.router.ship = Ship(ship_info)
         self.router.ship_id = str(ship_info.get('ShipID', '1'))
-        self.router.ships[self.router.ship_id] = self.router.ship        
-            
+        self.router.ships[self.router.ship_id] = self.router.ship
+
     def _load_events(self) -> Dict[str, list]:
         """Load journal events from events.json file."""
         events:Dict[str, list] = {}

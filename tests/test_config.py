@@ -35,9 +35,9 @@ import types as _types
 
 # Use a real ModuleType so static type checkers accept the assignment
 _config_mod = _types.ModuleType('config')
-_config_mod.appname = 'EDMC'
-_config_mod.config = MockConfig()
-_config_mod.shutting_down = False
+_config_mod.appname = 'EDMC' # type: ignore
+_config_mod.config = MockConfig() # type: ignore
+_config_mod.shutting_down = False # type: ignore
 sys.modules['config'] = _config_mod
 
 # Mock myNotebook before importing modules that use it
@@ -70,9 +70,9 @@ import logging
 try:
 	from utils.debug import Debug
 
-	logger = logging.getLogger('EDMC.TestHarness')
+	logger:logging.Logger = logging.getLogger('EDMC.TestHarness')
 	if not logger.handlers:
-		handler = logging.StreamHandler()
+		handler:logging.StreamHandler = logging.StreamHandler()
 		handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 		logger.addHandler(handler)
 	logger.setLevel(logging.DEBUG)
@@ -110,26 +110,6 @@ try:
 			return None
 
 	Context.ui = _StubUI() #type: ignore
-except Exception:
-	pass
-
-# Provide minimal module data so Ship range calculations succeed during tests
-try:
-	from Router.context import Context as _Context
-	# Minimal FSD and fuel tank entries matching TestHarness default module symbols
-	_Context.modules = [
-		{
-			'symbol': 'int_hyperdrive_size8_class5',
-			'fuelpower': 2.505,
-			'fuelmul': 0.011,
-			'maxfuel': 6.8,
-			'optmass': 4670,
-		},
-		{
-			'symbol': 'int_fueltank_size8_class3',
-			'fuel': 32.0,
-		}
-	]
 except Exception:
 	pass
 

@@ -21,6 +21,8 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 - Route export makes it easy to save a route for later reuse
 - Fleet carrier support includes jump cooldown tracking and notification
 - Tracks and reports statistics including jumps and distance per hour
+- Supports [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display
+- Supports chat commands (!nd next, !nd previous, !nd copy) for single screen operation
 
 ## Installation
 
@@ -56,13 +58,11 @@ This works the same as the Neutron Plotter but because the Galaxy Plotter is muc
 
 **Note** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
 
-
 ### CSV Import
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
 
 To import a CSV click **Import** and select an appropriate file such as that exported by the various Spansh route plotters.
-
 
 ### Following the route
 
@@ -82,6 +82,19 @@ The **Show route** button will open a window showing progress and the details of
 
 The **Export route** button will open a file dialog allowing you to save the current route as a CSV.
 
+### Overlay Support
+
+When you make a jump the next waypoint as well as your current statistics will be displayed on screen.
+This requires the EDMC Modern Overlay to be installed. To enable overlay display, in the ED:MC options select Navl's Neutron Dancer, enable Overlay and choose where and in which colour you want text to be displayed.
+
+### Chat Commands
+
+This enables management of Neutron Dancer without tabbing out of the game. Simply bring up a chat window and type in "!nd" and a command. Supported commands are:
+
+* next – move to the next waypoint
+* previous (or just prev) – move to the previous waypoint
+* copy – re-insert the next waypoint into the past buffer
+
 ### Saving State
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off and catch up any jumps made while EDMC was inactive.
@@ -99,6 +112,7 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a star.
 
 Fly dangerous! o7
+
 
 
 

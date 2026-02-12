@@ -16,440 +16,322 @@
         "cargo": 0,
         "max_time": 60,
         "algorithm": "Optimistic",
-        "fuel_reserve": 12,
+        "fuel_reserve": 4,
         "is_supercharged": 0,
         "use_supercharge": 1,
         "use_injections": 0,
         "exclude_secondary": 1,
         "refuel_every_scoopable": 0,
-        "fuel_power": 2.5025,
-        "fuel_multiplier": 0.011,
-        "optimal_mass": 7528.04,
-        "base_mass": 1360.44,
-        "tank_size": 128,
-        "internal_tank_size": 1.14,
-        "max_fuel_per_jump": 6.8,
+        "fuel_power": 2.45,
+        "fuel_multiplier": 0.013,
+        "optimal_mass": 1894.1,
+        "base_mass": 287.6,
+        "tank_size": 32,
+        "internal_tank_size": 0.5,
+        "max_fuel_per_jump": 5.2,
         "range_boost": 10.5,
         "ship_build": {
-            "timestamp": "2025-12-30T06:20:07Z",
+            "timestamp": "2026-01-01T04:00:02Z",
             "event": "Loadout",
-            "Ship": "explorer_nx",
-            "ShipID": 115,
-            "ShipName": "Perviy",
-            "ShipIdent": "DW-10E",
-            "ModulesValue": 259134074,
-            "HullHealth": 0.985963,
-            "UnladenMass": 1359.300049,
-            "CargoCapacity": 16,
-            "MaxJumpRange": 82.367165,
+            "Ship": "mandalay",
+            "ShipName": "Shipping Delay",
+            "ShipIdent": "DW-28M",
+            "HullValue": 16114020,
+            "ModulesValue": 15376658,
+            "UnladenMass": 287.1,
+            "CargoCapacity": 112,
+            "MaxJumpRange": 85.254853,
             "FuelCapacity": {
-                "Main": 128.0,
-                "Reserve": 1.14
+                "Main": 32,
+                "Reserve": 0.5
             },
-            "Rebuy": 12956705,
+            "Rebuy": 1574533,
             "Modules": [
                 {
-                    "Slot": "Armour",
-                    "Item": "explorer_nx_armour_grade1",
+                    "Slot": "CargoHatch",
+                    "Item": "modularcargobaydoor",
                     "On": true,
-                    "Priority": 1,
-                    "Health": 1.0,
-                    "Value": 8549540
+                    "Priority": 0
                 },
                 {
-                    "Slot": "Decal1",
-                    "Item": "decal_caspianownersclub_01",
+                    "Slot": "TinyHardpoint4",
+                    "Item": "hpt_heatsinklauncher_turret_tiny",
                     "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "Decal2",
-                    "Item": "decal_explorer_elite05",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "Decal3",
-                    "Item": "decal_exobio_elite01",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "ShipName0",
-                    "Item": "nameplate_explorer01_white",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "ShipName1",
-                    "Item": "nameplate_explorer01_white",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "ShipID0",
-                    "Item": "nameplate_shipid_doubleline_white",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "ShipID1",
-                    "Item": "nameplate_shipid_doubleline_white",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "PowerPlant",
-                    "Item": "int_powerplant_size5_class5",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 0.984287,
-                    "Value": 3794047,
+                    "Priority": 0,
+                    "Value": 3413,
                     "Engineering": {
-                        "Engineer": "Hera Tani",
-                        "EngineerID": 300090,
-                        "BlueprintID": 128673764,
-                        "BlueprintName": "PowerPlant_Armoured",
-                        "Level": 5,
-                        "Quality": 1.0,
-                        "ExperimentalEffect": "special_powerplant_cooled",
-                        "ExperimentalEffect_Localised": "Thermal Spread",
+                        "BlueprintName": "Misc_HeatSinkCapacity",
+                        "Level": 1,
+                        "Quality": 1,
                         "Modifiers": [
                             {
                                 "Label": "Mass",
-                                "Value": 12.0,
-                                "OriginalValue": 10.0,
-                                "LessIsGood": 1
+                                "Value": 2.6,
+                                "OriginalValue": 1.3
+                            },
+                            {
+                                "Label": "AmmoMaximum",
+                                "Value": 3,
+                                "OriginalValue": 2
+                            },
+                            {
+                                "Label": "ReloadTime",
+                                "Value": 15,
+                                "OriginalValue": 10
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "Armour",
+                    "Item": "mandalay_armour_grade1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 0
+                },
+                {
+                    "Slot": "PowerPlant",
+                    "Item": "int_powerplant_size4_class5",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 1405199,
+                    "Engineering": {
+                        "BlueprintName": "PowerPlant_Armoured",
+                        "Level": 1,
+                        "Quality": 1,
+                        "ExperimentalEffect": "special_powerplant_cooled",
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 5.2,
+                                "OriginalValue": 5
                             },
                             {
                                 "Label": "Integrity",
-                                "Value": 233.200012,
-                                "OriginalValue": 106.0,
-                                "LessIsGood": 0
+                                "Value": 123.2,
+                                "OriginalValue": 88
                             },
                             {
                                 "Label": "PowerCapacity",
-                                "Value": 22.848,
-                                "OriginalValue": 20.4,
-                                "LessIsGood": 0
+                                "Value": 16.224,
+                                "OriginalValue": 15.6
                             },
                             {
                                 "Label": "HeatEfficiency",
-                                "Value": 0.3168,
-                                "OriginalValue": 0.4,
-                                "LessIsGood": 1
+                                "Value": 0.3456,
+                                "OriginalValue": 0.4
                             }
                         ]
                     }
                 },
                 {
                     "Slot": "MainEngines",
-                    "Item": "int_engine_size7_class5_gravityoptimised_mkii",
+                    "Item": "int_engine_size4_class2",
                     "On": true,
                     "Priority": 0,
-                    "Health": 1.0,
-                    "Value": 59993261,
-                    "Engineering": {
-                        "Engineer": "Professor Palin",
-                        "EngineerID": 300220,
-                        "BlueprintID": 128673659,
-                        "BlueprintName": "Engine_Dirty",
-                        "Level": 5,
-                        "Quality": 1.0,
-                        "ExperimentalEffect": "special_engine_overloaded",
-                        "ExperimentalEffect_Localised": "Drag Drives",
-                        "Modifiers": [
-                            {
-                                "Label": "Integrity",
-                                "Value": 122.400002,
-                                "OriginalValue": 144.0,
-                                "LessIsGood": 0
-                            },
-                            {
-                                "Label": "PowerDraw",
-                                "Value": 10.2144,
-                                "OriginalValue": 9.12,
-                                "LessIsGood": 1
-                            },
-                            {
-                                "Label": "EngineOptimalMass",
-                                "Value": 1890.0,
-                                "OriginalValue": 2160.0,
-                                "LessIsGood": 0
-                            },
-                            {
-                                "Label": "EngineOptPerformance",
-                                "Value": 145.599991,
-                                "OriginalValue": 100.0,
-                                "LessIsGood": 0
-                            },
-                            {
-                                "Label": "EngineHeatRate",
-                                "Value": 2.288,
-                                "OriginalValue": 1.3,
-                                "LessIsGood": 1
-                            }
-                        ]
-                    }
+                    "Value": 58139
                 },
                 {
                     "Slot": "FrameShiftDrive",
-                    "Item": "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii",
+                    "Item": "int_hyperdrive_overcharge_size5_class5",
                     "On": true,
                     "Priority": 0,
-                    "Health": 0.981658,
-                    "Value": 71991912,
+                    "Value": 5971622,
                     "Engineering": {
-                        "Engineer": "Elvira Martuuk",
-                        "EngineerID": 300160,
-                        "BlueprintID": 128673694,
                         "BlueprintName": "FSD_LongRange",
                         "Level": 5,
-                        "Quality": 1.0,
+                        "Quality": 1,
                         "ExperimentalEffect": "special_fsd_heavy",
-                        "ExperimentalEffect_Localised": "Mass Manager",
                         "Modifiers": [
                             {
                                 "Label": "Mass",
-                                "Value": 208.0,
-                                "OriginalValue": 160.0,
-                                "LessIsGood": 1
+                                "Value": 26,
+                                "OriginalValue": 20
                             },
                             {
                                 "Label": "Integrity",
-                                "Value": 147.016006,
-                                "OriginalValue": 188.0,
-                                "LessIsGood": 0
+                                "Value": 93.84,
+                                "OriginalValue": 120
                             },
                             {
                                 "Label": "PowerDraw",
-                                "Value": 1.2075,
-                                "OriginalValue": 1.05,
-                                "LessIsGood": 1
+                                "Value": 0.69,
+                                "OriginalValue": 0.6
                             },
                             {
                                 "Label": "FSDOptimalMass",
-                                "Value": 7528.039551,
-                                "OriginalValue": 4670.0,
-                                "LessIsGood": 0
+                                "Value": 1894.1,
+                                "OriginalValue": 1175
                             }
                         ]
                     }
                 },
                 {
                     "Slot": "LifeSupport",
-                    "Item": "int_lifesupport_size5_class2",
+                    "Item": "int_lifesupport_size4_class2",
                     "On": true,
                     "Priority": 0,
-                    "Health": 1.0,
-                    "Value": 69713
+                    "Value": 27661
                 },
                 {
                     "Slot": "PowerDistributor",
-                    "Item": "int_powerdistributor_size5_class2",
+                    "Item": "int_powerdistributor_size4_class5",
                     "On": true,
                     "Priority": 0,
-                    "Health": 1.0,
-                    "Value": 69713,
+                    "Value": 432247,
                     "Engineering": {
-                        "Engineer": "Marco Qwent",
-                        "EngineerID": 300200,
-                        "BlueprintID": 128673742,
-                        "BlueprintName": "PowerDistributor_PriorityEngines",
-                        "Level": 3,
-                        "Quality": 1.0,
+                        "BlueprintName": "PowerDistributor_HighFrequency",
+                        "Level": 5,
+                        "Quality": 1,
                         "ExperimentalEffect": "special_powerdistributor_fast",
-                        "ExperimentalEffect_Localised": "Super Conduits",
                         "Modifiers": [
                             {
                                 "Label": "WeaponsCapacity",
-                                "Value": 27.081598,
-                                "OriginalValue": 31.0,
-                                "LessIsGood": 0
+                                "Value": 29.184,
+                                "OriginalValue": 32
                             },
                             {
                                 "Label": "WeaponsRecharge",
-                                "Value": 3.22816,
-                                "OriginalValue": 3.2,
-                                "LessIsGood": 0
+                                "Value": 5.278,
+                                "OriginalValue": 3.5
                             },
                             {
                                 "Label": "EnginesCapacity",
-                                "Value": 29.567999,
-                                "OriginalValue": 22.0,
-                                "LessIsGood": 0
+                                "Value": 20.976,
+                                "OriginalValue": 23
                             },
                             {
                                 "Label": "EnginesRecharge",
-                                "Value": 2.5688,
-                                "OriginalValue": 1.9,
-                                "LessIsGood": 0
+                                "Value": 2.8652,
+                                "OriginalValue": 1.9
                             },
                             {
                                 "Label": "SystemsCapacity",
-                                "Value": 19.219198,
-                                "OriginalValue": 22.0,
-                                "LessIsGood": 0
+                                "Value": 20.976,
+                                "OriginalValue": 23
                             },
                             {
                                 "Label": "SystemsRecharge",
-                                "Value": 1.79816,
-                                "OriginalValue": 1.9,
-                                "LessIsGood": 0
+                                "Value": 2.8652,
+                                "OriginalValue": 1.9
                             }
                         ]
                     }
                 },
                 {
                     "Slot": "Radar",
-                    "Item": "int_sensors_size8_class2",
+                    "Item": "int_sensors_size5_class2",
                     "On": true,
                     "Priority": 0,
-                    "Health": 1.0,
-                    "Value": 1530326
+                    "Value": 77454,
+                    "Engineering": {
+                        "BlueprintName": "Sensor_LightWeight",
+                        "Level": 3,
+                        "Quality": 1,
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 4,
+                                "OriginalValue": 8
+                            },
+                            {
+                                "Label": "Integrity",
+                                "Value": 53.9,
+                                "OriginalValue": 77
+                            },
+                            {
+                                "Label": "SensorTargetScanAngle",
+                                "Value": 25.5,
+                                "OriginalValue": 30
+                            }
+                        ]
+                    }
                 },
                 {
                     "Slot": "FuelTank",
-                    "Item": "int_fueltank_size7_class3",
+                    "Item": "int_fueltank_size5_class3",
                     "On": true,
                     "Priority": 1,
-                    "Health": 1.0
+                    "Value": 95306
                 },
                 {
-                    "Slot": "Slot01_Size7",
-                    "Item": "int_fuelscoop_size7_class5",
+                    "Slot": "Slot01_Size6",
+                    "Item": "int_cargorack_size6_class1",
                     "On": true,
-                    "Priority": 0,
-                    "Health": 1.0,
-                    "Value": 80011016
+                    "Priority": 1,
+                    "Value": 353525
                 },
                 {
-                    "Slot": "Slot02_Size6",
-                    "Item": "int_repairer_size6_class5",
-                    "On": false,
-                    "Priority": 2,
-                    "Health": 0.997784,
-                    "Value": 13430578
-                },
-                {
-                    "Slot": "Slot03_Size6",
-                    "Item": "int_repairer_size6_class5",
-                    "On": false,
-                    "Priority": 2,
-                    "Health": 1.0,
-                    "Value": 13430578
-                },
-                {
-                    "Slot": "Slot04_Size5",
+                    "Slot": "Slot02_Size5",
                     "Item": "int_guardianfsdbooster_size5",
                     "On": true,
-                    "Priority": 3,
-                    "Health": 1.0,
-                    "Value": 5688921
+                    "Priority": 0,
+                    "Value": 6321023
                 },
                 {
-                    "Slot": "Slot05_Size5",
-                    "Item": "int_shieldgenerator_size5_class2",
-                    "On": true,
-                    "Priority": 3,
-                    "Health": 1.0,
-                    "Value": 165879
-                },
-                {
-                    "Slot": "Slot09_Size4",
-                    "Item": "int_corrosionproofcargorack_size4_class1",
+                    "Slot": "Slot03_Size4",
+                    "Item": "int_cargorack_size4_class1",
                     "On": true,
                     "Priority": 1,
-                    "Health": 1.0,
-                    "Value": 82774
+                    "Value": 33472
                 },
                 {
-                    "Slot": "Slot10_Size3",
-                    "Item": "int_dronecontrol_repair_size3_class5",
+                    "Slot": "Slot04_Size4",
+                    "Item": "int_cargorack_size4_class1",
                     "On": true,
-                    "Priority": 2,
-                    "Health": 1.0,
-                    "Value": 75816
+                    "Priority": 1,
+                    "Value": 33472
                 },
                 {
-                    "Slot": "Slot12_Size1",
+                    "Slot": "Slot05_Size3",
+                    "Item": "int_cargorack_size3_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 10296
+                },
+                {
+                    "Slot": "Slot06_Size3",
+                    "Item": "int_cargorack_size3_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 10296
+                },
+                {
+                    "Slot": "Slot07_Size2",
+                    "Item": "int_fuelscoop_size2_class5",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 277719
+                },
+                {
+                    "Slot": "Slot08_Size1",
                     "Item": "int_detailedsurfacescanner_tiny",
                     "On": true,
                     "Priority": 0,
-                    "Health": 0.988647,
-                    "Value": 250000
+                    "Value": 243750
                 },
                 {
-                    "Slot": "Slot13_Size1",
+                    "Slot": "Slot09_Size1",
                     "Item": "int_supercruiseassist",
                     "On": true,
-                    "Priority": 2,
-                    "Health": 1.0
+                    "Priority": 0,
+                    "Value": 8892
                 },
                 {
-                    "Slot": "Slot14_Size1",
+                    "Slot": "Slot10_Size1",
                     "Item": "int_dockingcomputer_advanced",
                     "On": true,
-                    "Priority": 2,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "PlanetaryApproachSuite",
-                    "Item": "int_planetapproachsuite_advanced",
-                    "On": true,
                     "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "Bobble01",
-                    "Item": "bobble_trophy_exploration",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "Bobble10",
-                    "Item": "bobble_trophy_exploration",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "VesselVoice",
-                    "Item": "voicepack_verity",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "ShipCockpit",
-                    "Item": "explorer_nx_cockpit",
-                    "On": true,
-                    "Priority": 1,
-                    "Health": 1.0
-                },
-                {
-                    "Slot": "CargoHatch",
-                    "Item": "modularcargobaydoor",
-                    "On": true,
-                    "Priority": 2,
-                    "Health": 1.0
+                    "Value": 13172
                 }
             ]
         },
-        "supercharge_multiplier": 6,
+        "supercharge_multiplier": 4,
         "injection_multiplier": 2,
         "source": "Apurui",
         "destination": "Bleae Thua NI-B b27-5"
     },
-    "ship_id": "97",
+    "ship_id": "1",
     "cargo": 0,
     "shiplist": [
         "97",
@@ -487,7 +369,302 @@
     "window_geometries": {
         "route": "1457x769+117+478"
     },
-    "ship": {},
+    "ship": {
+        "timestamp": "2026-01-01T04:00:02Z",
+        "event": "Loadout",
+        "Ship": "mandalay",
+        "ShipName": "Shipping Delay",
+        "ShipIdent": "DW-28M",
+        "HullValue": 16114020,
+        "ModulesValue": 15376658,
+        "UnladenMass": 287.1,
+        "CargoCapacity": 112,
+        "MaxJumpRange": 85.254853,
+        "FuelCapacity": {
+            "Main": 32,
+            "Reserve": 0.5
+        },
+        "Rebuy": 1574533,
+        "Modules": [
+            {
+                "Slot": "CargoHatch",
+                "Item": "modularcargobaydoor",
+                "On": true,
+                "Priority": 0
+            },
+            {
+                "Slot": "TinyHardpoint4",
+                "Item": "hpt_heatsinklauncher_turret_tiny",
+                "On": true,
+                "Priority": 0,
+                "Value": 3413,
+                "Engineering": {
+                    "BlueprintName": "Misc_HeatSinkCapacity",
+                    "Level": 1,
+                    "Quality": 1,
+                    "Modifiers": [
+                        {
+                            "Label": "Mass",
+                            "Value": 2.6,
+                            "OriginalValue": 1.3
+                        },
+                        {
+                            "Label": "AmmoMaximum",
+                            "Value": 3,
+                            "OriginalValue": 2
+                        },
+                        {
+                            "Label": "ReloadTime",
+                            "Value": 15,
+                            "OriginalValue": 10
+                        }
+                    ]
+                }
+            },
+            {
+                "Slot": "Armour",
+                "Item": "mandalay_armour_grade1",
+                "On": true,
+                "Priority": 1,
+                "Value": 0
+            },
+            {
+                "Slot": "PowerPlant",
+                "Item": "int_powerplant_size4_class5",
+                "On": true,
+                "Priority": 1,
+                "Value": 1405199,
+                "Engineering": {
+                    "BlueprintName": "PowerPlant_Armoured",
+                    "Level": 1,
+                    "Quality": 1,
+                    "ExperimentalEffect": "special_powerplant_cooled",
+                    "Modifiers": [
+                        {
+                            "Label": "Mass",
+                            "Value": 5.2,
+                            "OriginalValue": 5
+                        },
+                        {
+                            "Label": "Integrity",
+                            "Value": 123.2,
+                            "OriginalValue": 88
+                        },
+                        {
+                            "Label": "PowerCapacity",
+                            "Value": 16.224,
+                            "OriginalValue": 15.6
+                        },
+                        {
+                            "Label": "HeatEfficiency",
+                            "Value": 0.3456,
+                            "OriginalValue": 0.4
+                        }
+                    ]
+                }
+            },
+            {
+                "Slot": "MainEngines",
+                "Item": "int_engine_size4_class2",
+                "On": true,
+                "Priority": 0,
+                "Value": 58139
+            },
+            {
+                "Slot": "FrameShiftDrive",
+                "Item": "int_hyperdrive_overcharge_size5_class5",
+                "On": true,
+                "Priority": 0,
+                "Value": 5971622,
+                "Engineering": {
+                    "BlueprintName": "FSD_LongRange",
+                    "Level": 5,
+                    "Quality": 1,
+                    "ExperimentalEffect": "special_fsd_heavy",
+                    "Modifiers": [
+                        {
+                            "Label": "Mass",
+                            "Value": 26,
+                            "OriginalValue": 20
+                        },
+                        {
+                            "Label": "Integrity",
+                            "Value": 93.84,
+                            "OriginalValue": 120
+                        },
+                        {
+                            "Label": "PowerDraw",
+                            "Value": 0.69,
+                            "OriginalValue": 0.6
+                        },
+                        {
+                            "Label": "FSDOptimalMass",
+                            "Value": 1894.1,
+                            "OriginalValue": 1175
+                        }
+                    ]
+                }
+            },
+            {
+                "Slot": "LifeSupport",
+                "Item": "int_lifesupport_size4_class2",
+                "On": true,
+                "Priority": 0,
+                "Value": 27661
+            },
+            {
+                "Slot": "PowerDistributor",
+                "Item": "int_powerdistributor_size4_class5",
+                "On": true,
+                "Priority": 0,
+                "Value": 432247,
+                "Engineering": {
+                    "BlueprintName": "PowerDistributor_HighFrequency",
+                    "Level": 5,
+                    "Quality": 1,
+                    "ExperimentalEffect": "special_powerdistributor_fast",
+                    "Modifiers": [
+                        {
+                            "Label": "WeaponsCapacity",
+                            "Value": 29.184,
+                            "OriginalValue": 32
+                        },
+                        {
+                            "Label": "WeaponsRecharge",
+                            "Value": 5.278,
+                            "OriginalValue": 3.5
+                        },
+                        {
+                            "Label": "EnginesCapacity",
+                            "Value": 20.976,
+                            "OriginalValue": 23
+                        },
+                        {
+                            "Label": "EnginesRecharge",
+                            "Value": 2.8652,
+                            "OriginalValue": 1.9
+                        },
+                        {
+                            "Label": "SystemsCapacity",
+                            "Value": 20.976,
+                            "OriginalValue": 23
+                        },
+                        {
+                            "Label": "SystemsRecharge",
+                            "Value": 2.8652,
+                            "OriginalValue": 1.9
+                        }
+                    ]
+                }
+            },
+            {
+                "Slot": "Radar",
+                "Item": "int_sensors_size5_class2",
+                "On": true,
+                "Priority": 0,
+                "Value": 77454,
+                "Engineering": {
+                    "BlueprintName": "Sensor_LightWeight",
+                    "Level": 3,
+                    "Quality": 1,
+                    "Modifiers": [
+                        {
+                            "Label": "Mass",
+                            "Value": 4,
+                            "OriginalValue": 8
+                        },
+                        {
+                            "Label": "Integrity",
+                            "Value": 53.9,
+                            "OriginalValue": 77
+                        },
+                        {
+                            "Label": "SensorTargetScanAngle",
+                            "Value": 25.5,
+                            "OriginalValue": 30
+                        }
+                    ]
+                }
+            },
+            {
+                "Slot": "FuelTank",
+                "Item": "int_fueltank_size5_class3",
+                "On": true,
+                "Priority": 1,
+                "Value": 95306
+            },
+            {
+                "Slot": "Slot01_Size6",
+                "Item": "int_cargorack_size6_class1",
+                "On": true,
+                "Priority": 1,
+                "Value": 353525
+            },
+            {
+                "Slot": "Slot02_Size5",
+                "Item": "int_guardianfsdbooster_size5",
+                "On": true,
+                "Priority": 0,
+                "Value": 6321023
+            },
+            {
+                "Slot": "Slot03_Size4",
+                "Item": "int_cargorack_size4_class1",
+                "On": true,
+                "Priority": 1,
+                "Value": 33472
+            },
+            {
+                "Slot": "Slot04_Size4",
+                "Item": "int_cargorack_size4_class1",
+                "On": true,
+                "Priority": 1,
+                "Value": 33472
+            },
+            {
+                "Slot": "Slot05_Size3",
+                "Item": "int_cargorack_size3_class1",
+                "On": true,
+                "Priority": 1,
+                "Value": 10296
+            },
+            {
+                "Slot": "Slot06_Size3",
+                "Item": "int_cargorack_size3_class1",
+                "On": true,
+                "Priority": 1,
+                "Value": 10296
+            },
+            {
+                "Slot": "Slot07_Size2",
+                "Item": "int_fuelscoop_size2_class5",
+                "On": true,
+                "Priority": 0,
+                "Value": 277719
+            },
+            {
+                "Slot": "Slot08_Size1",
+                "Item": "int_detailedsurfacescanner_tiny",
+                "On": true,
+                "Priority": 0,
+                "Value": 243750
+            },
+            {
+                "Slot": "Slot09_Size1",
+                "Item": "int_supercruiseassist",
+                "On": true,
+                "Priority": 0,
+                "Value": 8892
+            },
+            {
+                "Slot": "Slot10_Size1",
+                "Item": "int_dockingcomputer_advanced",
+                "On": true,
+                "Priority": 1,
+                "Value": 13172
+            }
+        ]
+    },
     "ships": {
         "115": {
             "timestamp": "2025-12-30T06:20:07Z",
@@ -3038,6 +3215,302 @@
                     "Health": 1.0
                 }
             ]
+        },
+        "1": {
+            "timestamp": "2026-01-01T04:00:02Z",
+            "event": "Loadout",
+            "Ship": "mandalay",
+            "ShipName": "Shipping Delay",
+            "ShipIdent": "DW-28M",
+            "HullValue": 16114020,
+            "ModulesValue": 15376658,
+            "UnladenMass": 287.1,
+            "CargoCapacity": 112,
+            "MaxJumpRange": 85.254853,
+            "FuelCapacity": {
+                "Main": 32,
+                "Reserve": 0.5
+            },
+            "Rebuy": 1574533,
+            "Modules": [
+                {
+                    "Slot": "CargoHatch",
+                    "Item": "modularcargobaydoor",
+                    "On": true,
+                    "Priority": 0
+                },
+                {
+                    "Slot": "TinyHardpoint4",
+                    "Item": "hpt_heatsinklauncher_turret_tiny",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 3413,
+                    "Engineering": {
+                        "BlueprintName": "Misc_HeatSinkCapacity",
+                        "Level": 1,
+                        "Quality": 1,
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 2.6,
+                                "OriginalValue": 1.3
+                            },
+                            {
+                                "Label": "AmmoMaximum",
+                                "Value": 3,
+                                "OriginalValue": 2
+                            },
+                            {
+                                "Label": "ReloadTime",
+                                "Value": 15,
+                                "OriginalValue": 10
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "Armour",
+                    "Item": "mandalay_armour_grade1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 0
+                },
+                {
+                    "Slot": "PowerPlant",
+                    "Item": "int_powerplant_size4_class5",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 1405199,
+                    "Engineering": {
+                        "BlueprintName": "PowerPlant_Armoured",
+                        "Level": 1,
+                        "Quality": 1,
+                        "ExperimentalEffect": "special_powerplant_cooled",
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 5.2,
+                                "OriginalValue": 5
+                            },
+                            {
+                                "Label": "Integrity",
+                                "Value": 123.2,
+                                "OriginalValue": 88
+                            },
+                            {
+                                "Label": "PowerCapacity",
+                                "Value": 16.224,
+                                "OriginalValue": 15.6
+                            },
+                            {
+                                "Label": "HeatEfficiency",
+                                "Value": 0.3456,
+                                "OriginalValue": 0.4
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "MainEngines",
+                    "Item": "int_engine_size4_class2",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 58139
+                },
+                {
+                    "Slot": "FrameShiftDrive",
+                    "Item": "int_hyperdrive_overcharge_size5_class5",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 5971622,
+                    "Engineering": {
+                        "BlueprintName": "FSD_LongRange",
+                        "Level": 5,
+                        "Quality": 1,
+                        "ExperimentalEffect": "special_fsd_heavy",
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 26,
+                                "OriginalValue": 20
+                            },
+                            {
+                                "Label": "Integrity",
+                                "Value": 93.84,
+                                "OriginalValue": 120
+                            },
+                            {
+                                "Label": "PowerDraw",
+                                "Value": 0.69,
+                                "OriginalValue": 0.6
+                            },
+                            {
+                                "Label": "FSDOptimalMass",
+                                "Value": 1894.1,
+                                "OriginalValue": 1175
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "LifeSupport",
+                    "Item": "int_lifesupport_size4_class2",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 27661
+                },
+                {
+                    "Slot": "PowerDistributor",
+                    "Item": "int_powerdistributor_size4_class5",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 432247,
+                    "Engineering": {
+                        "BlueprintName": "PowerDistributor_HighFrequency",
+                        "Level": 5,
+                        "Quality": 1,
+                        "ExperimentalEffect": "special_powerdistributor_fast",
+                        "Modifiers": [
+                            {
+                                "Label": "WeaponsCapacity",
+                                "Value": 29.184,
+                                "OriginalValue": 32
+                            },
+                            {
+                                "Label": "WeaponsRecharge",
+                                "Value": 5.278,
+                                "OriginalValue": 3.5
+                            },
+                            {
+                                "Label": "EnginesCapacity",
+                                "Value": 20.976,
+                                "OriginalValue": 23
+                            },
+                            {
+                                "Label": "EnginesRecharge",
+                                "Value": 2.8652,
+                                "OriginalValue": 1.9
+                            },
+                            {
+                                "Label": "SystemsCapacity",
+                                "Value": 20.976,
+                                "OriginalValue": 23
+                            },
+                            {
+                                "Label": "SystemsRecharge",
+                                "Value": 2.8652,
+                                "OriginalValue": 1.9
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "Radar",
+                    "Item": "int_sensors_size5_class2",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 77454,
+                    "Engineering": {
+                        "BlueprintName": "Sensor_LightWeight",
+                        "Level": 3,
+                        "Quality": 1,
+                        "Modifiers": [
+                            {
+                                "Label": "Mass",
+                                "Value": 4,
+                                "OriginalValue": 8
+                            },
+                            {
+                                "Label": "Integrity",
+                                "Value": 53.9,
+                                "OriginalValue": 77
+                            },
+                            {
+                                "Label": "SensorTargetScanAngle",
+                                "Value": 25.5,
+                                "OriginalValue": 30
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Slot": "FuelTank",
+                    "Item": "int_fueltank_size5_class3",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 95306
+                },
+                {
+                    "Slot": "Slot01_Size6",
+                    "Item": "int_cargorack_size6_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 353525
+                },
+                {
+                    "Slot": "Slot02_Size5",
+                    "Item": "int_guardianfsdbooster_size5",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 6321023
+                },
+                {
+                    "Slot": "Slot03_Size4",
+                    "Item": "int_cargorack_size4_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 33472
+                },
+                {
+                    "Slot": "Slot04_Size4",
+                    "Item": "int_cargorack_size4_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 33472
+                },
+                {
+                    "Slot": "Slot05_Size3",
+                    "Item": "int_cargorack_size3_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 10296
+                },
+                {
+                    "Slot": "Slot06_Size3",
+                    "Item": "int_cargorack_size3_class1",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 10296
+                },
+                {
+                    "Slot": "Slot07_Size2",
+                    "Item": "int_fuelscoop_size2_class5",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 277719
+                },
+                {
+                    "Slot": "Slot08_Size1",
+                    "Item": "int_detailedsurfacescanner_tiny",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 243750
+                },
+                {
+                    "Slot": "Slot09_Size1",
+                    "Item": "int_supercruiseassist",
+                    "On": true,
+                    "Priority": 0,
+                    "Value": 8892
+                },
+                {
+                    "Slot": "Slot10_Size1",
+                    "Item": "int_dockingcomputer_advanced",
+                    "On": true,
+                    "Priority": 1,
+                    "Value": 13172
+                }
+            ]
         }
     },
     "route": [
@@ -3058,107 +3531,173 @@
                 false,
                 0,
                 2025.12,
-                128,
+                32,
                 0,
+                false,
+                false,
+                17
+            ],
+            [
+                "Col 285 Sector DC-I b24-3",
+                false,
+                78.77,
+                1946.76,
+                26.83,
+                5.17,
+                false,
+                true,
+                16
+            ],
+            [
+                "Col 285 Sector FM-M d7-103",
+                false,
+                78.91,
+                1870.65,
+                21.82,
+                5.01,
+                false,
+                true,
+                15
+            ],
+            [
+                "Swoilz LO-C b5-0",
+                false,
+                81.13,
+                1791.57,
+                16.64,
+                5.18,
+                false,
+                true,
+                14
+            ],
+            [
+                "R CrA Sector RI-S b4-4",
+                false,
+                80.6,
+                1716.77,
+                11.72,
+                4.92,
+                false,
+                true,
+                13
+            ],
+            [
+                "Corona Austr. Dark Region QN-S b4-0",
+                false,
+                83.6,
+                1638.46,
+                32,
+                5.2,
+                true,
+                true,
+                12
+            ],
+            [
+                "PSR J1856-3754",
+                true,
+                70.87,
+                1608.07,
+                28.01,
+                3.99,
                 false,
                 false,
                 11
             ],
             [
-                "Col 285 Sector XA-K b23-1",
+                "Col 359 Sector UY-Y c14-4",
                 false,
-                75.9,
-                1951.55,
-                121.33,
-                6.67,
+                318.95,
+                1345.65,
+                22.83,
+                5.18,
                 false,
-                false,
+                true,
                 10
             ],
             [
-                "Col 285 Sector NZ-C b27-9",
+                "Col 359 Sector QN-K d8-65",
                 false,
-                76.63,
-                1876.19,
-                114.57,
-                6.76,
+                80.39,
+                1283.79,
+                17.72,
+                5.1,
                 false,
                 true,
                 9
             ],
             [
-                "Swoilz CS-E b4-2",
+                "Col 359 Sector KY-M b35-1",
                 false,
-                76.19,
-                1800.59,
-                107.98,
-                6.6,
+                81.83,
+                1226.73,
+                12.58,
+                5.14,
                 false,
                 true,
                 8
             ],
             [
-                "R CrA Sector FR-U b3-7",
+                "Col 359 Sector RF-J b37-4",
                 false,
-                77.35,
-                1725.05,
-                101.19,
-                6.79,
-                false,
+                82.1,
+                1186.18,
+                32,
+                5.0,
+                true,
                 true,
                 7
             ],
             [
-                "PSR J1752-2806",
+                "Col 359 Sector VZ-G d10-45",
                 true,
-                73.86,
-                1686.04,
-                95.2,
-                5.99,
+                70.92,
+                1185.97,
+                28.01,
+                3.99,
                 false,
                 false,
                 6
             ],
             [
-                "Col 359 Sector ZZ-P d5-52",
+                "Swoiwns GI-H d11-27",
                 true,
-                459.87,
-                1549.14,
-                88.69,
-                6.51,
+                273.79,
+                976.69,
+                24.44,
+                3.57,
                 false,
                 false,
                 5
             ],
             [
-                "Col 359 Sector XK-F d11-32",
+                "Swoiwns XQ-B d14-16",
                 true,
-                458.56,
-                1108.58,
-                82.29,
-                6.4,
+                301.28,
+                815.41,
+                20.04,
+                4.4,
                 false,
                 false,
                 4
             ],
             [
-                "Swoiwns XQ-B d14-16",
+                "Bleia Eohn RY-Y d1-24",
                 true,
-                464.42,
-                815.41,
-                75.75,
-                6.54,
+                320.32,
+                584.39,
+                15.08,
+                4.96,
                 false,
                 false,
                 3
             ],
             [
-                "Bleia Eohn HW-U d3-6",
+                "M25 Sector BQ-Y d69",
                 true,
-                453.61,
-                560.42,
-                69.64,
-                6.11,
+                216.53,
+                478.2,
+                13.25,
+                1.84,
                 false,
                 false,
                 2
@@ -3166,10 +3705,10 @@
             [
                 "M25 Sector PI-T d3-51",
                 true,
-                381.43,
+                283.46,
                 279.96,
-                65.72,
-                3.92,
+                9.74,
+                3.5,
                 false,
                 false,
                 1
@@ -3179,8 +3718,8 @@
                 false,
                 279.96,
                 0,
-                63.92,
-                1.8,
+                6.43,
+                3.31,
                 false,
                 false,
                 0

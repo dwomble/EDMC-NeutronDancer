@@ -9,9 +9,9 @@ import json
 import sys
 import logging
 from pathlib import Path
-from typing import Any, Optional, Callable, Dict, List
-from dataclasses import dataclass, field
-import datetime
+from typing import Optional, Callable, Dict
+from datetime import datetime, timezone
+from time import sleep
 import logging
 
 # Configure logging to output INFO level messages and higher to the console
@@ -331,7 +331,7 @@ class TestHarness:
         if state is None: state = {}
         sys:str = event.get("StarSystem", event.get("System", ""))
         if sys != "": self.system = sys
-
+        event['timestamp'] = event.get('timestamp', datetime.now(timezone.utc).isoformat())
         # Call all registered handlers
         for handler in self.journal_handlers:
             try:
@@ -346,7 +346,8 @@ class TestHarness:
             except Exception as e:
                 print(f"Error in journal handler: {e}")
                 raise
-
+        sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
+        
     def set_ship(self, ship_name:str) -> None:
         """ Set the current ship in the router context. """
         ship_info:dict = self.loadouts.get(ship_name, {})

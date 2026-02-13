@@ -1,6 +1,7 @@
 flake8
 isort
 pytest
+pytest-cov
 pillow
 
 -r requirements.txt

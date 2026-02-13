@@ -39,7 +39,7 @@ class TestStartup:
     def test_harness_initialization(self) -> None:
         """Test basic harness initialization."""
         harness = TestHarness()
-        assert harness.commander == "TestCommander"
+        assert harness.commander == "NavlGazr"
         assert harness.system == "Sol"
         assert harness.router is not None
 
@@ -78,16 +78,6 @@ class TestShipLoadout:
         assert hasattr(harness.router.ship, 'range')
         assert harness.router.ship.range > 0
 
-
-class TestJumps:
-    """Test jump tracking and route management."""
-
-    def test_jump_sequence(self, harness:TestHarness):
-        """ Test a sequence of FSD jumps. """
-        harness.system = 'Kuk'
-        for event in harness.events.get('jump_sequence', []):
-            harness.fire_event(event)
-            assert harness.router.system == event.get("StarSystem", event.get("System", ''))
 class TestImporting:
     """Test importing functionality for different route types."""
 
@@ -149,36 +139,24 @@ class TestEventSequences:
 
     def test_full_route_scenario(self, harness: TestHarness):
         """Test a complete route scenario with jumps and cargo."""
-        # Setup
-        #harness.startup("Sol")
-        #harness.loadout(ship_id="1", ship_type="Anaconda", ship_name="Route Runner", use_real_loadout=False)
-        #harness.cargo(0)
 
-        # Simulate route
-        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
-        #distances = [8.6, 11.4, 10.4]
+        # Import a route
+        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == True
 
-        #for i, system in enumerate(route_systems[1:], 1):
-        #    harness.jump(system, jump_distance=distances[i-1])
-        #    assert harness.router.system == system
-
-        # Final state check
-        #state = harness.get_router_state()
-        #assert state['system'] == "Altair"
-        #assert state['cargo'] == 0
-
-        # Simulate route
-        #route_systems = ["Sol", "Sirius", "Procyon", "Altair"]
-        #distances = [8.6, 11.4, 10.4]
-
-        #for i, system in enumerate(route_systems[1:], 1):
-        #    harness.jump(system, jump_distance=distances[i-1])
-        #    assert harness.router.system == system
+        # Follow the route
+        for event in harness.events.get('full_route_scenario', []):
+            harness.fire_event(event)
+            match event.get('event'):
+                case 'ShipyardSwap':
+                    assert harness.router.ship_id == str(event.get('ShipID'))
+                case 'Location' | 'FSDJump':
+                    assert harness.router.system == event.get('StarSystem', '')
 
         # Final state check
-        #state = harness.get_router_state()
-        #assert state['system'] == "Altair"
-        #assert state['cargo'] == 0
+        assert harness.context.route.jumps_remaining() == 0
+
 
     def test_carrier_jump_noroute(self, harness: TestHarness) -> None:
         """Test carrier jump with docking."""
@@ -196,17 +174,6 @@ class TestEventSequences:
         #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
 
         #assert harness.router.system == "Sol"
-
-    def test_supercruise_exit(self, harness: TestHarness):
-        """Test supercruise exit event."""
-        #harness.startup("Sol")
-        #harness.supercruise_exit("Sirius", body="A", position=[0, 0, 0])
-
-        # System should be updated
-        #assert harness.router.system == "Sirius"
-
-    def test_location_event(self, harness: TestHarness):
-        """Test location event."""
 
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""

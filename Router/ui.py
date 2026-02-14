@@ -633,7 +633,8 @@ class UI():
 
         shipmenu:dict = {}
         for id in Context.router.shiplist[:10]:
-            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+            if id in Context.router.ships:
+                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
         self.range_entry.set_menu(shipmenu)
 
         # Galaxy plotter

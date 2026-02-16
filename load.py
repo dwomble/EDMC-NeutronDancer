@@ -1,10 +1,10 @@
-
 from pathlib import Path
-from semantic_version import Version #type: ignore
+from semantic_version import Version  # type: ignore
 import tkinter as tk
 
-import myNotebook as nb  #type: ignore
-from config import appname  #type: ignore
+import edmc_data
+import myNotebook as nb  # type: ignore
+from config import appname  # type: ignore
 
 from Router.constants import GH_PROJECT, NAME, errs
 from utils.debug import Debug, catch_exceptions
@@ -14,6 +14,8 @@ from Router.context import Context
 from Router.route_manager import Router
 from Router.csv import CSV
 from Router.ui import UI
+from Router.overlay import Overlay, OverlayMode
+
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
@@ -21,8 +23,8 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_name = NAME
     Context.plugin_dir = Path(plugin_dir).resolve()
 
-    version:Version = Version("0.0.0")
-    version_file:Path = Context.plugin_dir / "version"
+    version: Version = Version("0.0.0")
+    version_file: Path = Context.plugin_dir / "version"
     if version_file.is_file():
         version = Version(version_file.read_text())
     Context.plugin_version = version
@@ -31,6 +33,7 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.updater.check_for_update(Context.plugin_version)
 
     return NAME
+
 
 def plugin_start(plugin_dir: str) -> None:
     """EDMC calls this function when running in Python 2 mode."""
@@ -43,32 +46,37 @@ def plugin_stop() -> None:
         Context.updater.install()
 
 
-def plugin_app(parent:tk.Widget) -> tk.Frame:
+def plugin_app(parent: tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
+    Context.overlay = Overlay()
     Context.ui = UI(parent)
 
     return Context.ui.frame
 
 
-def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
-    match entry['event']:
-        case 'Startup':
+def journal_entry(
+    cmdr: str, is_beta: bool, system: str, station: str, entry: dict, state: dict
+) -> None:
+    match entry["event"]:
+        case "Startup":
             Context.router.system = system
-        case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
+        case "FSDJump" | "Location" | "SupercruiseExit" if (
+            entry.get("StarSystem", system) != Context.router.system
+        ):
             Context.router.system = system
             Context.router.jumped(system, entry)
-        case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
+        case "CarrierJumpRequest" | "CarrierLocation" | "CarrierJumpCancelled":
             Context.router.carrier_event(entry)
-        case 'Loadout':
+        case "Loadout":
             Context.router.set_ship(entry)
-        case 'ShipyardSwap':
-            Context.router.swap_ship(entry.get('ShipID', ''))
-        case 'Cargo':
-            Context.router.cargo = entry.get('Count', 0)
-        case 'SendText':
-            if entry.get('Message').startswith("!nd "):
-                match entry.get('Message', '')[4:]:
+        case "ShipyardSwap":
+            Context.router.swap_ship(entry.get("ShipID", ""))
+        case "Cargo":
+            Context.router.cargo = entry.get("Count", 0)
+        case "SendText":
+            if entry.get("Message").startswith("!nd "):
+                match entry.get("Message", "")[4:]:
                     case "prev" | "previous":
                         Context.ui.goto_prev_waypoint()
                     case "next":
@@ -77,7 +85,20 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.ctc(Context.route.next_stop())
 
 
-def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
+def dashboard_entry(cmdr: str, is_beta: bool, entry: dict) -> None:
+    if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)):
+        Context.overlay.hide()
+        return
+    match entry.get("GuiFocus"):
+        case edmc_data.GuiFocusNoFocus:
+            Context.overlay.show(OverlayMode.cockpit)
+        case edmc_data.GuiFocusGalaxyMap:
+            Context.overlay.show(OverlayMode.galaxy_map)
+        case _:
+            Context.overlay.hide()
+
+
+def plugin_prefs(parent: tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
     return Context.ui.prefs_frame(parent)
 
 

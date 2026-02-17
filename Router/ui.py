@@ -771,6 +771,14 @@ class UI:
                 ]
             )
             jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
+            next_refuel = Context.route.next_refuel()
+            if next_refuel is not None:
+                if next_refuel > 0:
+                    jstr += f", Next refuel in {next_refuel} jump"
+                    if next_refuel > 1:
+                        jstr += "s"
+                else:
+                    jstr += ", ⛽ Time to refuel."
         Context.overlay.title_text = f"Next: {wp}"
         Context.overlay.body_text = jstr
 

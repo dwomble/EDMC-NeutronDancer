@@ -14,7 +14,7 @@ from Router.context import Context
 from Router.route_manager import Router
 from Router.csv import CSV
 from Router.ui import UI
-from Router.overlay import Overlay, OverlayMode
+from Router.overlay import Overlay, OverlayView
 
 
 def plugin_start3(plugin_dir: str) -> str:
@@ -87,15 +87,15 @@ def journal_entry(
 
 def dashboard_entry(cmdr: str, is_beta: bool, entry: dict) -> None:
     if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)):
-        Context.overlay.hide()
+        Context.overlay.view = OverlayView.hidden
         return
     match entry.get("GuiFocus"):
         case edmc_data.GuiFocusNoFocus:
-            Context.overlay.show(OverlayMode.cockpit)
+            Context.overlay.view = OverlayView.cockpit
         case edmc_data.GuiFocusGalaxyMap:
-            Context.overlay.show(OverlayMode.galaxy_map)
+            Context.overlay.view = OverlayView.galaxy_map
         case _:
-            Context.overlay.hide()
+            Context.overlay.view = OverlayView.hidden
 
 
 def plugin_prefs(parent: tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:

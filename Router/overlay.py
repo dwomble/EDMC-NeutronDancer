@@ -1,5 +1,4 @@
 import json
-import threading
 from dataclasses import dataclass, asdict
 from enum import Enum
 from functools import partial
@@ -26,7 +25,8 @@ from .context import Context
 from .constants import OVERLAY_NAME
 
 
-class OverlayMode(Enum):
+class OverlayView(Enum):
+    hidden = 0
     cockpit = 1
     galaxy_map = 2
 
@@ -64,12 +64,10 @@ class Overlay:
 
     def __init__(self) -> None:
         self._enabled: bool = None
-        self._thread: threading.Thread | None = None
-        self._stop = threading.Event()
-        self.mode: OverlayMode | None = None
-        self.title_text: str = ""
-        self.body_text: str = ""
-        self.ovf: OvFrame = OvFrame()
+        self._view: OverlayView = OverlayView.hidden
+        self._title_text: str = ""
+        self._body_text: str = ""
+        self._load_prefs()
         if self._overlay:
             _define_plugin_group(
                 plugin_group=OVERLAY_NAME,
@@ -82,97 +80,86 @@ class Overlay:
                 background_color="#00000000",
                 background_border_width=2,
             )
-        self._load_prefs()
-        self.enabled = self.ovf.enabled
-
-    @property
-    def enabled(self):
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value):
-        if value is False and self._thread is not None:
-            # Stop the thread before we disable.
-            self.hide()
-        self._enabled = value
+            self._draw_overlay()
 
     @property
     def _overlay(self):
         """Is an overlay installed and running?"""
         if not edmcoverlay:
             Debug.logger.warning(f"edmcoverlay plugin is not installed")
-            return
+            return None
 
         # Is it running?
         try:
             return edmcoverlay.Overlay()
         except Exception as e:
             Debug.logger.warning(f"EDMCOverlay is not running")
-            return
+            return None
+
+    @property
+    def view(self) -> OverlayView:
+        return self._view
+
+    @view.setter
+    def view(self, value: OverlayView) -> None:
+        self._view = value
+        self._draw_overlay()
+
+    @property
+    def title_text(self) -> str:
+        return self._title_text
+
+    @title_text.setter
+    def title_text(self, value: str) -> None:
+        self._title_text = value
+        self._draw_overlay()
+
+    @property
+    def body_text(self) -> str:
+        return self._body_text
+
+    @body_text.setter
+    def body_text(self, value: str) -> None:
+        self._body_text = value
+        self._draw_overlay()
 
     @catch_exceptions
     def _draw_overlay(self) -> None:
+        if not self._overlay:
+            # no overlay, just no-op.
+            return
         x, y = {
-            OverlayMode.cockpit: (self.ovf.cockpit_x, self.ovf.cockpit_y),
-            OverlayMode.galaxy_map: (self.ovf.galaxy_map_x, self.ovf.galaxy_map_y),
-        }[self.mode]
+            OverlayView.hidden: (0, 0),
+            OverlayView.cockpit: (self.ovf.cockpit_x, self.ovf.cockpit_y),
+            OverlayView.galaxy_map: (self.ovf.galaxy_map_x, self.ovf.galaxy_map_y),
+        }[self.view]
+        if not self.ovf.enabled or self.view == OverlayView.hidden:
+            Debug.logger.info("Clearing overlay")
+            title_text = ""
+            body_text = ""
+        else:
+            title_text = self.title_text
+            body_text = self.body_text
         # Draw title
         self._overlay.send_message(
             msgid=f"{OVERLAY_NAME}-{self.ovf.name}-title",
-            text=self.title_text,
+            text=title_text,
             color=self.ovf.text_colour,
             x=x,
             y=y,
-            ttl=1,
+            ttl=0,
             size="large",
         )
         # Draw body
         self._overlay.send_message(
             msgid=f"{OVERLAY_NAME}-{self.ovf.name}-body",
-            text=self.body_text,
+            text=body_text,
             color=self.ovf.text_colour,
             x=x,
             y=y + 20,
-            ttl=1,
+            ttl=0,
             size="normal",
         )
-
-    @catch_exceptions
-    def show(self, mode: OverlayMode) -> None:
-        self.mode = mode
-        if not self._overlay or not self.enabled:
-            # No overlay, just no-op
-            return
-        if self._thread is not None:
-            # We're already started.
-            return
-
-        def _loop():
-            while not self._stop.wait(1):
-                self._draw_overlay()
-
-        self._thread = threading.Thread(target=_loop, daemon=True)
-        # Draw the overlay immediately, then start the thread
-        self._draw_overlay()
-        self._thread.start()
-
-    @catch_exceptions
-    def hide(self) -> None:
-        if not self._overlay or not self.enabled:
-            # No overlay, just no-op
-            return
-        if self._thread is None:
-            # We're already stopped.
-            return
-        self._stop.set()
-        # Clear the message
-        self._overlay.send_raw({"id": f"{OVERLAY_NAME}-title", "text": "", "ttl": 0})
-        self._overlay.send_raw({"id": f"{OVERLAY_NAME}-body", "text": "", "ttl": 0})
-        # Wait for the thread to stop
-        self._thread.join()
-        # Clean up
-        self._thread = None
-        self._stop.clear()
 
     @catch_exceptions
     def prefs_display(self, parent: nb.Frame) -> nb.Frame:
@@ -264,17 +251,17 @@ class Overlay:
         # Store the serialized frames in the config
 
         config.set(f"{OVERLAY_NAME}_overlay", json.dumps(asdict(self.ovf)))
-        self.enabled = self.ovf.enabled
-
         Debug.logger.info(f"Saved {self.ovf} frames to EDMC config")
+        self._draw_overlay()
         return True
 
     def _load_prefs(self) -> None:
         """Read frame data from the EDMC config."""
 
-        conf = config.get(f"{OVERLAY_NAME}_overlay")
+        conf = config.get(f"{OVERLAY_NAME}_overlay", {})
         Debug.logger.debug(f"Loading config: {conf}")
-        if conf == None:
-            return
-        data: dict = json.loads(conf)
-        self.ovf = OvFrame(**data)
+        try:
+            data: dict = json.loads(conf)
+            self.ovf = OvFrame(**data)
+        except Exception:
+            self.ovf = OvFrame()

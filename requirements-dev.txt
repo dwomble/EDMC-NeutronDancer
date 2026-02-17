@@ -3,5 +3,6 @@ isort
 pytest
 pytest-cov
 pillow
+pre-commit
 
 -r requirements.txt

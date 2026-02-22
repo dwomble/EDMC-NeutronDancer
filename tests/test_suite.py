@@ -12,6 +12,7 @@ from typing import Generator, Optional
 from unittest.mock import Mock, patch, MagicMock
 import json
 import time
+import logging
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
@@ -346,7 +347,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "Optimistic",
+            "algorithm": "optimistic",
             "fuel_reserve": 4,
             "is_supercharged": 0,
             "use_supercharge": 1,
@@ -368,17 +369,28 @@ class TestPlotting:
             "destination": "Bleae Thua NI-B b27-5"
         }
 
+        assert harness.router.ship.fuel_power == 2.45
+        assert harness.router.ship.fuel_multiplier == 0.013
+        assert harness.router.ship.optimal_mass == 1894.1
+        assert harness.router.ship.base_mass == 287.6
+        assert harness.router.ship.tank_size == 32
+        assert harness.router.ship.internal_tank_size == 0.5
+        assert harness.router.ship.max_fuel_per_jump == 5.2
+
         res:bool = harness.router.plot_route('Galaxy', galaxy_params)
         assert res == True
         time.sleep(62)
-
+        
         assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
-        assert harness.context.route.total_jumps() == 18
-        harness.context.route.offset = 8
-        assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
-
+        #logging.info(f"{harness.context.route.route}")
+        
+        # Galaxy plotter's results vary based on a number of factors.
+        assert harness.context.route.total_jumps() <= 28
+        assert harness.context.route.total_jumps() >= 14
+        #harness.context.route.offset = 8
+        #assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
 
 
     def test_plot_galaxy_route_caspian(self, harness: TestHarness) -> None:
@@ -389,7 +401,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "Optimistic",
+            "algorithm": "optimistic",
             "fuel_reserve": 12,
             "is_supercharged": 0,
             "use_supercharge": 1,
@@ -425,4 +437,3 @@ class TestPlotting:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
-

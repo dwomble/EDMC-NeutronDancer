@@ -11,15 +11,11 @@ import myNotebook as nb # type: ignore
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
-    from overlay_plugin.overlay_api import define_plugin_group as _define_plugin_group #type: ignore
+    from overlay_plugin.overlay_api import define_plugin_group as _define_plugin_group # type: ignore
 except ImportError:
-    try:
-        from edmcoverlay import edmcoverlay # type: ignore
+    edmcoverlay = None
 
-    except ImportError:
-        edmcoverlay = None
-
-from config import config # type:ignore
+from config import config # type: ignore
 
 from utils.debug import Debug, catch_exceptions
 from utils.placeholder import Placeholder

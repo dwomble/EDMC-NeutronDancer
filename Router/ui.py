@@ -823,6 +823,7 @@ class UI():
         self.update_waypoint()
 
 
+    @catch_exceptions
     def ctc(self, text:str = '') -> None:
         """ Copy text to the clipboard """
         if self.parent == None: return
@@ -839,14 +840,14 @@ class UI():
         clipboard_cli:str|None = os.getenv("EDMC_CLIPBOARD_CLI", None)
         if shutil.which("wl-copy"):
             clipboard_cli = "wl-copy"
+        elif shutil.which("xsel"):
+            clipboard_cli = "xsel --clipboard --input"
         elif shutil.which("xclip"):
-            clipboard_cli = "xclip -selection c"
+            clipboard_cli = "xclip -selection c -target UTF8_STRING"
 
         if clipboard_cli != None:
             Debug.logger.debug(f"Using linux clipboard: {clipboard_cli}")
-            commands:list = clipboard_cli.split()
-            command:subprocess.Popen[bytes] = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
-            subprocess.Popen(commands, stdin=command.stdout)
+            subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
             return
 
         # Fallback to the tkinter version

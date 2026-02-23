@@ -843,12 +843,14 @@ class UI():
             clipboard_cli = "xclip -selection c"
 
         if clipboard_cli != None:
+            Debug.logger.debug(f"Using linux clipboard: {clipboard_cli}")
             commands:list = clipboard_cli.split()
             command:subprocess.Popen[bytes] = subprocess.Popen(["echo", "-n", text], stdout=subprocess.PIPE)
             subprocess.Popen(commands, stdin=command.stdout)
             return
 
         # Fallback to the tkinter version
+        Debug.logger.debug(f"Using linux tkinter clipboard fallback")
         self.parent.clipboard_clear()
         self.parent.clipboard_append(text)
         self.parent.update()

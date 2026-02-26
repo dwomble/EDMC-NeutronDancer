@@ -743,6 +743,7 @@ class UI():
         params:dict = {
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
             #'max_time': int(self.time_limit.get()),
+            'max_time': 60,
             'algorithm': self.algorithm.get(),
             'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,

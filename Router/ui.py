@@ -312,11 +312,12 @@ class UI():
         Tooltip(self.fuel_res, tts["fuel_reserve"])
         self.fuel_res.grid(row=row, column=col, padx=5, pady=5)
 
-        col += 1
-        self.time_limit:tk.Scale|ttk.Scale = scale(plot_fr, from_=60, to=120, resolution=5, orient=tk.HORIZONTAL)
-        Tooltip(self.time_limit, tts["calc_time"])
-        self.time_limit.grid(row=row, column=col, pady=5)
-        self.time_limit.set(params.get('max_time', 60))
+        # Spansh ignores this unless you're logged in.
+        #col += 1
+        #self.time_limit:tk.Scale|ttk.Scale = scale(plot_fr, from_=60, to=120, resolution=5, orient=tk.HORIZONTAL)
+        #Tooltip(self.time_limit, tts["calc_time"])
+        #self.time_limit.grid(row=row, column=col, pady=5)
+        #self.time_limit.set(params.get('max_time', 60))
 
         # Row 5
         row += 1; col = 0
@@ -741,7 +742,7 @@ class UI():
 
         params:dict = {
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
-            'max_time': int(self.time_limit.get()),
+            #'max_time': int(self.time_limit.get()),
             'algorithm': self.algorithm.get(),
             'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,

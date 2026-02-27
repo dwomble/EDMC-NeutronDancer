@@ -181,6 +181,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
 
     return ret + units
 
+
 class PopupNotice:
     """ Create a temporary popup window """
     def __init__(self, notice:str = '', timeout:int = 0, config = None) -> None:

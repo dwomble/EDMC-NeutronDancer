@@ -16,6 +16,8 @@ except ImportError:
     edmcoverlay = None
 
 from config import config # type: ignore
+#from edmc_data import GuiFocusNoFocus, FlagsInMainShip, GuiFocusGalaxyMap # type: ignore
+import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
 from utils.placeholder import Placeholder
@@ -144,6 +146,22 @@ class Overlay():
             self.msgs[f"{OVERLAY_NAME}-{msgid}-{i}"] = args
             y += 20
         self.src_msgs[msgid] = text
+
+
+    @catch_exceptions
+    def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
+        """ ED UI state change """
+        
+        Context.overlay.view = 'OverlayView.hidden'
+        if not Context.route or not bool(entry.get("Flags") & edmc_data.FlagsInMainShip):
+            return
+        
+        match entry.get("GuiFocus"):
+            case edmc_data.GuiFocusNoFocus:
+                Context.overlay.view = 'OverlayView.cockpit'
+            case edmc_data.GuiFocusGalaxyMap:
+                Context.overlay.view = 'OverlayView.galaxy_map'
+
 
     @catch_exceptions
     def prefs_display(self, parent:nb.Frame) -> nb.Frame:

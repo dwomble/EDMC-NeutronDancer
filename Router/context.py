@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .route_manager import Router
     from .ui import UI
     from .csv import CSV
+    from .overlay import Overlay
 from .route import Route
 
 @dataclass
@@ -35,4 +36,4 @@ class Context:
     csv:'CSV' = None
     ui:'UI' = None
     updater:'Updater' = None
-
+    overlay:'Overlay' = None

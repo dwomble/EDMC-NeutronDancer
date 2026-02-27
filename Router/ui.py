@@ -26,7 +26,6 @@ from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
-from .overlay import Overlay
 class UI():
     """
         The main UI for the router.
@@ -118,7 +117,7 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
-        Overlay().show_message('Default', ["title", "", "normal", ""], ttl=1)
+        Context.overlay.show_message('Default', ["title", "", "normal", ""], ttl=1)
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -537,7 +536,7 @@ class UI():
             jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
 
         message.extend(["normal", f"{jstr}"])
-        Overlay().show_message('Default', message, ttl=60)
+        Context.overlay.show_message('Default', message, ttl=60)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -895,8 +894,23 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        Overlay().show_message("Default", lbls['cooldown_complete'], "title")
+        Context.overlay.show_message("Default", lbls['cooldown_complete'], "title")
         PopupNotice(title + "\n" + message, 20000, self.parent)
+
+
+    @catch_exceptions
+    def chat(self, message:str = '') -> None:
+        """ Handle commands via in game chat messages """
+        if not message.startswith("!nd "):
+            return
+        
+        match message[4:]:
+            case "prev" | "previous":
+                self.goto_prev_waypoint()
+            case "next":
+                self.goto_next_waypoint()
+            case _:
+                self.ctc(Context.route.next_stop())
 
 
     @catch_exceptions
@@ -908,9 +922,9 @@ class UI():
         frame:nb.Frame = nb.Frame(parent)
         # Make the second column fill available space
         frame.columnconfigure(1, weight=1)
-        Overlay().prefs_display(frame)
+        Context.overlay.prefs_display(frame)
         return frame
 
     def save_prefs(self) -> None:
-        Overlay().save_prefs()
+        Context.overlay.save_prefs()
         return

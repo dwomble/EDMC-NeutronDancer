@@ -158,9 +158,9 @@ class Overlay():
         
         match entry.get("GuiFocus"):
             case edmc_data.GuiFocusNoFocus:
-                Context.overlay.view = 'OverlayView.cockpit'
+                self.view = 'OverlayView.cockpit'
             case edmc_data.GuiFocusGalaxyMap:
-                Context.overlay.view = 'OverlayView.galaxy_map'
+                self.view = 'OverlayView.galaxy_map'
 
 
     @catch_exceptions
@@ -190,14 +190,14 @@ class Overlay():
         # Hide existing messages. Redraw them in the new location when the user clicks save
         self.clear_messages()
 
-        prefsfr:nb.Frame = nb.Frame(parent)
-        prefsfr.columnconfigure(6, weight=1)
-        prefsfr.rowconfigure(60, weight=1)
-        prefsfr.grid()
-        validate = (prefsfr.register(validate_int), '%P')
+        ovrprefs:nb.Frame = nb.Frame(parent)
+        ovrprefs.columnconfigure(6, weight=1)
+        ovrprefs.rowconfigure(60, weight=1)
+        ovrprefs.grid()
+        validate = (ovrprefs.register(validate_int), '%P')
 
         row:int = 0; col:int = 0
-        nb.Label(prefsfr, text="Overlay", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
+        nb.Label(ovrprefs, text="Overlay", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
         vars:dict = {}; cbtns:list = []; col = 0
         for k in [('enabled', 'Enable', tk.BooleanVar, tk.Checkbutton),
@@ -213,18 +213,18 @@ class Overlay():
             vars[k[0]] = bind_var(self.ovf, k[0], k[2](value=getattr(self.ovf, k[0])))
             match k[3]:
                 case tk.Checkbutton:
-                    nb.Checkbutton(prefsfr, text=k[1], variable=vars[k[0]]).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
+                    nb.Checkbutton(ovrprefs, text=k[1], variable=vars[k[0]]).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
                 case tk.Entry:
-                    nb.Label(prefsfr, text=k[1]).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    nb.Label(ovrprefs, text=k[1]).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     col += 1
-                    tk.Entry(prefsfr, textvariable=vars[k[0]], width=8, validate='all', validatecommand=validate).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    tk.Entry(ovrprefs, textvariable=vars[k[0]], width=8, validate='all', validatecommand=validate).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                 case 'ColorPicker':
-                    btn:tk.Button = tk.Button(prefsfr, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background, command=partial(colour_picker, prefsfr, k[1], vars[k[0]]))
+                    btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background, command=partial(colour_picker, ovrprefs, k[1], vars[k[0]]))
                     btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     cbtns.append(btn)
             col += 1
 
-        return prefsfr
+        return ovrprefs
 
 
     def save_prefs(self) -> bool:

@@ -83,7 +83,9 @@ class UI():
 
         self.sub_fr:tk.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
-
+        
+        self.cooldown_popup:bool = True
+        
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_update())
         self._initialized = True
@@ -534,7 +536,14 @@ class UI():
             jstr += f", {lbls['distance']} "
             dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
             jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
-
+        
+        next_refuel:int|None = Context.route.next_refuel()
+        if next_refuel is not None and next_refuel == 0:
+            jstr += ", ⛽ " + lbls["refuel_now"]
+        if next_refuel is not None and next_refuel > 0:
+            jstr += ", " + lbls["refuel"].format("next_refuel", next_refuel)
+            jstr += " " + lbls["jump"] if next_refuel == 1 else lbls["jumps"]
+ 
         message.extend(["normal", f"{jstr}"])
         Context.overlay.show_message('Default', message, ttl=60)
 
@@ -886,10 +895,12 @@ class UI():
 
     @catch_exceptions
     def cooldown_complete(self) -> None:
-        """Show an informational messagebox indicating a carrier cooldown has completed."""
+        """ Show an informational messagebox indicating a carrier cooldown has completed. """        
         Debug.logger.debug(f"Cooldown complete notification triggered.")
+
         self.update_waypoint()
-        if self.parent == None: return
+        
+        if self.parent == None or self.cooldown_popup == False: return
 
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
@@ -915,13 +926,47 @@ class UI():
 
     @catch_exceptions
     def prefs_frame(self, parent:tk.Frame) -> nb.Frame:
-        """
-        Return a TK Frame for adding to the EDMC settings dialog
-        """
+        """ Return a TK Frame for adding to the EDMC settings dialog """
+
+        def bind_var(data_obj, attribute, tk_var):
+            # Update dataclass whenever the UI changes
+            def update_obj(*args) -> None:
+                setattr(data_obj, attribute, tk_var.get())
+
+            tk_var.trace_add("write", update_obj)
+            return tk_var
+        
         self.plugin_frame:tk.Frame = parent
         frame:nb.Frame = nb.Frame(parent)
         # Make the second column fill available space
         frame.columnconfigure(1, weight=1)
+
+        prefsfr:nb.Frame = nb.Frame(parent)
+        prefsfr.columnconfigure(2, weight=1)
+        prefsfr.rowconfigure(60, weight=1)
+        prefsfr.grid()
+
+        row:int = 0; col:int = 0
+        nb.Label(prefsfr, text="Neutron Dancer Options", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
+
+        vars:dict = {}; cbtns:list = []; col = 0
+        # variable, label, variable type, object type
+        for k in [('cooldown_popup', 'Show Carrier Cooldown Popup', tk.BooleanVar, tk.Checkbutton)]:
+
+            vars[k[0]] = bind_var(self, k[0], k[2](value=getattr(self, k[0])))
+            match k[3]:
+                case tk.Checkbutton:
+                    nb.Checkbutton(prefsfr, text=k[1], variable=vars[k[0]]).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
+                case tk.Entry:
+                    nb.Label(prefsfr, text=k[1]).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    col += 1
+                    tk.Entry(prefsfr, textvariable=vars[k[0]], width=8, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                case 'ColorPicker':
+                    btn:tk.Button = tk.Button(prefsfr, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background, command=partial(colour_picker, ovrprefs, k[1], vars[k[0]]))
+                    btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    cbtns.append(btn)
+            col += 1
+
         Context.overlay.prefs_display(frame)
         return frame
 

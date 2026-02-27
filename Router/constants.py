@@ -76,6 +76,10 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Restock Tritium": ["bool", ""]
                 }
 
+# Different ways a file might store true/false
+TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
+FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
+
 """
 Output strings
 """
@@ -130,7 +134,9 @@ lbls:dict = {
     "dist_per_hour": "Ly/hr",
     "refuel": "Refuel",
     "carrier_jumping": "Carrier Jump Scheduled",
-    "carrier_cooldown": "Carrier Cooldown"
+    "carrier_cooldown": "Carrier Cooldown",
+    "next_refuel": "Next refuel in {next_refuel}",
+    "refuel_now": "Time to refuel"
 }
 
 # Tooltips

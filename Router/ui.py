@@ -642,7 +642,7 @@ class UI():
         self.set_entry(self.cargo_entry, str(Context.router.cargo))
 
         # Ship dropdown
-        ships:list = [Context.router.ships[id].name for id in Context.router.shiplist]
+        ships:list = [Context.router.ships[id].name for id in Context.router.shiplist if id in Context.router.ships]
         if isinstance(self.shipdd, ttk.Combobox):
             self.shipdd['values'] = ships
             return

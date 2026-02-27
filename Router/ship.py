@@ -27,8 +27,9 @@ class Ship:
 
         # This is used when we're initializing from a journal entry
         self.id:str = str(entry.get('ShipID', ''))
-        self.name:str = entry.get('ShipName', '')
-        self.type = entry.get('Ship', '')
+        self.type:str = entry.get('Ship', '')
+        self.ident:str = entry.get('ShipIdent', '')
+        self.name:str = entry.get('ShipName', '') or self.ident or self.type
 
         fsd:dict = [m for m in entry.get('Modules', []) if m['Slot'] == 'FrameShiftDrive'][0]
         fsd_type:str = fsd['Item']

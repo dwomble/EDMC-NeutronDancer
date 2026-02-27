@@ -21,7 +21,7 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice
 from utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
+from .constants import NAME, OVERLAY_NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -85,7 +85,8 @@ class UI():
         self.show_frame('Route' if Context.route.route != [] else 'Default')
         
         self.cooldown_popup:bool = True
-        
+        self._load_prefs()
+
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_update())
         self._initialized = True
@@ -157,7 +158,8 @@ class UI():
         self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=BOLD)
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
-        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ", command=lambda: self.show_frame(Context.router.last_plot))
+        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ", 
+                                                   command=lambda: self.show_frame(Context.router.last_plot))
         plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
 
         return title_fr
@@ -166,13 +168,15 @@ class UI():
     def _create_busy_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Spinner image for route plotting """
 
-        image:str = os.path.join(Context.plugin_dir, ASSET_DIR, "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
+        image:str = os.path.join(Context.plugin_dir, ASSET_DIR, 
+                                 "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
         self.frameCnt:int = 44
         self.frameSpd:int = 50
 
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:tk.Frame = frame(parent)
-        self.route_lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), justify=tk.CENTER, font=BOLD)
+        self.route_lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest), 
+                                                  justify=tk.CENTER, font=BOLD)
         self.route_lbl.pack(pady=5, anchor=tk.CENTER)
         self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
@@ -184,9 +188,11 @@ class UI():
     def _plot_switcher(self, fr:tk.Frame, row:int, col:int) -> None:
         """ Switch between the two route plotters """
         sfr:tk.Frame = frame(fr, width=self.frwidth)
-        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron', command=lambda: self.show_frame('Neutron'))
+        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron', 
+                                                        command=lambda: self.show_frame('Neutron'))
         r1.grid(row=0, column=0, padx=5, pady=5)
-        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', command=lambda: self.show_frame('Galaxy'))
+        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy', 
+                                                        command=lambda: self.show_frame('Galaxy'))
         r2.grid(row=0, column=1, padx=5, pady=5)
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         r3:tk.Button|ttk.Button = button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
@@ -515,10 +521,11 @@ class UI():
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
 
-        if Context.route.fleetcarrier == True and Context.router.carrier_state == 'Jumping' and Context.route.get_waypoint(-1) == Context.router.system:
-            wp = f"{lbls['carrier_jumping']}"
-        if Context.route.fleetcarrier == True and Context.router.carrier_state == 'Cooldown' and Context.route.get_waypoint(-1) == Context.router.system:
-            wp = f"{lbls['carrier_cooldown']}"
+        if Context.route.fleetcarrier == True and Context.route.get_waypoint(-1) == Context.router.system:
+            if Context.router.carrier_state == 'Jumping':
+                wp = f"{lbls['carrier_jumping']}"
+            if Context.router.carrier_state == 'Cooldown':
+                wp = f"{lbls['carrier_cooldown']}"
 
         # Set an icon if appropriate
         image:tk.PhotoImage|str = ''  # Empty image
@@ -557,7 +564,8 @@ class UI():
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
 
-        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', length=self.frwidth-3)
+        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate', 
+                                       length=self.frwidth-3)
         self.progtt:Tooltip = Tooltip(self.progbar, text=tts["progress"])
         self.progbar.rowconfigure(0, weight=1)
         self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
@@ -577,7 +585,8 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40, command=lambda: self.ctc(Context.route.next_stop()))
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40, 
+                                                        command=lambda: self.ctc(Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
 
@@ -596,7 +605,8 @@ class UI():
         self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], command=lambda: self.window_route.show(Context.route))
+        self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"], 
+                                                          command=lambda: self.window_route.show(Context.route))
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -887,7 +897,8 @@ class UI():
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
         try:
-            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()}, 
+                                                     headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         except:
             return [inp]
         return json.loads(results.content)
@@ -899,7 +910,7 @@ class UI():
         Debug.logger.debug(f"Cooldown complete notification triggered.")
 
         self.update_waypoint()
-        
+
         if self.parent == None or self.cooldown_popup == False: return
 
         # I don't love this. Overlay would be better.
@@ -962,7 +973,8 @@ class UI():
                     col += 1
                     tk.Entry(prefsfr, textvariable=vars[k[0]], width=8, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                 case 'ColorPicker':
-                    btn:tk.Button = tk.Button(prefsfr, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background, command=partial(colour_picker, ovrprefs, k[1], vars[k[0]]))
+                    btn:tk.Button = tk.Button(prefsfr, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background, 
+                                              command=partial(colour_picker, ovrprefs, k[1], vars[k[0]]))
                     btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     cbtns.append(btn)
             col += 1
@@ -970,6 +982,13 @@ class UI():
         Context.overlay.prefs_display(frame)
         return frame
 
+
     def save_prefs(self) -> None:
+        config.set(f"{OVERLAY_NAME}_cooldown_popup", self.cooldown_popup)
         Context.overlay.save_prefs()
         return
+
+    def _load_prefs(self) -> None:
+        """ Read frame data from the EDMC config. """
+
+        self.cooldown_popup = config.get(f"{OVERLAY_NAME}_cooldown_popup")

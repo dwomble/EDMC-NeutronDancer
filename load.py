@@ -16,7 +16,6 @@ from Router.csv import CSV
 from Router.ui import UI
 from Router.overlay import Overlay
 
-
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
 
@@ -34,7 +33,6 @@ def plugin_start3(plugin_dir: str) -> str:
 
     return NAME
 
-
 def plugin_start(plugin_dir: str) -> None:
     """EDMC calls this function when running in Python 2 mode."""
     raise EnvironmentError(errs["required_version"])
@@ -49,8 +47,8 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
-    Context.ui = UI(parent)
     Context.overlay = Overlay()
+    Context.ui = UI(parent)
 
     return Context.ui.frame
 
@@ -71,11 +69,14 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
         case 'SendText':
-            Context.ui.chat(entry.get('Message', ''))
-
-
-def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
-    return Context.overlay.dashboard_entry(cmdr, is_beta, entry)
+            if entry.get('Message').startswith("!nd "):
+                match entry.get('Message', '')[4:]:
+                    case "prev" | "previous":
+                        Context.ui.goto_prev_waypoint()
+                    case "next":
+                        Context.ui.goto_next_waypoint()
+                    case _:
+                        Context.ui.ctc(Context.route.next_stop())
 
 
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:

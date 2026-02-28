@@ -39,6 +39,8 @@ def labelframe(parent:tk.Widget, **kw) -> tk.LabelFrame:
 def button(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Button|ttk.Button:
     """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
     if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
+        #Debug.logger.debug(f"Button {btn} {kw}")
+        #return btn
     return tk.Button(fr, padx=10,**kw)
 
 
@@ -188,9 +190,9 @@ class PopupNotice:
 
     def __init__(self, notice:str = '', timeout:int = 0, config = None) -> None:
         self.config = config
-        
+
         self.root = tk.Tk()
-        
+
         if os.environ.get('XDG_SESSION_TYPE', 'x11').lower() == 'wayland':
             print("Wayland detected: Using window types for borderless effect.")
             # 'splash' or 'tooltip' usually removes decorations in Wayland
@@ -201,15 +203,15 @@ class PopupNotice:
         self.root.attributes("-alpha", 0.6)
         self.root.geometry(config.window_geometries.get('Alert', "300x150-1+0"))
         self.root.attributes("-topmost", True)
-        
+
         self.frame = tk.Frame(self.root, bg='red4', relief="raised")
         self.frame.pack(fill="both", expand=True)
-        
+
         label = tk.Label(self.frame, text=notice, fg="white", bg="red4", font=("Helvetica", 12, "bold"), justify=tk.CENTER)
         label.pack(pady=20, anchor=tk.CENTER)
         exit_btn = tk.Button(self.frame, text="Close", fg="white", bg="red4", command=self.close)
         exit_btn.pack(pady=10)
-        
+
         if timeout > 0: self.root.after(timeout, self.close)
         self.frame.bind("<Button-1>", self.start_move)
         self.frame.bind("<B1-Motion>", self.do_move)

@@ -34,6 +34,6 @@ class Context:
     route:Route = Route([], [], 0, [])
     router:'Router' = None
     csv:'CSV' = None
+    overlay:'Overlay' = None
     ui:'UI' = None
     updater:'Updater' = None
-    overlay:'Overlay' = None

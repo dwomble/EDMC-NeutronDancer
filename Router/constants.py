@@ -105,7 +105,6 @@ lbls:dict = {
     "restock_tritium": "Time to restock Tritium",
     "source_system": "Source System",
     "dest_system": "Destination System",
-    "range": "Range (LY)",
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
@@ -114,6 +113,7 @@ lbls:dict = {
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
     "jump": "jump",
     "jumps": "jumps",
+    "range": "Ship Range",
     "waypoints": "waypoints",
     "distance": "distance",
     "total_distance": "Total Distance",
@@ -135,7 +135,7 @@ lbls:dict = {
     "refuel": "Refuel",
     "carrier_jumping": "Carrier Jump Scheduled",
     "carrier_cooldown": "Carrier Cooldown",
-    "next_refuel": "Next refuel in {next_refuel}",
+    "next_refuel": "Refuel in {r}",
     "refuel_now": "Time to refuel"
 }
 

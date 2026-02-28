@@ -151,11 +151,11 @@ class Overlay():
     @catch_exceptions
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change """
-        
+
         Context.overlay.view = 'OverlayView.hidden'
         if not Context.route or not bool(entry.get("Flags") & edmc_data.FlagsInMainShip):
             return
-        
+
         match entry.get("GuiFocus"):
             case edmc_data.GuiFocusNoFocus:
                 self.view = 'OverlayView.cockpit'
@@ -194,7 +194,7 @@ class Overlay():
         ovrprefs.columnconfigure(6, weight=1)
         ovrprefs.rowconfigure(60, weight=1)
         ovrprefs.grid()
-        validate = (ovrprefs.register(validate_int), '%P')
+        validate:tuple = (ovrprefs.register(validate_int), '%P')
 
         row:int = 0; col:int = 0
         nb.Label(ovrprefs, text="Overlay", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1

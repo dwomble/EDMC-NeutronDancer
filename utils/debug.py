@@ -22,8 +22,8 @@ class Debug:
 
 
 def catch_exceptions(func):
-    """ 
-    Generic exception handler called via decorators. Used to ensure we get a stack trace in the debug log 
+    """
+    Generic exception handler called via decorators. Used to ensure we get a stack trace in the debug log
     without having to constantly wrap methods in try except blocks.
     """
     @functools.wraps(func)
@@ -33,7 +33,8 @@ def catch_exceptions(func):
         except Exception as e:
             Debug.logger.error(f"An error occurred in {func.__name__}: {e}")
             trace:list = traceback.format_exc().splitlines()
-            Debug.logger.error(trace[0] + "\n" + "\n".join(trace[4:]))
+            #Debug.logger.error(trace[0] + "\n" + "\n".join(trace[4:]))
+            Debug.logger.error(trace[0] + "\n" + "\n".join(trace))
     return wrapper
 
 # Ensure `Debug.logger` exists even if no `Debug` instance was created.

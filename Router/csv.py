@@ -112,7 +112,7 @@ class CSV:
             self.error = errs["invalid_file"]
             Debug.logger.error(f"Failed to read file {filename}, exception info:", exc_info=e)
             return False
-        
+
 
     def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """

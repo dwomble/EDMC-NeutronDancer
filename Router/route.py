@@ -77,7 +77,7 @@ class Route:
             waypoint_range = self.route[self.offset-1:len(self.route)]
 
         return next((i + start for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
-        
+
 
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
@@ -146,7 +146,6 @@ class Route:
         """ Return the index of a given column, by default the system name column """
         if self.hdrs == []: return None
 
-        Debug.logger.debug(f"{self.hdrs}")
         if which == '':
             for h in ['Body Name', 'body', 'System Name', 'system', 'name']:
                 if h in self.hdrs:

@@ -66,10 +66,10 @@ class Overlay():
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
         
-        self.frames:dict[str, OvFrame] = {'Default': OvFrame(), 'Carrier': OvFrame()}
+        self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Carrier': OvFrame()}
         self._load_prefs()
-        self.create_frame(Context.appname, self.frames['Default'])
-        self.create_frame(Context.appname, self.frames['Carrier'])
+        self.create_frame(Context.appname, self.ovfrs['Default'])
+        self.create_frame(Context.appname, self.ovfrs['Carrier'])
         self.src_msgs:dict = {}
         self.msgs:dict = {}
 
@@ -104,16 +104,16 @@ class Overlay():
 
 
     @catch_exceptions
-    def clear_frame(self, msgid:str = "") -> bool:
+    def clear_frame(self, frame:str = "") -> bool:
         """ Clear a message frame """
         overlay = self._get_overlay()
-        if not overlay or msgid not in self.msgs: return False
+        if not overlay or frame not in self.msgs: return False
 
         # temporarily enable the frame if necessary
         status:bool = self.ovf.enabled
         self.ovf.enabled = True
 
-        msg:dict = self.msgs[msgid]
+        msg:dict = self.msgs[frame]
         msg['ttl'] = 1
         overlay.send_message(**msg)
         #del self.msgs[msgid]
@@ -145,17 +145,16 @@ class Overlay():
     
 
     @catch_exceptions
-    def display_frame(self, frame:str = "", text:str|list = "", size:str = "normal", ttl = 120) -> None:
+    def display_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
         """ Display/update a frame with a set of messages """
         
         overlay = self._get_overlay()
-        if not overlay: return
-        if frame not in self.frames: return
+        if not overlay or frame not in self.ovfrs: return
+        fr:OvFrame = self.ovfrs[frame]
 
-        fr:OvFrame = self.frames[frame]
-        if isinstance(text, str): text = [{'size': size, 'text': text}]
-        y:int = self.frames[frame].y
-        for i, t in enumerate(text):
+        if isinstance(content, str): content = [{'size': size, 'text': content}]
+        y:int = fr.y
+        for i, t in enumerate(content):
             id:str = f"{Context.appname}-{frame}-{i}"
             args:dict = {
                 'msgid': id,
@@ -170,7 +169,7 @@ class Overlay():
             overlay.send_message(**args)
             self.msgs[id] = args
             y += 20 # This needs to adapt to text size
-        self.src_msgs[frame] = text
+        self.src_msgs[frame] = content
 
 
     @catch_exceptions
@@ -181,9 +180,9 @@ class Overlay():
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:            
             self.clear_frame('Default')
-            self.frames['Default'].visible = False
+            self.ovfrs['Default'].visible = False
         else:
-            self.frames['Default'].visible = True
+            self.ovfrs['Default'].visible = True
 
         # Carrier frame
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
@@ -191,7 +190,7 @@ class Overlay():
             self.clear_frame('Carrier')
             self.ovf.visible = False
         else:
-            self.frames['Default'].visible = True
+            self.ovfrs['Default'].visible = True
 
         self.redraw_frames()        
 
@@ -245,7 +244,7 @@ class Overlay():
 
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:list = []
-        for name, fr in self.frames.items():
+        for name, fr in self.ovfrs.items():
             col = 0
             for k in pref_opts:
                 

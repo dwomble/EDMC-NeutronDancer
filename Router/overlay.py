@@ -166,7 +166,7 @@ class Overlay():
             Debug.logger.debug(f"Sending overlay message {args}")
             overlay.send_message(**args)
             self.msgs[id] = args
-            y += 20 # This needs to adapt to text size
+            y += 20 # @TODO This needs to adapt to text size
         self.src_msgs[frame] = content
 
 
@@ -234,7 +234,8 @@ class Overlay():
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change, store the current state """
 
-        # Default frame
+        # @TODO: Add alternate location when in galaxy map
+        # Default frame, visible in ship main view only
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
             self.clear_frame('Default')
@@ -242,7 +243,7 @@ class Overlay():
         else:
             self.ovfrs['Default'].visible = True
 
-        # Carrier frame
+        # Carrier frame, visible in ship main view only
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
             self.clear_frame('Carrier')

@@ -79,6 +79,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.ctc(Context.route.next_stop())
 
 
+def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
+    Context.overlay.dashboard_entry(cmdr, is_beta, entry)
+
+
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
     return Context.ui.prefs_frame(parent)
 

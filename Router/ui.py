@@ -536,7 +536,7 @@ class UI():
             wp = ' ' + wp + ' '
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
 
-        message:list = ['large', "Next: " + str(wp)]
+        message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
         jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
         tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
         txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
@@ -553,7 +553,7 @@ class UI():
             jstr += ", " + lbls["refuel"].format(r=next_refuel)
             jstr += " " + lbls["jump"] if next_refuel == 1 else lbls["jumps"]
 
-        message.extend(["normal", f"{jstr}"])
+        message.append({'size': "normal", 'text': f"{jstr}"})
         Context.overlay.display_frame('Default', message, ttl=60)
 
 
@@ -915,7 +915,7 @@ class UI():
         # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
-        Context.overlay.display_frame("Carrier", lbls['cooldown_complete'], "title")
+        Context.overlay.display_frame("Carrier", lbls['cooldown_complete'], "title", 60)
         PopupNotice(title + "\n" + message, 20000, self.parent)
 
 

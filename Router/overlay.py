@@ -48,7 +48,7 @@ class OvFrame:
 
 class Overlay():
     """
-    Overlay frame manager. 
+    Overlay frame manager.
      - Currently it just supports a single frame and simple messages but will be extended in future.
      - Each frame can display multiple messages with different text sizes.
     """
@@ -65,7 +65,7 @@ class Overlay():
     def __init__(self) -> None:
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
-        
+
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Carrier': OvFrame()}
         self._load_prefs()
         self.create_frame(Context.appname, self.ovfrs['Default'])
@@ -119,7 +119,7 @@ class Overlay():
         #del self.msgs[msgid]
 
         self.ovf.enabled = status
-        
+
         return True
 
 
@@ -142,28 +142,29 @@ class Overlay():
         if ovf.bgenabled:
             kw['background_color'] = ovf.background
             kw['background_border_width'] = ovf.border_width
-    
+
 
     @catch_exceptions
     def display_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
         """ Display/update a frame with a set of messages """
-        
+
         overlay = self._get_overlay()
         if not overlay or frame not in self.ovfrs: return
         fr:OvFrame = self.ovfrs[frame]
 
         if isinstance(content, str): content = [{'size': size, 'text': content}]
+
         y:int = fr.y
-        for i, t in enumerate(content):
+        for i, c in enumerate(content):
             id:str = f"{Context.appname}-{frame}-{i}"
             args:dict = {
                 'msgid': id,
-                'text': t.get('text', ''),
-                'color': t.get('colour', fr.text_colour),
+                'text': c.get('text', ''),
+                'color': c.get('colour', fr.text_colour),
                 'x': fr.x,
                 'y': y,
                 'ttl': ttl,
-                'size': t.get('size', 'normal')
+                'size': c.get('size', 'normal')
             }
             Debug.logger.debug(f"Sending overlay message {args}")
             overlay.send_message(**args)
@@ -175,10 +176,10 @@ class Overlay():
     @catch_exceptions
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change, store the current state """
-        
+
         # Default frame
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
-            entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:            
+            entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
             self.clear_frame('Default')
             self.ovfrs['Default'].visible = False
         else:
@@ -192,7 +193,7 @@ class Overlay():
         else:
             self.ovfrs['Default'].visible = True
 
-        self.redraw_frames()        
+        self.redraw_frames()
 
 
     @catch_exceptions
@@ -229,7 +230,7 @@ class Overlay():
             #('bgenabled', 'Use Background', tk.BooleanVar, tk.Checkbutton),
             #('background', 'Background', tk.StringVar, 'ColorPicker')
             ]
-        
+
         # Hide existing messages. Redraw them in the new location when the user clicks save
         self.clear_frames()
 
@@ -247,7 +248,7 @@ class Overlay():
         for name, fr in self.ovfrs.items():
             col = 0
             for k in pref_opts:
-                
+
                 var = bind_var(fr, k[0], k[2](value=getattr(fr, k[0])))
                 vars[f"{name}-{k[0]}"] = var
                 match k[3]:
@@ -259,7 +260,7 @@ class Overlay():
                         ent:tk.Entry = tk.Entry(ovrprefs, textvariable=var, width=8, validate='all', validatecommand=validate)
                         ent.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     case 'ColorPicker':
-                        btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour, background=fr.background, 
+                        btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour, background=fr.background,
                                                   command=partial(colour_picker, ovrprefs, k[1], var))
                         btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                         cbtns.append(btn)

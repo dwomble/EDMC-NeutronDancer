@@ -203,3 +203,8 @@ cnf:dict = {
     "Y": "Y",
     "overlay_colour": "Overlay Colour"
 }
+
+ovr:dict = {
+    "jump": "Carrier jump in {t}",
+    "cooldown": "Carrier cooldown {t}"
+}

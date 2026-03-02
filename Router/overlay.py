@@ -1,10 +1,10 @@
-import textwrap
-import copy
 import json
-import re
 from dataclasses import dataclass, asdict
 from functools import partial
-from enum import Enum
+from datetime import datetime, timedelta
+from threading import Thread, Event
+from math import floor
+from datetime import UTC, datetime, timedelta
 
 import tkinter as tk
 from tkinter import ttk, colorchooser as tkColorChooser
@@ -45,6 +45,7 @@ class OvFrame:
     anchor:str = "nw"
     justification:str = "left"
     text_size:str = "normal"
+    stopper:Event = Event()
 
 class Overlay():
     """
@@ -167,6 +168,66 @@ class Overlay():
             self.msgs[id] = args
             y += 20 # This needs to adapt to text size
         self.src_msgs[frame] = content
+
+
+    def _timedelta_str(self, delta:timedelta) -> str:
+        """ Display remaining time showing hh:mm:ss """
+        days , rem = divmod(int(delta.seconds), 60*60*24)
+        hours, rem = divmod(rem, 60*60)
+        mins, secs = divmod(rem, 60)
+        tmp:list = []
+        if floor(days) > 1: tmp.append(f"{floor(days)} days")
+        elif int(days) > 0: tmp.append(f"1 day")
+        if floor(hours) > 1: tmp.append(f"{floor(hours)} hours")
+        elif int(hours) > 0: tmp.append(f" 1 hour")
+        if floor(mins) > 1 and len(tmp) < 2:
+            if floor(mins) > 1: tmp.append(f" {int(mins)} minutes")
+        elif floor(mins) > 0: tmp.append(f" 1 minute")
+        if floor(secs) > 1 and len(tmp) < 2:
+            if floor(secs) > 1: tmp.append(f" {int(secs)} seconds")
+            elif secs > 0: tmp.append(f" 1 second")
+        return ' '.join(tmp)
+
+    #    s:int = delta.seconds
+    #    unit:int = 3600
+    #    res:str = ""
+    #    while unit > 1:
+    #        t, s = divmod(s, unit)
+    #        unit = int(unit / 60)
+    #        if t > 0:
+    #            res += f"{t:02d}"
+    #    return res
+
+
+    def _countdown(self, frame:str, content:str|list[dict], end:datetime, stop:Event) -> None:
+        """ Update the countdown display frame until zero or stopped """
+        rem = end - datetime.now(tz=end.tzinfo)
+        while rem.seconds > 0 and not stop.wait(1):
+            rem = end - datetime.now(tz=end.tzinfo)
+            display = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
+                if isinstance(content, list) else content.format(t=self._timedelta_str(rem))            
+            Context.overlay.display_frame(frame, display, ttl=1)
+        
+        stop.clear()
+        Debug.logger.debug("Countdown thread is ending.")
+
+
+    def stop_countdown(self, frame:str) -> None:
+        """ Stop a countdown display for a frame """
+        if frame not in self.ovfrs: return
+        self.ovfrs[frame].stopper.set()
+
+
+    def display_countdown(self, frame:str, content:str|list[dict], end:datetime|int|None) -> None:  
+        """ 
+        Like display message but with a countdown either until a specific time or for some number of seconds 
+        The countdown should be in a variable t in the content string
+        """
+        if end == None or frame not in self.ovfrs: return
+        if isinstance(end, int): end = datetime.now() + timedelta(seconds=end)
+        
+        Thread(target=self._countdown, args=(frame, content, end, self.ovfrs[frame].stopper), 
+                                             name=f"{Context.appname}_{frame} overlay countdown worker").start()
 
 
     @catch_exceptions

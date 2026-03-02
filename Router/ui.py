@@ -983,11 +983,12 @@ class UI():
 
 
     def save_prefs(self) -> None:
-        config.set(f"{Context.appname}_cooldown_popup", self.cooldown_popup)
+        config.set(f"{Context.appname}_cooldown_popup", bool(self.cooldown_popup))
         Context.overlay.save_prefs()
         return
 
 
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
-        self.cooldown_popup = config.get(f"{Context.appname}_cooldown_popup")
+        res:bool|None = config.get(f"{Context.appname}_cooldown_popup")
+        self.cooldown_popup = res if res != None else True

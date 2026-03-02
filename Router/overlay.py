@@ -99,28 +99,24 @@ class Overlay():
 
     def clear_frames(self) -> None:
         """ Clear all overlay frames """
-        Debug.logger.debug(f"Clearing {self.msgs.keys()}")
-        [self.clear_frame(m) for m in list(self.msgs)]
+        [self.clear_frame(fr) for fr in self.ovfrs]
 
 
     @catch_exceptions
-    def clear_frame(self, frame:str = "") -> bool:
+    def clear_frame(self, frame:str = "") -> None:
         """ Clear a message frame """
         overlay = self._get_overlay()
-        if not overlay or frame not in self.msgs: return False
+        if not overlay or frame not in self.msgs: return
 
         # temporarily enable the frame if necessary
-        status:bool = self.ovf.enabled
-        self.ovf.enabled = True
-
+        status:bool = self.ovfrs[frame].enabled
+        self.ovfrs[frame].enabled = True
         msg:dict = self.msgs[frame]
         msg['ttl'] = 1
         overlay.send_message(**msg)
         #del self.msgs[msgid]
 
-        self.ovf.enabled = status
-
-        return True
+        self.ovfrs[frame].enabled = status
 
 
     @catch_exceptions
@@ -189,9 +185,9 @@ class Overlay():
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
             self.clear_frame('Carrier')
-            self.ovf.visible = False
+            self.ovfrs['Carrier'].visible = False
         else:
-            self.ovfrs['Default'].visible = True
+            self.ovfrs['Carrier'].visible = True
 
         self.redraw_frames()
 
@@ -208,14 +204,12 @@ class Overlay():
             tk_var.trace_add("write", update_obj)
             return tk_var
 
-        def colour_picker(parent:nb.Frame, which:str, col:tk.StringVar) -> None:
+        def colour_picker(parent:nb.Frame, frame:str, which:str, col:tk.StringVar) -> None:
             (_, color) = tkColorChooser.askcolor(col.get(), title=which, parent=parent)
 
             if color:
                 col.set(color)
-                Debug.logger.debug(f"{len(cbtns)} {cbtns}")
-                for b in cbtns:
-                    b.config(**{which.lower(): color})
+                cbtns[frame].config(**{which.lower(): color})
 
         def validate_int(val:str) -> bool:
             return True if val.isdigit() or val == '' else False
@@ -244,11 +238,11 @@ class Overlay():
         nb.Label(ovrprefs, text="Overlays", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
         # Loop through the frames and create a preferences line for each
-        vars:dict = {}; cbtns:list = []
+        vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():
-            col = 0
+            nb.Label(ovrprefs, text=name, justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW)
+            row += 1; col = 0
             for k in pref_opts:
-
                 var = bind_var(fr, k[0], k[2](value=getattr(fr, k[0])))
                 vars[f"{name}-{k[0]}"] = var
                 match k[3]:
@@ -261,11 +255,11 @@ class Overlay():
                         ent.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     case 'ColorPicker':
                         btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour, background=fr.background,
-                                                  command=partial(colour_picker, ovrprefs, k[1], var))
+                                                  command=partial(colour_picker, ovrprefs, name, k[1], var))
                         btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-                        cbtns.append(btn)
+                        cbtns[name] = btn
                 col += 1
-
+            row += 1
         return ovrprefs
 
 
@@ -273,19 +267,20 @@ class Overlay():
         """ Serialize and save the frames dictionary to EDMC config. """
         # Store the serialized frames in the config
 
-        config.set(f"{Context.appname}_overlay", json.dumps(asdict(self.ovf)))
-        if self.ovf.enabled == True:
-            self.redraw_frames()
+        for name, fr in self.ovfrs.items():
+            config.set(f"{Context.appname}_{name}_overlay", json.dumps(asdict(fr)))
 
-        Debug.logger.info(f"Saved {self.ovf} frames to EDMC config")
+        self.redraw_frames()
+        Debug.logger.info(f"Saved frames to EDMC config")
         return True
 
 
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
 
-        conf = config.get(f"{Context.appname}_overlay")
-        Debug.logger.debug(f"Loading config: {conf}")
-        if conf == None: return
-        data:dict = json.loads(conf)
-        self.ovf = OvFrame(**data)
+        for name in self.ovfrs:
+            conf:str|None = config.get(f"{Context.appname}_{name}_overlay")
+            Debug.logger.debug(f"Loading config: {conf}")
+            if conf == None: continue
+            data:dict = json.loads(conf)
+            self.ovfrs[name] = OvFrame(**data)

@@ -5,7 +5,7 @@ import tkinter as tk
 
 import myNotebook as nb  #type: ignore
 
-from Router.constants import GH_PROJECT, NAME, errs
+from Router.constants import GH_PROJECT, NAME, TITLE, errs
 from utils.debug import Debug, catch_exceptions
 from utils.updater import Updater
 
@@ -18,7 +18,8 @@ from Router.overlay import Overlay
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
 
-    Context.plugin_title = NAME
+    Context.plugin_name = NAME
+    Context.plugin_title = TITLE
     Context.plugin_dir = Path(plugin_dir).resolve()
 
     version:Version = Version("0.0.0")
@@ -79,7 +80,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.ctc(Context.route.next_stop())
 
 
-def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
+def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
     Context.overlay.dashboard_entry(cmdr, is_beta, entry)
 
 

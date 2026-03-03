@@ -128,7 +128,7 @@ class Router():
 
     def carrier_event(self, entry:dict) -> None:
         """ Note carrier jumps for a cooldown notification """
-        if Context.route.route == [] or Context.route.fleetcarrier == False: return
+        #if Context.route.route == [] or Context.route.fleetcarrier == False: return
 
         match entry.get('event'):
             case 'CarrierJumpRequest' if entry.get('SystemName', '') == Context.route.next_stop():
@@ -159,7 +159,7 @@ class Router():
 
             #case _ if self.carrier_id == entry.get('CarrierID', ''):
             #    self.carrier_state = 'Idle'
-        
+
 
     def cooldown_complete(self) -> None:
         """ Show an informational messagebox indicating a carrier cooldown has completed. """

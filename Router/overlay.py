@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from threading import Thread, Event
 from math import floor
 from datetime import UTC, datetime, timedelta
+from copy import deepcopy
 
 import tkinter as tk
 from tkinter import ttk, colorchooser as tkColorChooser
@@ -35,7 +36,6 @@ class OvFrame:
     y:int = 0
     w:int = 0
     h:int = 0
-    ttl:int = 0
     title_colour:str = 'white'
     text_colour:str = 'white'
     bgenabled:bool = False
@@ -45,7 +45,6 @@ class OvFrame:
     anchor:str = "nw"
     justification:str = "left"
     text_size:str = "normal"
-    stopper:Event = Event()
 
 class Overlay():
     """
@@ -68,17 +67,15 @@ class Overlay():
         if hasattr(self, '_initialized'): return
 
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Carrier': OvFrame()}
+        self.stoppers:dict[str, Event] = {}
         self._load_prefs()
-        self.create_frame(Context.appname, self.ovfrs['Default'])
-        self.create_frame(Context.appname, self.ovfrs['Carrier'])
-        self.src_msgs:dict = {}
+        self.create_frame(Context.plugin_name, self.ovfrs['Default'])
+        self.create_frame(Context.plugin_name, self.ovfrs['Carrier'])
         self.msgs:dict = {}
-
-        self.state:dict = {}
         self._initialized = True
 
 
-    def _get_overlay(self):
+    def _get_overlay(self) -> None:
         """ Is an overlay installed and running? """
         if not edmcoverlay:
             Debug.logger.warning(f"edmcoverlay plugin is not installed")
@@ -94,30 +91,32 @@ class Overlay():
 
     def redraw_frames(self) -> None:
         """ Redraw all overlay frames """
-        Debug.logger.debug(f"Redrawing mesages")
-        [self.display_frame(m, text) for m, text in self.src_msgs.items()]
+        Debug.logger.debug(f"Redrawing frames")
+        [self.redraw_frame(fr) for fr in self.msgs]
+
+    def redraw_frame(self, frame:str = "") -> None:
+        overlay = self._get_overlay()
+        if not overlay or frame not in self.msgs: return
+        [overlay.send_message(**m) for m in self.msgs[frame].values()]
 
 
-    def clear_frames(self) -> None:
+    def hide_frames(self) -> None:
         """ Clear all overlay frames """
-        [self.clear_frame(fr) for fr in self.ovfrs]
+        [self.hide_frame(fr) for fr in self.ovfrs]
 
 
     @catch_exceptions
-    def clear_frame(self, frame:str = "") -> None:
+    def hide_frame(self, frame:str = "") -> None:
         """ Clear a message frame """
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs: return
 
-        # temporarily enable the frame if necessary
-        status:bool = self.ovfrs[frame].enabled
-        self.ovfrs[frame].enabled = True
-        msg:dict = self.msgs[frame]
-        msg['ttl'] = 1
-        overlay.send_message(**msg)
-        #del self.msgs[msgid]
-
-        self.ovfrs[frame].enabled = status
+        for m in self.msgs[frame].values():
+            tmp:dict = deepcopy(m)
+            tmp['ttl'] = 1
+            tmp['text'] = ''
+            Debug.logger.debug(f"sending {tmp}")
+            overlay.send_message(**tmp)
 
 
     @catch_exceptions
@@ -125,6 +124,7 @@ class Overlay():
         """ Initialize a frame """
         if not self._get_overlay(): return
 
+        self.stoppers[group] = Event()
         kw:dict = {
             'plugin_group': group,
             'matching_prefixes': f"{group}-",
@@ -146,28 +146,36 @@ class Overlay():
         """ Display/update a frame with a set of messages """
 
         overlay = self._get_overlay()
+        Debug.logger.debug(f"Display called for {frame} {overlay} {self.ovfrs}")
         if not overlay or frame not in self.ovfrs: return
         fr:OvFrame = self.ovfrs[frame]
 
+        Debug.logger.debug(f"State: {fr.enabled}")
+        if fr.enabled == False: return
+
         if isinstance(content, str): content = [{'size': size, 'text': content}]
 
+        Debug.logger.debug(f"Redrawing")
+        self.msgs[frame] = {}
         y:int = fr.y
         for i, c in enumerate(content):
-            id:str = f"{Context.appname}-{frame}-{i}"
+            id:str = f"{Context.plugin_name}-{frame}-{i}"
             args:dict = {
                 'msgid': id,
                 'text': c.get('text', ''),
                 'color': c.get('colour', fr.text_colour),
                 'x': fr.x,
                 'y': y,
-                'ttl': ttl,
+                'ttl': c.get('ttl', ttl), # @TODO: ttl needs to be a datetime
                 'size': c.get('size', 'normal')
             }
-            Debug.logger.debug(f"Sending overlay message {args}")
-            overlay.send_message(**args)
-            self.msgs[id] = args
+            if fr.visible == True:
+                Debug.logger.debug(f"Sending overlay message {args}")
+                overlay.send_message(**args)
+            if frame not in self.msgs: self.msgs[frame] = {}
+            self.msgs[frame][id] = args
             y += 20 # @TODO This needs to adapt to text size
-        self.src_msgs[frame] = content
+
 
 
     def _timedelta_str(self, delta:timedelta) -> str:
@@ -199,15 +207,17 @@ class Overlay():
     #    return res
 
 
+    @catch_exceptions
     def _countdown(self, frame:str, content:str|list[dict], end:datetime, stop:Event) -> None:
         """ Update the countdown display frame until zero or stopped """
         rem = end - datetime.now(tz=end.tzinfo)
         while rem.seconds > 0 and not stop.wait(1):
             rem = end - datetime.now(tz=end.tzinfo)
             display = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
-                if isinstance(content, list) else content.format(t=self._timedelta_str(rem))            
+                if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
+            Debug.logger.debug(f"Countdown {frame} {display}")
             Context.overlay.display_frame(frame, display, ttl=1)
-        
+
         stop.clear()
         Debug.logger.debug("Countdown thread is ending.")
 
@@ -215,43 +225,47 @@ class Overlay():
     def stop_countdown(self, frame:str) -> None:
         """ Stop a countdown display for a frame """
         if frame not in self.ovfrs: return
-        self.ovfrs[frame].stopper.set()
+        self.stoppers[frame].set()
 
 
-    def display_countdown(self, frame:str, content:str|list[dict], end:datetime|int|None) -> None:  
-        """ 
-        Like display message but with a countdown either until a specific time or for some number of seconds 
+    @catch_exceptions
+    def display_countdown(self, frame:str, content:str|list[dict], end:datetime|int|None) -> None:
+        """
+        Like display message but with a countdown either until a specific time or for some number of seconds
         The countdown should be in a variable t in the content string
         """
+        Debug.logger.debug(f"Countdown starting")
         if end == None or frame not in self.ovfrs: return
         if isinstance(end, int): end = datetime.now() + timedelta(seconds=end)
-        
-        Thread(target=self._countdown, args=(frame, content, end, self.ovfrs[frame].stopper), 
-                                             name=f"{Context.appname}_{frame} overlay countdown worker").start()
+
+        Thread(target=self._countdown, args=(frame, content, end, self.stoppers[frame]),
+                                             name=f"{Context.plugin_name}_{frame} overlay countdown worker").start()
 
 
     @catch_exceptions
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change, store the current state """
 
+        Debug.logger.debug(f"Entry: {entry}")
         # @TODO: Add alternate location when in galaxy map
         # Default frame, visible in ship main view only
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
-            self.clear_frame('Default')
+            self.hide_frame('Default')
             self.ovfrs['Default'].visible = False
         else:
             self.ovfrs['Default'].visible = True
+            self.redraw_frame('Default')
 
         # Carrier frame, visible in ship main view only
         if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
-            self.clear_frame('Carrier')
+            self.hide_frame('Carrier')
             self.ovfrs['Carrier'].visible = False
         else:
             self.ovfrs['Carrier'].visible = True
+            self.redraw_frame('Carrier')
 
-        self.redraw_frames()
 
 
     @catch_exceptions
@@ -288,7 +302,7 @@ class Overlay():
             ]
 
         # Hide existing messages. Redraw them in the new location when the user clicks save
-        self.clear_frames()
+        self.hide_frames()
 
         ovrprefs:nb.Frame = nb.Frame(parent)
         ovrprefs.columnconfigure(6, weight=1)
@@ -330,7 +344,7 @@ class Overlay():
         # Store the serialized frames in the config
 
         for name, fr in self.ovfrs.items():
-            config.set(f"{Context.appname}_{name}_overlay", json.dumps(asdict(fr)))
+            config.set(f"{Context.plugin_name}_{name}_overlay", json.dumps(asdict(fr)))
 
         self.redraw_frames()
         Debug.logger.info(f"Saved frames to EDMC config")
@@ -341,7 +355,7 @@ class Overlay():
         """ Read frame data from the EDMC config. """
 
         for name in self.ovfrs:
-            conf:str|None = config.get(f"{Context.appname}_{name}_overlay")
+            conf:str|None = config.get(f"{Context.plugin_name}_{name}_overlay")
             Debug.logger.debug(f"Loading config: {conf}")
             if conf == None: continue
             data:dict = json.loads(conf)

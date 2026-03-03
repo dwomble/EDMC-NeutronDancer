@@ -121,7 +121,7 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
-        Context.overlay.clear_frame(which)
+        Context.overlay.hide_frame(which)
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -554,7 +554,7 @@ class UI():
             jstr += " " + lbls["jump"] if next_refuel == 1 else lbls["jumps"]
 
         message.append({'size': "normal", 'text': f"{jstr}"})
-        Context.overlay.display_frame('Default', message, ttl=60)
+        Context.overlay.display_frame('Default', message, ttl=120)
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -983,12 +983,12 @@ class UI():
 
 
     def save_prefs(self) -> None:
-        config.set(f"{Context.appname}_cooldown_popup", bool(self.cooldown_popup))
+        config.set(f"{Context.plugin_name}_cooldown_popup", bool(self.cooldown_popup))
         Context.overlay.save_prefs()
         return
 
 
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
-        res:bool|None = config.get(f"{Context.appname}_cooldown_popup")
+        res:bool|None = config.get(f"{Context.plugin_name}_cooldown_popup")
         self.cooldown_popup = res if res != None else True

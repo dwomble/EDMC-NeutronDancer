@@ -22,8 +22,8 @@ from .route import Route
 class Context:
     # Plugin parameters
     plugin_title:str = 'Unnamed'
-    appname:str = appname
-    
+    plugin_name:str = ''
+
     plugin_dir:Path = None
     plugin_version:Version = None
     plugin_useragent:str = None

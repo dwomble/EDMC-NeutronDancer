@@ -206,7 +206,7 @@ class TestStateManagement:
 class TestOverlay:    
     """Test overlay functionality."""
 
-    def test_cooldown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
+    def test_countdown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
         """Ensure carrier jump completion starts the countdown thread."""
 
         called:dict[str, bool] = {'flag': False}

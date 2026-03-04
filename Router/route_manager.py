@@ -153,14 +153,14 @@ class Router():
 
         message.append({'size': "normal", 'text': f"{jstr}"})
         Context.overlay.display_frame('Default', message, ttl=120)
-
+        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
 
     def update_route(self, i:int) -> None:
         """ Called by the UI when next or prev is clicked """
         Context.route.update_route(i)
         self.update_jump_overlay()
 
-
+    @catch_exceptions
     def carrier_event(self, entry:dict) -> None:
         """ Note carrier jumps for a cooldown notification """
         #if Context.route.route == [] or Context.route.fleetcarrier == False: return
@@ -176,8 +176,8 @@ class Router():
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = 'Cooldown'
                 Context.overlay.stop_countdown('Carrier')
-                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 60)
-                Context.ui.frame.after(60000, lambda: self.cooldown_complete())
+                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
+                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == 'Jumping' and self.carrier_id == entry.get('CarrierID', '') and Context.ui.parent != None:
                 system:str = entry.get('StarSystem', '')
@@ -199,7 +199,6 @@ class Router():
     def cooldown_complete(self) -> None:
         """ Show an informational messagebox indicating a carrier cooldown has completed. """
         Debug.logger.debug(f"Cooldown complete notification triggered.")
-        if Context.ui.parent == None: return
         self.carrier_state = 'Idle'
         Context.ui.cooldown_complete()
 

@@ -122,6 +122,7 @@ class UI():
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
         Context.overlay.hide_frame('Default')
+        Context.overlay.hide_frame('Galaxy Map')
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -891,8 +892,6 @@ class UI():
         self.update_waypoint()
 
         if self.parent == None or self.cooldown_popup == False: return
-
-        # I don't love this. Overlay would be better.
         title:str = f"{NAME} – {hdrs['cooldown_title']}"
         message:str = lbls['cooldown_complete']
         PopupNotice(title + "\n" + message, 20000, self.parent)
@@ -933,10 +932,10 @@ class UI():
         prefsfr:nb.Frame = nb.Frame(frame)
         prefsfr.columnconfigure(3, weight=1)
         prefsfr.rowconfigure(60, weight=1)
-        prefsfr.grid()
+        prefsfr.grid(sticky=tk.NW)
 
         row:int = 0; col:int = 0
-        nb.Label(prefsfr, text="Neutron Dancer Options", justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        nb.Label(prefsfr, text="Neutron Dancer Options", justify=tk.LEFT).grid(row=row, column=col, padx=10, pady=5, sticky=tk.NW)
 
         vars:dict = {}; cbtns:list = []; row += 1; col = 0
         # variable, label, variable type, object type
@@ -956,6 +955,8 @@ class UI():
                     btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     cbtns.append(btn)
             col += 1
+        row += 1
+        ttk.Separator(frame).grid(row=row, columnspan=3, pady=5 * 2, sticky=tk.EW)
 
         Context.overlay.prefs_display(frame)
         return frame

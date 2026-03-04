@@ -1,5 +1,21 @@
 # EDMC-NeutronDancer Changelog
 
+## v?.?.? ????-??-??
+
+### New Features
+
+* Overlay improvements [Issue 24](https://github.com/dwomble/EDMC-NeutronDancer/issues/24)
+  * Added carrier jump countdown and cooldown overlay
+  * Added configuration option to not display the cooldown popup
+  * Added galaxy map route overlay
+  * Made overlays UI context sensitive
+
+### Bug Fixes
+
+* Hopefully fixed cooldown popup notice problem on Linux [Issue 25](https://github.com/dwomble/EDMC-NeutronDancer/issues/25)
+* Hopefully fixed flatpak clipboard problems [Issue 23](https://github.com/dwomble/EDMC-NeutronDancer/issues/23)
+* Fixed problem with old overlay breaking the plugin [Issue 21](https://github.com/dwomble/EDMC-NeutronDancer/issues/21)
+
 ## v1.7.0 2026-02-12
 
 ### New Features

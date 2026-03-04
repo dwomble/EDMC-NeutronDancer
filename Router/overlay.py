@@ -58,7 +58,8 @@ class Overlay():
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
         self.stoppers:dict[str, Event] = {}
         self._load_prefs()
-        for fr in self.ovfrs.values():
+        for k, fr in self.ovfrs.items():
+            fr.name = k
             self.create_frame(Context.plugin_name, fr)
 
         self.msgs:dict = {}
@@ -87,6 +88,7 @@ class Overlay():
     def redraw_frame(self, frame:str = "") -> None:
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs: return
+        self.ovfrs[frame].visible = True
         [overlay.send_message(**m) for m in self.msgs[frame].values()]
 
 
@@ -106,7 +108,7 @@ class Overlay():
             tmp:dict = deepcopy(m)
             tmp['ttl'] = 1
             tmp['text'] = ''
-            Debug.logger.debug(f"sending {tmp}")
+            Debug.logger.debug(f"Hiding frame {tmp}")
             overlay.send_message(**tmp)
 
 
@@ -155,7 +157,6 @@ class Overlay():
                 'size': c.get('size', 'normal')
             }
             if fr.visible == True:
-                Debug.logger.debug(f"Sending overlay message {args}")
                 overlay.send_message(**args)
             if frame not in self.msgs: self.msgs[frame] = {}
             self.msgs[frame][id] = args
@@ -214,26 +215,28 @@ class Overlay():
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change, store the current state """
 
-        Debug.logger.debug(f"Entry: {entry}")
-        # @TODO: Add alternate location when in galaxy map
         # Default frame, visible in ship main view only
-        if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
-            entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
+        # Galaxy Map frame, visible in galaxy map only
+        if not Context.route or not (bool(entry["Flags"] & edmc_data.FlagsInMainShip)):
             self.hide_frame('Default')
-            self.ovfrs['Default'].visible = False
-        else:
-            self.ovfrs['Default'].visible = True
+            self.hide_frame('Galaxy Map')
+        elif entry.get("GuiFocus") == edmc_data.GuiFocusNoFocus:
             self.redraw_frame('Default')
+            self.hide_frame('Galaxy Map')
+        elif entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
+            self.ovfrs['Galaxy Map'].visible = True
+            self.redraw_frame('Galaxy Map')
+            self.hide_frame('Default')
+        else:
+            self.hide_frame('Default')
+            self.hide_frame('Galaxy Map')
 
         # Carrier frame, visible in ship main view only
-        if not (Context.route and bool(entry["Flags"] & edmc_data.FlagsInMainShip)) or \
+        if not bool(entry["Flags"] & edmc_data.FlagsInMainShip) or \
             entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
             self.hide_frame('Carrier')
-            self.ovfrs['Carrier'].visible = False
         else:
-            self.ovfrs['Carrier'].visible = True
             self.redraw_frame('Carrier')
-
 
 
     @catch_exceptions
@@ -278,7 +281,7 @@ class Overlay():
         vars:dict = {}; cbtns:dict = {}
         row += 1; col = 0
         for name, fr in self.ovfrs.items():
-            nb.Label(ovrprefs, text=name, justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+            nb.Label(ovrprefs, text=name, justify=tk.LEFT).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
             col += 1
             for k in pref_opts:
                 var = bind_var(fr, k[0], k[2](value=getattr(fr, k[0])))
@@ -287,9 +290,9 @@ class Overlay():
                     case tk.Checkbutton:
                         nb.Checkbutton(ovrprefs, text=k[1], variable=var).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
                     case 'ColorPicker':
-                        btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour,
+                        btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour, background="#555555",
                                                   command=partial(colour_picker, ovrprefs, name, k[1], var))
-                        btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                        btn.grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
                         cbtns[name] = btn
                 col += 1
             #row += 1

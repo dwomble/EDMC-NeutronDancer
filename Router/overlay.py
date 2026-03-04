@@ -318,7 +318,6 @@ class Overlay():
 
         for name in self.ovfrs:
             conf:str|None = config.get(f"{Context.plugin_name}_{name}_overlay")
-            Debug.logger.debug(f"Loading config: {conf}")
             if conf == None: continue
             data:dict = json.loads(conf)
             try:

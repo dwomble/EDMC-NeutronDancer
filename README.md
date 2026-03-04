@@ -84,16 +84,21 @@ The **Export route** button will open a file dialog allowing you to save the cur
 
 ### Overlay Support
 
-When you make a jump the next waypoint as well as your current statistics will be displayed on screen.
-This requires the EDMC Modern Overlay to be installed. To enable overlay display, in the ED:MC options select Navl's Neutron Dancer, enable Overlay and choose where and in which colour you want text to be displayed.
+This requires the EDMC Modern Overlay to be installed. To enable overlay display, in the ED:MC options select Navl's Neutron Dancer.
+
+Three overlays are available.
+
+1. _Default_ when enabled this will display the next jump in the current route and other details in the ship main window
+2. _Galaxy Map_, this displays the same information as _Default_ but only shows in the Galaxy Map so the colour and location can be distinct
+3. _Carrier_, this displays carrier jump and cooldown timers
 
 ### Chat Commands
 
 This enables management of Neutron Dancer without tabbing out of the game. Simply bring up a chat window and type in "!nd" and a command. Supported commands are:
 
-* next – move to the next waypoint
-* previous (or just prev) – move to the previous waypoint
-* copy – re-insert the next waypoint into the past buffer
+- next – move to the next waypoint
+- previous (or just prev) – move to the previous waypoint
+- copy – re-insert the next waypoint into the past buffer
 
 ### Saving State
 
@@ -112,9 +117,3 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a star.
 
 Fly dangerous! o7
-
-
-
-
-
-

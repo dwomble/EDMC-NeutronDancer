@@ -847,7 +847,10 @@ class UI():
 
         if clipboard_cli != None:
             Debug.logger.debug(f"Using linux clipboard: {clipboard_cli}")
-            subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
+            try:
+                subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), text=True, check=True)
+            except subprocess.CalledProcessError as e:
+                Debug.logger.error("Failed to run {clipboard_cli}: {e}")
             return
 
         # Fallback to the tkinter version

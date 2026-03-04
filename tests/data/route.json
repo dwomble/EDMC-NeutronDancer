@@ -3,8 +3,8 @@
     "src": "Apurui",
     "dest": "Bleae Thua NI-B b27-5",
     "last_plot": "Galaxy",
-    "carrier_id": 3709409280,
-    "carrier_state": "Idle",
+    "carrier_id": "TES-TY1",
+    "carrier_state": "Cooldown",
     "neutron_params": {
         "from": "Apurui",
         "to": "Bleae Thua NI-B b27-5",
@@ -1561,7 +1561,7 @@
                     "Health": 1.0
                 }
             ],
-            "timestamp": "2026-03-03T21:15:54.882704+00:00"
+            "timestamp": "2026-03-04T21:55:36.178842+00:00"
         },
         "87": {
             "event": "Loadout",
@@ -2240,7 +2240,7 @@
                     "Health": 1.0
                 }
             ],
-            "timestamp": "2026-03-03T21:15:56.398933+00:00"
+            "timestamp": "2026-03-04T21:55:37.692411+00:00"
         },
         "1": {
             "timestamp": "2026-01-01T04:00:02Z",
@@ -3110,9 +3110,24 @@
         0,
         [
             [
-                1772572554.347626,
-                "Col 285 Sector CW-J b23-8",
+                1772661326.098623,
+                "HIP 84800",
                 76.407
+            ],
+            [
+                1772661328.6153028,
+                "Synuefe QH-E b59-3",
+                75.91
+            ],
+            [
+                1772661331.138649,
+                "Swoilz JW-H b2-7",
+                76.133
+            ],
+            [
+                1772661335.164445,
+                "Swoilz PC-G b3-7",
+                76.997
             ]
         ]
     ]

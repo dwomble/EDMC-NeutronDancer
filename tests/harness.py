@@ -14,6 +14,9 @@ from datetime import datetime, timezone
 from time import sleep
 import logging
 import types as _types
+import tkinter as tk
+from tkinter import ttk
+import tkinter.messagebox
 
 # Configure logging to output INFO level messages and higher to the console
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,6 +29,10 @@ sys.path.insert(0, str(plugin_dir))
 this_dir = Path(__file__).parent
 sys.path.insert(0, str(this_dir))
 
+print(f"{sys.path}")
+from mock_tk import MockTk
+tk = MockTk
+tk.PhotoImage = MockTk.PhotoImage
 # Mock EDMC's config module (only if not already mocked)
 if 'config' not in sys.modules:
     class MockConfig:
@@ -45,11 +52,14 @@ if 'config' not in sys.modules:
         def set(self, key, value):
             self.data[key] = value
 
+        def get_int(self, key):
+            return int(self.data.get(key, 0)) #type: ignore
+
     _cfg = _types.ModuleType('config')
     _cfg.appname = 'EDMC' # type:ignore
     _cfg.config = MockConfig() # type:ignore
     _cfg.shutting_down = False # type:ignore
-    sys.modules['config.config'] = _cfg
+    sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
 theme_mod = _types.ModuleType("theme")
@@ -58,143 +68,6 @@ theme_mod.theme.name = "default"
 theme_mod.theme.dark = False
 sys.modules['theme'] = theme_mod
 
-# Mock tkinter modules for testing
-try:
-    import tkinter as tk
-    from tkinter import ttk
-    import tkinter.messagebox
-except ImportError:
-    # If tkinter is not available, create mock modules
-    class MockTk:
-        """ Mock tkinter module """
-        class Widget: pass
-        class Frame(Widget): pass
-        class Toplevel(Widget): pass
-        class Label(Widget): pass
-        class Button(Widget): pass
-        class Radiobutton(Widget): pass
-        class Checkbutton(Widget): pass
-        class Entry(Widget): pass
-        class Text(Widget): pass
-        class Canvas(Widget): pass
-        class Listbox(Widget): pass
-        class Scale(Widget): pass
-        class Spinbox(Widget): pass
-        class LabelFrame(Widget): pass
-        class Message(Widget): pass
-        class Scrollbar(Widget): pass
-        class OptionMenu(Widget): pass
-        class Menubutton(Widget): pass
-        class Menu(Widget): pass
-
-        # Constants
-        NSEW = "nsew"
-        NW = "nw"
-        N = "n"
-        NE = "ne"
-        W = "w"
-        CENTER = "center"
-        E = "e"
-        SW = "sw"
-        S = "s"
-        SE = "se"
-        LEFT = "left"
-        RIGHT = "right"
-        TOP = "top"
-        BOTTOM = "bottom"
-        BOTH = "both"
-        NONE = "none"
-        X = "x"
-        Y = "y"
-        END = "end"
-        DISABLED = "disabled"
-        NORMAL = "normal"
-
-        StringVar: Callable[[], None] = lambda: None
-        IntVar: Callable[[], None] = lambda: None
-        BooleanVar: Callable[[], None] = lambda: None
-
-    class MockTtk:
-        """ Mock tkinter.ttk module """
-        class Frame(MockTk.Frame): pass
-        class Label(MockTk.Label): pass
-        class Button(MockTk.Button): pass
-        class Entry(MockTk.Entry): pass
-        class Combobox(MockTk.Entry): pass
-        class Checkbutton(MockTk.Checkbutton): pass
-        class Radiobutton(MockTk.Radiobutton): pass
-        class Scrollbar(MockTk.Scrollbar): pass
-        class LabelFrame(MockTk.LabelFrame): pass
-        class Notebook(MockTk.Frame): pass
-        class Scale(MockTk.Scale): pass
-        class Progressbar(MockTk.Canvas): pass
-
-    class MockMessagebox:
-        """ Mock tkinter.messagebox module """
-        @staticmethod
-        def showinfo(title, message): pass
-        @staticmethod
-        def showerror(title, message): pass
-        @staticmethod
-        def showwarning(title, message): pass
-        @staticmethod
-        def askyesno(title, message): return False
-        @staticmethod
-        def askokcancel(title, message): return False
-
-    _tk_mod = _types.ModuleType('tkinter')
-    # attach classes and constants from MockTk to the module
-    for name, val in MockTk.__dict__.items():
-        if not name.startswith('__'):
-            setattr(_tk_mod, name, val)
-
-    _ttk_mod = _types.ModuleType('tkinter.ttk')
-    for name, val in MockTtk.__dict__.items():
-        if not name.startswith('__'):
-            setattr(_ttk_mod, name, val)
-
-    _msg_mod = _types.ModuleType('tkinter.messagebox')
-    # copy static methods from MockMessagebox to module-level callables
-    _msg_mod.showinfo = MockMessagebox.showinfo # type:ignore
-    _msg_mod.showerror = MockMessagebox.showerror # type:ignore
-    _msg_mod.showwarning = MockMessagebox.showwarning # type:ignore
-    _msg_mod.askyesno = MockMessagebox.askyesno # type:ignore
-    _msg_mod.askokcancel = MockMessagebox.askokcancel # type:ignore
-
-    sys.modules['tkinter'] = _tk_mod
-    sys.modules['tkinter.ttk'] = _ttk_mod
-    sys.modules['tkinter.messagebox'] = _msg_mod
-
-# Mock myNotebook module
-class MockNotebook:
-    """ Mock myNotebook (nb) module """
-    class Frame:
-        def __init__(self, parent=None, **kw): pass
-    class Label:
-        def __init__(self, parent=None, **kw): pass
-    class Button:
-        def __init__(self, parent=None, **kw): pass
-    class Entry:
-        def __init__(self, parent=None, **kw): pass
-    class Combobox:
-        def __init__(self, parent=None, **kw): pass
-    class Checkbutton:
-        def __init__(self, parent=None, **kw): pass
-    class Radiobutton:
-        def __init__(self, parent=None, **kw): pass
-    class Scrollbar:
-        def __init__(self, parent=None, **kw): pass
-    class LabelFrame:
-        def __init__(self, parent=None, **kw): pass
-    class Notebook:
-        def __init__(self, parent=None, **kw): pass
-    
-_nb_mod = _types.ModuleType('myNotebook')
-# attach classes from MockNotebook to module
-for name, val in MockNotebook.__dict__.items():
-    if not name.startswith('__'):
-        setattr(_nb_mod, name, val)
-sys.modules['myNotebook'] = _nb_mod
 
 class MockEDMCOverlay:
     def __init__(self): pass
@@ -244,6 +117,7 @@ from config import config # type: ignore
 from Router.context import Context
 from Router.route_manager import Router
 from Router.route import Route
+from Router.ui import UI
 from Router.ship import Ship
 from Router.csv import CSV
 from Router.constants import NAME, TITLE
@@ -311,40 +185,11 @@ class TestHarness:
         self.overlay = Overlay()
         Context.overlay = self.overlay
 
-        # Ensure a minimal UI stub exists for headless/test environments
-        try:
-            if getattr(Context, 'ui', None) is None:
-                class _StubUI:
-                    def __init__(self):
-                        self.frame = _types.SimpleNamespace()
-                        # simple after() implementation used by Router
-                        def after(ms, cb):
-                            # don't schedule background calls during tests
-                            return None
-                        self.frame.after = after
-                        self.parent = None
-
-                    def switch_ship(self, ship):
-                        return None
-
-                    def update_waypoint(self):
-                        return None
-
-                    def ctc(self, arg=None):
-                        return None
-
-                    def show_frame(self, which=None):
-                        return None
-
-                    def show_error(self, msg=None):
-                        return None
-
-                    def cooldown_complete(self):
-                        return None
-
-                Context.ui = _StubUI()  # type: ignore
-        except Exception:
-            pass
+        # This got stuck with annoying PhotoImage
+        #parent:tk.Widget = MockTk.Widget() # type: ignore
+        self.ui = UI()
+        self.ui.frame = MockTk.Frame #type: ignore
+        Context.ui = self.ui
         
         self.context = Context
 
@@ -401,7 +246,12 @@ class TestHarness:
             except Exception as e:
                 print(f"Error in journal handler: {e}")
                 raise
-        sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
+            sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
+        
+    def play_sequence(self, name:str) -> None:
+        """ Fire a sequence of events """
+        for event in self.events.get(name, []):
+            self.fire_event(event)
         
     def set_ship(self, ship_name:str) -> None:
         """ Set the current ship in the router context. """

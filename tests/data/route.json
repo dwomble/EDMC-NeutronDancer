@@ -2,9 +2,9 @@
     "system": "Sol",
     "src": "Apurui",
     "dest": "Bleae Thua NI-B b27-5",
-    "last_plot": "Galaxy",
-    "carrier_id": 3709409280,
-    "carrier_state": "Idle",
+    "last_plot": "Neutron",
+    "carrier_id": "TES-TY1",
+    "carrier_state": "Cooldown",
     "neutron_params": {
         "from": "Apurui",
         "to": "Bleae Thua NI-B b27-5",
@@ -1561,7 +1561,7 @@
                     "Health": 1.0
                 }
             ],
-            "timestamp": "2026-03-03T21:15:54.882704+00:00"
+            "timestamp": "2026-03-04T17:41:01.082294+00:00"
         },
         "87": {
             "event": "Loadout",
@@ -2240,7 +2240,7 @@
                     "Health": 1.0
                 }
             ],
-            "timestamp": "2026-03-03T21:15:56.398933+00:00"
+            "timestamp": "2026-03-04T17:41:02.605198+00:00"
         },
         "1": {
             "timestamp": "2026-01-01T04:00:02Z",
@@ -2964,156 +2964,71 @@
     "route": [
         [
             "System Name",
+            "Jumps",
+            "Jumps Rem",
             "Neutron",
-            "Distance",
-            "Distance Rem",
-            "Fuel Left",
-            "Fuel Used",
-            "Refuel",
-            "Scoopable",
-            "Waypoints Rem"
+            "Distance Jumped",
+            "Distance Rem"
         ],
         [
             [
                 "Apurui",
+                0,
+                21,
                 false,
                 0,
-                2025.12,
-                128,
-                0,
-                false,
-                false,
-                11
-            ],
-            [
-                "Col 285 Sector XA-K b23-1",
-                false,
-                75.9,
-                1951.55,
-                121.28,
-                6.72,
-                false,
-                false,
-                10
-            ],
-            [
-                "Col 285 Sector MZ-C b27-10",
-                false,
-                76.05,
-                1877.22,
-                114.59,
-                6.69,
-                false,
-                true,
-                9
-            ],
-            [
-                "Swoilz AJ-C c2-10",
-                false,
-                76.62,
-                1801.18,
-                107.83,
-                6.75,
-                false,
-                true,
-                8
-            ],
-            [
-                "R CrA Sector FR-U b3-7",
-                false,
-                76.72,
-                1725.05,
-                101.13,
-                6.71,
-                false,
-                true,
-                7
+                2025.12
             ],
             [
                 "PSR J1752-2806",
+                7,
+                21,
                 true,
-                73.86,
-                1686.04,
-                95.09,
-                6.04,
-                false,
-                false,
-                6
+                349.79,
+                1686.04
             ],
             [
-                "Col 359 Sector ZZ-P d5-52",
+                "Col 359 Sector NN-T e3-3",
+                5,
+                14,
                 true,
-                459.87,
-                1549.14,
-                88.52,
-                6.57,
-                false,
-                false,
-                5
+                534.35,
+                1323.91
             ],
             [
-                "Col 359 Sector XK-F d11-32",
+                "Col 359 Sector TU-F d11-89",
+                1,
+                9,
                 true,
-                458.56,
-                1108.58,
-                82.07,
-                6.46,
-                false,
-                false,
-                4
+                312.64,
+                1019.79
             ],
             [
-                "Swoiwns XQ-B d14-16",
+                "PSR J1744-1134",
+                1,
+                8,
                 true,
-                464.42,
-                815.41,
-                75.47,
-                6.6,
-                false,
-                false,
-                3
+                299.99,
+                813.41
             ],
             [
-                "Bleia Eohn HW-U d3-6",
+                "Bleae Thua VN-T d3-12",
+                6,
+                7,
                 true,
-                453.61,
-                560.42,
-                69.31,
-                6.16,
-                false,
-                false,
-                2
-            ],
-            [
-                "M25 Sector PI-T d3-51",
-                true,
-                381.43,
-                279.96,
-                65.35,
-                3.96,
-                false,
-                false,
-                1
+                578.13,
+                357.67
             ],
             [
                 "Bleae Thua NI-B b27-5",
-                false,
-                279.96,
+                1,
                 0,
-                63.54,
-                1.81,
                 false,
-                false,
+                357.67,
                 0
             ]
         ],
         0,
-        [
-            [
-                1772572554.347626,
-                "Col 285 Sector CW-J b23-8",
-                76.407
-            ]
-        ]
+        []
     ]
 }

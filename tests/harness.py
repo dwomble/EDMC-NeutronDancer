@@ -244,6 +244,7 @@ from config import config # type: ignore
 from Router.context import Context
 from Router.route_manager import Router
 from Router.route import Route
+from Router.ui import UI
 from Router.ship import Ship
 from Router.csv import CSV
 from Router.constants import NAME, TITLE
@@ -311,40 +312,8 @@ class TestHarness:
         self.overlay = Overlay()
         Context.overlay = self.overlay
 
-        # Ensure a minimal UI stub exists for headless/test environments
-        try:
-            if getattr(Context, 'ui', None) is None:
-                class _StubUI:
-                    def __init__(self):
-                        self.frame = _types.SimpleNamespace()
-                        # simple after() implementation used by Router
-                        def after(ms, cb):
-                            # don't schedule background calls during tests
-                            return None
-                        self.frame.after = after
-                        self.parent = None
-
-                    def switch_ship(self, ship):
-                        return None
-
-                    def update_waypoint(self):
-                        return None
-
-                    def ctc(self, arg=None):
-                        return None
-
-                    def show_frame(self, which=None):
-                        return None
-
-                    def show_error(self, msg=None):
-                        return None
-
-                    def cooldown_complete(self):
-                        return None
-
-                Context.ui = _StubUI()  # type: ignore
-        except Exception:
-            pass
+        self.ui = UI()
+        Context.ui = self.ui
         
         self.context = Context
 
@@ -401,7 +370,12 @@ class TestHarness:
             except Exception as e:
                 print(f"Error in journal handler: {e}")
                 raise
-        sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
+            sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
+        
+    def play_sequence(self, name:str) -> None:
+        """ Fire a sequence of events """
+        for event in self.events.get(name, []):
+            self.fire_event(event)
         
     def set_ship(self, ship_name:str) -> None:
         """ Set the current ship in the router context. """

@@ -49,11 +49,8 @@ class TestStartup:
         """Test that startup event sets system correctly."""
 
         assert harness.router is not None
-        for event in harness.events.get('startup', []):
-            harness.fire_event(event)
-
+        harness.play_sequence('startup')
         assert harness.router.system == "Sol"
-
 
 class TestShipLoadout:
     """Test ship loadout and switching."""
@@ -61,14 +58,12 @@ class TestShipLoadout:
     def test_loadout_event(self, harness:TestHarness) -> None:
         """Test loading a ship."""
 
-        for event in harness.events.get('loadout', []):
-            harness.fire_event(event)
-
-        shipid:str = str(event.get('ShipID', '87'))
+        harness.play_sequence('loadout')
+        shipid:str = '87'
         assert harness.router.ship_id == shipid
         assert harness.router.ship is not None
-        assert harness.router.ship.type == event.get('Ship', 'mandalay')
-        assert harness.router.ship.name == event.get('ShipName', 'Long Delay')
+        assert harness.router.ship.type == 'mandalay'
+        assert harness.router.ship.name == 'Long Delay'
         assert harness.router.neutron_params['supercharge_multiplier'] == harness.router.ship.supercharge_multiplier
         assert harness.router.neutron_params['range'] == harness.router.ship.range
         assert harness.router.ships[shipid] is harness.router.ship
@@ -126,13 +121,9 @@ class TestCargo:
 
     def test_cargo_event(self, harness: TestHarness):
         """Test cargo event updates."""
-        for event in harness.events.get('add_cargo', []):
-            harness.fire_event(event)
-
+        harness.play_sequence('add_cargo')
         assert harness.router.cargo == 200
-
-        for event in harness.events.get('remove_cargo', []):
-            harness.fire_event(event)
+        harness.play_sequence('remove_cargo')
 
         assert harness.router.cargo == 0
 
@@ -186,17 +177,14 @@ class TestShipyardSwap:
     def test_swap_existing_ship(self, harness: TestHarness):
         """Test swapping to a previously loaded ship."""
         # Load multiple ships
-        for event in harness.events.get('shipyard_swap', []):
-            harness.fire_event(event)
-
-        assert harness.router.ship_id == str(event.get('ShipID'))
+        harness.play_sequence('shipyard_swap')
+        assert harness.router.ship_id == '106'
 
     def test_swap_unknown_ship(self, harness: TestHarness):
         """Test swapping to an unknown ship."""
-        for event in harness.events.get('shipyard_swap_unknown', []):
-            harness.fire_event(event)
-
-        assert harness.router.ship_id == str(event.get('ShipID'))
+        harness.play_sequence('shipyard_swap_unknown')
+        
+        assert harness.router.ship_id == '106'
 
 class TestStateManagement:
     """Test router state management."""
@@ -210,10 +198,32 @@ class TestStateManagement:
 
     def test_save_load_parameters(self, harness: TestHarness) -> None:
         """Test that route parameters are saved."""
-        for event in harness.events.get('startup', []):
-            harness.fire_event(event)
+        #@TODO: Finish this test
+        harness.play_sequence('startup')
 
         # Should do a save and verify the json result
+
+class TestOverlay:    
+    """Test overlay functionality."""
+
+    def test_cooldown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
+        """Ensure carrier jump completion starts the countdown thread."""
+
+        called:dict[str, bool] = {'flag': False}
+
+        def fake_countdown(self, frame, content, end, stop) -> None:
+            # Simulate some work then set flag
+            called['flag'] = True
+
+        monkeypatch.setattr(type(harness.overlay), '_countdown', fake_countdown, raising=False)
+        harness.overlay.display_countdown('Carrier', 'Countdown', 100)
+
+        # The thread may run quickly; wait briefly for it to start
+        import time
+        time.sleep(0.05)
+        assert called['flag'] is True
+
+
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
 
@@ -227,6 +237,7 @@ class TestPlotting:
 
         monkeypatch.setattr(type(harness.router), '_plotter', fake_plotter, raising=False)
 
+        harness.router.carrier_id = 'TES-TY1'
         params:dict = {'from': 'A', 'to': 'B', 'max_time': 1}
         result:bool = harness.router.plot_route('Neutron', params)
         assert result is True

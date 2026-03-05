@@ -8,6 +8,7 @@ import myNotebook as nb  #type: ignore
 from Router.constants import GH_PROJECT, NAME, TITLE, errs
 from utils.debug import Debug, catch_exceptions
 from utils.updater import Updater
+from utils.misc import copy_to_clipboard
 
 from Router.context import Context
 from Router.route_manager import Router
@@ -71,6 +72,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
         case 'SendText':
+            Debug.logger.debug(f"SendText called")
             if entry.get('Message').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
                     case "prev" | "previous":
@@ -78,7 +80,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                     case "next":
                         Context.ui.goto_next_waypoint()
                     case _:
-                        Context.ui.ctc(Context.route.next_stop())
+                        copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:

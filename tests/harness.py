@@ -15,8 +15,6 @@ from time import sleep
 import logging
 import types as _types
 import tkinter as tk
-from tkinter import ttk
-import tkinter.messagebox
 
 # Configure logging to output INFO level messages and higher to the console
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

@@ -66,5 +66,11 @@
     ],
     "cancel_carrier_jump": [
         { "event":"CarrierJumpCancelled", "CarrierID":"TES-TY1" }
+    ],
+    "chat_commands": [
+        {"event": "SendText", "Message": "!nd next"},
+        {"event": "SendText", "Message": "!nd previous"},
+        {"event": "SendText", "Message": "!nd"},
+        {"event": "SendText", "Message": "Hi there"}
     ]
 }

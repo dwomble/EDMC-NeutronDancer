@@ -9,7 +9,7 @@ from threading import Thread
 
 from config import config # type: ignore
 from utils.debug import Debug, catch_exceptions
-from utils.misc import hfplus
+from utils.misc import hfplus, copy_to_clipboard
 
 from .constants import ovr, errs, lbls, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
@@ -301,7 +301,7 @@ class Router():
             Context.route = Route(hdrs, rte)
             Context.route.offset = 1 if Context.route.source() == self.system else 0
 
-            Context.ui.ctc(Context.route.next_stop())
+            copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')
             self.update_jump_overlay()
             self.save()
@@ -346,7 +346,7 @@ class Router():
             self.dest = Context.route.destination()
 
             Context.route.offset = 1 if Context.route.source() == self.system else 0
-            Context.ui.ctc(Context.route.next_stop())
+            copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
             return True
 

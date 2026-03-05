@@ -58,6 +58,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     match entry['event']:
         case 'Startup':
             Context.router.system = system
+            Context.router.update_jump_overlay()
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.system = system
             Context.router.jumped(system, entry)

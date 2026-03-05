@@ -148,8 +148,8 @@ class Router():
         if next_refuel is not None and next_refuel == 0:
             jstr += ", ⛽ " + lbls["refuel_now"]
         if next_refuel is not None and next_refuel > 0:
-            jstr += ", " + lbls["refuel"].format(r=next_refuel)
-            jstr += " " + lbls["jump"] if next_refuel == 1 else lbls["jumps"]
+            jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
+            jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
 
         message.append({'size': "normal", 'text': f"{jstr}"})
         Context.overlay.display_frame('Default', message, ttl=120)
@@ -303,6 +303,7 @@ class Router():
 
             Context.ui.ctc(Context.route.next_stop())
             Context.ui.show_frame('Route')
+            self.update_jump_overlay()
             self.save()
 
         except Exception as e:

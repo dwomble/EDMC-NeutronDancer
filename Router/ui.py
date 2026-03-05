@@ -121,8 +121,8 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
-        Context.overlay.hide_frame('Default')
-        Context.overlay.hide_frame('Galaxy Map')
+        Context.overlay.clear_frame('Default')
+        Context.overlay.clear_frame('Galaxy Map')
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"

@@ -92,8 +92,20 @@ class Overlay():
         [overlay.send_message(**m) for m in self.msgs[frame].values()]
 
 
-    def hide_frames(self) -> None:
+    def clear_frames(self) -> None:
         """ Clear all overlay frames """
+        [self.clear_frame(fr) for fr in self.ovfrs]
+
+
+    def clear_frame(self, frame:str = "") -> None:
+        """ Hide a frame and clear it so it doesn't show again """
+        self.hide_frame(frame)
+        if frame in self.msgs:
+            del self.msgs[frame]
+
+
+    def hide_frames(self) -> None:
+        """ Hide all overlay frames """
         [self.hide_frame(fr) for fr in self.ovfrs]
 
 
@@ -108,7 +120,7 @@ class Overlay():
             tmp:dict = deepcopy(m)
             tmp['ttl'] = 1
             tmp['text'] = ''
-            Debug.logger.debug(f"Hiding frame {tmp}")
+            #Debug.logger.debug(f"Hiding frame {tmp}")
             overlay.send_message(**tmp)
 
 

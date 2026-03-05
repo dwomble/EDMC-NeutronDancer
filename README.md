@@ -39,6 +39,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 By default Neutron Dancer starts in a minimized mode in order to be as unobtrusive as possible when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
 
 Neutron dancer supports two route creation methods:
+
 1. Direct plotting from Spansh Neutron Router or Spansh Galaxy Router
 2. CSV import from Spansh Road to Riches, Expressway to Exomastery, Tourist planner, Fleetcarrier plotter, etc.
 
@@ -84,7 +85,7 @@ The **Export route** button will open a file dialog allowing you to save the cur
 
 ### Overlay Support
 
-This requires the EDMC Modern Overlay to be installed, older overlays aren't supported. 
+This requires the EDMC Modern Overlay to be installed, older overlays aren't supported.
 
 To enable overlay display, in the ED:MC options select Navl's Neutron Dancer, activate the overlay frames you want and choose the text colour.
 
@@ -109,6 +110,17 @@ This enables management of Neutron Dancer without tabbing out of the game. Simpl
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off and catch up any jumps made while EDMC was inactive.
 
 It also saves ship details and source and destination systems for easy entry.
+
+### Linux Clipboard
+
+This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs all of them that exist. If it can't find any of them at all it falls back to using the Tk native solution.
+
+If you have problems with waypoints not being put into the clipboard you can override all of this by setting an environment variable `EDMC_CLIPBOARD_CLI` to the command you wish to use before running EDMC. e.g.
+
+```shell
+export EDMC_CLIPBOARD_CLI="/usr/local/random/xsel --clipboard --input
+/usr/bin/python EDMarketConnector.py
+```
 
 ## Credits
 

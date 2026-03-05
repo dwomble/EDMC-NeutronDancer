@@ -1,7 +1,4 @@
-import subprocess
 import os
-import sys
-import shutil
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as confirmDialog
@@ -18,7 +15,7 @@ from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
-from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice
+from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
@@ -513,7 +510,7 @@ class UI():
             return
 
         wp:str = Context.route.next_stop()
-        self.ctc(wp)
+        copy_to_clipboard(self.parent, wp)
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
@@ -563,7 +560,7 @@ class UI():
 
         col += 1
         self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40,
-                                                        command=lambda: self.ctc(Context.route.next_stop()))
+                                                        command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
 
@@ -815,44 +812,6 @@ class UI():
         Context.router.update_route(-1)
         self.update_waypoint()
 
-
-    @catch_exceptions
-    def ctc(self, text:str = '') -> None:
-        """ Copy text to the clipboard """
-        if self.parent == None: return
-
-        # It's here and below so we don't have to go through all the checks on non-linux systems
-        if sys.platform not in ['linux', 'linux2']:
-            # Use the native clipboard method
-            self.parent.clipboard_clear()
-            self.parent.clipboard_append(text)
-            self.parent.update()
-            return
-
-        # Try to use a CLI clipboard tool first
-        clipboard_cli:str|None = os.getenv("EDMC_CLIPBOARD_CLI", None)
-        if not clipboard_cli and os.getenv("XDG_SESSION_TYPE") == "wayland" and shutil.which("wl-copy"):
-            clipboard_cli = "wl-copy"
-        if not clipboard_cli and os.getenv("XDG_SESSION_TYPE") == "x11" and shutil.which("xsel"):
-            clipboard_cli = "xsel --clipboard --input"
-        if not clipboard_cli and os.getenv("XDG_SESSION_TYPE") == "x11" and shutil.which("xclip"):
-            clipboard_cli = "xclip -selection c -target UTF8_STRING"
-
-        if clipboard_cli != None:
-            Debug.logger.debug(f"Using linux clipboard: {clipboard_cli}")
-            try:
-                subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
-            except subprocess.CalledProcessError as e:
-                Debug.logger.error(f"Failed to run {clipboard_cli}: {e}")
-            return
-
-        # Fallback to the tkinter version
-        Debug.logger.debug(f"Using linux tkinter clipboard fallback")
-        self.parent.clipboard_clear()
-        self.parent.clipboard_append(text)
-        self.parent.update()
-
-
     @catch_exceptions
     def check_range(self, one, two, three) -> None:
         """ Validate the range entry """
@@ -905,7 +864,7 @@ class UI():
             case "next":
                 self.goto_next_waypoint()
             case _:
-                self.ctc(Context.route.next_stop())
+                copy_to_clipboard(self.parent, Context.route.next_stop())
 
 
     @catch_exceptions

@@ -30,9 +30,9 @@ this_dir = Path(__file__).parent
 sys.path.insert(0, str(this_dir))
 
 print(f"{sys.path}")
-from mock_tk import MockTk
-tk = MockTk
-tk.PhotoImage = MockTk.PhotoImage
+#from mock_tk import MockTk
+#tk = MockTk
+#tk.PhotoImage = MockTk.PhotoImage
 # Mock EDMC's config module (only if not already mocked)
 if 'config' not in sys.modules:
     class MockConfig:
@@ -134,6 +134,7 @@ class TestHarness:
             plugin_dir = str(Path(__file__).parent)
 
         self.plugin_dir:Path = Path(plugin_dir).resolve()
+        self.live_dir:Path = Path(__file__).parent.parent.resolve()
         self.commander = "TestCommander"
         self.is_beta = False
         self.system = "Sol"
@@ -187,8 +188,14 @@ class TestHarness:
 
         # This got stuck with annoying PhotoImage
         #parent:tk.Widget = MockTk.Widget() # type: ignore
-        self.ui = UI()
-        self.ui.frame = MockTk.Frame #type: ignore
+        root = tk.Tk()        
+        root.withdraw()
+        # Have to temporarily switch the plugin dir to live so that it can find the assets folder for images.
+        Context.plugin_dir = self.live_dir
+        self.ui = UI(tk.Frame(root))
+        Context.plugin_dir = self.plugin_dir
+
+        #self.ui.frame = MockTk.Frame #type: ignore
         Context.ui = self.ui
         
         self.context = Context

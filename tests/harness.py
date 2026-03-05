@@ -79,7 +79,7 @@ class Mockedmcoverlay:
         def __init__(self): pass
         @staticmethod
         def send_message(**kw): pass
-        
+
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():
     if not name.startswith('__'):
@@ -92,14 +92,14 @@ for name, val in Mockedmcoverlay.__dict__.items():
         setattr(_overlay, name, val)
 sys.modules['EDMCOverlay.edmcoverlay'] = _overlay
 
-# Mock up the modern overlay and its plugin 
+# Mock up the modern overlay and its plugin
 class MockOverlay_Plugin:
     def __init__(self, **kw): pass
 class Mockoverlay_api:
     def __init__(self, **kw): pass
     @staticmethod
     def define_plugin_group(**kw): pass
-    
+
 _overlay_plugin = _types.ModuleType('overlay_plugin')
 for name, val in MockOverlay_Plugin.__dict__.items():
     if not name.startswith('__'):
@@ -197,7 +197,7 @@ class TestHarness:
 
         #self.ui.frame = MockTk.Frame #type: ignore
         Context.ui = self.ui
-        
+
         self.context = Context
 
         # Event handlers registered by plugins
@@ -254,12 +254,12 @@ class TestHarness:
                 print(f"Error in journal handler: {e}")
                 raise
             sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
-        
+
     def play_sequence(self, name:str) -> None:
         """ Fire a sequence of events """
         for event in self.events.get(name, []):
             self.fire_event(event)
-        
+
     def set_ship(self, ship_name:str) -> None:
         """ Set the current ship in the router context. """
         ship_info:dict = self.loadouts.get(ship_name, {})

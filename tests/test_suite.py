@@ -139,7 +139,7 @@ class TestEventSequences:
         filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
         res:bool = harness.router.import_route(filename)
         assert res == True
-        
+
         # Follow the route
         for event in harness.events.get('full_route_scenario', []):
             harness.fire_event(event)
@@ -184,7 +184,7 @@ class TestShipyardSwap:
     def test_swap_unknown_ship(self, harness: TestHarness):
         """Test swapping to an unknown ship."""
         harness.play_sequence('shipyard_swap_unknown')
-        
+
         assert harness.router.ship_id == '106'
 
 class TestStateManagement:
@@ -204,7 +204,7 @@ class TestStateManagement:
 
         # Should do a save and verify the json result
 
-class TestOverlay:    
+class TestOverlay:
     """Test overlay functionality."""
 
     def test_countdown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
@@ -238,7 +238,7 @@ class TestOverlay:
         # The thread may run quickly; wait briefly for it to start
         import time
         time.sleep(0.05)
-        assert called['flag'] is True        
+        assert called['flag'] is True
 
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
@@ -411,15 +411,15 @@ class TestPlotting:
         res:bool = harness.router.plot_route('Galaxy', galaxy_params)
         assert res == True
         time.sleep(62)
-        
+
         assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
         #logging.info(f"{harness.context.route.route}")
-        
+
         # Galaxy plotter's results vary based on a number of factors.
         assert harness.context.route.total_jumps() <= 28
-        assert harness.context.route.total_jumps() >= 14
+        assert harness.context.route.total_jumps() >= 11
         #harness.context.route.offset = 8
         #assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
 

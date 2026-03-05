@@ -177,7 +177,7 @@ class Overlay():
 
     def _timedelta_str(self, delta:timedelta) -> str:
         """ Display remaining time showing hh:mm:ss """
-        s:int = delta.seconds
+        s:int = delta.seconds-1
         unit:int = 60
         res:list = []
         while unit > 0:

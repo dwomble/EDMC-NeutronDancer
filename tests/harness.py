@@ -24,13 +24,10 @@ plugin_dir:Path = Path(__file__).parent.parent
 sys.path.insert(0, str(plugin_dir))
 
 # We keep a copy of edmc_data here.
-this_dir = Path(__file__).parent
+this_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(this_dir))
 
-print(f"{sys.path}")
-#from mock_tk import MockTk
-#tk = MockTk
-#tk.PhotoImage = MockTk.PhotoImage
+
 # Mock EDMC's config module (only if not already mocked)
 if 'config' not in sys.modules:
     class MockConfig:
@@ -185,7 +182,6 @@ class TestHarness:
         Context.overlay = self.overlay
 
         # This got stuck with annoying PhotoImage
-        #parent:tk.Widget = MockTk.Widget() # type: ignore
         try:
             root = tk.Tk()
         except:
@@ -196,15 +192,11 @@ class TestHarness:
         Context.plugin_dir = self.live_dir
         self.ui = UI(tk.Frame(root))
         Context.plugin_dir = self.plugin_dir
-
-        #self.ui.frame = MockTk.Frame #type: ignore
         Context.ui = self.ui
-
         self.context = Context
 
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
-        self.state_change_handlers: list[Callable] = []
         self.config = config
 
     def setup(self, config_file:str = "test_config.json") -> None:

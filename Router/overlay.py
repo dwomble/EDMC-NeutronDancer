@@ -178,7 +178,7 @@ class Overlay():
 
     def _timedelta_str(self, delta:timedelta) -> str:
         """ Display remaining time showing hh:mm:ss """
-        s:int = delta.seconds-1
+        s:int = delta.seconds
         unit:int = 60
         res:list = []
         while unit > 0:
@@ -197,7 +197,8 @@ class Overlay():
             rem = end - datetime.now(tz=end.tzinfo)
             display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
-            Context.overlay.display_frame(frame, display, ttl=1)
+            if self.ovfrs[frame].visible == True:
+                Context.overlay.display_frame(frame, display, ttl=1)
 
         stop.clear()
         Context.overlay.display_frame(frame, '', ttl=1)
@@ -219,8 +220,8 @@ class Overlay():
         Debug.logger.debug(f"Countdown starting {content} {end}")
         if end == None or frame not in self.ovfrs: return
         self.stop_countdown(frame)
+        self.stoppers[frame] = Event()
         if isinstance(end, int): end = datetime.now() + timedelta(seconds=end)
-        if frame not in self.stoppers: self.stoppers[frame] = Event()
         Thread(target=self._countdown, args=(frame, content, end, self.stoppers[frame]),
                                              name=f"{Context.plugin_name}_{frame} overlay countdown worker").start()
 
@@ -247,7 +248,7 @@ class Overlay():
 
         # Carrier frame, visible in ship main view only
         if not bool(entry["Flags"] & edmc_data.FlagsInMainShip) or \
-            entry.get("GuiFocus") not in [edmc_data.GuiFocusNoFocus]:
+            entry.get("GuiFocus") != edmc_data.GuiFocusNoFocus:
             self.hide_frame('Carrier')
         else:
             self.redraw_frame('Carrier')

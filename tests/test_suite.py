@@ -81,7 +81,7 @@ class TestShipLoadout:
         assert harness.router.ships[shipid] is harness.router.ship
 
 
-    def test_ship_range_calculation(self, harness: TestHarness) -> None:
+    def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
         assert harness.router.ship is not None
         assert hasattr(harness.router.ship, 'range')
@@ -90,7 +90,7 @@ class TestShipLoadout:
 class TestImporting:
     """Test importing functionality for different route types."""
 
-    def test_import_route_neutron(self, harness: TestHarness) -> None:
+    def test_import_route_neutron(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
@@ -99,7 +99,7 @@ class TestImporting:
         assert harness.router.dest == 'Voqooe BI-H d11-864'
         assert harness.context.route.total_jumps() == 399
 
-    def test_import_route_galaxy(self, harness: TestHarness) -> None:
+    def test_import_route_galaxy(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
@@ -109,7 +109,7 @@ class TestImporting:
         assert harness.context.route.total_jumps() == 74
 
 
-    def test_import_route_fc(self, harness: TestHarness) -> None:
+    def test_import_route_fc(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "fc-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
@@ -120,7 +120,7 @@ class TestImporting:
         assert harness.context.route.next_stop() == 'Nyeajeau IQ-U c4-7'
         assert harness.router.dest == 'Voqooe BI-H d11-864'
 
-    def test_import_route_riches(self, harness: TestHarness) -> None:
+    def test_import_route_riches(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "riches-apurui-M23.csv")
         res:bool = harness.router.import_route(filename)
 
@@ -130,7 +130,7 @@ class TestImporting:
 class TestCargo:
     """Test cargo management."""
 
-    def test_cargo_event(self, harness: TestHarness):
+    def test_cargo_event(self, harness:TestHarness):
         """Test cargo event updates."""
         harness.play_sequence('add_cargo')
         assert harness.router.cargo == 200
@@ -214,13 +214,13 @@ class TestChatCommands:
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""
 
-    def test_swap_existing_ship(self, harness: TestHarness):
+    def test_swap_existing_ship(self, harness:TestHarness):
         """Test swapping to a previously loaded ship."""
         # Load multiple ships
         harness.play_sequence('shipyard_swap')
         assert harness.router.ship_id == '106'
 
-    def test_swap_unknown_ship(self, harness: TestHarness):
+    def test_swap_unknown_ship(self, harness:TestHarness):
         """Test swapping to an unknown ship."""
         harness.play_sequence('shipyard_swap_unknown')
 
@@ -230,7 +230,7 @@ class TestShipyardSwap:
 class TestOverlay:
     """Test overlay functionality."""
 
-    def test_countdown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
+    def test_countdown_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure countdown starts the countdown thread."""
 
         called:dict[str, bool] = {'flag': False}
@@ -247,7 +247,7 @@ class TestOverlay:
         time.sleep(0.05)
         assert called['flag'] is True
 
-    def test_countdown_shows_overlay(self, harness: TestHarness, monkeypatch) -> None:
+    def test_countdown_shows_overlay(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure carrier jump completion starts the countdown thread."""
 
         called:dict[str, bool] = {'flag': False}
@@ -257,7 +257,7 @@ class TestOverlay:
         harness.fire_event(events[1])
         assert harness.overlay.msgs != {}
 
-    def test_clear_frames(self, harness: TestHarness, monkeypatch) -> None:
+    def test_clear_frames(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure clearings all frames removes the messages."""
 
         called:dict[str, bool] = {'flag': False}
@@ -277,7 +277,7 @@ class TestOverlay:
 class TestEventSequences:
     """Test complex multi-step event scenarios."""
 
-    def test_full_route_scenario(self, harness: TestHarness):
+    def test_full_route_scenario(self, harness:TestHarness):
         """Test a complete route scenario with jumps and cargo."""
         harness.system = 'Apurui'
 
@@ -300,7 +300,7 @@ class TestEventSequences:
         # Final state check
         assert harness.context.route.jumps_remaining() == 0
 
-    def test_carrier_jump_noroute(self, harness: TestHarness) -> None:
+    def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
         """Test carrier jump with docking."""
         events:list = harness.events.get('carrier_events', [])
         harness.fire_event(events[0])
@@ -308,7 +308,7 @@ class TestEventSequences:
         harness.fire_event(events[1])
         assert harness.router.carrier_state == 'Cooldown'
 
-    def test_carrier_jump_route(self, harness: TestHarness):
+    def test_carrier_jump_route(self, harness:TestHarness):
         """Test carrier jump with docking."""
         filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
@@ -322,7 +322,7 @@ class TestEventSequences:
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""
 
-    def test_plot_route_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
+    def test_plot_route_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure plot_route returns True and starts the plotting worker."""
         called:dict[str, bool] = {'flag': False}
 
@@ -341,7 +341,7 @@ class TestPlotting:
         time.sleep(0.05)
         assert called['flag'] is True
 
-    def test_plotter_success_creates_route(self, harness: TestHarness) -> None:
+    def test_plotter_success_creates_route(self, harness:TestHarness) -> None:
         """Test that _plotter successfully creates a route from Spansh response."""
         # Mock Spansh response for job submission
         job_response = Mock()
@@ -385,7 +385,7 @@ class TestPlotting:
                     assert Context.route is not None
                     assert len(Context.route.route) >= 2
 
-    def test_plotter_error_response_shows_error(self, harness: TestHarness):
+    def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
         error_response = Mock()
@@ -415,7 +415,7 @@ class TestPlotting:
 
                 # No exception should be raised; Context.ui.show_error would be called
 
-    def test_plot_route_unknown_type(self, harness: TestHarness):
+    def test_plot_route_unknown_type(self, harness:TestHarness):
         """Unknown plot types should return False and not start plotting."""
         result:bool = harness.router.plot_route('UnsupportedType', {})
         assert result is False
@@ -449,7 +449,7 @@ class TestPlotting:
         assert harness.context.route.total_jumps() == 21
 
 
-    def test_plot_galaxy_route(self, harness: TestHarness) -> None:
+    def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Ensure galaxy plot_route sets params and starts worker."""
 
         harness.set_ship('Shipping Delay')
@@ -503,7 +503,7 @@ class TestPlotting:
         #assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
 
 
-    def test_plot_galaxy_route_caspian(self, harness: TestHarness) -> None:
+    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Ensure galaxy plot_route sets params and starts worker."""
 
         harness.set_ship('Perviy')

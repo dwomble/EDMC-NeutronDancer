@@ -11,11 +11,6 @@ import tkinter as tk
 from tkinter import ttk, colorchooser as tkColorChooser
 import myNotebook as nb # type: ignore
 
-try:
-    from EDMCOverlay import edmcoverlay # type: ignore
-    from overlay_plugin.overlay_api import define_plugin_group # type: ignore
-except ImportError:
-    edmcoverlay = None
 
 from config import config # type: ignore
 #from edmc_data import GuiFocusNoFocus, FlagsInMainShip, GuiFocusGalaxyMap # type: ignore
@@ -23,6 +18,13 @@ import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
 from .context import Context
+
+try:
+    from EDMCOverlay import edmcoverlay # type: ignore
+    from overlay_plugin.overlay_api import define_plugin_group # type: ignore
+except ImportError:
+    Debug.logger.warning(f"EDMC Overlay not installed")
+    edmcoverlay = None
 
 #FLAGS = [edmc_data.FlagsDocked, edmc_data.FlagsLanded, edmc_data.FlagsLandingGearDown, edmc_data.FlagsShieldsUp, edmc_data.FlagsSupercruise,
 #         edmc_data.FlagsFlightAssistOff, edmc_data.FlagsHardpointsDeployed, edmc_data.FlagsInWing]
@@ -68,9 +70,7 @@ class Overlay():
 
     def _get_overlay(self):
         """ Is an overlay installed and running? """
-        if not edmcoverlay:
-            Debug.logger.warning(f"edmcoverlay plugin is not installed")
-            return
+        if not edmcoverlay: return
 
         # Is it running?
         try:
@@ -84,6 +84,7 @@ class Overlay():
         """ Redraw all overlay frames """
         Debug.logger.debug(f"Redrawing frames")
         [self.redraw_frame(fr) for fr in self.msgs]
+
 
     def redraw_frame(self, frame:str = "") -> None:
         overlay = self._get_overlay()
@@ -146,7 +147,7 @@ class Overlay():
         """ Display/update a frame with a set of messages """
 
         overlay = self._get_overlay()
-        Debug.logger.debug(f"Display called for {frame} {overlay}")
+        #Debug.logger.debug(f"Display called for {frame} {content}")
         if not overlay or frame not in self.ovfrs: return
         fr:OvFrame = self.ovfrs[frame]
 

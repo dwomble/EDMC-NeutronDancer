@@ -186,8 +186,12 @@ class TestHarness:
 
         # This got stuck with annoying PhotoImage
         #parent:tk.Widget = MockTk.Widget() # type: ignore
-        root = tk.Tk()        
+        try:
+            root = tk.Tk()
+        except:
+            pass
         root.withdraw()
+
         # Have to temporarily switch the plugin dir to live so that it can find the assets folder for images.
         Context.plugin_dir = self.live_dir
         self.ui = UI(tk.Frame(root))

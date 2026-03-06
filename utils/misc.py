@@ -57,7 +57,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
         except subprocess.CalledProcessError as e:
             Debug.logger.error(f"Failed to run {clipboard_cli}: {e}")
         return
-    
+
     # Still nothing? Then run all the ones we can find regardless of session type.
     for cmd in cmds:
         if shutil.which(cmd.split()[0]):
@@ -69,7 +69,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
 
     if clipboard_cli != None:
         return
-    
+
     # Final fallback to the tkinter version
     Debug.logger.debug(f"Using linux tkinter clipboard fallback")
     parent.clipboard_clear()
@@ -256,8 +256,7 @@ class PopupNotice:
             self.root.overrideredirect(True)
 
         self.root.attributes("-alpha", 0.6)
-        #self.root.geometry(config.window_geometries.get('Alert', "300x150-1+0"))
-        self.root.geometry("300x150-1+0")
+        self.root.geometry("350x150-1+0")
         self.root.attributes("-topmost", True)
 
         self.frame = tk.Frame(self.root, bg='red4', relief="raised")

@@ -64,13 +64,15 @@
         { "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Swoilz PC-G b3-7", "SystemAddress":16068411926041, "StarPos":[316.68750,-100.37500,289.09375], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"None", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"None", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"None", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchy", "Population":0, "Body":"Swoilz PC-G b3-7 A", "BodyID":1, "BodyType":"Star", "JumpDist":76.997, "FuelUsed":3.813308, "FuelLevel":28.186691 },
         { "event":"Scan", "ScanType":"AutoScan", "BodyName":"Swoilz PC-G b3-7 A", "BodyID":1, "Parents":[ {"Null":0} ], "StarSystem":"Swoilz PC-G b3-7", "SystemAddress":16068411926041, "DistanceFromArrivalLS":0.000000, "StarType":"M", "Subclass":8, "StellarMass":0.222656, "Radius":295833696.000000, "AbsoluteMagnitude":10.834152, "Age_MY":1448, "SurfaceTemperature":2224.000000, "Luminosity":"Va", "SemiMajorAxis":2179204463958.740234, "Eccentricity":0.127747, "OrbitalInclination":-57.677372, "Periapsis":105.333463, "OrbitalPeriod":13326607346.534729, "AscendingNode":172.652217, "MeanAnomaly":62.463758, "RotationPeriod":138777.707203, "AxialTilt":0.000000, "WasDiscovered":true, "WasMapped":false, "WasFootfalled":false }
     ],
-    "cancel_carrier_jump": [
-        { "event":"CarrierJumpCancelled", "CarrierID":"TES-TY1" }
+    "carrier_events": [
+        { "event":"CarrierJumpRequest", "CarrierType":"FleetCarrier", "CarrierID":3709409280, "SystemName":"Bleae Thua ZE-I b23-1", "Body":"Bleae Thua ZE-I b23-1 AB 1", "SystemAddress":2867293399241, "BodyID":12, "DepartureTime":"2026-03-05T23:10:10Z"},
+        { "event":"CarrierLocation", "CarrierType":"FleetCarrier", "CarrierID":3709409280, "StarSystem":"Bleae Thua ZE-I b23-1", "SystemAddress":2867293399241, "BodyID":12 },
+        { "event":"CarrierJumpCancelled", "CarrierType":"FleetCarrier", "CarrierID":3709409280}
     ],
     "chat_commands": [
-        {"event": "SendText", "Message": "!nd next"},
-        {"event": "SendText", "Message": "!nd previous"},
-        {"event": "SendText", "Message": "!nd"},
-        {"event": "SendText", "Message": "Hi there"}
+        { "event": "SendText", "Message": "!nd next"},
+        { "event": "SendText", "Message": "!nd previous"},
+        { "event": "SendText", "Message": "!nd"},
+        { "event": "SendText", "Message": "Hi there"}
     ]
 }

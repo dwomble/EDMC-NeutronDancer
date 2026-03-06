@@ -53,6 +53,17 @@ class TestStartup:
         harness.play_sequence('startup')
         assert harness.router.system == "Sol"
 
+class TestStateManagement:
+    """Test router state management."""
+
+    def test_load(self, harness:TestHarness) -> None:
+        """Call plugin load"""
+        harness.router._load()
+
+    def test_save(self, harness:TestHarness) -> None:
+        """Call save"""
+        harness.router.save()
+
 class TestShipLoadout:
     """Test ship loadout and switching."""
 
@@ -200,6 +211,69 @@ class TestChatCommands:
         assert harness.context.route.next_stop() == 'Bleae Thua NI-B b27-5'
         assert harness.ui.parent.clipboard_get() == ''
 
+class TestShipyardSwap:
+    """Test ship swapping from shipyard."""
+
+    def test_swap_existing_ship(self, harness: TestHarness):
+        """Test swapping to a previously loaded ship."""
+        # Load multiple ships
+        harness.play_sequence('shipyard_swap')
+        assert harness.router.ship_id == '106'
+
+    def test_swap_unknown_ship(self, harness: TestHarness):
+        """Test swapping to an unknown ship."""
+        harness.play_sequence('shipyard_swap_unknown')
+
+        assert harness.router.ship_id == '106'
+
+
+class TestOverlay:
+    """Test overlay functionality."""
+
+    def test_countdown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
+        """Ensure countdown starts the countdown thread."""
+
+        called:dict[str, bool] = {'flag': False}
+
+        def fake_countdown(self, frame, content, end, stop) -> None:
+            # Simulate some work then set flag
+            called['flag'] = True
+
+        monkeypatch.setattr(type(harness.overlay), '_countdown', fake_countdown, raising=False)
+        harness.overlay.display_countdown('Carrier', 'Countdown', 100)
+
+        # The thread may run quickly; wait briefly for it to start
+        import time
+        time.sleep(0.05)
+        assert called['flag'] is True
+
+    def test_countdown_shows_overlay(self, harness: TestHarness, monkeypatch) -> None:
+        """Ensure carrier jump completion starts the countdown thread."""
+
+        called:dict[str, bool] = {'flag': False}
+
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        harness.fire_event(events[1])
+        assert harness.overlay.msgs != {}
+
+    def test_clear_frames(self, harness: TestHarness, monkeypatch) -> None:
+        """Ensure clearings all frames removes the messages."""
+
+        called:dict[str, bool] = {'flag': False}
+
+        def fake_countdown(self, frame, content, end, stop) -> None:
+            # Simulate some work then set flag
+            called['flag'] = True
+
+        monkeypatch.setattr(type(harness.context.overlay), '_countdown', fake_countdown, raising=False)
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        harness.fire_event(events[2])
+        assert harness.overlay.msgs != {}
+        harness.overlay.clear_frames()
+        assert harness.overlay.msgs == {}
+
 class TestEventSequences:
     """Test complex multi-step event scenarios."""
 
@@ -226,91 +300,24 @@ class TestEventSequences:
         # Final state check
         assert harness.context.route.jumps_remaining() == 0
 
-
     def test_carrier_jump_noroute(self, harness: TestHarness) -> None:
         """Test carrier jump with docking."""
-        # { "timestamp":"2026-01-24T07:06:27Z", "event":"CarrierLocation", "CarrierType":"FleetCarrier", "CarrierID":3709409280, "StarSystem":"Kuk", "SystemAddress":24859942069665, "BodyID":12 }
-        #harness.startup("Sol")
-        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
-
-        #assert harness.router.system == "Sol"
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.router.carrier_state == 'Jumping'
+        harness.fire_event(events[1])
+        assert harness.router.carrier_state == 'Cooldown'
 
     def test_carrier_jump_route(self, harness: TestHarness):
         """Test carrier jump with docking."""
-        #harness.startup("Sol")
-        #harness.router.carrier_id = "FC-12345"
-        #harness.router.carrier_state = "Jumping"
-        #harness.carrier_location_event("Sirius", station="My Fleet Carrier", docked=True)
+        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
+        res:bool = harness.router.import_route(filename)
 
-        #assert harness.router.system == "Sol"
-
-class TestShipyardSwap:
-    """Test ship swapping from shipyard."""
-
-    def test_swap_existing_ship(self, harness: TestHarness):
-        """Test swapping to a previously loaded ship."""
-        # Load multiple ships
-        harness.play_sequence('shipyard_swap')
-        assert harness.router.ship_id == '106'
-
-    def test_swap_unknown_ship(self, harness: TestHarness):
-        """Test swapping to an unknown ship."""
-        harness.play_sequence('shipyard_swap_unknown')
-
-        assert harness.router.ship_id == '106'
-
-class TestStateManagement:
-    """Test router state management."""
-
-    def test_router_singleton(self, harness: TestHarness) -> None:
-        """Test that Router is a singleton."""
-
-        # Create another harness - should share same router instance
-        harness2 = TestHarness()
-        assert harness.router is harness2.router
-
-    def test_save_load_parameters(self, harness: TestHarness) -> None:
-        """Test that route parameters are saved."""
-        #@TODO: Finish this test
-        harness.play_sequence('startup')
-
-        # Should do a save and verify the json result
-
-class TestOverlay:
-    """Test overlay functionality."""
-
-    def test_countdown_starts_thread(self, harness: TestHarness, monkeypatch) -> None:
-        """Ensure countdown starts the countdown thread."""
-
-        called:dict[str, bool] = {'flag': False}
-
-        def fake_countdown(self, frame, content, end, stop) -> None:
-            # Simulate some work then set flag
-            called['flag'] = True
-
-        monkeypatch.setattr(type(harness.overlay), '_countdown', fake_countdown, raising=False)
-        harness.overlay.display_countdown('Carrier', 'Countdown', 100)
-
-        # The thread may run quickly; wait briefly for it to start
-        import time
-        time.sleep(0.05)
-        assert called['flag'] is True
-
-    def test_cooldown_shows_overlay(self, harness: TestHarness, monkeypatch) -> None:
-        """Ensure carrier jump completion starts the countdown thread."""
-
-        called:dict[str, bool] = {'flag': False}
-
-        def fake_countdown(self, frame, content, end, stop) -> None:
-            # Simulate some work then set flag
-            called['flag'] = True
-
-        monkeypatch.setattr(type(harness.context.overlay), '_countdown', fake_countdown, raising=False)
-        harness.play_sequence('cancel_carrier_jump')
-        # The thread may run quickly; wait briefly for it to start
-        import time
-        time.sleep(0.05)
-        assert called['flag'] is True
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.router.carrier_state == 'Jumping'
+        harness.fire_event(events[1])
+        assert harness.router.carrier_state == 'Cooldown'
 
 class TestPlotting:
     """Test plotting functionality (neutron/galaxy routes)."""

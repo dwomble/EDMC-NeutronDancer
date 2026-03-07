@@ -99,11 +99,11 @@ To change overlay frame positions, set backgrounds etc. use Modern Overlay's con
 
 ### Chat Commands
 
-This enables management of Neutron Dancer without tabbing out of the game. Simply bring up a chat window and type in "!nd" and a command. Supported commands are:
+This enables management of Neutron Dancer without tabbing out of the game. Simply bring up a chat window and type in `!nd` and a command. Supported commands are:
 
-- next – move to the next waypoint
-- previous (or just prev) – move to the previous waypoint
-- copy – re-insert the next waypoint into the past buffer
+- `next` – move to the next waypoint
+- `previous` (or just `prev`) – move to the previous waypoint
+- `copy` – re-insert the next waypoint into the past buffer
 
 ### Saving State
 

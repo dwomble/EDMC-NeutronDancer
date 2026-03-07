@@ -315,7 +315,10 @@ class Overlay():
                         btn.grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
                         cbtns[name] = btn
                 col += 1
-            #row += 1
+        row += 1; col = 0
+        nb.Label(ovrprefs, text="To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
+                 justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
+
         return ovrprefs
 
 

@@ -95,7 +95,3 @@ def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
     Context.ui.save_prefs()
-
-
-def __version__() -> str:
-    return str(Context.plugin_version)

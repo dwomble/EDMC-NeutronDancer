@@ -15,19 +15,32 @@ Next click **Calculate** to query Spansh and plot your route.
 
 ## Galaxy Plotter
 
-This works the same as the Neutron Plotter but Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route. [*You have been warned*]{red}.
+This works the same as the Neutron Plotter but Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
 
 ![Galaxy Plotter](https://github.com/user-attachments/assets/7eb44a7e-5233-41b8-ada5-3dd39f9fd35a)
 
-- *Routing Algorithm* there are several algorithms available. Different algorithms may work faster, find better routes or in some cases be unable to find a route.
+- **Routing Algorithm** there are several algorithms available. Different algorithms may work faster, find better routes or in some cases be unable to find a route.
     1. *Fuel* Prioritises saving fuel, will not scoop fuel or supercharge. Will make the smallest jumps possible in order to preserve fuel as much as possible.
     1. *Fuel Jumps* Prioritises saving fuel, will not scoop fuel or supercharge. Will make the smallest jumps possible in order to preserve fuel as much as possible. Once it has generated a route it will then attempt to minimise the number of jumps to use the entire fuel tank. It will attempt to save only enough fuel to recharge the internal fuel tank once. If you have generated a particularly long route it is likely that you will need to recharge more than once and as such you will most likely run out of fuel.
     1. *Optimistic* Prioritises Neutron jumps. Penalises areas of the galaxy which have large gaps between neutron stars. Typically generates the fastest route with fewest total jumps.
     1. *Pessimistic* Prioritises calculation speed. Overestimates the average star distance to filter out routes. This means it calculates routes faster but the routes are typically less optimal.
 
-**Usage**
+- **Routing Options**
+  - *Already supercharged* Is your ship already supercharged
+
+  - *Use Supercharge* Use Neutron stars to supercharge your FSD
+
+  - *Use FSD Injections* Use FSD synthesis to boost when a Neutron star is not available
+
+  - *Exclude Secondary Stars* Prevent the system using secondary Neutron stars and scoopable stars to help with the route
+
+  - *Refuel Every Scoopable* Refuel every time you encounter a scoopable star
+
+### Usage
 
 1. In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
+
+1. Jump range is very weight dependent. Only refuel where it says to do so or you may get a "Jump exceeds maximum fuel" error. If this happens you can use FSD Supercharge Overdrive to burn off the excess or follow the instructions below.
 
 1. Due to the complexity of the galaxy plotter and the calculations involved a route plotted in the Neutron Dancer may vary *slightly* from one created through the web interface.
 

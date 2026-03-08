@@ -502,15 +502,6 @@ class UI():
         self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
 
-        # We check if we're there rather than if there are no jumps remaining so
-        # we don't show end of the road when someone steps forward/backward.
-        sys:str = Context.router.carrier_location if Context.route.fleetcarrier == True else Context.router.system
-
-        if sys == Context.route.destination() and Context.route.jumps_remaining() == 0:
-            self.waypoint_btn.configure(text=lbls["route_complete"], image='', compound=tk.NONE)
-            self._update_progbar()
-            return
-
         wp:str = Context.route.next_stop()
         copy_to_clipboard(self.parent, wp)
         if Context.route.jumps_to_wp() != 0:
@@ -518,11 +509,13 @@ class UI():
         self._update_progbar()
 
         # Set an icon if appropriate
-        image:tk.PhotoImage|str = ''  # Empty image
+        image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
         if Context.route.refuel() == True:
-            image=self.fuel_img
-            wp = ' ' + wp + ' '
-        self.waypoint_btn.configure(text=wp, image=image, compound=tk.RIGHT)
+            image:tk.PhotoImage = self.fuel_img
+            wp = lbls['refuel_now'] + ' ' + wp + ' '
+
+        self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
+
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:

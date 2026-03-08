@@ -69,6 +69,7 @@ class Router():
 
         self._load()
 
+        if Context.route.route != []: Context.route.update_route(0, self.system)
         self._initialized = True
 
 
@@ -132,6 +133,7 @@ class Router():
 
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
+        Debug.logger.debug(f"Updating jump overlay")
         wp:str = Context.route.next_stop()
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
@@ -153,9 +155,11 @@ class Router():
             jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
             jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
 
+        Debug.logger.debug(f"Next refuel {next_refuel}")
         message.append({'size': "normal", 'text': f"{jstr}"})
         Context.overlay.display_frame('Default', message, ttl=120)
         Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+
 
     def update_route(self, i:int) -> None:
         """ Called by the UI when next or prev is clicked """
@@ -319,7 +323,7 @@ class Router():
             self._store_history()
 
             Context.route = Route(hdrs, rte)
-            Context.route.offset = 1 if Context.route.source() == self.system else 0
+            Context.route.offset = 0
 
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')
@@ -365,7 +369,7 @@ class Router():
             self.src = Context.route.source()
             self.dest = Context.route.destination()
 
-            Context.route.offset = 1 if Context.route.source() == self.system else 0
+            Context.route.offset = 0
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
             return True

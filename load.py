@@ -52,6 +52,8 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.overlay = Overlay()
     Context.ui = UI(parent)
 
+    parent.after(5000, Context.router.update_jump_overlay)
+
     return Context.ui.frame
 
 
@@ -60,7 +62,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'Startup':
             Context.router.system = system
             Context.router.carrier_state = 'Idle'
-            Context.router.update_jump_overlay()
+            if Context.route.route != []: Context.route.update_route(0, system)
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.system = system
             Context.router.jumped(system, entry)

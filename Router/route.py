@@ -1,6 +1,6 @@
 from time import time
 from utils.debug import Debug
-from .constants import HEADER_MAP, tts, TRUE
+from .constants import HEADER_MAP, tts, lbls, TRUE
 
 class Route:
     """
@@ -13,6 +13,7 @@ class Route:
         self.offset:int = offset
         self.fleetcarrier:bool = False
 
+        Debug.logger.debug(f"Init, offset: {self.offset}")
         if hdrs == [] or cols == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
@@ -57,9 +58,9 @@ class Route:
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
-        if self.offset >= len(self.route): return ''
-        Debug.logger.debug(f"Next stop: {self.sc} {self.route[self.offset][self.sc]}")
-        return self.route[self.offset][self.sc]
+        if self.offset >= len(self.route)-1: return lbls['route_complete']
+        Debug.logger.debug(f"Next stop: {self.sc} {self.route[self.offset+1][self.sc]}")
+        return self.route[self.offset+1][self.sc]
 
 
     def next_refuel(self) -> int|None:
@@ -69,14 +70,18 @@ class Route:
         ind:int|None = self.colind("Refuel") or self.colind("Restock")
         if ind == None: return None
 
+        if self.route[self.offset][ind] in TRUE: return 0
         # TODO: Not sure about this logic. It's trying to deal with a started or not started route but still...
         start:int = 1
         waypoint_range:list = self.route[self.offset:len(self.route)]
-        if self.offset > 0:
-            start = 0
-            waypoint_range = self.route[self.offset-1:len(self.route)]
-
         return next((i + start for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
+
+
+    def refuel(self) -> bool:
+        """ Return whether we need to refuel at this waypoint """
+        ind:int|None = self.colind('Refuel') or self.colind('Restock')
+        if ind == None: return False
+        return self.route[self.offset][ind] in TRUE
 
 
     def jumps_to_wp(self) -> int:
@@ -97,11 +102,13 @@ class Route:
         if offset >= len(self.route)-1: return 0
 
         # No jump count column
-        if self.jc == None: return len(self.route[offset:-1])
+        if self.jc == None:
+            Debug.logger.debug(f"Jumps remaining: {len(self.route[offset:-1])}")
+            return len(self.route[offset:-1])
 
         syscol:int|None = self.colind('System Name')  # We want to use the system name rather than the body name to count jumps
         if syscol == None: syscol = self.sc # Fallback to whatever column we use for the system if we don't have a system name column
-        return sum([j[self.jc] for i, j in enumerate(self.route[offset:]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
+        return sum([j[self.jc] for i, j in enumerate(self.route[offset:-1]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
 
 
     def perc_jumps_rem(self, offset:int|None = None) -> float:
@@ -133,6 +140,7 @@ class Route:
         """ Distance remaining if we know it """
         if self.route == [] or self.dc == None: return 0
         if offset == None: offset = self.offset
+        Debug.logger.debug(f"Dist remaining {offset}: {self.route[offset][self.dc]}")
         return self.route[offset][self.dc]
 
 
@@ -164,16 +172,10 @@ class Route:
 
     def get_waypoint(self, inc:int = 0) -> str:
         """ Return the system of a waypoint relative to our current offset """
-        if self.route == [] or self.offset + inc > len(self.route)-1 or self.offset+inc < 0: return tts["none"]
+        inc += 1 # Offset is our current location, but waypoint needs to show the next not the current
+        if self.route == [] or self.offset + inc >= len(self.route)-1 or self.offset+inc < 0: return tts["none"]
 
         return self.route[self.offset+inc][self.sc]
-
-
-    def refuel(self) -> bool:
-        """ Return whether we need to refuel at this waypoint """
-        ind:int|None = self.colind('Refuel') or self.colind('Restock')
-        if ind == None: return False
-        return self.route[self.offset][ind] in [True, 'True', 'true', 'YES', 'Yes', 'yes', 1, '1']
 
 
     def update_route(self, direction:int = 0, system:str = '') -> int:
@@ -181,6 +183,7 @@ class Route:
         Step forwards or backwards through the route.
         If no direction is given pickup from wherever we are on the route
         """
+        Debug.logger.debug(f"Updating route")
         if self.route == []: return -1
 
         if direction == 0: # Figure out if we're on the route
@@ -193,7 +196,6 @@ class Route:
             if self.route[self.offset][self.sc] != system:
                 Debug.logger.debug(f"We aren't on the route")
                 return -1
-            direction = 1  # Default to moving forwards
             Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.sc]}")
 
         # Are we at one end or the other?

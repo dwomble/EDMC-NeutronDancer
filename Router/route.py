@@ -103,12 +103,12 @@ class Route:
 
         # No jump count column
         if self.jc == None:
-            Debug.logger.debug(f"Jumps remaining: {len(self.route[offset:-1])}")
-            return len(self.route[offset:-1])
+            Debug.logger.info(f"Jumps remaining: {len(self.route[offset:])}")
+            return len(self.route[offset:])
 
         syscol:int|None = self.colind('System Name')  # We want to use the system name rather than the body name to count jumps
         if syscol == None: syscol = self.sc # Fallback to whatever column we use for the system if we don't have a system name column
-        return sum([j[self.jc] for i, j in enumerate(self.route[offset:-1]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
+        return sum([j[self.jc] for i, j in enumerate(self.route[offset:]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
 
 
     def perc_jumps_rem(self, offset:int|None = None) -> float:

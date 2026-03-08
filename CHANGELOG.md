@@ -15,6 +15,7 @@
 * Hopefully fixed cooldown popup notice problem on Linux [Issue 25](https://github.com/dwomble/EDMC-NeutronDancer/issues/25)
 * Further reworked Linux clipboard to try every possible combination [Issue 23](https://github.com/dwomble/EDMC-NeutronDancer/issues/23)
 * Fixed problem with old overlay breaking the plugin [Issue 21](https://github.com/dwomble/EDMC-NeutronDancer/issues/21)
+* Reworked offset (step) calculations to address inconsistencies
 
 ## v1.7.0 2026-02-12
 

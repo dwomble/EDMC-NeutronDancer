@@ -117,7 +117,7 @@ class TestImporting:
         assert res == True
         assert harness.context.route.fleetcarrier == True
         assert harness.router.src == 'Bleae Thua NI-B b27-5'
-        harness.context.route.offset = 10
+        harness.context.route.offset = 9
         assert harness.context.route.next_stop() == 'Nyeajeau IQ-U c4-7'
         assert harness.router.dest == 'Voqooe BI-H d11-864'
 
@@ -146,11 +146,11 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
         assert res == True
-        assert harness.context.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[0])
-        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.context.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
 
     def test_no_next(self, harness:TestHarness):
         """Test next command when at the end of a route"""
@@ -158,12 +158,12 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
         assert res == True
-        harness.context.route.offset = len(harness.context.route.route)-1
+        harness.context.route.offset = len(harness.context.route.route)-2
         assert harness.context.route.next_stop() == 'Voqooe BI-H d11-864'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[0])
-        assert harness.context.route.next_stop() == 'Voqooe BI-H d11-864'
+        assert harness.context.route.next_stop() == 'End of the road!'
 
     def test_no_previous(self, harness:TestHarness):
         """Test prev/previous command when at the beginning of a route"""
@@ -174,7 +174,7 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.context.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_previous(self, harness:TestHarness):
         """Test prev/previous command when at the beginning of a route"""
@@ -183,11 +183,11 @@ class TestChatCommands:
         res:bool = harness.router.import_route(filename)
         assert res == True
         Context.router.update_route(1)
-        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.context.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.context.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_copy(self, harness:TestHarness):
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
@@ -196,7 +196,7 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[2])
-        assert harness.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
+        assert harness.ui.parent.clipboard_get() == 'Bleae Thua RX-L d7-28'
 
     def test_other(self, harness:TestHarness):
         """Test some other random string has no impact"""
@@ -209,7 +209,7 @@ class TestChatCommands:
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[2])
         harness.fire_event(events[3])
-        assert harness.context.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
         assert harness.ui.parent.clipboard_get() == ''
 
 class TestShipyardSwap:

@@ -151,36 +151,6 @@ class TestHarness:
         self.csv = CSV()
         Context.csv = self.csv
 
-        # Ensure minimal module data present for ship calculations during tests
-        try:
-            # Add FSD entry if missing or missing necessary fields
-            fsd_symbol:str = 'int_hyperdrive_size8_class5'
-            # Replace any existing FSD entries with a known-good one so it's chosen first
-            fsd_entry:dict = {
-                'symbol': 'Int_Hyperdrive_Size8_Class5',
-                'fuelpower': 2.5025,
-                'fuelmul': 0.011,
-                'maxfuel': 6.8,
-                'optmass': 4670,
-            }
-            Context.modules = []
-            if hasattr(Context, 'modules'):
-                Context.modules = [m for m in Context.modules if m.get('symbol','').lower() != fsd_symbol]
-
-            Context.modules.insert(0, fsd_entry)
-
-            ft_symbol:str = 'int_fueltank_size8_class3'
-            # Ensure a matching fuel tank entry exists
-            ft_entry:dict = {
-                'symbol': 'Int_FuelTank_Size8_Class3',
-                'fuel': 32.0,
-            }
-            Context.modules = [m for m in Context.modules if m.get('symbol','').lower() != ft_symbol]
-            # Place fuel tank after FSD entries
-            Context.modules.insert(1, ft_entry)
-        except Exception:
-            pass
-
         self.overlay = Overlay()
         Context.overlay = self.overlay
 

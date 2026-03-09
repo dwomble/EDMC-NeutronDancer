@@ -22,7 +22,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 - Fleet carrier support includes jump cooldown tracking and notification
 - Tracks and reports statistics including jumps and distance per hour
 - Supports [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display
-- Supports chat commands (!nd next, !nd previous, !nd copy) for single screen operation
+- Supports chat commands (`!nd next`, `!nd previous`, `!nd copy`) for single screen operation
 
 ## Installation
 
@@ -38,10 +38,17 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 By default Neutron Dancer starts in a minimized mode in order to be as unobtrusive as possible when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
 
-Neutron dancer supports two route creation methods:
+Neutron dancer supports two direct route creation methods:
 
-1. Direct plotting from Spansh Neutron Router or Spansh Galaxy Router
-2. CSV import from Spansh Road to Riches, Expressway to Exomastery, Tourist planner, Fleetcarrier plotter, etc.
+1. The simpler Spansh Neutron Plotter
+1. The more sophisticated Spansh Galaxy Plotter
+
+it also supports CSV file import in a wide variety of formats
+
+1. Road to Riches
+1. Expressway to Exomastery
+1. Tourist planner
+1. Fleetcarrier plotter, etc.
 
 ### Neutron Plotting
 
@@ -53,7 +60,7 @@ Next click **Calculate** to query Spansh and plot your route.
 
 ### Galaxy Plotting
 
-This works the same as the Neutron Plotter but because the Galaxy Plotter is much more sophisticated Neutron Dancer must have seen the ship you're going to use (you must have switched to it) in order to calculate all the details required. The options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
+This works the same as the Neutron Plotter but because the Galaxy Plotter is much more sophisticated the options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
 
 <img width="439" height="239" alt="Screenshot 2026-01-16 173246" src="https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f" />
 
@@ -87,7 +94,7 @@ The **Export route** button will open a file dialog allowing you to save the cur
 
 This requires the EDMC Modern Overlay to be installed, older overlays aren't supported.
 
-To enable overlay display, in the ED:MC options select Navl's Neutron Dancer, activate the overlay frames you want and choose the text colour.
+To enable overlay display, in the EDMC select File -> Settings and in the settings window select Navl's Neutron Dancer, activate the overlay frames you want and choose the text colour.
 
 Three overlays are available.
 
@@ -95,7 +102,7 @@ Three overlays are available.
 2. _Galaxy Map_, this displays the same information as _Default_ but only shows in the Galaxy Map so the colour and location can be distinct
 3. _Carrier_, this displays carrier jump and cooldown timers
 
-To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller.
+To change overlay frame positions, set backgrounds, text alignment etc. use Modern Overlay's controller.
 
 ### Chat Commands
 
@@ -113,7 +120,7 @@ It also saves ship details and source and destination systems for easy entry.
 
 ### Linux Clipboard
 
-This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs all of them that exist. If it can't find any of them at all it falls back to using the Tk native solution.
+This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
 
 If you have problems with waypoints not being put into the clipboard you can override all of this by setting an environment variable `EDMC_CLIPBOARD_CLI` to the command you wish to use before running EDMC. e.g.
 

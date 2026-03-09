@@ -103,8 +103,8 @@ class Route:
 
         # No jump count column
         if self.jc == None:
-            Debug.logger.info(f"Jumps remaining: {len(self.route[offset:])}")
-            return len(self.route[offset:])
+            Debug.logger.info(f"Jumps remaining: {len(self.route[offset:])} {self.route[offset]}")
+            return len(self.route[offset:])-1
 
         syscol:int|None = self.colind('System Name')  # We want to use the system name rather than the body name to count jumps
         if syscol == None: syscol = self.sc # Fallback to whatever column we use for the system if we don't have a system name column

@@ -5,7 +5,7 @@ import tkinter as tk
 
 import myNotebook as nb  #type: ignore
 
-from Router.constants import GH_PROJECT, NAME, TITLE, errs
+from Router.constants import GH_PROJECT, NAME, TITLE, errs, CarrierStates
 from utils.debug import Debug, catch_exceptions
 from utils.updater import Updater
 from utils.misc import copy_to_clipboard
@@ -61,7 +61,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     match entry['event']:
         case 'Startup':
             Context.router.system = system
-            Context.router.carrier_state = 'Idle'
+            Context.router.carrier_state = CarrierStates.Idle
             if Context.route.route != []: Context.route.update_route(0, system)
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.system = system

@@ -25,7 +25,7 @@ from load import journal_entry
 from Router.context import Context
 from Router.constants import CarrierStates
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 @pytest.fixture
 def harness() -> Generator:
@@ -92,18 +92,19 @@ class TestImporting:
     """Test importing functionality for different route types."""
 
     def test_import_route_neutron(self, harness:TestHarness) -> None:
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
         res:bool = harness.router.import_route(filename)
 
         assert res == True
         assert harness.router.src == 'Bleae Thua NI-B b27-5'
-        assert harness.router.dest == 'Voqooe BI-H d11-864'
-        assert harness.context.route.total_jumps() == 399
+        assert harness.router.dest == 'Smojue DR-N d6-34'
+        assert harness.context.route.total_jumps() == 66
 
     def test_import_route_galaxy(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
 
+        logging.debug(f"Route: {len(harness.context.route.route)} {harness.context.route}")
         assert res == True
         assert harness.router.src == 'Bleae Thua NI-B b27-5'
         assert harness.router.dest == 'Voqooe BI-H d11-864'
@@ -539,6 +540,7 @@ class TestPlotting:
         assert res == True
         time.sleep(62)
 
+        logging.debug(f"Route: {harness.context.route}")
         assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'

@@ -15,11 +15,12 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 ## Key Features
 
-- Spansh **Galaxy Plotting** and **Neutron Plotting** directly from within EDMC
+- The easiest way to use Spansh' sophisticated **Galaxy Plotter** from within EDMC
+- Spansh **Neutron Plotting** directly from within EDMC
 - CSV import supports almost any route file including Road to Riches, Expressway to Exomastery, Tourist planner, and Fleetcarrier plotter
 - History tracking remembers your current waypoint as well as ships, loadouts, and destinations
 - Route export makes it easy to save a route for later reuse
-- Fleet carrier support includes jump cooldown tracking and notification
+- Fleet carrier support includes jump countdown and cooldown tracking and notification
 - Tracks and reports statistics including jumps and distance per hour
 - Supports [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display
 - Supports chat commands (`!nd next`, `!nd previous`, `!nd copy`) for single screen operation

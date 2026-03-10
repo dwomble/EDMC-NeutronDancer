@@ -7,6 +7,7 @@ Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb
 
 import pytest # type: ignore
 import sys
+import os
 from pathlib import Path
 from typing import Generator, Optional
 from time import sleep
@@ -24,7 +25,8 @@ sys.path.insert(0, str(plugin_dir))
 from harness import TestHarness
 from load import journal_entry
 from Router.context import Context
-from Router.constants import CarrierStates
+from Router.route import Route
+from Router.constants import CarrierStates, SPANSH_ROUTE
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -55,6 +57,11 @@ class TestStartup:
         harness.play_sequence('startup')
         assert harness.router.system == "Sol"
 
+    def test_module_import(self, harness:TestHarness) -> None:
+        """Test retrieving module data from Coriolis """
+        harness.context.modules = []
+        harness.router._get_module_data()
+        assert len(harness.context.modules) == 89
 class TestStateManagement:
     """Test router state management."""
 
@@ -68,6 +75,12 @@ class TestStateManagement:
 
 class TestShipLoadout:
     """Test ship loadout and switching."""
+
+    def test_bad_event(self, harness:TestHarness) -> None:
+        """Test bad loadout event."""
+        harness.fire_event({"event": "bad", "Ship":"naughty", "ShipID":100000, "ShipName":"Dummy", "ShipIdent":"Dumdum"})
+        
+        assert hasattr(harness.router.ship, "ship_id") == False
 
     def test_loadout_event(self, harness:TestHarness) -> None:
         """Test loading a ship."""
@@ -91,6 +104,22 @@ class TestShipLoadout:
 
 class TestImporting:
     """Test importing functionality for different route types."""
+
+    def test_import_nofile(self, harness:TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "missing.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == False
+
+    def test_import_empty(self, harness:TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "empty.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == False
+
+    def test_import_bad_route(self, harness:TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "bad_import.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == False
+
 
     def test_import_route_neutron(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
@@ -130,6 +159,43 @@ class TestImporting:
         assert res == True
         assert harness.router.src == 'HIP 89264 6'
         assert harness.router.dest == 'Bleae Thua HF-R d4-116 B 7'
+
+
+class TestExplorting:
+    """CSV Export"""
+
+    def test_export_noroute(self, harness:TestHarness) -> None:    
+        """ Trying to export without a route """    
+        harness.context.route = Route()
+        res:bool = harness.router.export_route()
+        assert res == False
+
+    def test_export_no_file(self, harness:TestHarness) -> None:
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.router.import_route(filename)
+
+        assert res == True
+
+        out:str = str(Path(__file__).parent / "nodir" / "nofile.csv")
+        res:bool = harness.router.export_route(out)
+        assert res == False
+
+    def test_export_route(self, harness:TestHarness) -> None:
+        out:str = str(Path(__file__).parent / "config" / "tmp.csv")
+        if os.path.exists(out):
+            os.remove(out)
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == True
+
+        
+        res:bool = harness.context.csv.write(harness.context.route.hdrs, harness.context.route.route, out)
+        assert res == True
+        assert os.path.exists(out)
+        os.remove(out)
+
+
 class TestCargo:
     """Test cargo management."""
 
@@ -167,17 +233,6 @@ class TestChatCommands:
         harness.fire_event(events[0])
         assert harness.context.route.next_stop() == 'End of the road!'
 
-    def test_no_previous(self, harness:TestHarness):
-        """Test prev/previous command when at the beginning of a route"""
-
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
-        res:bool = harness.router.import_route(filename)
-        assert res == True
-
-        events:list = harness.events.get('chat_commands', [])
-        harness.fire_event(events[1])
-        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
-
     def test_previous(self, harness:TestHarness):
         """Test prev/previous command when at the beginning of a route"""
 
@@ -186,6 +241,17 @@ class TestChatCommands:
         assert res == True
         Context.router.update_route(1)
         assert harness.context.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+
+        events:list = harness.events.get('chat_commands', [])
+        harness.fire_event(events[1])
+        assert harness.context.route.next_stop() == 'Bleae Thua RX-L d7-28'
+
+    def test_no_previous(self, harness:TestHarness):
+        """Test prev/previous command when at the beginning of a route"""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.router.import_route(filename)
+        assert res == True
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
@@ -319,8 +385,8 @@ class TestEventSequences:
         harness.fire_event(events[1])
         assert harness.router.carrier_state == CarrierStates.Cooldown
 
-class TestPlotting:
-    """Test plotting functionality (neutron/galaxy routes)."""
+class TestPlotOperations:
+    """Test individual plotting functions"""
 
     def test_plot_route_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure plot_route returns True and starts the plotting worker."""
@@ -414,6 +480,19 @@ class TestPlotting:
                     plotter_thread.join(timeout=120)
 
                 # No exception should be raised; Context.ui.show_error would be called
+
+    def test_plotter(self, harness:TestHarness):
+        """Test the _plotter function"""
+
+        harness.router._plotter(SPANSH_ROUTE,
+                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                'range': '60.00', 'efficiency': '60',
+                                'supercharge_multiplier': '4'})
+        assert len(harness.context.route.hdrs) == 6
+        assert len(harness.context.route.route) == 9
+
+class TestPlotting:
+    """Test end to end plotting functionality (neutron/galaxy routes)."""
 
     def test_plot_route_unknown_type(self, harness:TestHarness):
         """Unknown plot types should return False and not start plotting."""

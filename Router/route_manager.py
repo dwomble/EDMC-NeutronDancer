@@ -380,10 +380,10 @@ class Router():
             return False
 
 
-    def export_route(self) -> bool:
+    def export_route(self, filename:str = '') -> bool:
         """ Save a route to a CSV file """
         try:
-            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
+            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route, filename) == False:
                 Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False

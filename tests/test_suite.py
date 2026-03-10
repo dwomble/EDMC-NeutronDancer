@@ -345,7 +345,7 @@ class TestEventSequences:
     """Test complex multi-step event scenarios."""
 
     def test_full_route_scenario(self, harness:TestHarness):
-        """Test a complete route scenario with jumps and cargo."""
+        """Test a complete route scenario with jumps."""
         harness.router.system = 'Apurui'
 
         # Import a route
@@ -468,7 +468,7 @@ class TestPlotOperations:
             if "route plotting worker" in thread.name:
                 plotter_thread = thread
             return thread
-
+        
         with patch('threading.Thread', side_effect=capture_thread):
             with patch('requests.post', return_value=error_response):
                 params = {'from': 'Start', 'to': 'End', 'max_time': 1}
@@ -479,7 +479,9 @@ class TestPlotOperations:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
-                # No exception should be raised; Context.ui.show_error would be called
+        # No exception should be raised; Context.ui.show_error would be called        
+        # Not sure how to capture the error message
+        #assert harness.ui.error_lbl['text'] == 'server error'
 
     def test_plotter(self, harness:TestHarness):
         """Test the _plotter function"""
@@ -519,11 +521,12 @@ class TestPlotting:
         res:bool = harness.router.plot_route('Neutron',
                                              {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
                                               'range': '60.00', 'efficiency': '60',
-                                              'supercharge_multiplier': '6'})
+                                              'supercharge_multiplier': '6'})        
         assert res == True
+        # Wait for the plot to finish
         time.sleep(20)
-        assert harness.context.route is not None
-        print(harness.context.route)
+
+        assert harness.context.route is not None        
         assert harness.context.route.source() == 'Apurui'
         assert harness.context.route.destination() == 'Bleae Thua NI-B b27-5'
         assert harness.context.route.total_jumps() == 21
@@ -569,18 +572,17 @@ class TestPlotting:
 
         res:bool = harness.router.plot_route('Galaxy', galaxy_params)
         assert res == True
+
+        # Wait for the plot to complete
         time.sleep(62)
 
         assert harness.context.route is not None
         assert harness.router.src == 'Apurui'
         assert harness.router.dest == 'Bleae Thua NI-B b27-5'
-        #logging.info(f"{harness.context.route.route}")
 
         # Galaxy plotter's results vary based on a number of factors.
         assert harness.context.route.total_jumps() <= 28
         assert harness.context.route.total_jumps() >= 11
-        #harness.context.route.offset = 8
-        #assert harness.context.route.next_stop() == 'Col 359 Sector GW-Z b28-3'
 
 
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:

@@ -351,6 +351,7 @@ class Router():
             err = json.loads(response.content)["error"]
 
         Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
+        Debug.logger.info(f"Setting error {err}")
         Context.ui.show_error(err)
         return
 

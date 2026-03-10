@@ -161,7 +161,7 @@ class TestImporting:
         assert harness.router.dest == 'Bleae Thua HF-R d4-116 B 7'
 
 
-class TestExplorting:
+class TestExporting:
     """CSV Export"""
 
     def test_export_noroute(self, harness:TestHarness) -> None:    

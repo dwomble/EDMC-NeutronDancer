@@ -8,6 +8,7 @@ Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb
 import pytest # type: ignore
 import sys
 import os
+import shutil
 from pathlib import Path
 from typing import Generator, Optional
 from time import sleep
@@ -23,31 +24,45 @@ sys.path.insert(0, str(plugin_dir))
 
 # Config is already mocked by conftest.py
 from harness import TestHarness
-from load import journal_entry
-from Router.context import Context
-from Router.route import Route
 from Router.constants import CarrierStates, SPANSH_ROUTE
+from Router.route import Route
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 @pytest.fixture
 def harness() -> Generator:
     """Provide a fresh test harness for each test."""
-    test_harness = TestHarness()
-    test_harness.register_journal_handler(journal_entry)
+
+    shutil.copy(Path(__file__).parent / "config" / "route_init.json", 
+                Path(__file__).parent / "data" / "route.json")
+
+    test_harness = TestHarness() 
+    test_harness.set_edmc_config()
+
+    import Router.constants
+    Router.constants.ASSET_DIR = "../assets"
+
+    from load import plugin_start3, plugin_app, journal_entry
+
+    plugin_start3(str(test_harness.plugin_dir))
+    plugin_app(test_harness.parent)
+
+    from Router.context import Context
+    test_harness.context = Context
+    test_harness.router = Context.router
+    
+    # Used by event firing
+    test_harness.load_events("journal_events.json")
+    test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
+
     yield test_harness
-    # Cleanup if needed
-    #Context.router = None
 
 
 class TestStartup:
     """Test plugin startup behavior."""
 
-    def test_harness_initialization(self) -> None:
-        """Test basic harness initialization."""
-        harness = TestHarness()
-        assert harness.commander == "TestCommander"
-        assert harness.system == "Sol"
+    def test_harness_initialization(self, harness:TestHarness) -> None:
+        """Test basic harness initialization."""        
         assert harness.router is not None
 
     def test_startup_event(self, harness:TestHarness) -> None:
@@ -239,7 +254,7 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.router.import_route(filename)
         assert res == True
-        Context.router.update_route(1)
+        harness.router.update_route(1)
         assert harness.context.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
 
         events:list = harness.events.get('chat_commands', [])
@@ -448,8 +463,8 @@ class TestPlotOperations:
                         plotter_thread.join(timeout=120)
 
                     # Route should be created and have at least 2 waypoints
-                    assert Context.route is not None
-                    assert len(Context.route.route) >= 2
+                    assert harness.context.route is not None
+                    assert len(harness.context.route.route) >= 2
 
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""

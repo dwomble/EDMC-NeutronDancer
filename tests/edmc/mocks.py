@@ -4,9 +4,23 @@ import types as _types
 import semantic_version
 import logging
 from pathlib import Path
+from unittest.mock import patch
+from tests.edmc import requests as edmc_requests
 
 # We keep a copy of edmc_data here.
 this_dir:Path = Path(__file__).parent
+parent:Path = Path(__file__).parent.parent
+
+
+# Force it to look like Linux
+#with patch.object(sys, 'platform', 'linux'):
+#    with patch.dict(os.environ, {'XDG_DATA_HOME': str(this_dir)}, clear=False):
+#        import config
+
+#def _mock_app_dir() -> Path:
+#    return this_dir
+
+#config.get_appdirpath = _mock_app_dir # type: ignore
 
 if 'config' not in sys.modules:
     class MockConfig:
@@ -23,7 +37,7 @@ if 'config' not in sys.modules:
 
             self.data = {} # Any variables that need setting
             self.shutting_down = False
-            self.app_dir_path = this_dir
+            self.app_dir_path = parent
             self._initialized = True
 
         def __setitem__(self, key, value):
@@ -49,16 +63,27 @@ if 'config' not in sys.modules:
                 del self.data[key]
 
     def appversion() -> semantic_version.Version:
-        return semantic_version.Version('1.0.0')
+        return semantic_version.Version('10.0.0')
+
+    _cfg_attrs = {'appname': 'EDMC', 
+                  'appversion': appversion, 
+                  'appcmdname': 'EDMC',
+                  'app_dir_path': parent,
+                  'config_logger': logging.getLogger('TestHarness'),
+                  'shutting_down': False,
+                  'logger': logging.getLogger('TestHarness')
+                }
 
     _cfg = _types.ModuleType('config')
-    _cfg.appname = 'EDMC' # type:ignore
-    _cfg.config = MockConfig() # type:ignore    
-    _cfg.appversion = appversion
-    _cfg.appcmdname = "EDMC"
-    _cfg.config_logger = logging.getLogger("pre_config")
-    _cfg.shutting_down = False # type:ignore
-    _cfg.logger = (logging.getLogger('TestHarness'))
+    _cfg.config = MockConfig() # type:ignore  
+    
+    for name, val in MockConfig.__dict__.items():
+        if not name.startswith('__'):
+            setattr(_cfg, name, val)
+
+    for name, val in _cfg_attrs.items():
+        setattr(_cfg, name, val)
+        
     sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
@@ -68,12 +93,13 @@ theme_mod.theme.name = "default"
 theme_mod.theme.dark = False
 sys.modules['theme'] = theme_mod
 
+
 class MockCAPIData:
     def __init__(self, data = None, source_host = None, source_endpoint = None, request_cmdr = None) -> None:
         pass
 
 _companion = _types.ModuleType('companion')
-_companion.SERVER_LIVE = ''
+_companion.SERVER_LIVE = '' # type: ignore
 sys.modules['companion'] = _companion
 
 _capidata = _types.ModuleType('CAPIData')
@@ -94,13 +120,16 @@ for name, val in MockEDLogs.__dict__.items():
     if not name.startswith('__'):
         setattr(_monitor, name, val)
 
-_monitor.monitor = MockEDLogs
+_monitor.monitor = MockEDLogs # type: ignore
 sys.modules['monitor'] = _monitor
 
 _plug = _types.ModuleType('Plugin')
 class MockPlugin:    
     def __init__(self) -> None:
-        pass        
+        pass
+    @staticmethod        
+    def show_error(message:str) -> None:
+        print(f"Plugin error: {message}")
 
 for name, val in MockPlugin.__dict__.items():
     if not name.startswith('__'):
@@ -109,29 +138,46 @@ for name, val in MockPlugin.__dict__.items():
 sys.modules['plug'] = _plug
 
 _l10n = _types.ModuleType('l10n')
-sys.modules['l10n'] = _l10n
+_l10n.FALLBACK = 'en' # type: ignore
+_l10n.LOCALISATION_DIR = 'L10n' # type: ignore
 _translations = _types.ModuleType('Translations')
 class MockTranslations:
     def __init__(self) -> None:
+        FALLBACK = 'en'
         pass
     def translate(self, x = "", context = None, lang = None) -> str:
-        return ""
-
+        return x
+    def tl(self, x: str = "", context: str | None = None, lang: str | None = None) -> str:
+        return x
+    @staticmethod
+    def available() -> set[str]:
+        return set('en')
+    @staticmethod
+    def get_system_lang() -> str:
+        return 'en'
+    
 for name, val in MockTranslations.__dict__.items():
     if not name.startswith('__'):
         setattr(_translations, name, val)
-_l10n.Translations = _translations
-_l10n.translations = _translations
-_l10n.LOCALISATION_DIR = 'L10n'
+translation_attributes = {'FALLBACK': 'en'}
+for name, val in translation_attributes.items():
+    setattr(_translations, name, val)
+
+_l10n.Translations = _translations # type: ignore
+_l10n.translations = MockTranslations() # type: ignore
+
 _locale = _types.ModuleType('_Locale')
 class MockLocale:
     def __init__(self) -> None:
         pass
+    @staticmethod
+    def preferred_languages() -> list[str]:
+        return ['en']
 for name, val in MockLocale.__dict__.items():
     if not name.startswith('__'):
         setattr(_locale, name, val)
-_l10n.Locale = _locale
-_l10n._Locale = _l10n
+_l10n.Locale = _locale # type: ignore
+_l10n._Locale = _l10n # type: ignore
 
 sys.modules['l10n'] = _l10n
 class MockEDMCOverlay:
@@ -139,11 +185,23 @@ class MockEDMCOverlay:
 
 class Mockedmcoverlay:
     def __init__(self): pass
-
     class Overlay():
-        def __init__(self): pass
-        @staticmethod
-        def send_message(**kw): pass
+        def __init__(self): 
+            self.messages:dict = {}
+            self.shapes:dict = {}
+        
+        def send_message(self, *args, **kw):
+            msgid = args[0] if args else kw.get('msgid')
+            if not msgid:
+                print("send_message called with no msgid")
+                return
+            self.messages[msgid] = [*args, kw]
+
+        def send_shape(self, *args, **kw):
+            if not args:
+                print("send_shape called with no positional arguments")
+                return             
+            self.shapes[args[0]] = [*args, kw]
 
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():
@@ -186,4 +244,4 @@ def _patched_init(self, name, level, fn, lno, msg, args, exc_info, func=None, si
     self.osthreadid = -1
     self.qualname = 'TestHarness'
     
-logging.LogRecord.__init__ = _patched_init
+logging.LogRecord.__init__ = _patched_init # type: ignore

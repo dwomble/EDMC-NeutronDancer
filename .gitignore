@@ -3,6 +3,12 @@
 *.pyc
 __pycache__/
 
+# Mac files
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
 # IDE settings
 .vscode/
 
@@ -12,12 +18,8 @@ __pycache__/
 # Development garbage
 deploy.sh
 
-*/.DS_Store
-
 data/*
 routes/*
 updates/*
 tests/data/*
 .coverage
-.DS_Store
-.DS_Store

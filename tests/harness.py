@@ -6,7 +6,6 @@ the plugin's routing functionality without running the full EDMC application.
 """
 import threading
 threading.get_native_id = lambda: 0
-threading.thread_native_id = lambda: 0
 
 import os
 import json
@@ -18,6 +17,7 @@ from time import sleep
 import logging
 import tkinter as tk
 import threading
+from typing import Any
 
 edmc_dir:Path = Path(__file__).parent / 'edmc'
 sys.path.insert(0, str(edmc_dir))
@@ -29,6 +29,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 test_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(test_dir))
 
+import tests.edmc.requests
 import tests.edmc.mocks
 from tests.edmc.mocks import MockConfig
 
@@ -43,18 +44,20 @@ class TestHarness:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, plugin_dir:Optional[str] = None):
+    def __init__(self, plugin_dir:Optional[str] = None, live_requests:bool = False):
         """ Initialize the test harness. """
 
         if plugin_dir is None:
             plugin_dir = str(Path(__file__).parent)
 
         self.plugin_dir:Path = Path(plugin_dir).resolve()
-        
+        self.plugin:Any = None
         # Event handlers registered by plugins
-        self.journal_handlers: list[Callable] = []
-        self.config = MockConfig()
+        self.journal_handlers: list[Callable] = []        
+        self.config = MockConfig()     
+        self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
+        self.set_requests_mode(live_requests)
 
         os.environ['EDMC_NO_UI'] = '1'
 
@@ -69,18 +72,22 @@ class TestHarness:
         
         self._initialized = True        
 
+    def set_requests_mode(self, live_requests:bool) -> None:
+        self.live_requests = live_requests
+        tests.edmc.requests.live_requests(live_requests)
 
     def set_edmc_config(self, config_file:str = "edmc_config.json") -> None:
         # Load config
         config_path:Path = self.plugin_dir / "config" / config_file               
         if not config_path.is_file():
             self.config.data = {}
-            return
+            print(f"Warning: edmc's config file not found {config_path}")
         try:
             with open(config_path, 'r') as f:
                 self.config.data = json.load(f)                
         except Exception as e:
             print(f"Warning: Could not load edmc config file {config_path}: {e}")
+        self.config.data['app_dir_path'] = str(self.plugin_dir) # Override app_dir_path to plugin dir for testing purposes
 
     def load_events(self, source:str) -> None:
         """ Load journal events from events.json file. """      

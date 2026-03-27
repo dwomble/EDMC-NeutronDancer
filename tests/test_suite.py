@@ -37,7 +37,8 @@ def harness() -> Generator:
     shutil.copy(Path(__file__).parent / "config" / "route_init.json", 
                 Path(__file__).parent / "data" / "route.json")
 
-    test_harness = TestHarness() 
+    # Almost every test needs to be live.
+    test_harness = TestHarness(live_requests=True) 
     test_harness.set_edmc_config()
 
     # This is ND-specific. /assets is where the images are stored
@@ -50,8 +51,8 @@ def harness() -> Generator:
     plugin_app(test_harness.parent)
 
     # ND-specific, this is our plugin object
-    from Router.context import Context
-    test_harness.plugin = Context
+    import Router.context
+    test_harness.plugin = Router.context.Context
     
     # ND-specific, this is the journal handling function and the default journal params
     test_harness.load_events("journal_events.json")

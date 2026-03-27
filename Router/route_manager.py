@@ -134,6 +134,8 @@ class Router():
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
         Debug.logger.debug(f"Updating jump overlay")
+        if Context.route.route == []: return
+        
         wp:str = Context.route.next_stop()
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"

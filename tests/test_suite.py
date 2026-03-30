@@ -34,11 +34,11 @@ def harness() -> Generator:
     """Provide a fresh test harness for each test."""
 
     # We want a standard route.json for each test
-    shutil.copy(Path(__file__).parent / "config" / "route_init.json", 
+    shutil.copy(Path(__file__).parent / "config" / "route_init.json",
                 Path(__file__).parent / "data" / "route.json")
 
     # Almost every test needs to be live.
-    test_harness = TestHarness(live_requests=True) 
+    test_harness = TestHarness(live_requests=True)
     test_harness.set_edmc_config()
 
     # This is ND-specific. /assets is where the images are stored
@@ -53,7 +53,7 @@ def harness() -> Generator:
     # ND-specific, this is our plugin object
     import Router.context
     test_harness.plugin = Router.context.Context
-    
+
     # ND-specific, this is the journal handling function and the default journal params
     test_harness.load_events("journal_events.json")
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
@@ -64,7 +64,7 @@ class TestStartup:
     """Test plugin startup behavior."""
 
     def test_harness_initialization(self, harness:TestHarness) -> None:
-        """Test basic harness initialization."""        
+        """Test basic harness initialization."""
         assert harness.plugin.router is not None
 
     def test_startup_event(self, harness:TestHarness) -> None:
@@ -96,7 +96,7 @@ class TestShipLoadout:
     def test_bad_event(self, harness:TestHarness) -> None:
         """Test bad loadout event."""
         harness.fire_event({"event": "bad", "Ship":"naughty", "ShipID":100000, "ShipName":"Dummy", "ShipIdent":"Dumdum"})
-        
+
         assert hasattr(harness.plugin.router.ship, "ship_id") == False
 
     def test_loadout_event(self, harness:TestHarness) -> None:
@@ -181,8 +181,8 @@ class TestImporting:
 class TestExporting:
     """CSV Export"""
 
-    def test_export_noroute(self, harness:TestHarness) -> None:    
-        """ Trying to export without a route """    
+    def test_export_noroute(self, harness:TestHarness) -> None:
+        """ Trying to export without a route """
         harness.plugin.route = Route()
         res:bool = harness.plugin.router.export_route()
         assert res == False
@@ -206,7 +206,7 @@ class TestExporting:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
 
-        
+
         res:bool = harness.plugin.csv.write(harness.plugin.route.hdrs, harness.plugin.route.route, out)
         assert res == True
         assert os.path.exists(out)
@@ -292,7 +292,7 @@ class TestChatCommands:
         copy_to_clipboard(harness.plugin.ui.parent, '')
 
         events:list = harness.events.get('chat_commands', [])
-        harness.fire_event(events[3])        
+        harness.fire_event(events[3])
         assert harness.plugin.ui.parent.clipboard_get() == ''
 
 class TestShipyardSwap:
@@ -485,7 +485,7 @@ class TestPlotOperations:
             if "route plotting worker" in thread.name:
                 plotter_thread = thread
             return thread
-        
+
         with patch('threading.Thread', side_effect=capture_thread):
             with patch('requests.post', return_value=error_response):
                 params = {'from': 'Start', 'to': 'End', 'max_time': 1}
@@ -496,7 +496,7 @@ class TestPlotOperations:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
-        # No exception should be raised; Context.ui.show_error would be called        
+        # No exception should be raised; Context.ui.show_error would be called
         # Not sure how to capture the error message
         #assert harness.ui.error_lbl['text'] == 'server error'
 
@@ -519,7 +519,7 @@ class TestPlotting:
         assert result is False
 
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
-        """ Plot a Neutron test route """
+        """ Perform a live Neutron plot """
 
         res:bool = harness.plugin.router.plot_route('Neutron',
                                              {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
@@ -533,24 +533,24 @@ class TestPlotting:
         assert harness.plugin.route.total_jumps() == 31
 
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
-        """ Plot a Neutron test route """
+        """ Perform a live Neutron plot for a Caspian explorer """
 
         res:bool = harness.plugin.router.plot_route('Neutron',
                                              {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
                                               'range': '60.00', 'efficiency': '60',
-                                              'supercharge_multiplier': '6'})        
+                                              'supercharge_multiplier': '6'})
         assert res == True
         # Wait for the plot to finish
         time.sleep(20)
 
-        assert harness.plugin.route is not None        
+        assert harness.plugin.route is not None
         assert harness.plugin.route.source() == 'Apurui'
         assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
         assert harness.plugin.route.total_jumps() == 21
 
 
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
-        """Ensure galaxy plot_route sets params and starts worker."""
+        """Perform a live galaxy plot and check results."""
 
         harness.plugin.router.swap_ship(1)
 
@@ -603,9 +603,9 @@ class TestPlotting:
 
 
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
-        """Ensure galaxy plot_route sets params and starts worker."""
+        """Perform a live galaxy plot and check results for a caspian explorer."""
 
-        harness.plugin.router.swap_ship(115)        
+        harness.plugin.router.swap_ship(115)
 
         galaxy_params:dict = {
             "cargo": 0,

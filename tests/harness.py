@@ -86,6 +86,7 @@ class TestHarness:
                 Path(__file__).parent / "journal_folder" / file)
 
         self.monitor = monitor
+        self.unhandled_exceptions:list[str] = []
 
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
@@ -93,6 +94,10 @@ class TestHarness:
         self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
         self.set_requests_mode(live_requests)
+
+        if not hasattr(self, '_original_threading_excepthook'):
+            self._original_threading_excepthook = threading.excepthook
+        threading.excepthook = self._capture_thread_exception
 
         os.environ['EDMC_NO_UI'] = '1'
 
@@ -106,6 +111,27 @@ class TestHarness:
             print(f"Failed to create Tk root: {e}")
 
         self._initialized = True
+
+    def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
+        """Record unhandled worker-thread exceptions so tests can fail deterministically."""
+        exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
+        thread_name = getattr(args.thread, 'name', '<unknown>')
+        self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
+
+        if hasattr(self, '_original_threading_excepthook') and self._original_threading_excepthook:
+            self._original_threading_excepthook(args)
+
+    def assert_no_unhandled_exceptions(self) -> None:
+        """Fail the current test if any unhandled thread exceptions were captured."""
+        if not self.unhandled_exceptions:
+            return
+
+        failures = "\n".join(f"- {item}" for item in self.unhandled_exceptions)
+        self.unhandled_exceptions.clear()
+        raise AssertionError(
+            "Unhandled exception(s) were raised by background thread(s):\n"
+            f"{failures}"
+        )
 
     def set_requests_mode(self, live_requests:bool) -> None:
         self.live_requests = live_requests
@@ -212,8 +238,7 @@ class TestHarness:
 
         print(f"Firing event: {event['event']}")
         # Update monitor state with provided state data before firing the event
-        for k, v in state.items():
-            self.monitor.state[k] = v
+        self.monitor.state.update(state)
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
             event['timestamp'] = datetime.now(timezone.utc).isoformat()
@@ -230,7 +255,9 @@ class TestHarness:
 
         # Update the separate journal files that ED maintains
         # @TODO: Figure out what gets written to NavRoute.json.
-        if event['event'] in CONFIG_FILES:
+        if event['event'] in CONFIG_FILES.keys():
+            if event['event'] == 'Market' and 'Items' not in event:
+                event['Items'] = [] # Just add an empty market since we can't produce one.
             with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
                 json.dump(event, f)
 
@@ -243,7 +270,7 @@ class TestHarness:
                     system=self.monitor.state['SystemName'],
                     station=self.monitor.state['StationName'],
                     entry=event,
-                    state=state
+                    state=self.monitor.state
                 )
             except Exception as e:
                 print(f"Error in journal handler: {e}")

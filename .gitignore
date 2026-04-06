@@ -22,4 +22,6 @@ data/*
 routes/*
 updates/*
 tests/data/*
+tests/logs/*
+tests/journal_folder/*
 .coverage

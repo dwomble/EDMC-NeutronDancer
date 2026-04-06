@@ -1,0 +1,596 @@
+2026-04-06 15:44:34.073 UTC - WARNING - 50912:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:44:34.081 UTC - DEBUG - 50912:6123352064:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:44:34.081 UTC - DEBUG - 50912:6123352064:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:44:34.081 UTC - DEBUG - 50912:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:44:34.082 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:44:34.082 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:44:34.082 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:44:34.082 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:44:34.176 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:44:34.176 UTC - DEBUG - 50912:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:44:34.303 UTC - DEBUG - 50912:6123352064:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:44:34.303 UTC - DEBUG - 50912:6123352064:-1 updater.TestHarness:136: Update available
+2026-04-06 15:44:37.525 UTC - WARNING - 50930:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:44:37.532 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:44:37.532 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:44:37.532 UTC - DEBUG - 50930:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:44:37.533 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:44:37.533 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:44:37.533 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:44:37.533 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:44:37.603 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:44:37.603 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:136: Update available
+2026-04-06 15:44:37.621 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:44:37.621 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:44:37.646 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:44:37.646 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:44:37.647 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:44:37.647 UTC - DEBUG - 50930:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:44:37.715 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:44:37.715 UTC - DEBUG - 50930:6148976640:-1 updater.TestHarness:136: Update available
+2026-04-06 15:44:38.157 UTC - DEBUG - 50930:6300413952:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:44:38.158 UTC - DEBUG - 50930:8699949312:-1 route_manager.TestHarness:403: Getting module data
+2026-04-06 15:44:38.158 UTC - DEBUG - 50930:6300413952:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:44:38.240 UTC - DEBUG - 50930:6300413952:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:44:38.240 UTC - DEBUG - 50930:6300413952:-1 updater.TestHarness:136: Update available
+2026-04-06 15:44:38.729 UTC - DEBUG - 50930:8699949312:-1 route_manager.TestHarness:435: Downloaded 89 FSD entries from Coriolis
+2026-04-06 15:46:47.213 UTC - WARNING - 51016:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:46:47.221 UTC - DEBUG - 51016:6109851648:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:46:47.221 UTC - DEBUG - 51016:6109851648:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:46:47.221 UTC - DEBUG - 51016:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:46:47.222 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:46:47.222 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:46:47.222 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:46:47.222 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:46:47.311 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:46:47.311 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:46:47.334 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:46:47.334 UTC - DEBUG - 51016:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:46:47.457 UTC - DEBUG - 51016:6109851648:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:46:47.457 UTC - DEBUG - 51016:6109851648:-1 updater.TestHarness:136: Update available
+2026-04-06 15:47:27.665 UTC - WARNING - 51063:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:47:27.672 UTC - DEBUG - 51063:6146158592:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:47:27.673 UTC - DEBUG - 51063:6146158592:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:47:27.673 UTC - DEBUG - 51063:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:47:27.674 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:47:27.674 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:47:27.674 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:47:27.674 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:47:27.763 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:47:27.763 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:47:27.783 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:47:27.783 UTC - DEBUG - 51063:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:47:27.860 UTC - DEBUG - 51063:6146158592:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:47:27.860 UTC - DEBUG - 51063:6146158592:-1 updater.TestHarness:136: Update available
+2026-04-06 15:50:57.129 UTC - WARNING - 51201:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:50:57.137 UTC - DEBUG - 51201:6188068864:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:50:57.137 UTC - DEBUG - 51201:6188068864:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:50:57.138 UTC - DEBUG - 51201:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:50:57.138 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:50:57.138 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:50:57.138 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:50:57.138 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:50:57.229 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:50:57.230 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:50:57.249 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:50:57.249 UTC - DEBUG - 51201:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:50:57.346 UTC - DEBUG - 51201:6188068864:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:50:57.346 UTC - DEBUG - 51201:6188068864:-1 updater.TestHarness:136: Update available
+2026-04-06 15:51:33.193 UTC - WARNING - 51246:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:51:33.200 UTC - DEBUG - 51246:6124449792:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:51:33.200 UTC - DEBUG - 51246:6124449792:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:51:33.201 UTC - DEBUG - 51246:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:51:33.201 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:51:33.201 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:51:33.201 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:51:33.201 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:51:33.273 UTC - DEBUG - 51246:6124449792:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:51:33.273 UTC - DEBUG - 51246:6124449792:-1 updater.TestHarness:136: Update available
+2026-04-06 15:51:33.295 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:51:33.295 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:51:33.317 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:51:33.317 UTC - DEBUG - 51246:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:52:33.567 UTC - WARNING - 51287:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 15:52:33.578 UTC - DEBUG - 51287:6218166272:-1 updater.TestHarness:131: Checking for update
+2026-04-06 15:52:33.578 UTC - DEBUG - 51287:6218166272:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 15:52:33.579 UTC - DEBUG - 51287:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 15:52:33.580 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 15:52:33.580 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 15:52:33.581 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 15:52:33.581 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 15:52:33.674 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:52:33.675 UTC - DEBUG - 51287:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 15:52:36.676 UTC - DEBUG - 51287:6218166272:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 15:52:36.676 UTC - DEBUG - 51287:6218166272:-1 updater.TestHarness:136: Update available
+2026-04-06 16:08:22.827 UTC - WARNING - 51973:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 16:08:22.835 UTC - DEBUG - 51973:6155415552:-1 updater.TestHarness:131: Checking for update
+2026-04-06 16:08:22.835 UTC - DEBUG - 51973:6155415552:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 16:08:22.835 UTC - DEBUG - 51973:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 16:08:22.836 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 16:08:22.836 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 16:08:22.836 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 16:08:22.836 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 16:08:22.931 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 16:08:22.931 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 16:08:22.954 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 16:08:22.954 UTC - DEBUG - 51973:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 16:08:23.128 UTC - DEBUG - 51973:6155415552:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 16:08:23.128 UTC - DEBUG - 51973:6155415552:-1 updater.TestHarness:136: Update available
+2026-04-06 16:59:59.003 UTC - WARNING - 52922:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 16:59:59.012 UTC - DEBUG - 52922:6187905024:-1 updater.TestHarness:131: Checking for update
+2026-04-06 16:59:59.012 UTC - DEBUG - 52922:6187905024:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 16:59:59.012 UTC - DEBUG - 52922:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 16:59:59.013 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 16:59:59.013 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 16:59:59.013 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 16:59:59.013 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 16:59:59.116 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 16:59:59.116 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 16:59:59.146 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 16:59:59.146 UTC - DEBUG - 52922:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 16:59:59.219 UTC - DEBUG - 52922:6187905024:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 16:59:59.219 UTC - DEBUG - 52922:6187905024:-1 updater.TestHarness:136: Update available
+2026-04-06 17:03:23.487 UTC - WARNING - 53105:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:03:23.500 UTC - DEBUG - 53105:6180139008:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:03:23.500 UTC - DEBUG - 53105:6180139008:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:03:23.501 UTC - DEBUG - 53105:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:03:23.501 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:03:23.501 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:03:23.501 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:03:23.502 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:03:23.607 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:03:23.607 UTC - DEBUG - 53105:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:03:29.039 UTC - DEBUG - 53105:6180139008:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:03:29.039 UTC - DEBUG - 53105:6180139008:-1 updater.TestHarness:136: Update available
+2026-04-06 17:11:08.082 UTC - WARNING - 53423:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:11:08.090 UTC - DEBUG - 53423:6151286784:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:11:08.090 UTC - DEBUG - 53423:6151286784:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:11:08.090 UTC - DEBUG - 53423:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:11:08.091 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:11:08.091 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:11:08.091 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:11:08.091 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:11:08.190 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:11:08.190 UTC - DEBUG - 53423:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:11:08.338 UTC - DEBUG - 53423:6151286784:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:11:08.341 UTC - DEBUG - 53423:6151286784:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:30.483 UTC - WARNING - 53537:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:30.490 UTC - DEBUG - 53537:6112817152:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:30.490 UTC - DEBUG - 53537:6112817152:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:30.491 UTC - DEBUG - 53537:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:30.491 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:30.491 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:30.491 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:30.491 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:30.593 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:30.593 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:30.619 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:30.619 UTC - DEBUG - 53537:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:30.679 UTC - DEBUG - 53537:6112817152:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:30.679 UTC - DEBUG - 53537:6112817152:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:33.577 UTC - WARNING - 53549:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:33.585 UTC - DEBUG - 53549:6124335104:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:33.585 UTC - DEBUG - 53549:6124335104:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:33.585 UTC - DEBUG - 53549:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:33.586 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:33.586 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:33.586 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:33.586 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:33.675 UTC - DEBUG - 53549:6124335104:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:33.676 UTC - DEBUG - 53549:6124335104:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:33.685 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:33.685 UTC - DEBUG - 53549:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:33.710 UTC - DEBUG - 53549:8699949312:-1 route_manager.TestHarness:403: Getting module data
+2026-04-06 17:13:34.631 UTC - DEBUG - 53549:8699949312:-1 route_manager.TestHarness:435: Downloaded 89 FSD entries from Coriolis
+2026-04-06 17:13:36.369 UTC - WARNING - 53562:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:36.377 UTC - DEBUG - 53562:6122975232:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:36.377 UTC - DEBUG - 53562:6122975232:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:36.377 UTC - DEBUG - 53562:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:36.378 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:36.378 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:36.378 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:36.378 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:36.450 UTC - DEBUG - 53562:6122975232:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:36.450 UTC - DEBUG - 53562:6122975232:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:36.474 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:36.474 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:36.497 UTC - DEBUG - 53562:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:36.498 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:36.498 UTC - DEBUG - 53562:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:36.502 UTC - DEBUG - 53562:6274412544:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:36.503 UTC - DEBUG - 53562:6274412544:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:36.587 UTC - DEBUG - 53562:6274412544:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:36.587 UTC - DEBUG - 53562:6274412544:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:38.407 UTC - WARNING - 53569:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:38.415 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:38.415 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:38.415 UTC - DEBUG - 53569:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:38.416 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:38.416 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:38.416 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:38.416 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:38.494 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:38.494 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:38.512 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:38.513 UTC - DEBUG - 53569:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:38.537 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:38.537 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:38.603 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:38.604 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:39.045 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:39.045 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:39.116 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:39.116 UTC - DEBUG - 53569:6109802496:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.074 UTC - WARNING - 53581:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:42.081 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.081 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.082 UTC - DEBUG - 53581:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:42.083 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:42.083 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.083 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:42.083 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:42.173 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.173 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.181 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:42.181 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:42.204 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.204 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/missing.csv
+2026-04-06 17:13:42.204 UTC - ERROR - 53581:8699949312:-1 csv.TestHarness:113: Failed to read file /Users/derek/Code/EDMC-NeutronDancer/tests/config/missing.csv, exception info:
+Traceback (most recent call last):
+  File "/Users/derek/Code/EDMC-NeutronDancer/Router/csv.py", line 62, in read
+    with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/derek/Code/EDMC-NeutronDancer/tests/config/missing.csv'
+2026-04-06 17:13:42.204 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:367: Failed to load route
+2026-04-06 17:13:42.204 UTC - ERROR - 53581:8699949312:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-06 17:13:42.207 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.207 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.208 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.208 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/empty.csv
+2026-04-06 17:13:42.208 UTC - ERROR - 53581:8699949312:-1 csv.TestHarness:70: File /Users/derek/Code/EDMC-NeutronDancer/tests/config/empty.csv is empty or doesn't have a header row
+2026-04-06 17:13:42.208 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:367: Failed to load route
+2026-04-06 17:13:42.208 UTC - ERROR - 53581:8699949312:-1 ui.TestHarness:762: Showing error File is empty or doesn't have a header row
+2026-04-06 17:13:42.210 UTC - DEBUG - 53581:6299054080:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.210 UTC - DEBUG - 53581:6299054080:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.210 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.210 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/bad_import.csv
+2026-04-06 17:13:42.211 UTC - ERROR - 53581:8699949312:-1 csv.TestHarness:84: File /Users/derek/Code/EDMC-NeutronDancer/tests/config/bad_import.csv is of unsupported format
+2026-04-06 17:13:42.211 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:367: Failed to load route
+2026-04-06 17:13:42.211 UTC - ERROR - 53581:8699949312:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-06 17:13:42.213 UTC - DEBUG - 53581:6315880448:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.213 UTC - DEBUG - 53581:6315880448:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.214 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.214 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Smojue.csv
+2026-04-06 17:13:42.214 UTC - DEBUG - 53581:8699949312:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:42.214 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:42.214 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.214 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.214 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:42.218 UTC - DEBUG - 53581:6332706816:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.218 UTC - DEBUG - 53581:6332706816:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.219 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.219 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/galaxy-Bleae-Voqooe.csv
+2026-04-06 17:13:42.219 UTC - DEBUG - 53581:8699949312:-1 csv.TestHarness:109: Successfully imported route with 75 rows and headers: ['System Name', 'Distance', 'Distance Remaining', 'Fuel Left', 'Fuel Used', 'Refuel', 'Neutron Star']
+2026-04-06 17:13:42.219 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:42.219 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.219 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.220 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua YV-V b29-1
+2026-04-06 17:13:42.223 UTC - DEBUG - 53581:6349533184:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.223 UTC - DEBUG - 53581:6349533184:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.224 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.224 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/fc-Bleae-Voqooe.csv
+2026-04-06 17:13:42.224 UTC - DEBUG - 53581:8699949312:-1 csv.TestHarness:109: Successfully imported route with 35 rows and headers: ['System Name', 'Distance', 'Distance Remaining', 'Fuel Used', 'Icy Ring', 'Pristine', 'Restock Tritium', 'Tritium in tank', 'Tritium in market']
+2026-04-06 17:13:42.224 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:42.224 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:42.224 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 M20 Sector MD-F a13-2
+2026-04-06 17:13:42.227 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 0 Nyeajeau IQ-U c4-7
+2026-04-06 17:13:42.233 UTC - DEBUG - 53581:6366359552:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:42.233 UTC - INFO - 53581:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:42.233 UTC - DEBUG - 53581:6366359552:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:42.234 UTC - INFO - 53581:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/riches-apurui-M23.csv
+2026-04-06 17:13:42.243 UTC - DEBUG - 53581:8699949312:-1 csv.TestHarness:109: Successfully imported route with 326 rows and headers: ['System Name', 'Jumps', 'Body Name', 'Body Subtype', 'Is Terraformable', 'Distance To Arrival', 'Estimated Scan Value', 'Estimated Mapping Value']
+2026-04-06 17:13:42.243 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:42.243 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: Body Name 2
+2026-04-06 17:13:42.246 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:158: Body Name 3
+2026-04-06 17:13:42.246 UTC - DEBUG - 53581:8699949312:-1 route.TestHarness:62: Next stop: 3 HIP 89264 5
+2026-04-06 17:13:42.920 UTC - DEBUG - 53581:6299054080:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.920 UTC - DEBUG - 53581:6299054080:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.933 UTC - DEBUG - 53581:6332706816:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.933 UTC - DEBUG - 53581:6332706816:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.936 UTC - DEBUG - 53581:6349533184:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.936 UTC - DEBUG - 53581:6349533184:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.995 UTC - DEBUG - 53581:6315880448:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.995 UTC - DEBUG - 53581:6315880448:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.996 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.996 UTC - DEBUG - 53581:6147616768:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:42.996 UTC - DEBUG - 53581:6366359552:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:42.996 UTC - DEBUG - 53581:6366359552:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:44.328 UTC - WARNING - 53592:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:44.338 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:44.338 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:44.339 UTC - DEBUG - 53592:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:44.339 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:44.339 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:44.340 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:44.340 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:44.424 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:44.424 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:44.437 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:44.437 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:44.461 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:44.461 UTC - DEBUG - 53592:8699949312:-1 csv.TestHarness:122: No route
+2026-04-06 17:13:44.461 UTC - ERROR - 53592:8699949312:-1 route_manager.TestHarness:390: Failed to save route
+2026-04-06 17:13:44.461 UTC - ERROR - 53592:8699949312:-1 ui.TestHarness:762: Showing error No filename given
+2026-04-06 17:13:44.463 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:44.463 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:44.463 UTC - INFO - 53592:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:44.463 UTC - INFO - 53592:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Smojue.csv
+2026-04-06 17:13:44.464 UTC - DEBUG - 53592:8699949312:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:44.464 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:44.464 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:44.464 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:44.464 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:44.465 UTC - ERROR - 53592:8699949312:-1 csv.TestHarness:146: Failed to read file /Users/derek/Code/EDMC-NeutronDancer/tests/nodir/nofile.csv, exception info:
+Traceback (most recent call last):
+  File "/Users/derek/Code/EDMC-NeutronDancer/Router/csv.py", line 138, in write
+    with open(filename, 'w', newline='') as csvfile:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/derek/Code/EDMC-NeutronDancer/tests/nodir/nofile.csv'
+2026-04-06 17:13:44.465 UTC - ERROR - 53592:8699949312:-1 route_manager.TestHarness:390: Failed to save route
+2026-04-06 17:13:44.465 UTC - ERROR - 53592:8699949312:-1 ui.TestHarness:762: Showing error No filename given
+2026-04-06 17:13:44.467 UTC - DEBUG - 53592:6269890560:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:44.467 UTC - DEBUG - 53592:6269890560:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:44.468 UTC - INFO - 53592:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:44.468 UTC - INFO - 53592:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Smojue.csv
+2026-04-06 17:13:44.468 UTC - DEBUG - 53592:8699949312:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:44.468 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:44.468 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:44.468 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:44.468 UTC - DEBUG - 53592:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:44.557 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:44.557 UTC - DEBUG - 53592:6118453248:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:44.568 UTC - DEBUG - 53592:6269890560:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:44.568 UTC - DEBUG - 53592:6269890560:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:47.100 UTC - WARNING - 53600:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:47.107 UTC - DEBUG - 53600:6151270400:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:47.108 UTC - DEBUG - 53600:6151270400:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:47.108 UTC - DEBUG - 53600:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:47.109 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:47.109 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:47.109 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:47.109 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:47.196 UTC - DEBUG - 53600:6151270400:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:47.196 UTC - DEBUG - 53600:6151270400:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:47.204 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:47.205 UTC - DEBUG - 53600:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:49.846 UTC - WARNING - 53612:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:49.856 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:49.856 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:49.856 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:49.857 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:49.857 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.857 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.857 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:49.933 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:49.933 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:49.954 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:49.954 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:49.976 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:49.976 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:49.977 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:49.977 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:49.977 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.977 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.977 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.978 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-06 17:13:49.979 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-06 17:13:49.981 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:49.982 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:49.982 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:49.982 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:49.983 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:49.983 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:49.983 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.984 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.984 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.985 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Voqooe BI-H d11-864
+2026-04-06 17:13:49.985 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.985 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:13:49.985 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:13:49.988 UTC - DEBUG - 53612:6296678400:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:49.988 UTC - DEBUG - 53612:6296678400:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:49.989 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:49.989 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:49.990 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:49.990 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:49.990 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-06 17:13:49.991 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:13:49.992 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.993 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.995 UTC - DEBUG - 53612:6313504768:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:49.995 UTC - DEBUG - 53612:6313504768:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:49.996 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:49.996 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:49.997 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:49.997 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:49.997 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:13:49.998 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:49.999 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:50.001 UTC - DEBUG - 53612:6330331136:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:50.001 UTC - DEBUG - 53612:6330331136:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:50.002 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:50.002 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:50.002 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:50.002 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:50.002 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:50.003 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:50.003 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:50.004 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:50.006 UTC - DEBUG - 53612:6347157504:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:50.007 UTC - DEBUG - 53612:6347157504:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:50.007 UTC - INFO - 53612:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:13:50.007 UTC - INFO - 53612:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/neutron-Bleae-Voqooe.csv
+2026-04-06 17:13:50.009 UTC - DEBUG - 53612:8699949312:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-06 17:13:50.009 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:50.009 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:50.010 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:50.010 UTC - DEBUG - 53612:8699949312:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-06 17:13:50.060 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:50.060 UTC - DEBUG - 53612:6145241088:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:50.618 UTC - DEBUG - 53612:6313504768:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:50.618 UTC - DEBUG - 53612:6313504768:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:50.648 UTC - DEBUG - 53612:6296678400:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:50.648 UTC - DEBUG - 53612:6296678400:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:50.668 UTC - DEBUG - 53612:6330331136:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:50.668 UTC - DEBUG - 53612:6330331136:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:50.678 UTC - DEBUG - 53612:6347157504:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:50.678 UTC - DEBUG - 53612:6347157504:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:54.833 UTC - WARNING - 53624:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:54.841 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:54.841 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:54.842 UTC - DEBUG - 53624:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:54.842 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:54.842 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:54.843 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:54.843 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:54.902 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:54.902 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:54.937 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:54.937 UTC - DEBUG - 53624:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:56.473 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:56.473 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:56.535 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:56.535 UTC - DEBUG - 53624:6156005376:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:58.866 UTC - WARNING - 53633:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:13:58.874 UTC - DEBUG - 53633:6141014016:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:58.874 UTC - DEBUG - 53633:6141014016:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:58.875 UTC - DEBUG - 53633:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:13:58.875 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:13:58.875 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:13:58.875 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:13:58.875 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:13:58.949 UTC - DEBUG - 53633:6141014016:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:58.949 UTC - DEBUG - 53633:6141014016:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:58.973 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:58.973 UTC - DEBUG - 53633:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:13:59.000 UTC - DEBUG - 53633:8699949312:-1 overlay.TestHarness:225: Countdown starting Countdown 100
+2026-04-06 17:13:59.053 UTC - DEBUG - 53633:6292451328:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:59.053 UTC - DEBUG - 53633:6292451328:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:59.054 UTC - DEBUG - 53633:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-06 17:13:59.054 UTC - DEBUG - 53633:8699949312:-1 route_manager.TestHarness:190: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-06 17:13:59.054 UTC - DEBUG - 53633:8699949312:-1 route_manager.TestHarness:200: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-06 17:13:59.054 UTC - DEBUG - 53633:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-06 17:13:59.054 UTC - DEBUG - 53633:6309277696:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-06 17:13:59.056 UTC - DEBUG - 53633:6309277696:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:13:59.056 UTC - DEBUG - 53633:6309277696:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:13:59.057 UTC - DEBUG - 53633:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-06 17:13:59.058 UTC - DEBUG - 53633:6326104064:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-06 17:13:59.058 UTC - DEBUG - 53633:8699949312:-1 route_manager.TestHarness:190: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-06 17:13:59.058 UTC - DEBUG - 53633:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 60
+2026-04-06 17:13:59.384 UTC - DEBUG - 53633:6292451328:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:59.384 UTC - DEBUG - 53633:6292451328:-1 updater.TestHarness:136: Update available
+2026-04-06 17:13:59.605 UTC - DEBUG - 53633:6309277696:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:13:59.605 UTC - DEBUG - 53633:6309277696:-1 updater.TestHarness:136: Update available
+2026-04-06 17:14:01.249 UTC - WARNING - 53645:8699949312:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-06 17:14:01.257 UTC - DEBUG - 53645:6178992128:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:14:01.258 UTC - DEBUG - 53645:6178992128:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:14:01.258 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:456: Loaded 89 modules from local file
+2026-04-06 17:14:01.258 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:14:01.259 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:14:01.259 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:14:01.259 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:195: We aren't on the route
+2026-04-06 17:14:01.354 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:14:01.355 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-06 17:14:01.379 UTC - INFO - 53645:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:14:01.379 UTC - INFO - 53645:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/full-route-scenario.csv
+2026-04-06 17:14:01.381 UTC - DEBUG - 53645:8699949312:-1 csv.TestHarness:109: Successfully imported route with 5 rows and headers: ['System Name', 'Waypoints Rem', 'Neutron', 'Distance', 'Distance Rem', 'Fuel Left', 'Fuel Used', 'Refuel', 'Scoopable']
+2026-04-06 17:14:01.381 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:16: Init, offset: 0
+2026-04-06 17:14:01.381 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:158: System Name 0
+2026-04-06 17:14:01.381 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 HIP 84800
+2026-04-06 17:14:01.382 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:212: Jump added
+2026-04-06 17:14:01.382 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:14:01.382 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:197: New offset 1 0 HIP 84800
+2026-04-06 17:14:01.382 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:129: Updating route
+2026-04-06 17:14:01.382 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:212: Jump added
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:197: New offset 2 0 Synuefe QH-E b59-3
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:129: Updating route
+2026-04-06 17:14:01.383 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:212: Jump added
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:197: New offset 3 0 Swoilz JW-H b2-7
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:129: Updating route
+2026-04-06 17:14:01.384 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-06 17:14:01.385 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:14:01.385 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-06 17:14:01.385 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:14:01.385 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:212: Jump added
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:233: Storing route history Apurui, Swoilz PC-G b3-7
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:241: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:184: Updating route
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route.TestHarness:197: New offset 4 0 Swoilz PC-G b3-7
+2026-04-06 17:14:01.388 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:129: Updating route
+2026-04-06 17:14:01.389 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:136: Updating jump overlay
+2026-04-06 17:14:01.389 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:160: Next refuel None
+2026-04-06 17:14:01.392 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:14:01.392 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:14:01.393 UTC - DEBUG - 53645:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-06 17:14:01.393 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:190: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-06 17:14:01.393 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:200: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-06 17:14:01.393 UTC - DEBUG - 53645:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-06 17:14:01.393 UTC - DEBUG - 53645:6347255808:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-06 17:14:01.395 UTC - DEBUG - 53645:6347255808:-1 updater.TestHarness:131: Checking for update
+2026-04-06 17:14:01.395 UTC - DEBUG - 53645:6347255808:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-06 17:14:01.396 UTC - INFO - 53645:8699949312:-1 route_manager.TestHarness:365: Importing route
+2026-04-06 17:14:01.396 UTC - INFO - 53645:8699949312:-1 csv.TestHarness:55: Importing route from file: /Users/derek/Code/EDMC-NeutronDancer/tests/config/vc-Bleae-Voqooe.csv
+2026-04-06 17:14:01.396 UTC - ERROR - 53645:8699949312:-1 csv.TestHarness:113: Failed to read file /Users/derek/Code/EDMC-NeutronDancer/tests/config/vc-Bleae-Voqooe.csv, exception info:
+Traceback (most recent call last):
+  File "/Users/derek/Code/EDMC-NeutronDancer/Router/csv.py", line 62, in read
+    with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/derek/Code/EDMC-NeutronDancer/tests/config/vc-Bleae-Voqooe.csv'
+2026-04-06 17:14:01.397 UTC - INFO - 53645:8699949312:-1 route_manager.TestHarness:367: Failed to load route
+2026-04-06 17:14:01.397 UTC - ERROR - 53645:8699949312:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:6364082176:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:190: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:8699949312:-1 route_manager.TestHarness:200: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:8699949312:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-06 17:14:01.397 UTC - DEBUG - 53645:6380908544:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-06 17:14:01.654 UTC - DEBUG - 53645:6178992128:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:14:01.654 UTC - DEBUG - 53645:6178992128:-1 updater.TestHarness:136: Update available
+2026-04-06 17:14:02.122 UTC - DEBUG - 53645:6347255808:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:14:02.123 UTC - DEBUG - 53645:6347255808:-1 updater.TestHarness:136: Update available
+2026-04-06 17:14:02.152 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-06 17:14:02.152 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:136: Update available

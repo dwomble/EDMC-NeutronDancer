@@ -58,17 +58,18 @@ def _import_live_requests():
 
 _live_requests, _live_requests_adapters = _import_live_requests()
 _use_live:bool = False
+_live_exceptions = getattr(_live_requests, 'exceptions', None) if _live_requests is not None else None
 
-if _live_requests is not None:
-    class _LiveMockRequestException(_live_requests.exceptions.RequestException):
+if _live_exceptions is not None and hasattr(_live_exceptions, 'RequestException') and hasattr(_live_exceptions, 'HTTPError'):
+    class _LiveMockRequestException(_live_exceptions.RequestException):
         pass
 
-    class _LiveMockHTTPError(_live_requests.exceptions.HTTPError):
+    class _LiveMockHTTPError(_live_exceptions.HTTPError):
         pass
 
     MockRequestException = _LiveMockRequestException
     MockHTTPError = _LiveMockHTTPError
-    TimeoutBase = _live_requests.exceptions.Timeout
+    TimeoutBase = getattr(_live_exceptions, 'Timeout', _LiveMockRequestException)
 else:
     class MockRequestException(Exception):
         pass
@@ -120,21 +121,53 @@ class MockResponse:
 
 
 class MockSession:
+    _instance = None
+
+    # Singleton pattern
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self) -> None:
+        if hasattr(self, '_initialized'): return
+
         self.calls = []
-        self.queued_responses = {'get': [], 'post': [], 'put': [], 'patch': [], 'delete': [],
-                                 'head': [], 'options': []}
+        self.queued_responses = {'get': {}, 'post': {}, 'put': {}, 'patch': {}, 'delete': {},
+                                 'head': {}, 'options': {}}
+        self.sticky_responses = {'get': {}, 'post': {}, 'put': {}, 'patch': {}, 'delete': {},
+                                 'head': {}, 'options': {}}
+
+        # Session attributes matching requests.Session
+        self.headers = {}
+        self.cookies = {}
+        self.params = {}
+        self.auth = None
+        self.proxies = {}
+        self.hooks = {}
+        self.verify = True
+        self.cert = None
+        self.timeout = None
+        self.trust_env = True
+
+        self._initialized = True
 
     def _mock_request(self, method: str, url: str, **kwargs) -> MockResponse:
         call = {'method': method, 'url': url, **kwargs}
         self.calls.append(call)
 
-        queued = self.queued_responses[method]
-        if queued:
-            response = queued.pop(0)
-        else:
-            response = MockResponse(url=url)
-
+        response:MockResponse|None = None
+        if url in self.queued_responses[method] and len(self.queued_responses[method][url]) > 0:
+            response = self.queued_responses[method][url].pop(0)
+        if response == None and url in self.sticky_responses[method]:
+            response = self.sticky_responses[method][url]
+        if response == None and 'any' in self.queued_responses[method] and len(self.queued_responses[method]['any']) > 0:
+            response = self.queued_responses[method]['any'].pop(0)
+        if response == None and 'any' in self.sticky_responses[method]:
+            response = self.sticky_responses[method]['any']
+        if response == None:
+            print(f"No response for {method.upper()} {url}, returning 404")
+            response = MockResponse(status_code=404, reason='Not Found')
         response.url = url
         return response
 
@@ -164,64 +197,43 @@ class MockSession:
 
     def mount(self, *args, **kwargs) -> None:
         return None
-
-
-class RequestsSession:
-    def __init__(self) -> None:
-        self._session = None
-
-    def _backend(self):
-        if not _use_live or _live_requests is None:
-            return _mock_requests
-
-        if self._session is None:
-            self._session = _live_requests.Session()
-        return self._session
-
-    def get(self, url: str, **kwargs):
-        return self._backend().get(url, **kwargs)
-
-    def post(self, url: str, **kwargs):
-        return self._backend().post(url, **kwargs)
-
-    def put(self, url: str, **kwargs):
-        return self._backend().put(url, **kwargs)
-
-    def patch(self, url: str, **kwargs):
-        return self._backend().patch(url, **kwargs)
-
-    def delete(self, url: str, **kwargs):
-        return self._backend().delete(url, **kwargs)
-
-    def head(self, url: str, **kwargs):
-        return self._backend().head(url, **kwargs)
-
-    def options(self, url: str, **kwargs):
-        return self._backend().options(url, **kwargs)
-
-    def close(self) -> None:
-        backend = self._backend()
-        if hasattr(backend, 'close'):
-            backend.close()
-
-    def mount(self, *args, **kwargs) -> None:
-        backend = self._backend()
-        if hasattr(backend, 'mount'):
-            backend.mount(*args, **kwargs)
-
 _mock_requests = MockSession()
+_live_session = None
+
+def RequestsSession():
+    """Factory function: returns either a live or mock requests.Session.
+
+    Returns the appropriate session object (mock or live) directly, ensuring
+    that all session attributes like headers, cookies, params, etc. work
+    correctly on the returned object.
+    """
+    global _live_session
+    if not _use_live or _live_requests is None:
+        return _mock_requests
+
+    if _live_session is None:
+        _live_session = _live_requests.Session()
+    return _live_session
 
 def _request(method: str, url: str, **kwargs):
+    """ Call the appropriate live or mock request method """
     if not _use_live or _live_requests is None:
         return getattr(_mock_requests, method)(url, **kwargs)
     return getattr(_live_requests, method)(url, **kwargs)
 
 
-def queue_response(method:str, response: MockResponse) -> None:
-    _mock_requests.queued_responses[method.lower()].append(response)
+def queue_response(method:str, response: MockResponse, url:str|None = None, sticky:bool = False) -> None:
+    """ Enable queuing a mock response. It can be one-time (sticky=False) or sticky (sticky=True), for a specific URL or any URL (url=None). """
+    if url is None: url = 'any'
+    if sticky:
+        _mock_requests.sticky_responses[method.lower()][url] = response
+    elif url not in _mock_requests.queued_responses[method.lower()]:
+        _mock_requests.queued_responses[method.lower()][url] = [response]
+    else:
+        _mock_requests.queued_responses[method.lower()][url].append(response)
 
-
-def live_requests(set:bool|None) -> bool:
+def live_requests(set:bool|None = None) -> bool:
+    """ Configure whether to use live requests or the mock. If set is None, returns the current state. """
     global _use_live
     if set != None:
         _use_live = set
@@ -235,15 +247,15 @@ def live_requests(set:bool|None) -> bool:
 _request_attrs = {
     'Response': MockResponse,
     'Session': RequestsSession,
-    'RequestException': (_live_requests.exceptions.RequestException if _live_requests is not None else MockRequestException),
-    'HTTPError': (_live_requests.exceptions.HTTPError if _live_requests is not None else MockHTTPError),
+    'RequestException': (_live_exceptions.RequestException if _live_exceptions is not None and hasattr(_live_exceptions, 'RequestException') else MockRequestException),
+    'HTTPError': (_live_exceptions.HTTPError if _live_exceptions is not None and hasattr(_live_exceptions, 'HTTPError') else MockHTTPError),
     'Timeout': TimeoutBase,
     'queue_response': queue_response,
     'calls': _mock_requests.calls,
     'queued_responses': _mock_requests.queued_responses,
     'codes': (_live_requests.codes if _live_requests is not None else _types.SimpleNamespace(ok=200)),
     'utils': (_live_requests.utils if _live_requests is not None else _types.SimpleNamespace(requote_uri=lambda value: value)),
-    'exceptions': (_live_requests.exceptions if _live_requests is not None else _types.SimpleNamespace(
+    'exceptions': (_live_exceptions if _live_exceptions is not None else _types.SimpleNamespace(
         RequestException=MockRequestException,
         HTTPError=MockHTTPError,
         Timeout=MockRequestException,

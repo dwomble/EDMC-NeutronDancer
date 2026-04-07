@@ -19,6 +19,7 @@ import logging
 import tkinter as tk
 import threading
 from typing import Any
+from types import SimpleNamespace
 
 edmc_dir:Path = Path(__file__).parent / 'edmc'
 sys.path.insert(0, str(edmc_dir))
@@ -134,11 +135,12 @@ class TestHarness:
         )
 
     def set_requests_mode(self, live_requests:bool) -> None:
+        """ Set whether the harness should use live HTTPS requests or mocked responses. """
         self.live_requests = live_requests
         tests.edmc.requests.live_requests(live_requests)
 
     def set_edmc_config(self, config_file:str = "edmc_config.json") -> None:
-        # Load config
+        """ Load a config file from the config directory and set it in the mock config object. """
         config_path:Path = self.plugin_dir / "config" / config_file
         if not config_path.is_file():
             self.config.data = {}
@@ -151,7 +153,7 @@ class TestHarness:
         self.config.data['app_dir_path'] = str(self.plugin_dir) # Override app_dir_path to plugin dir for testing purposes
 
     def get_config_data(self, config_file:str) -> str|dict|None:
-        """Load and return a chosen config file"""
+        """Load and return a chosen config file. Useful for comparing plugin output to expected config data."""
 
         config_path:Path = self.plugin_dir / "config" / config_file
         format = config_file.split('.')[1]
@@ -188,17 +190,22 @@ class TestHarness:
             print(f"Warning: Could not load {state_file}: {e}")
             return {}
 
-    def load_events(self, source:str) -> dict:
-        """ Load journal events from events.json file. """
+    def load_events(self, source:str, **kwargs) -> dict:
+        """ Load journal events from a json file or a direct ED log. """
 
         events_file = Path(self.plugin_dir, "journal_config", source)
         logging.info(f"Events file: {events_file}")
+        params = SimpleNamespace(**kwargs)
         if not events_file.exists():
             print(f" Events file {events_file} not found")
             return {}
         try:
             with open(events_file, 'r') as f:
-                tmp:dict = json.load(f)
+                if events_file.suffix == '.json':
+                    tmp:dict = json.load(f)
+                else:
+                    # Assume it's a direct ED log
+                    tmp = {"default": [json.loads(line) for line in f.readlines()]}
 
                 # The following allows the use of f strings in the json which enables time-based events.
                 res:dict = {}
@@ -254,10 +261,13 @@ class TestHarness:
             self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
 
         # Update the separate journal files that ED maintains
-        # @TODO: Figure out what gets written to NavRoute.json.
         if event['event'] in CONFIG_FILES.keys():
-            if event['event'] == 'Market' and 'Items' not in event:
-                event['Items'] = [] # Just add an empty market since we can't produce one.
+            match event['event']:
+                case 'Market' if 'Items' not in event:
+                    event['Items'] = [] # Just add an empty market since we can't produce one.
+                case 'NavRoute' if 'Route' not in event:
+                    event['Route'] = [] # Just add an empty route since we can't produce one.
+
             with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
                 json.dump(event, f)
 

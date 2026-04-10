@@ -45,7 +45,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     # Try to use the appropriate CLI clipboard tool
     clipboard_cli:str|None = os.getenv("EDMC_CLIPBOARD_CLI", None)
     if clipboard_cli == None:
-        for cmd, session in cmds:
+        for cmd, session in cmds.items():
             if os.getenv("XDG_SESSION_TYPE") == session and shutil.which(cmd.split()[0]):
                 clipboard_cli = cmd
                 break

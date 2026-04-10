@@ -134,8 +134,6 @@ class Router():
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
         Debug.logger.debug(f"Updating jump overlay")
-        if Context.route.route == []: return
-        
         wp:str = Context.route.next_stop()
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
@@ -353,7 +351,6 @@ class Router():
             err = json.loads(response.content)["error"]
 
         Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
-        Debug.logger.info(f"Setting error {err}")
         Context.ui.show_error(err)
         return
 
@@ -383,10 +380,10 @@ class Router():
             return False
 
 
-    def export_route(self, filename:str = '') -> bool:
+    def export_route(self) -> bool:
         """ Save a route to a CSV file """
         try:
-            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route, filename) == False:
+            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
                 Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False

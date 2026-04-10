@@ -41,7 +41,7 @@ class CSV:
         ]
         dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
         dir.mkdir(parents=True, exist_ok=True)
-        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=dir) or ''
+        filename:str = filedialog.askopenfilename(filetypes=ftypes, initialdir=dir)
         return filename
 
     @catch_exceptions
@@ -49,11 +49,11 @@ class CSV:
         """ Import a csv file """
         self.error = ""
 
-        if filename == '':
+        if len(filename) == 0:
             filename = self.choose_file()
 
         Debug.logger.info(f"Importing route from file: {filename}")
-        if filename == '':
+        if len(filename) == 0:
             self.error = errs["no_file"]
             Debug.logger.debug(f"No filename selected")
             return False
@@ -114,7 +114,7 @@ class CSV:
             return False
 
 
-    def write(self, headers:list, route:list, filename:str = '') -> bool:
+    def write(self, headers:list, route:list) -> bool:
         """ Export the route as a csv """
 
         if route == [] or headers == []:
@@ -125,96 +125,92 @@ class CSV:
         route_start:str = route[0][0]
         route_end:str = route[-1][0]
         route_name:str = f"{route_start} to {route_end}"
+        ftypes:list = [('CSV files', '*.csv')]
+        dir:Path = Path(Context.plugin_dir) / ROUTE_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        filename:str = filedialog.asksaveasfilename(filetypes=ftypes, initialdir=dir, initialfile=f"{route_name}.csv")
 
-        if len(filename) == '':
-            filename = self.choose_file()
-
-        if filename == '':
+        if len(filename) == 0:
             self.error = errs["no_filename"]
             Debug.logger.debug(f"No filename selected")
             return False
 
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
+            for row in route:
+                writer.writerow(row)
+        return True
+
+
+    def update_bodies_text(self) -> None:
+        if not self.roadtoriches:
+            return
+
+        # For the bodies to scan use the current system, which is one before the next stop
+        lastsystemoffset:int = Context.route.offset - 1
+        if lastsystemoffset < 0:
+            lastsystemoffset = 0    # Display bodies of the first system
+
+        lastsystem:str = self.route[lastsystemoffset][0]
+        bodynames:str = self.route[lastsystemoffset][2]
+        bodysubtypes:str = self.route[lastsystemoffset][3]
+
+        waterbodies:list = []
+        rockybodies:list = []
+        metalbodies:list = []
+        earthlikebodies:list = []
+        unknownbodies:list = []
+
+        for num, name in enumerate(bodysubtypes):
+            shortbodyname:str = bodynames[num].replace(lastsystem + " ", "")
+            if name.lower() == "high metal content world":
+                metalbodies.append(shortbodyname)
+            elif name.lower() == "rocky body":
+                rockybodies.append(shortbodyname)
+            elif name.lower() == "earth-like world":
+                earthlikebodies.append(shortbodyname)
+            elif name.lower() == "water world":
+                waterbodies.append(shortbodyname)
+            else:
+                unknownbodies.append(shortbodyname)
+
+        bodysubtypeandname:str = ""
+        if len(metalbodies) > 0:
+            bodysubtypeandname += "\n   Metal: " + ', '.join(metalbodies)
+        if len(rockybodies) > 0:
+            bodysubtypeandname += "\n   Rocky: " + ', '.join(rockybodies)
+        if len(earthlikebodies) > 0:
+            bodysubtypeandname += "\n   Earth: " + ', '.join(earthlikebodies)
+        if len(waterbodies) > 0:
+            bodysubtypeandname += "\n   Water: " + ', '.join(waterbodies)
+        if len(unknownbodies) > 0:
+            bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
+
+        self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
+
+
+    def plot_edts(self, filename: Path | str) -> None:
+        """ Currently unused """
         try:
-            with open(filename, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(headers)
-                for row in route:
-                    writer.writerow(row)
-            return True
+            with open(filename, 'r') as txtfile:
+                route_txt:list = txtfile.readlines()
+                for row in route_txt:
+                    if row not in (None, "", []):
+                        if row.lstrip().startswith('==='):
+                            jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
+                            self.jumps_left += jumps
+
+                            system:str = row[row.find('>') + 1:]
+                            if ',' in system:
+                                systems:list = system.split(',')
+                                for system in systems:
+                                    self.route.append([system.strip(), jumps])
+                                    jumps = 1
+                                    self.jumps_left += jumps
+                            else:
+                                self.route.append([system.strip(), jumps])
         except Exception as e:
-            self.error = errs["invalid_file"]
-            Debug.logger.error(f"Failed to read file {filename}, exception info:", exc_info=e)
-            return False
-
-
-    # def update_bodies_text(self) -> None:
-    #     if not self.roadtoriches:
-    #         return
-
-    #     # For the bodies to scan use the current system, which is one before the next stop
-    #     lastsystemoffset:int = Context.route.offset - 1
-    #     if lastsystemoffset < 0:
-    #         lastsystemoffset = 0    # Display bodies of the first system
-
-    #     lastsystem:str = self.route[lastsystemoffset][0]
-    #     bodynames:str = self.route[lastsystemoffset][2]
-    #     bodysubtypes:str = self.route[lastsystemoffset][3]
-
-    #     waterbodies:list = []
-    #     rockybodies:list = []
-    #     metalbodies:list = []
-    #     earthlikebodies:list = []
-    #     unknownbodies:list = []
-
-    #     for num, name in enumerate(bodysubtypes):
-    #         shortbodyname:str = bodynames[num].replace(lastsystem + " ", "")
-    #         if name.lower() == "high metal content world":
-    #             metalbodies.append(shortbodyname)
-    #         elif name.lower() == "rocky body":
-    #             rockybodies.append(shortbodyname)
-    #         elif name.lower() == "earth-like world":
-    #             earthlikebodies.append(shortbodyname)
-    #         elif name.lower() == "water world":
-    #             waterbodies.append(shortbodyname)
-    #         else:
-    #             unknownbodies.append(shortbodyname)
-
-    #     bodysubtypeandname:str = ""
-    #     if len(metalbodies) > 0:
-    #         bodysubtypeandname += "\n   Metal: " + ', '.join(metalbodies)
-    #     if len(rockybodies) > 0:
-    #         bodysubtypeandname += "\n   Rocky: " + ', '.join(rockybodies)
-    #     if len(earthlikebodies) > 0:
-    #         bodysubtypeandname += "\n   Earth: " + ', '.join(earthlikebodies)
-    #     if len(waterbodies) > 0:
-    #         bodysubtypeandname += "\n   Water: " + ', '.join(waterbodies)
-    #     if len(unknownbodies) > 0:
-    #         bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
-
-    #     self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
-
-
-    # def plot_edts(self, filename: Path | str) -> None:
-    #     """ Currently unused """
-    #     try:
-    #         with open(filename, 'r') as txtfile:
-    #             route_txt:list = txtfile.readlines()
-    #             for row in route_txt:
-    #                 if row not in (None, "", []):
-    #                     if row.lstrip().startswith('==='):
-    #                         jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
-    #                         self.jumps_left += jumps
-
-    #                         system:str = row[row.find('>') + 1:]
-    #                         if ',' in system:
-    #                             systems:list = system.split(',')
-    #                             for system in systems:
-    #                                 self.route.append([system.strip(), jumps])
-    #                                 jumps = 1
-    #                                 self.jumps_left += jumps
-    #                         else:
-    #                             self.route.append([system.strip(), jumps])
-    #     except Exception as e:
-    #         Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
-    #         Context.ui._show_busy_gui(True)
-    #         Context.ui.show_error("An error occured while reading the file.")
+            Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
+            Context.ui._show_busy_gui(True)
+            Context.ui.show_error("An error occured while reading the file.")

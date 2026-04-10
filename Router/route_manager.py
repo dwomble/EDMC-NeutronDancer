@@ -7,7 +7,6 @@ from time import time, sleep
 from datetime import UTC, datetime, timedelta
 from threading import Thread
 
-
 from config import config # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus, copy_to_clipboard

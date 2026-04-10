@@ -193,8 +193,9 @@ class TestExporting:
 
         assert res == True
 
-        out:str = str(Path(__file__).parent / "nodir" / "nofile.csv")
-        res:bool = harness.plugin.router.export_route(out)
+        with patch('Router.csv.filedialog.asksaveasfilename', return_value=''):
+            res:bool = harness.plugin.router.export_route()
+
         assert res == False
 
     def test_export_route(self, harness:TestHarness) -> None:
@@ -206,8 +207,8 @@ class TestExporting:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
 
-
-        res:bool = harness.plugin.csv.write(harness.plugin.route.hdrs, harness.plugin.route.route, out)
+        with patch('Router.csv.filedialog.asksaveasfilename', return_value=out):
+            res:bool = harness.plugin.csv.write(harness.plugin.route.hdrs, harness.plugin.route.route)
         assert res == True
         assert os.path.exists(out)
         os.remove(out)

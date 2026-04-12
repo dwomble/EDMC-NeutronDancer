@@ -171,7 +171,7 @@ class TestImporting:
         assert harness.plugin.router.dest == 'Voqooe BI-H d11-864'
 
     def test_import_route_riches(self, harness:TestHarness) -> None:
-        filename:str = str(Path(__file__).parent / "config" / "riches-apurui-M23.csv")
+        filename:str = str(Path(__file__).parent / "config" / "riches-Apurui-M23.csv")
         res:bool = harness.plugin.router.import_route(filename)
 
         assert res == True

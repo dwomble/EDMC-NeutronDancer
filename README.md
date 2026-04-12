@@ -138,6 +138,8 @@ export EDMC_CLIPBOARD_CLI="/usr/local/random/xsel --clipboard --input"
 /usr/bin/python EDMarketConnector.py
 ```
 
+Note, if you're running Flatpak and still having problems even with the environment variable set, check that EDMC is allowed to run the command you're referencing and allowed to follow any symlinks.
+
 ## Credits
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).

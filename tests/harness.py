@@ -5,7 +5,6 @@ This harness simulates EDMC's journal entry events and provides tools to test
 the plugin's routing functionality without running the full EDMC application.
 """
 import shutil
-import shutil
 import threading
 threading.get_native_id = lambda: 0
 
@@ -80,31 +79,17 @@ class TestHarness:
             plugin_dir = str(Path(__file__).parent)
 
         self.plugin_dir:Path = Path(plugin_dir).resolve()
-        self.live_dir:Path = Path(__file__).parent.parent.resolve()
-        self.commander = "TestCommander"
-        self.is_beta = False
-        self.system = "Sol"
+        self.plugin:Any = None
 
-        # Load our event sequences
-        self.events:Dict[str, list] = self._load_events()
-        self.loadouts:Dict[str, dict] = self._load_loadouts()
+        # Copy the initial config state files
+        Path(__file__).parent.joinpath("journal_folder").mkdir(exist_ok=True)
+        for file in CONFIG_FILES.values():
+            shutil.copy(Path(__file__).parent / "journal_config" / file,
+                Path(__file__).parent / "journal_folder" / file)
+        monitor.currentdir = str(Path(__file__).parent / "journal_folder")
+        self.monitor = monitor
+        self.unhandled_exceptions:list[str] = []
 
-        plugin_start3(str(self.live_dir))
-
-        # This got stuck with annoying PhotoImage
-        try:
-            root:tk.Tk = tk.Tk()
-            parent:tk.Frame = tk.Frame(root)
-            root.withdraw()
-        except:
-            pass
-
-        plugin_app(parent)
-
-        self.router = Context.router
-        self.overlay = Context.overlay
-        self.ui = Context.ui
-        self.context = Context
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
         self.config = MockConfig()

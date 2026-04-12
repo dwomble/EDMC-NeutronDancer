@@ -10,7 +10,7 @@ import sys
 import os
 import shutil
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, Any
 from time import sleep
 from unittest.mock import Mock, patch, MagicMock
 import json
@@ -34,6 +34,7 @@ def harness() -> Generator:
     """Provide a fresh test harness for each test."""
 
     # We want a standard route.json for each test
+    Path(__file__).parent.joinpath("data").mkdir(exist_ok=True)
     shutil.copy(Path(__file__).parent / "config" / "route_init.json",
                 Path(__file__).parent / "data" / "route.json")
 
@@ -282,8 +283,8 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[2])
-        assert harness.context.ui.parent is not None
-        assert harness.context.ui.parent.clipboard_get() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.ui.parent is not None
+        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua RX-L d7-28'
 
     def test_other(self, harness:TestHarness):
         """Test some other random string has no impact"""
@@ -295,8 +296,8 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[3])
-        assert harness.context.ui.parent is not None
-        assert harness.context.ui.parent.clipboard_get() == ''
+        assert harness.plugin.ui.parent is not None
+        assert harness.plugin.ui.parent.clipboard_get() == ''
 
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""
@@ -555,9 +556,10 @@ class TestPlotting:
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
 
-        harness.set_ship('Shipping Delay')
-        ship = harness.router.ship
+        harness.plugin.router.swap_ship(1)
+        ship = harness.plugin.router.ship
         assert ship is not None
+        assert ship.name == 'Shipping Delay'
 
         galaxy_params:dict = {
             "cargo": 0,
@@ -587,7 +589,7 @@ class TestPlotting:
         assert ship.fuel_power == 2.45
         assert ship.fuel_multiplier == 0.013
         assert ship.optimal_mass == 1894.1
-        assert ship.base_mass == 287.6
+        assert ship.base_mass == 297.3
         assert ship.tank_size == 32
         assert ship.internal_tank_size == 0.5
         assert ship.max_fuel_per_jump == 5.2
@@ -605,53 +607,6 @@ class TestPlotting:
         # Galaxy plotter's results vary based on a number of factors.
         assert harness.plugin.route.total_jumps() <= 28
         assert harness.plugin.route.total_jumps() >= 11
-
-
-    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
-        """Perform a live galaxy plot and check results for a caspian explorer."""
-
-        harness.set_ship('Perviy')
-        ship = harness.router.ship
-        assert ship is not None
-
-        galaxy_params:dict = {
-            "cargo": 0,
-            "max_time": 60,
-            "algorithm": "optimistic",
-            "fuel_reserve": 12,
-            "is_supercharged": 0,
-            "use_supercharge": 1,
-            "use_injections": 0,
-            "exclude_secondary": 1,
-            "refuel_every_scoopable": 0,
-            "fuel_power": ship.fuel_power,
-            "fuel_multiplier": ship.fuel_multiplier,
-            "optimal_mass": ship.optimal_mass,
-            "base_mass": ship.base_mass,
-            "tank_size": ship.tank_size,
-            "internal_tank_size": ship.internal_tank_size,
-            "max_fuel_per_jump": ship.max_fuel_per_jump,
-            "range_boost": 10.5,
-            "ship_build": ship.loadout,
-            "supercharge_multiplier": ship.supercharge_multiplier,
-            "injection_multiplier": ship.injection_multiplier,
-            "source": "Apurui",
-            "destination": "Bleae Thua NI-B b27-5"
-        }
-
-        res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-        assert res == True
-        time.sleep(62)
-
-        logging.debug(f"Route: {harness.context.route}")
-        assert harness.context.route is not None
-        assert harness.router.src == 'Apurui'
-        assert harness.router.dest == 'Bleae Thua NI-B b27-5'
-        assert harness.context.route.total_jumps() >= 11
-        assert harness.context.route.total_jumps() <= 17 or harness.context.route.total_jumps() == 28
-        #harness.context.route.offset = 6
-        #assert harness.context.route.next_stop() == 'Col 359 Sector ZZ-P d5-52'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

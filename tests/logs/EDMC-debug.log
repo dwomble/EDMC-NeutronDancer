@@ -594,3 +594,1337 @@ FileNotFoundError: [Errno 2] No such file or directory: '/Users/derek/Code/EDMC-
 2026-04-06 17:14:02.123 UTC - DEBUG - 53645:6347255808:-1 updater.TestHarness:136: Update available
 2026-04-06 17:14:02.152 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
 2026-04-06 17:14:02.152 UTC - DEBUG - 53645:6330429440:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:14.920 UTC - WARNING - 61088:37552:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:30:15.104 UTC - DEBUG - 61088:48720:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:15.104 UTC - DEBUG - 61088:48720:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:15.113 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:30:15.114 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:455: Module data is more than a day old, downloading fresh data
+2026-04-12 03:30:15.115 UTC - DEBUG - 61088:33188:-1 route_manager.TestHarness:399: Getting module data
+2026-04-12 03:30:15.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:15.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:15.124 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:15.124 UTC - DEBUG - 61088:37552:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:30:15.533 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.534 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.534 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.535 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.535 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.543 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:15.549 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:15.624 UTC - DEBUG - 61088:48720:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:15.625 UTC - DEBUG - 61088:48720:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:15.982 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.983 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.984 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.984 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.984 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.985 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:15.985 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:16.015 UTC - DEBUG - 61088:58264:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:16.017 UTC - DEBUG - 61088:58264:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:16.017 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:16.018 UTC - DEBUG - 61088:37552:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:30:16.306 UTC - DEBUG - 61088:58264:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:16.306 UTC - DEBUG - 61088:58264:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:16.535 UTC - DEBUG - 61088:18096:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:16.535 UTC - DEBUG - 61088:18096:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:16.537 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:399: Getting module data
+2026-04-12 03:30:16.605 UTC - DEBUG - 61088:33188:-1 route_manager.TestHarness:431: Downloaded 89 FSD entries from Coriolis
+2026-04-12 03:30:16.841 UTC - DEBUG - 61088:18096:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:16.843 UTC - DEBUG - 61088:18096:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:17.617 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:431: Downloaded 89 FSD entries from Coriolis
+2026-04-12 03:30:17.642 UTC - DEBUG - 61088:53132:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:17.642 UTC - DEBUG - 61088:53132:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:17.651 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:30:17.662 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:17.662 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:17.680 UTC - DEBUG - 61088:63784:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:17.681 UTC - DEBUG - 61088:63784:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:17.711 UTC - DEBUG - 61088:61016:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:17.711 UTC - DEBUG - 61088:61016:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:17.738 UTC - DEBUG - 61088:59308:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:17.739 UTC - DEBUG - 61088:59308:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.009 UTC - DEBUG - 61088:53132:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.009 UTC - DEBUG - 61088:53132:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.069 UTC - DEBUG - 61088:63784:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.069 UTC - DEBUG - 61088:63784:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.089 UTC - DEBUG - 61088:61016:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.089 UTC - DEBUG - 61088:61016:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.107 UTC - DEBUG - 61088:59308:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.108 UTC - DEBUG - 61088:59308:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.263 UTC - DEBUG - 61088:13060:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.263 UTC - DEBUG - 61088:13060:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.288 UTC - DEBUG - 61088:57772:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.288 UTC - DEBUG - 61088:57772:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.289 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.292 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\missing.csv
+2026-04-12 03:30:18.293 UTC - ERROR - 61088:37552:-1 csv.TestHarness:113: Failed to read file c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\missing.csv, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\csv.py", line 62, in read
+    with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\derek\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-NeutronDancer-dev\\tests\\config\\missing.csv'
+2026-04-12 03:30:18.295 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:363: Failed to load route
+2026-04-12 03:30:18.295 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-12 03:30:18.317 UTC - DEBUG - 61088:2708:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.319 UTC - DEBUG - 61088:2708:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.319 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.320 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\empty.csv
+2026-04-12 03:30:18.322 UTC - ERROR - 61088:37552:-1 csv.TestHarness:70: File c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\empty.csv is empty or doesn't have a header row
+2026-04-12 03:30:18.323 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:363: Failed to load route
+2026-04-12 03:30:18.324 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error File is empty or doesn't have a header row
+2026-04-12 03:30:18.344 UTC - DEBUG - 61088:54864:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.344 UTC - DEBUG - 61088:54864:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.345 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.346 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\bad_import.csv
+2026-04-12 03:30:18.349 UTC - ERROR - 61088:37552:-1 csv.TestHarness:84: File c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\bad_import.csv is of unsupported format
+2026-04-12 03:30:18.349 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:363: Failed to load route
+2026-04-12 03:30:18.350 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-12 03:30:18.371 UTC - DEBUG - 61088:12912:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.372 UTC - DEBUG - 61088:12912:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.373 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.374 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Smojue.csv
+2026-04-12 03:30:18.375 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:18.376 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.376 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.377 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.377 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:18.416 UTC - DEBUG - 61088:63612:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.416 UTC - DEBUG - 61088:63612:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.418 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.419 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\galaxy-Bleae-Voqooe.csv
+2026-04-12 03:30:18.422 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 75 rows and headers: ['System Name', 'Distance', 'Distance Remaining', 'Fuel Left', 'Fuel Used', 'Refuel', 'Neutron Star']
+2026-04-12 03:30:18.422 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.423 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.423 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 75 ['Bleae Thua NI-B b27-5', 0, 16458.73, 32, 0, 'No', 'No']
+2026-04-12 03:30:18.424 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 74 ['Bleae Thua YV-V b29-1', 79.85, 16387.74, 32, 5.08, 'Yes', 'No']
+2026-04-12 03:30:18.424 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 73 ['Bleae Thua SX-L d7-27', 80.26, 16323.42, 32, 5.15, 'Yes', 'No']
+2026-04-12 03:30:18.425 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 72 ['Bleae Thua WD-K d8-8', 78.98, 16256.72, 32, 4.95, 'Yes', 'No']
+2026-04-12 03:30:18.425 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 71 ['Bleae Thua RX-L d7-28', 78.06, 16273.68, 27.19, 4.81, 'No', 'Yes']
+2026-04-12 03:30:18.426 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 70 ['Bleae Thua ZU-G d10-56', 296.02, 16006.85, 23.11, 4.08, 'No', 'Yes']
+2026-04-12 03:30:18.427 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 69 ['Bleia Eohn HE-E d13-48', 283.79, 15756.73, 19.54, 3.58, 'No', 'Yes']
+2026-04-12 03:30:18.427 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 68 ['Droju YY-T b9-4', 333.96, 15426.69, 32, 5.2, 'Yes', 'No']
+2026-04-12 03:30:18.428 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 67 ['Smojue PM-W d1-3', 76.77, 15440.86, 27.38, 4.62, 'No', 'Yes']
+2026-04-12 03:30:18.428 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 66 ['Droju QU-V d3-48', 311.58, 15192.81, 22.75, 4.63, 'No', 'Yes']
+2026-04-12 03:30:18.429 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 65 ['Smojue DR-N d6-34', 277.48, 14976.72, 19.38, 3.38, 'No', 'Yes']
+2026-04-12 03:30:18.429 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 64 ['Smojue IK-N c20-0', 333.97, 14649.7, 32, 5.19, 'Yes', 'No']
+2026-04-12 03:30:18.429 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 63 ['Byeia Thaa HQ-G d10-34', 69.6, 14590.6, 28.37, 3.63, 'No', 'Yes']
+2026-04-12 03:30:18.429 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 62 ['Byeia Thaa RI-B d13-40', 233.29, 14371.13, 26.07, 2.3, 'No', 'Yes']
+2026-04-12 03:30:18.431 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 61 ['Traikoa VM-W d1-157', 326.73, 14049.76, 20.92, 5.16, 'No', 'Yes']
+2026-04-12 03:30:18.431 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 60 ['Traikoa TW-E c11-38', 332.64, 13717.54, 32, 5.2, 'Yes', 'No']
+2026-04-12 03:30:18.431 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 59 ['Traikoa IL-P d5-155', 79.43, 13705.02, 26.98, 5.02, 'No', 'Yes']
+2026-04-12 03:30:18.431 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 58 ['Blae Drye PZ-M d8-20', 302.32, 13416.36, 22.69, 4.29, 'No', 'Yes']
+2026-04-12 03:30:18.432 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 57 ['Blae Drye EY-F d12-14', 320.49, 13096.79, 17.89, 4.8, 'No', 'Yes']
+2026-04-12 03:30:18.432 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 56 ['Gria Drye HZ-D b4-4', 335.64, 12762.31, 32, 5.2, 'Yes', 'No']
+2026-04-12 03:30:18.433 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 55 ['Gria Drye IX-A d1-185', 73.44, 12761.59, 27.86, 4.14, 'No', 'Yes']
+2026-04-12 03:30:18.434 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 54 ['Gria Drye TU-V d3-211', 324.89, 12476.3, 22.71, 5.15, 'No', 'Yes']
+2026-04-12 03:30:18.434 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 53 ['Gria Drye JT-O d7-172', 319.0, 12172.01, 17.96, 4.75, 'No', 'Yes']
+2026-04-12 03:30:18.435 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 52 ['Gria Drye FC-Y b48-3', 335.34, 11837.62, 32, 5.19, 'Yes', 'No']
+2026-04-12 03:30:18.435 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 51 ['Gria Drye XR-H d11-35', 68.65, 11850.4, 28.49, 3.51, 'No', 'Yes']
+2026-04-12 03:30:18.435 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 50 ['Plaa Aescs FA-A d129', 310.33, 11557.33, 23.87, 4.62, 'No', 'Yes']
+2026-04-12 03:30:18.436 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 49 ['Plaa Aescs UY-S d3-210', 322.92, 11239.93, 18.93, 4.93, 'No', 'Yes']
+2026-04-12 03:30:18.436 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 48 ['Plaa Aescs VB-S b31-1', 334.48, 10906.7, 32, 5.19, 'Yes', 'No']
+2026-04-12 03:30:18.437 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 47 ['Plaa Aescs OD-K d8-286', 76.87, 10856.84, 27.37, 4.63, 'No', 'Yes']
+2026-04-12 03:30:18.437 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 46 ['Nyeajeau VR-H d11-12', 286.07, 10575.44, 23.61, 3.76, 'No', 'Yes']
+2026-04-12 03:30:18.437 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 45 ['Prooe Hypa ZV-C d117', 324.45, 10264.5, 18.63, 4.98, 'No', 'Yes']
+2026-04-12 03:30:18.437 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 44 ['Prooe Hypa MQ-F b17-22', 334.02, 9932.68, 32, 5.16, 'Yes', 'No']
+2026-04-12 03:30:18.438 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 43 ['Prooe Hypa SA-U d4-157', 78.94, 9868.55, 27.06, 4.94, 'No', 'Yes']
+2026-04-12 03:30:18.438 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 42 ['Prooe Hypa EO-O d7-65', 286.56, 9592.33, 23.29, 3.77, 'No', 'Yes']
+2026-04-12 03:30:18.438 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 41 ['Flyiedgiae JN-H d11-251', 316.89, 9275.91, 18.6, 4.69, 'No', 'Yes']
+2026-04-12 03:30:18.439 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 40 ['Flyae Eaec DZ-E c17', 330.66, 8947.02, 32, 5.04, 'Yes', 'No']
+2026-04-12 03:30:18.439 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 39 ['Flyae Eaec RH-C d156', 67.04, 8961.05, 28.69, 3.31, 'No', 'Yes']
+2026-04-12 03:30:18.439 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 38 ['Flyae Eaec ZO-Y d1-168', 263.69, 8724.38, 25.58, 3.11, 'No', 'Yes']
+2026-04-12 03:30:18.440 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 37 ['Flyae Eaec MH-T d4-90', 227.37, 8556.67, 23.47, 2.11, 'No', 'Yes']
+2026-04-12 03:30:18.441 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 36 ['Flyae Eaec UE-O d7-67', 317.11, 8277.51, 18.76, 4.71, 'No', 'Yes']
+2026-04-12 03:30:18.441 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 35 ['Flyae Eaec XM-M c23-106', 334.49, 7944.26, 32, 5.19, 'Yes', 'No']
+2026-04-12 03:30:18.442 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 34 ['Flyae Eaec JD-H d11-145', 48.34, 7902.35, 30.51, 1.49, 'No', 'Yes']
+2026-04-12 03:30:18.442 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 33 ['Flyae Eaec TV-B d14-368', 300.49, 7638.59, 26.18, 4.33, 'No', 'Yes']
+2026-04-12 03:30:18.442 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 32 ['Prae Eaec TO-Y d1-221', 286.21, 7373.78, 22.45, 3.73, 'No', 'Yes']
+2026-04-12 03:30:18.443 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 31 ['Prae Eaec DH-T d4-671', 310.74, 7096.79, 18.01, 4.45, 'No', 'Yes']
+2026-04-12 03:30:18.443 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 30 ['Prae Eaec UA-M d8-14', 335.15, 6767.66, 32, 5.18, 'Yes', 'No']
+2026-04-12 03:30:18.444 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 29 ['Prae Eaec AC-K d9-303', 46.17, 6729.64, 30.67, 1.33, 'No', 'Yes']
+2026-04-12 03:30:18.444 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 28 ['Prae Eaec OK-E d12-179', 314.17, 6455.24, 25.84, 4.84, 'No', 'Yes']
+2026-04-12 03:30:18.444 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 27 ['Clookia NI-B d181', 247.68, 6212.4, 23.22, 2.61, 'No', 'Yes']
+2026-04-12 03:30:18.445 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 26 ['Clookia ZA-W d2-140', 292.26, 5924.61, 19.38, 3.85, 'No', 'Yes']
+2026-04-12 03:30:18.445 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 25 ['Clookia QU-O d6-78', 327.16, 5602.1, 32, 4.93, 'Yes', 'No']
+2026-04-12 03:30:18.446 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 24 ['Clookia RU-O d6-33', 55.64, 5603.52, 29.9, 2.1, 'No', 'Yes']
+2026-04-12 03:30:18.446 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 23 ['Clookia GI-J d9-65', 264.6, 5384.43, 26.74, 3.16, 'No', 'Yes']
+2026-04-12 03:30:18.447 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 22 ['Clookia VQ-D d12-3', 278.68, 5124.47, 23.24, 3.51, 'No', 'Yes']
+2026-04-12 03:30:18.448 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 21 ['Graea Hypa YU-Y d13', 320.64, 4807.78, 18.41, 4.83, 'No', 'Yes']
+2026-04-12 03:30:18.448 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 20 ['Graea Hypa GB-Q b20-3', 335.1, 4474.34, 32, 5.2, 'Yes', 'No']
+2026-04-12 03:30:18.449 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 19 ['Gru Hypue HA-Q d5-92', 64.52, 4417.19, 28.99, 3.01, 'No', 'Yes']
+2026-04-12 03:30:18.449 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 18 ['Gru Hypue ZJ-R e4-17', 324.94, 4098.65, 23.79, 5.19, 'No', 'Yes']
+2026-04-12 03:30:18.450 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 17 ['Gru Hypue MH-D d12-162', 312.39, 3787.87, 19.25, 4.55, 'No', 'Yes']
+2026-04-12 03:30:18.450 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 16 ['Floalt SW-O b6-1', 329.29, 3459.63, 32, 5.01, 'Yes', 'No']
+2026-04-12 03:30:18.450 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 15 ['Floalt RW-W d1-242', 63.9, 3426.57, 29.06, 2.94, 'No', 'Yes']
+2026-04-12 03:30:18.451 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 14 ['Floalt JQ-P d5-174', 323.39, 3109.7, 23.92, 5.13, 'No', 'Yes']
+2026-04-12 03:30:18.451 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 13 ['Floalt ZO-I d9-198', 329.23, 2780.97, 18.75, 5.18, 'No', 'Yes']
+2026-04-12 03:30:18.452 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 12 ['Floalt HH-B c27-27', 334.26, 2453.91, 32, 5.18, 'Yes', 'No']
+2026-04-12 03:30:18.452 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 11 ['Floalt IR-N e6-26', 66.39, 2397.44, 28.77, 3.23, 'No', 'Yes']
+2026-04-12 03:30:18.453 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 10 ['Boerth VX-U d2-105', 323.66, 2078.81, 23.63, 5.13, 'No', 'Yes']
+2026-04-12 03:30:18.454 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 9 ['Boerth FQ-P d5-406', 319.75, 1763.81, 18.82, 4.81, 'No', 'Yes']
+2026-04-12 03:30:18.454 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 8 ['Boerth WJ-I d9-647', 322.83, 1443.78, 32, 4.76, 'Yes', 'No']
+2026-04-12 03:30:18.455 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 7 ['Boerth YE-R e4-36', 59.96, 1401.36, 29.48, 2.52, 'No', 'Yes']
+2026-04-12 03:30:18.455 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 6 ['Boerth FR-N e6-87', 314.33, 1100.64, 24.68, 4.8, 'No', 'Yes']
+2026-04-12 03:30:18.455 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Voqooe LI-Z d1-984', 326.23, 784.29, 19.59, 5.09, 'No', 'Yes']
+2026-04-12 03:30:18.456 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 4 ['Voqooe CC-S d5-991', 332.63, 453.66, 32, 5.15, 'Yes', 'No']
+2026-04-12 03:30:18.456 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Voqooe HD-Q d6-330', 73.62, 389.11, 27.84, 4.16, 'No', 'Yes']
+2026-04-12 03:30:18.457 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 2 ['Voqooe KI-S e4-998', 325.84, 64.08, 22.65, 5.19, 'No', 'Yes']
+2026-04-12 03:30:18.457 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.458 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua YV-V b29-1
+2026-04-12 03:30:18.459 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 75 ['Bleae Thua NI-B b27-5', 0, 16458.73, 32, 0, 'No', 'No', 74]
+2026-04-12 03:30:18.481 UTC - DEBUG - 61088:32820:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.481 UTC - DEBUG - 61088:32820:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.484 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.485 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\fc-Bleae-Voqooe.csv
+2026-04-12 03:30:18.486 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 35 rows and headers: ['System Name', 'Distance', 'Distance Remaining', 'Fuel Used', 'Icy Ring', 'Pristine', 'Restock Tritium', 'Tritium in tank', 'Tritium in market']
+2026-04-12 03:30:18.486 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.487 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.487 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 M20 Sector MD-F a13-2
+2026-04-12 03:30:18.488 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Nyeajeau IQ-U c4-7
+2026-04-12 03:30:18.511 UTC - DEBUG - 61088:61008:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.511 UTC - DEBUG - 61088:61008:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.514 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.515 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\riches-apurui-M23.csv
+2026-04-12 03:30:18.522 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 326 rows and headers: ['System Name', 'Jumps', 'Body Name', 'Body Subtype', 'Is Terraformable', 'Distance To Arrival', 'Estimated Scan Value', 'Estimated Mapping Value']
+2026-04-12 03:30:18.523 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.523 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: Body Name 2
+2026-04-12 03:30:18.530 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: Body Name 3
+2026-04-12 03:30:18.531 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 3 HIP 89264 5
+2026-04-12 03:30:18.557 UTC - DEBUG - 61088:29012:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.559 UTC - DEBUG - 61088:29012:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.560 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.561 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:122: No route
+2026-04-12 03:30:18.562 UTC - ERROR - 61088:37552:-1 route_manager.TestHarness:386: Failed to save route
+2026-04-12 03:30:18.562 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error No filename given
+2026-04-12 03:30:18.586 UTC - DEBUG - 61088:53144:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.586 UTC - DEBUG - 61088:53144:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.589 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.590 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Smojue.csv
+2026-04-12 03:30:18.591 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:18.591 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.591 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.593 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.593 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:18.596 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:135: No filename selected
+2026-04-12 03:30:18.596 UTC - ERROR - 61088:37552:-1 route_manager.TestHarness:386: Failed to save route
+2026-04-12 03:30:18.597 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error No filename given
+2026-04-12 03:30:18.625 UTC - DEBUG - 61088:29264:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.626 UTC - DEBUG - 61088:29264:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.629 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:18.629 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Smojue.csv
+2026-04-12 03:30:18.631 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 10 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:18.632 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:18.632 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.633 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:18.633 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:18.665 UTC - DEBUG - 61088:26568:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:18.667 UTC - DEBUG - 61088:26568:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:18.821 UTC - DEBUG - 61088:57772:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.823 UTC - DEBUG - 61088:57772:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.828 UTC - DEBUG - 61088:13060:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.829 UTC - DEBUG - 61088:13060:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.893 UTC - DEBUG - 61088:2708:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.894 UTC - DEBUG - 61088:2708:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.913 UTC - DEBUG - 61088:54864:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.914 UTC - DEBUG - 61088:54864:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:18.941 UTC - DEBUG - 61088:12912:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:18.943 UTC - DEBUG - 61088:12912:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.001 UTC - DEBUG - 61088:63612:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.002 UTC - DEBUG - 61088:63612:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.055 UTC - DEBUG - 61088:32820:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.055 UTC - DEBUG - 61088:32820:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.067 UTC - DEBUG - 61088:61008:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.067 UTC - DEBUG - 61088:61008:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.098 UTC - DEBUG - 61088:29012:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.098 UTC - DEBUG - 61088:29012:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.107 UTC - DEBUG - 61088:53144:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.107 UTC - DEBUG - 61088:53144:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.126 UTC - DEBUG - 61088:29264:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.127 UTC - DEBUG - 61088:29264:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.152 UTC - DEBUG - 61088:26568:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:19.153 UTC - DEBUG - 61088:26568:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:19.689 UTC - DEBUG - 61088:32648:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.689 UTC - DEBUG - 61088:32648:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.691 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.692 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.694 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.694 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.694 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.696 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.696 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.698 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.698 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:19.698 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:19.699 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-12 03:30:19.699 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:19.700 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-12 03:30:19.703 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-12 03:30:19.724 UTC - DEBUG - 61088:30584:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.725 UTC - DEBUG - 61088:30584:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.726 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.727 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.729 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.730 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.730 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.733 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.733 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.734 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Voqooe BI-H d11-864
+2026-04-12 03:30:19.734 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:19.734 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:19.735 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:19.756 UTC - DEBUG - 61088:44360:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.758 UTC - DEBUG - 61088:44360:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.758 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.759 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.761 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.762 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.762 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.764 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.764 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.765 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:19.766 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:19.766 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-12 03:30:19.766 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:19.767 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua ZJ-I d9-101
+2026-04-12 03:30:19.767 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:19.768 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:19.768 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.769 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:19.769 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.772 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.799 UTC - DEBUG - 61088:28408:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.801 UTC - DEBUG - 61088:28408:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.801 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.803 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.807 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.808 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.808 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.811 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.811 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.813 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:19.813 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:19.814 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.814 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:19.814 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.817 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.840 UTC - DEBUG - 61088:29688:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.840 UTC - DEBUG - 61088:29688:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.843 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.843 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.845 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.846 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.846 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.848 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.848 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.850 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.888 UTC - DEBUG - 61088:16364:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.890 UTC - DEBUG - 61088:16364:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:19.890 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:19.891 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:30:19.895 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:30:19.895 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:19.895 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.898 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:19.899 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:30:19.937 UTC - DEBUG - 61088:28124:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:19.939 UTC - DEBUG - 61088:28124:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:20.143 UTC - DEBUG - 61088:32648:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.144 UTC - DEBUG - 61088:32648:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.195 UTC - DEBUG - 61088:30584:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.196 UTC - DEBUG - 61088:30584:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.236 UTC - DEBUG - 61088:44360:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.237 UTC - DEBUG - 61088:44360:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.268 UTC - DEBUG - 61088:28408:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.269 UTC - DEBUG - 61088:28408:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.295 UTC - DEBUG - 61088:29688:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.296 UTC - DEBUG - 61088:29688:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.322 UTC - DEBUG - 61088:16364:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.323 UTC - DEBUG - 61088:16364:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:20.365 UTC - DEBUG - 61088:28124:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:20.365 UTC - DEBUG - 61088:28124:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:21.465 UTC - DEBUG - 61088:37216:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:21.465 UTC - DEBUG - 61088:37216:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:21.763 UTC - DEBUG - 61088:37216:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:21.764 UTC - DEBUG - 61088:37216:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:22.489 UTC - DEBUG - 61088:32520:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.489 UTC - DEBUG - 61088:32520:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.491 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Countdown 100
+2026-04-12 03:30:22.561 UTC - DEBUG - 61088:16980:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.562 UTC - DEBUG - 61088:16980:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.562 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-12 03:30:22.563 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:187: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.564 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:197: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.564 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-12 03:30:22.564 UTC - DEBUG - 61088:63980:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-12 03:30:22.583 UTC - DEBUG - 61088:61148:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.583 UTC - DEBUG - 61088:61148:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.585 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-12 03:30:22.585 UTC - DEBUG - 61088:38896:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-12 03:30:22.586 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:187: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.586 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 60
+2026-04-12 03:30:22.605 UTC - DEBUG - 61088:62584:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.606 UTC - DEBUG - 61088:62584:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.608 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:22.609 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\full-route-scenario.csv
+2026-04-12 03:30:22.610 UTC - DEBUG - 61088:37552:-1 csv.TestHarness:109: Successfully imported route with 5 rows and headers: ['System Name', 'Waypoints Rem', 'Neutron', 'Distance', 'Distance Rem', 'Fuel Left', 'Fuel Used', 'Refuel', 'Scoopable']
+2026-04-12 03:30:22.611 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:22.612 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:22.612 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 HIP 84800
+2026-04-12 03:30:22.613 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.613 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.613 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.614 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.614 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.614 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.615 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.615 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.615 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.616 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.617 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.617 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 HIP 84800
+2026-04-12 03:30:22.617 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.618 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.618 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.618 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.619 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.619 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.620 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.620 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.620 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.622 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 HIP 84800
+2026-04-12 03:30:22.622 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.622 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.623 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.623 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.624 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.624 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.624 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.625 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.625 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.626 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 HIP 84800
+2026-04-12 03:30:22.626 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.626 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.627 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.627 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.627 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.627 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.628 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.628 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.630 UTC - DEBUG - 61088:37552:-1 route.TestHarness:214: Jump added
+2026-04-12 03:30:22.630 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:22.630 UTC - DEBUG - 61088:37552:-1 route.TestHarness:199: New offset 1 0 HIP 84800
+2026-04-12 03:30:22.630 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:128: Updating route
+2026-04-12 03:30:22.632 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-12 03:30:22.632 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 4 ['HIP 84800', 3, 'False', 87.32, 218.89, 26.81, 5.19, 'False', 'True']
+2026-04-12 03:30:22.633 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 4 ['HIP 84800', 3, 'False', 87.32, 218.89, 26.81, 5.19, 'False', 'True']
+2026-04-12 03:30:22.633 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 1: 218.89
+2026-04-12 03:30:22.633 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 1: 218.89
+2026-04-12 03:30:22.634 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 4 ['HIP 84800', 3, 'False', 87.32, 218.89, 26.81, 5.19, 'False', 'True']
+2026-04-12 03:30:22.634 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.634 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.636 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.636 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 1: 218.89
+2026-04-12 03:30:22.637 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.639 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.640 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-12 03:30:22.640 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.641 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 4 ['HIP 84800', 3, 'False', 87.32, 218.89, 26.81, 5.19, 'False', 'True']
+2026-04-12 03:30:22.641 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.642 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.642 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.643 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 1: 218.89
+2026-04-12 03:30:22.643 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.643 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.643 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Synuefe QH-E b59-3
+2026-04-12 03:30:22.645 UTC - DEBUG - 61088:37552:-1 route.TestHarness:214: Jump added
+2026-04-12 03:30:22.645 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:22.645 UTC - DEBUG - 61088:37552:-1 route.TestHarness:199: New offset 2 0 Synuefe QH-E b59-3
+2026-04-12 03:30:22.646 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:128: Updating route
+2026-04-12 03:30:22.646 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-12 03:30:22.647 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.648 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-12 03:30:22.648 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.649 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Synuefe QH-E b59-3', 2, 'False', 87.97, 130.92, 21.71, 5.1, 'False', 'True']
+2026-04-12 03:30:22.649 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.650 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.650 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.650 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 2: 130.92
+2026-04-12 03:30:22.652 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.652 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.654 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Synuefe QH-E b59-3', 2, 'False', 87.97, 130.92, 21.71, 5.1, 'False', 'True']
+2026-04-12 03:30:22.655 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Synuefe QH-E b59-3', 2, 'False', 87.97, 130.92, 21.71, 5.1, 'False', 'True']
+2026-04-12 03:30:22.655 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 2: 130.92
+2026-04-12 03:30:22.655 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 2: 130.92
+2026-04-12 03:30:22.656 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Synuefe QH-E b59-3', 2, 'False', 87.97, 130.92, 21.71, 5.1, 'False', 'True']
+2026-04-12 03:30:22.656 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.657 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.657 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.657 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 2: 130.92
+2026-04-12 03:30:22.658 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.658 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.659 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-12 03:30:22.659 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.660 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 3 ['Synuefe QH-E b59-3', 2, 'False', 87.97, 130.92, 21.71, 5.1, 'False', 'True']
+2026-04-12 03:30:22.660 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.660 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.660 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.661 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 2: 130.92
+2026-04-12 03:30:22.661 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.661 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.661 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz JW-H b2-7
+2026-04-12 03:30:22.663 UTC - DEBUG - 61088:37552:-1 route.TestHarness:214: Jump added
+2026-04-12 03:30:22.663 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:22.663 UTC - DEBUG - 61088:37552:-1 route.TestHarness:199: New offset 3 0 Swoilz JW-H b2-7
+2026-04-12 03:30:22.664 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:128: Updating route
+2026-04-12 03:30:22.664 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-12 03:30:22.665 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 2 ['Swoilz JW-H b2-7', 1, 'False', 89.48, 43.7, 16.59, 5.13, 'False', 'True']
+2026-04-12 03:30:22.665 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 2 ['Swoilz JW-H b2-7', 1, 'False', 89.48, 43.7, 16.59, 5.13, 'False', 'True']
+2026-04-12 03:30:22.666 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 3: 43.7
+2026-04-12 03:30:22.666 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 3: 43.7
+2026-04-12 03:30:22.666 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 2 ['Swoilz JW-H b2-7', 1, 'False', 89.48, 43.7, 16.59, 5.13, 'False', 'True']
+2026-04-12 03:30:22.667 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.667 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.668 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.668 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 3: 43.7
+2026-04-12 03:30:22.668 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.670 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.670 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-12 03:30:22.670 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.671 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 2 ['Swoilz JW-H b2-7', 1, 'False', 89.48, 43.7, 16.59, 5.13, 'False', 'True']
+2026-04-12 03:30:22.671 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.671 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.673 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.673 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 3: 43.7
+2026-04-12 03:30:22.673 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.674 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.674 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 Swoilz PC-G b3-7
+2026-04-12 03:30:22.680 UTC - DEBUG - 61088:37552:-1 route.TestHarness:214: Jump added
+2026-04-12 03:30:22.680 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:230: Storing route history Apurui, Swoilz PC-G b3-7
+2026-04-12 03:30:22.682 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:238: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-12 03:30:22.682 UTC - DEBUG - 61088:37552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:30:22.682 UTC - DEBUG - 61088:37552:-1 route.TestHarness:199: New offset 4 0 Swoilz PC-G b3-7
+2026-04-12 03:30:22.682 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:128: Updating route
+2026-04-12 03:30:22.683 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.684 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.684 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.685 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.686 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.686 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 4: 0
+2026-04-12 03:30:22.686 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.687 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.688 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 4: 0
+2026-04-12 03:30:22.689 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:22.689 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.690 UTC - INFO - 61088:37552:-1 route.TestHarness:106: Jumps remaining: 5 ['Apurui', 4, 'False', 0, 303.9, 32, 0, 'False', 'False']
+2026-04-12 03:30:22.690 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.690 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.692 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 4: 0
+2026-04-12 03:30:22.692 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 303.9
+2026-04-12 03:30:22.692 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:22.719 UTC - DEBUG - 61088:49408:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.720 UTC - DEBUG - 61088:49408:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.722 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-12 03:30:22.724 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:187: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.724 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:197: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.724 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-12 03:30:22.725 UTC - DEBUG - 61088:62432:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-12 03:30:22.747 UTC - DEBUG - 61088:63976:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.748 UTC - DEBUG - 61088:63976:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.750 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:30:22.751 UTC - INFO - 61088:37552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\vc-Bleae-Voqooe.csv
+2026-04-12 03:30:22.752 UTC - ERROR - 61088:37552:-1 csv.TestHarness:113: Failed to read file c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\vc-Bleae-Voqooe.csv, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\csv.py", line 62, in read
+    with open(filename, 'r', encoding='utf-8-sig', newline='') as csvfile:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'c:\\Users\\derek\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-NeutronDancer-dev\\tests\\config\\vc-Bleae-Voqooe.csv'
+2026-04-12 03:30:22.753 UTC - INFO - 61088:37552:-1 route_manager.TestHarness:363: Failed to load route
+2026-04-12 03:30:22.754 UTC - ERROR - 61088:37552:-1 ui.TestHarness:762: Showing error File is corrupt or of unsupported format
+2026-04-12 03:30:22.755 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier jump to Bleae Thua ZE-I b23-1 in {t} 2026-03-05 23:10:10+00:00
+2026-04-12 03:30:22.755 UTC - DEBUG - 61088:56748:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-12 03:30:22.756 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:187: Carrier 3709409280 jumping to Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.756 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:197: Carrier is in Bleae Thua ZE-I b23-1
+2026-04-12 03:30:22.757 UTC - DEBUG - 61088:37552:-1 overlay.TestHarness:225: Countdown starting Carrier cooldown {t} 300
+2026-04-12 03:30:22.757 UTC - DEBUG - 61088:60752:-1 overlay.TestHarness:210: Countdown thread is ending.
+2026-04-12 03:30:22.781 UTC - DEBUG - 61088:57932:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.783 UTC - DEBUG - 61088:57932:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.860 UTC - DEBUG - 61088:63188:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.861 UTC - DEBUG - 61088:63188:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.863 UTC - DEBUG - 61088:35208:-1 route_manager.TestHarness:268: Plotting route {'from': 'Start', 'to': 'End', 'max_time': 1} to https://spansh.co.uk/api/route
+2026-04-12 03:30:22.863 UTC - ERROR - 61088:63188:-1 updater.TestHarness:142: Failed to check for updates, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 132, in _check_update
+    if not self.get_release(): return
+           ^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 101, in get_release
+    if version_data['draft'] == True or version_data['prerelease'] == True:
+       ~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'draft'
+2026-04-12 03:30:22.888 UTC - DEBUG - 61088:61488:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.888 UTC - DEBUG - 61088:61488:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.892 UTC - DEBUG - 61088:26296:-1 route_manager.TestHarness:268: Plotting route {'from': 'Start', 'to': 'End', 'max_time': 1} to https://spansh.co.uk/api/route
+2026-04-12 03:30:22.919 UTC - DEBUG - 61088:30528:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:22.920 UTC - DEBUG - 61088:30528:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:22.923 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:268: Plotting route {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5', 'range': '60.00', 'efficiency': '60', 'supercharge_multiplier': '4'} to https://spansh.co.uk/api/route
+2026-04-12 03:30:22.943 UTC - DEBUG - 61088:32520:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:22.945 UTC - DEBUG - 61088:32520:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.143 UTC - DEBUG - 61088:61148:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.144 UTC - DEBUG - 61088:16980:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.145 UTC - DEBUG - 61088:61148:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.147 UTC - DEBUG - 61088:62584:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.148 UTC - DEBUG - 61088:16980:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.149 UTC - DEBUG - 61088:62584:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.214 UTC - DEBUG - 61088:49408:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.214 UTC - DEBUG - 61088:49408:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.245 UTC - DEBUG - 61088:63976:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.246 UTC - DEBUG - 61088:63976:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.273 UTC - DEBUG - 61088:57932:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.273 UTC - DEBUG - 61088:57932:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.346 UTC - DEBUG - 61088:61488:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.347 UTC - DEBUG - 61088:61488:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:23.375 UTC - DEBUG - 61088:30528:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:23.376 UTC - DEBUG - 61088:30528:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:24.037 UTC - DEBUG - 61088:35208:-1 route_manager.TestHarness:342: Result: <Response [400]> {'error': 'from, to and range are required'}
+2026-04-12 03:30:24.037 UTC - INFO - 61088:35208:-1 route_manager.TestHarness:349: Server response: {'error': 'from, to and range are required'}
+2026-04-12 03:30:24.060 UTC - DEBUG - 61088:26296:-1 route_manager.TestHarness:342: Result: <Response [400]> {'error': 'from, to and range are required'}
+2026-04-12 03:30:24.060 UTC - INFO - 61088:26296:-1 route_manager.TestHarness:349: Server response: {'error': 'from, to and range are required'}
+2026-04-12 03:30:25.123 UTC - ERROR - 61088:35208:-1 debug.TestHarness:32: An error occurred in show_frame: main thread is not in main loop
+2026-04-12 03:30:25.125 UTC - ERROR - 61088:35208:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 118, in show_frame
+    self.hide_error()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 769, in hide_error
+    self.error_lbl.grid_remove()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 2584, in grid_remove
+    self.tk.call('grid', 'remove', self._w)
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:25.126 UTC - ERROR - 61088:35208:-1 ui.TestHarness:762: Showing error from, to and range are required
+2026-04-12 03:30:25.155 UTC - ERROR - 61088:26296:-1 debug.TestHarness:32: An error occurred in show_frame: main thread is not in main loop
+2026-04-12 03:30:25.156 UTC - ERROR - 61088:26296:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 118, in show_frame
+    self.hide_error()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 769, in hide_error
+    self.error_lbl.grid_remove()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 2584, in grid_remove
+    self.tk.call('grid', 'remove', self._w)
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:25.156 UTC - ERROR - 61088:26296:-1 ui.TestHarness:762: Showing error from, to and range are required
+2026-04-12 03:30:26.217 UTC - ERROR - 61088:35208:-1 debug.TestHarness:32: An error occurred in plot_error: main thread is not in main loop
+2026-04-12 03:30:26.218 UTC - ERROR - 61088:35208:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\route_manager.py", line 353, in plot_error
+    Context.ui.show_error(err)
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 763, in show_error
+    self.error_lbl['text'] = error
+    ~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1732, in __setitem__
+    self.configure({key: value})
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1721, in configure
+    return self._configure('configure', cnf, kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1711, in _configure
+    self.tk.call(_flatten((self._w, cmd)) + self._options(cnf))
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:26.248 UTC - ERROR - 61088:26296:-1 debug.TestHarness:32: An error occurred in plot_error: main thread is not in main loop
+2026-04-12 03:30:26.249 UTC - ERROR - 61088:26296:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\route_manager.py", line 353, in plot_error
+    Context.ui.show_error(err)
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 763, in show_error
+    self.error_lbl['text'] = error
+    ~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1732, in __setitem__
+    self.configure({key: value})
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1721, in configure
+    return self._configure('configure', cnf, kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 1711, in _configure
+    self.tk.call(_flatten((self._w, cmd)) + self._options(cnf))
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:31.045 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:230: Storing route history Start, End
+2026-04-12 03:30:31.047 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:238: Route history updated: ['Start', 'Apurui', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-12 03:30:31.047 UTC - DEBUG - 61088:37552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:31.048 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:31.048 UTC - DEBUG - 61088:37552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:31.048 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.049 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.049 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.049 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.050 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.050 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.050 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.050 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.051 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.051 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.051 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.053 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.053 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.053 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.054 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.054 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.055 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.055 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.056 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.056 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.056 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.056 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.056 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.057 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.057 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.058 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.059 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.059 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.059 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.060 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.060 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.061 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.061 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.061 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.062 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.062 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.062 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.063 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.063 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.063 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.063 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.063 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.064 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.064 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.064 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.065 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.065 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.065 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.066 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.066 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.066 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.067 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.067 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.067 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.068 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.068 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.068 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.069 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.069 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.069 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.070 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.070 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.070 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.070 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.071 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.072 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.072 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.072 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.073 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.073 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.073 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.073 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.073 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.074 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.074 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.074 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.075 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.075 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.075 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.075 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.077 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.077 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.077 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.077 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.077 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.078 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.078 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.079 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.079 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.079 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.079 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.080 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.080 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.080 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.081 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.081 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.081 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.081 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.083 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.083 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.083 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.083 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.083 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.084 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.084 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.084 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.085 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.085 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.085 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.086 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.086 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.086 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.087 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.087 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.087 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.087 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.087 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.089 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.089 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.089 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.090 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.090 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.090 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.090 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.090 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.091 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.091 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.091 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.091 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.093 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.093 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.093 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.093 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.094 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.094 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.094 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.095 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.095 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.096 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.096 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.096 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.097 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.097 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.097 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.097 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.098 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.098 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.098 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.099 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.099 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.100 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.100 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.100 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.100 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.101 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.101 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.101 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.101 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.103 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.103 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.103 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.104 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.104 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.104 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.105 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.105 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.105 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.106 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.106 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.107 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.107 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.107 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.107 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.107 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.108 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.108 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.108 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.109 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.109 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.110 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.110 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.111 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.111 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.111 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.112 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.112 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.112 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.113 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.113 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.113 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.114 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.114 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.114 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.115 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.115 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.115 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.115 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.115 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.116 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.116 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.116 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.117 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.117 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.117 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.118 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.118 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.118 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.119 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.119 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.119 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.120 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.120 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.120 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.120 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.121 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.121 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.121 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.122 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.123 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.123 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.124 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.124 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.125 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.126 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.127 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.127 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.128 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.128 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.128 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.129 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.130 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:31.131 UTC - DEBUG - 61088:37552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:31.132 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.132 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.132 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.133 UTC - DEBUG - 61088:37552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:31.133 UTC - DEBUG - 61088:37552:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:31.162 UTC - DEBUG - 61088:57424:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:31.163 UTC - DEBUG - 61088:57424:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:31.163 UTC - ERROR - 61088:37552:-1 route_manager.TestHarness:256: Unknown route type UnsupportedType
+2026-04-12 03:30:31.180 UTC - DEBUG - 61088:52916:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:31.180 UTC - DEBUG - 61088:52916:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:31.184 UTC - DEBUG - 61088:53592:-1 route_manager.TestHarness:268: Plotting route {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5', 'range': '60.00', 'efficiency': '60', 'supercharge_multiplier': '4'} to https://spansh.co.uk/api/route
+2026-04-12 03:30:31.538 UTC - DEBUG - 61088:57424:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:31.540 UTC - DEBUG - 61088:52916:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:31.540 UTC - DEBUG - 61088:57424:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:31.540 UTC - DEBUG - 61088:52916:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:49.390 UTC - DEBUG - 61088:53592:-1 route_manager.TestHarness:230: Storing route history Apurui, Bleae Thua NI-B b27-5
+2026-04-12 03:30:49.390 UTC - DEBUG - 61088:53592:-1 route_manager.TestHarness:238: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-12 03:30:49.391 UTC - DEBUG - 61088:53592:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:49.391 UTC - DEBUG - 61088:53592:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:49.391 UTC - DEBUG - 61088:53592:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:49.391 UTC - DEBUG - 61088:53592:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:50.501 UTC - ERROR - 61088:53592:-1 debug.TestHarness:32: An error occurred in copy_to_clipboard: main thread is not in main loop
+2026-04-12 03:30:50.502 UTC - ERROR - 61088:53592:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\misc.py", line 36, in copy_to_clipboard
+    parent.clipboard_clear()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 934, in clipboard_clear
+    self.tk.call(('clipboard', 'clear') + self._options(kw))
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:51.205 UTC - DEBUG - 61088:17708:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:30:51.206 UTC - DEBUG - 61088:17708:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:30:51.208 UTC - DEBUG - 61088:56856:-1 route_manager.TestHarness:268: Plotting route {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5', 'range': '60.00', 'efficiency': '60', 'supercharge_multiplier': '6'} to https://spansh.co.uk/api/route
+2026-04-12 03:30:51.520 UTC - DEBUG - 61088:17708:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:30:51.520 UTC - DEBUG - 61088:17708:-1 updater.TestHarness:136: Update available
+2026-04-12 03:30:51.603 UTC - ERROR - 61088:53592:-1 debug.TestHarness:32: An error occurred in show_frame: main thread is not in main loop
+2026-04-12 03:30:51.605 UTC - ERROR - 61088:53592:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 118, in show_frame
+    self.hide_error()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 769, in hide_error
+    self.error_lbl.grid_remove()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 2584, in grid_remove
+    self.tk.call('grid', 'remove', self._w)
+RuntimeError: main thread is not in main loop
+2026-04-12 03:30:51.605 UTC - DEBUG - 61088:53592:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:30:51.606 UTC - DEBUG - 61088:53592:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:30:51.607 UTC - DEBUG - 61088:53592:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:51.607 UTC - DEBUG - 61088:53592:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:51.608 UTC - DEBUG - 61088:53592:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:51.608 UTC - DEBUG - 61088:53592:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:30:51.609 UTC - DEBUG - 61088:53592:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:30:59.343 UTC - DEBUG - 61088:56856:-1 route_manager.TestHarness:230: Storing route history Apurui, Bleae Thua NI-B b27-5
+2026-04-12 03:30:59.343 UTC - DEBUG - 61088:56856:-1 route_manager.TestHarness:238: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-12 03:30:59.344 UTC - DEBUG - 61088:56856:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:30:59.344 UTC - DEBUG - 61088:56856:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:59.345 UTC - DEBUG - 61088:56856:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:30:59.345 UTC - DEBUG - 61088:56856:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:31:00.439 UTC - ERROR - 61088:56856:-1 debug.TestHarness:32: An error occurred in copy_to_clipboard: main thread is not in main loop
+2026-04-12 03:31:00.440 UTC - ERROR - 61088:56856:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\misc.py", line 36, in copy_to_clipboard
+    parent.clipboard_clear()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 934, in clipboard_clear
+    self.tk.call(('clipboard', 'clear') + self._options(kw))
+RuntimeError: main thread is not in main loop
+2026-04-12 03:31:01.536 UTC - ERROR - 61088:56856:-1 debug.TestHarness:32: An error occurred in show_frame: main thread is not in main loop
+2026-04-12 03:31:01.537 UTC - ERROR - 61088:56856:-1 debug.TestHarness:35: Traceback (most recent call last):
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\debug.py", line 30, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 118, in show_frame
+    self.hide_error()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\Router\ui.py", line 769, in hide_error
+    self.error_lbl.grid_remove()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\tkinter\__init__.py", line 2584, in grid_remove
+    self.tk.call('grid', 'remove', self._w)
+RuntimeError: main thread is not in main loop
+2026-04-12 03:31:01.537 UTC - DEBUG - 61088:56856:-1 route_manager.TestHarness:135: Updating jump overlay
+2026-04-12 03:31:01.538 UTC - DEBUG - 61088:56856:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:31:01.538 UTC - DEBUG - 61088:56856:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:31:01.538 UTC - DEBUG - 61088:56856:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:31:01.539 UTC - DEBUG - 61088:56856:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:31:01.539 UTC - DEBUG - 61088:56856:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:31:01.539 UTC - DEBUG - 61088:56856:-1 route_manager.TestHarness:157: Next refuel None
+2026-04-12 03:31:11.227 UTC - DEBUG - 61088:57928:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:31:11.227 UTC - DEBUG - 61088:57928:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:31:11.258 UTC - DEBUG - 61088:54216:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:31:11.258 UTC - DEBUG - 61088:54216:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:31:11.553 UTC - DEBUG - 61088:57928:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:31:11.553 UTC - DEBUG - 61088:57928:-1 updater.TestHarness:136: Update available
+2026-04-12 03:31:11.576 UTC - DEBUG - 61088:54216:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:31:11.577 UTC - DEBUG - 61088:54216:-1 updater.TestHarness:136: Update available
+2026-04-12 03:33:12.802 UTC - WARNING - 1296:61552:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:33:12.985 UTC - DEBUG - 1296:32008:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:33:12.985 UTC - DEBUG - 1296:32008:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:33:12.986 UTC - DEBUG - 1296:61552:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:33:12.995 UTC - DEBUG - 1296:61552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:33:12.996 UTC - DEBUG - 1296:61552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:12.996 UTC - DEBUG - 1296:61552:-1 route.TestHarness:186: Updating route
+2026-04-12 03:33:12.997 UTC - DEBUG - 1296:61552:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:33:13.402 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.403 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.403 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.404 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.405 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.414 UTC - DEBUG - 1296:61552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:33:13.420 UTC - DEBUG - 1296:61552:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:33:13.441 UTC - DEBUG - 1296:32008:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:33:13.441 UTC - DEBUG - 1296:32008:-1 updater.TestHarness:136: Update available
+2026-04-12 03:33:13.847 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.848 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.848 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.849 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.849 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.849 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.849 UTC - DEBUG - 1296:61552:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:13.855 UTC - INFO - 1296:61552:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:33:13.856 UTC - INFO - 1296:61552:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:33:13.860 UTC - DEBUG - 1296:61552:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:33:13.860 UTC - DEBUG - 1296:61552:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:33:13.861 UTC - DEBUG - 1296:61552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:13.863 UTC - DEBUG - 1296:61552:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:13.863 UTC - DEBUG - 1296:61552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:33:13.867 UTC - DEBUG - 1296:61552:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:33:16.800 UTC - WARNING - 32544:44012:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:33:16.991 UTC - DEBUG - 32544:35244:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:33:16.992 UTC - DEBUG - 32544:35244:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:33:16.992 UTC - DEBUG - 32544:44012:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:33:17.002 UTC - DEBUG - 32544:44012:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:33:17.002 UTC - DEBUG - 32544:44012:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:17.003 UTC - DEBUG - 32544:44012:-1 route.TestHarness:186: Updating route
+2026-04-12 03:33:17.004 UTC - DEBUG - 32544:44012:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:33:17.301 UTC - DEBUG - 32544:35244:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:33:17.302 UTC - DEBUG - 32544:35244:-1 updater.TestHarness:136: Update available
+2026-04-12 03:33:17.439 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.440 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.441 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.441 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.442 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.449 UTC - DEBUG - 32544:44012:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:33:17.459 UTC - DEBUG - 32544:44012:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:33:17.935 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.936 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.937 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.937 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.938 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.938 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.939 UTC - DEBUG - 32544:44012:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:33:17.945 UTC - INFO - 32544:44012:-1 route_manager.TestHarness:361: Importing route
+2026-04-12 03:33:17.945 UTC - INFO - 32544:44012:-1 csv.TestHarness:55: Importing route from file: c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\tests\config\neutron-Bleae-Voqooe.csv
+2026-04-12 03:33:17.949 UTC - DEBUG - 32544:44012:-1 csv.TestHarness:109: Successfully imported route with 168 rows and headers: ['System Name', 'Jumps', 'Distance To Arrival', 'Distance Remaining', 'Neutron Star']
+2026-04-12 03:33:17.949 UTC - DEBUG - 32544:44012:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:33:17.949 UTC - DEBUG - 32544:44012:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:17.952 UTC - DEBUG - 32544:44012:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:33:17.953 UTC - DEBUG - 32544:44012:-1 route.TestHarness:62: Next stop: 0 Bleae Thua RX-L d7-28
+2026-04-12 03:34:06.783 UTC - WARNING - 36832:14480:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:34:06.957 UTC - DEBUG - 36832:38896:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:34:06.958 UTC - DEBUG - 36832:14480:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:34:06.958 UTC - DEBUG - 36832:38896:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:34:06.968 UTC - DEBUG - 36832:14480:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:34:06.968 UTC - DEBUG - 36832:14480:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:34:06.969 UTC - DEBUG - 36832:14480:-1 route.TestHarness:186: Updating route
+2026-04-12 03:34:06.969 UTC - DEBUG - 36832:14480:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:34:07.410 UTC - DEBUG - 36832:38896:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:34:07.411 UTC - DEBUG - 36832:38896:-1 updater.TestHarness:136: Update available
+2026-04-12 03:34:07.459 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.460 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.460 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.461 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.461 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.468 UTC - DEBUG - 36832:14480:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:07.473 UTC - DEBUG - 36832:14480:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:07.860 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.861 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.861 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.861 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.862 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.862 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:07.863 UTC - DEBUG - 36832:14480:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:30.503 UTC - WARNING - 13472:29332:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:34:30.685 UTC - DEBUG - 13472:63596:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:34:30.686 UTC - DEBUG - 13472:29332:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:34:30.686 UTC - DEBUG - 13472:63596:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:34:30.696 UTC - DEBUG - 13472:29332:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:34:30.697 UTC - DEBUG - 13472:29332:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:34:30.697 UTC - DEBUG - 13472:29332:-1 route.TestHarness:186: Updating route
+2026-04-12 03:34:30.698 UTC - DEBUG - 13472:29332:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:34:30.984 UTC - DEBUG - 13472:63596:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:34:30.984 UTC - DEBUG - 13472:63596:-1 updater.TestHarness:136: Update available
+2026-04-12 03:34:31.142 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.143 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.143 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.143 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.143 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.149 UTC - DEBUG - 13472:29332:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:31.154 UTC - DEBUG - 13472:29332:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:31.585 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.586 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.586 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.587 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.587 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.587 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:31.588 UTC - DEBUG - 13472:29332:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:58.852 UTC - WARNING - 11416:42940:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:34:59.020 UTC - DEBUG - 11416:20216:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:34:59.020 UTC - DEBUG - 11416:20216:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:34:59.022 UTC - DEBUG - 11416:42940:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:34:59.030 UTC - DEBUG - 11416:42940:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:34:59.031 UTC - DEBUG - 11416:42940:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:34:59.031 UTC - DEBUG - 11416:42940:-1 route.TestHarness:186: Updating route
+2026-04-12 03:34:59.032 UTC - DEBUG - 11416:42940:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:34:59.299 UTC - DEBUG - 11416:20216:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:34:59.299 UTC - DEBUG - 11416:20216:-1 updater.TestHarness:136: Update available
+2026-04-12 03:34:59.445 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.446 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.446 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.447 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.447 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.456 UTC - DEBUG - 11416:42940:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:59.462 UTC - DEBUG - 11416:42940:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:34:59.862 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.863 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.863 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.863 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.864 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.864 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:34:59.864 UTC - DEBUG - 11416:42940:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.236 UTC - WARNING - 56952:44204:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:41:30.414 UTC - DEBUG - 56952:13772:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:41:30.414 UTC - DEBUG - 56952:13772:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:41:30.414 UTC - DEBUG - 56952:44204:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:41:30.424 UTC - DEBUG - 56952:44204:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:41:30.426 UTC - DEBUG - 56952:44204:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:41:30.426 UTC - DEBUG - 56952:44204:-1 route.TestHarness:186: Updating route
+2026-04-12 03:41:30.426 UTC - DEBUG - 56952:44204:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:41:30.844 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.846 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.846 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.847 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.848 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:30.852 UTC - DEBUG - 56952:13772:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:41:30.852 UTC - DEBUG - 56952:13772:-1 updater.TestHarness:136: Update available
+2026-04-12 03:41:30.855 UTC - DEBUG - 56952:44204:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:41:30.860 UTC - DEBUG - 56952:44204:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:41:31.258 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.259 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.259 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.260 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.260 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.261 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.261 UTC - DEBUG - 56952:44204:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:41:31.268 UTC - DEBUG - 56952:58148:-1 route_manager.TestHarness:268: Plotting route {'cargo': 0, 'max_time': 60, 'algorithm': 'optimistic', 'fuel_reserve': 4, 'is_supercharged': 0, 'use_supercharge': 1, 'use_injections': 0, 'exclude_secondary': 1, 'refuel_every_scoopable': 0, 'fuel_power': 2.45, 'fuel_multiplier': 0.013, 'optimal_mass': 1894.1, 'base_mass': 287.6, 'tank_size': 32, 'internal_tank_size': 0.5, 'max_fuel_per_jump': 5.2, 'range_boost': 10.5, 'ship_build': {'timestamp': '2026-01-01T04:00:02Z', 'event': 'Loadout', 'Ship': 'mandalay', 'ShipName': 'Shipping Delay', 'ShipIdent': 'DW-28M', 'HullValue': 16114020, 'ModulesValue': 15376658, 'UnladenMass': 287.1, 'CargoCapacity': 112, 'MaxJumpRange': 85.254853, 'FuelCapacity': {'Main': 32, 'Reserve': 0.5}, 'Rebuy': 1574533, 'Modules': [{'Slot': 'CargoHatch', 'Item': 'modularcargobaydoor', 'On': True, 'Priority': 0}, {'Slot': 'TinyHardpoint4', 'Item': 'hpt_heatsinklauncher_turret_tiny', 'On': True, 'Priority': 0, 'Value': 3413, 'Engineering': {'BlueprintName': 'Misc_HeatSinkCapacity', 'Level': 1, 'Quality': 1, 'Modifiers': [{'Label': 'Mass', 'Value': 2.6, 'OriginalValue': 1.3}, {'Label': 'AmmoMaximum', 'Value': 3, 'OriginalValue': 2}, {'Label': 'ReloadTime', 'Value': 15, 'OriginalValue': 10}]}}, {'Slot': 'Armour', 'Item': 'mandalay_armour_grade1', 'On': True, 'Priority': 1, 'Value': 0}, {'Slot': 'PowerPlant', 'Item': 'int_powerplant_size4_class5', 'On': True, 'Priority': 1, 'Value': 1405199, 'Engineering': {'BlueprintName': 'PowerPlant_Armoured', 'Level': 1, 'Quality': 1, 'ExperimentalEffect': 'special_powerplant_cooled', 'Modifiers': [{'Label': 'Mass', 'Value': 5.2, 'OriginalValue': 5}, {'Label': 'Integrity', 'Value': 123.2, 'OriginalValue': 88}, {'Label': 'PowerCapacity', 'Value': 16.224, 'OriginalValue': 15.6}, {'Label': 'HeatEfficiency', 'Value': 0.3456, 'OriginalValue': 0.4}]}}, {'Slot': 'MainEngines', 'Item': 'int_engine_size4_class2', 'On': True, 'Priority': 0, 'Value': 58139}, {'Slot': 'FrameShiftDrive', 'Item': 'int_hyperdrive_overcharge_size5_class5', 'On': True, 'Priority': 0, 'Value': 5971622, 'Engineering': {'BlueprintName': 'FSD_LongRange', 'Level': 5, 'Quality': 1, 'ExperimentalEffect': 'special_fsd_heavy', 'Modifiers': [{'Label': 'Mass', 'Value': 26, 'OriginalValue': 20}, {'Label': 'Integrity', 'Value': 93.84, 'OriginalValue': 120}, {'Label': 'PowerDraw', 'Value': 0.69, 'OriginalValue': 0.6}, {'Label': 'FSDOptimalMass', 'Value': 1894.1, 'OriginalValue': 1175}]}}, {'Slot': 'LifeSupport', 'Item': 'int_lifesupport_size4_class2', 'On': True, 'Priority': 0, 'Value': 27661}, {'Slot': 'PowerDistributor', 'Item': 'int_powerdistributor_size4_class5', 'On': True, 'Priority': 0, 'Value': 432247, 'Engineering': {'BlueprintName': 'PowerDistributor_HighFrequency', 'Level': 5, 'Quality': 1, 'ExperimentalEffect': 'special_powerdistributor_fast', 'Modifiers': [{'Label': 'WeaponsCapacity', 'Value': 29.184, 'OriginalValue': 32}, {'Label': 'WeaponsRecharge', 'Value': 5.278, 'OriginalValue': 3.5}, {'Label': 'EnginesCapacity', 'Value': 20.976, 'OriginalValue': 23}, {'Label': 'EnginesRecharge', 'Value': 2.8652, 'OriginalValue': 1.9}, {'Label': 'SystemsCapacity', 'Value': 20.976, 'OriginalValue': 23}, {'Label': 'SystemsRecharge', 'Value': 2.8652, 'OriginalValue': 1.9}]}}, {'Slot': 'Radar', 'Item': 'int_sensors_size5_class2', 'On': True, 'Priority': 0, 'Value': 77454, 'Engineering': {'BlueprintName': 'Sensor_LightWeight', 'Level': 3, 'Quality': 1, 'Modifiers': [{'Label': 'Mass', 'Value': 4, 'OriginalValue': 8}, {'Label': 'Integrity', 'Value': 53.9, 'OriginalValue': 77}, {'Label': 'SensorTargetScanAngle', 'Value': 25.5, 'OriginalValue': 30}]}}, {'Slot': 'FuelTank', 'Item': 'int_fueltank_size5_class3', 'On': True, 'Priority': 1, 'Value': 95306}, {'Slot': 'Slot01_Size6', 'Item': 'int_cargorack_size6_class1', 'On': True, 'Priority': 1, 'Value': 353525}, {'Slot': 'Slot02_Size5', 'Item': 'int_guardianfsdbooster_size5', 'On': True, 'Priority': 0, 'Value': 6321023}, {'Slot': 'Slot03_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Value': 33472}, {'Slot': 'Slot04_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Value': 33472}, {'Slot': 'Slot05_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Value': 10296}, {'Slot': 'Slot06_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Value': 10296}, {'Slot': 'Slot07_Size2', 'Item': 'int_fuelscoop_size2_class5', 'On': True, 'Priority': 0, 'Value': 277719}, {'Slot': 'Slot08_Size1', 'Item': 'int_detailedsurfacescanner_tiny', 'On': True, 'Priority': 0, 'Value': 243750}, {'Slot': 'Slot09_Size1', 'Item': 'int_supercruiseassist', 'On': True, 'Priority': 0, 'Value': 8892}, {'Slot': 'Slot10_Size1', 'Item': 'int_dockingcomputer_advanced', 'On': True, 'Priority': 1, 'Value': 13172}]}, 'supercharge_multiplier': 4, 'injection_multiplier': 2, 'source': 'Apurui', 'destination': 'Bleae Thua NI-B b27-5'} to https://spansh.co.uk/api/generic/route
+2026-04-12 03:43:01.637 UTC - WARNING - 46108:43396:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:43:01.812 UTC - DEBUG - 46108:29544:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:43:01.814 UTC - DEBUG - 46108:29544:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:43:01.814 UTC - DEBUG - 46108:43396:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:43:01.824 UTC - DEBUG - 46108:43396:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:43:01.825 UTC - DEBUG - 46108:43396:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:43:01.826 UTC - DEBUG - 46108:43396:-1 route.TestHarness:186: Updating route
+2026-04-12 03:43:01.827 UTC - DEBUG - 46108:43396:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:43:02.235 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.236 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.237 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.238 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.238 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.246 UTC - DEBUG - 46108:29544:-1 updater.TestHarness:133: Version: 0.0.0 response 1.8.1 
+2026-04-12 03:43:02.247 UTC - DEBUG - 46108:43396:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:43:02.247 UTC - DEBUG - 46108:29544:-1 updater.TestHarness:136: Update available
+2026-04-12 03:43:02.253 UTC - DEBUG - 46108:43396:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:43:02.643 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.645 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.645 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.645 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.646 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.646 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.647 UTC - DEBUG - 46108:43396:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:43:02.652 UTC - DEBUG - 46108:21260:-1 route_manager.TestHarness:268: Plotting route {'cargo': 0, 'max_time': 60, 'algorithm': 'optimistic', 'fuel_reserve': 4, 'is_supercharged': 0, 'use_supercharge': 1, 'use_injections': 0, 'exclude_secondary': 1, 'refuel_every_scoopable': 0, 'fuel_power': 2.45, 'fuel_multiplier': 0.013, 'optimal_mass': 1894.1, 'base_mass': 287.6, 'tank_size': 32, 'internal_tank_size': 0.5, 'max_fuel_per_jump': 5.2, 'range_boost': 10.5, 'ship_build': {'timestamp': '2026-01-01T04:00:02Z', 'event': 'Loadout', 'Ship': 'mandalay', 'ShipName': 'Shipping Delay', 'ShipIdent': 'DW-28M', 'HullValue': 16114020, 'ModulesValue': 15376658, 'UnladenMass': 287.1, 'CargoCapacity': 112, 'MaxJumpRange': 85.254853, 'FuelCapacity': {'Main': 32, 'Reserve': 0.5}, 'Rebuy': 1574533, 'Modules': [{'Slot': 'CargoHatch', 'Item': 'modularcargobaydoor', 'On': True, 'Priority': 0}, {'Slot': 'TinyHardpoint4', 'Item': 'hpt_heatsinklauncher_turret_tiny', 'On': True, 'Priority': 0, 'Value': 3413, 'Engineering': {'BlueprintName': 'Misc_HeatSinkCapacity', 'Level': 1, 'Quality': 1, 'Modifiers': [{'Label': 'Mass', 'Value': 2.6, 'OriginalValue': 1.3}, {'Label': 'AmmoMaximum', 'Value': 3, 'OriginalValue': 2}, {'Label': 'ReloadTime', 'Value': 15, 'OriginalValue': 10}]}}, {'Slot': 'Armour', 'Item': 'mandalay_armour_grade1', 'On': True, 'Priority': 1, 'Value': 0}, {'Slot': 'PowerPlant', 'Item': 'int_powerplant_size4_class5', 'On': True, 'Priority': 1, 'Value': 1405199, 'Engineering': {'BlueprintName': 'PowerPlant_Armoured', 'Level': 1, 'Quality': 1, 'ExperimentalEffect': 'special_powerplant_cooled', 'Modifiers': [{'Label': 'Mass', 'Value': 5.2, 'OriginalValue': 5}, {'Label': 'Integrity', 'Value': 123.2, 'OriginalValue': 88}, {'Label': 'PowerCapacity', 'Value': 16.224, 'OriginalValue': 15.6}, {'Label': 'HeatEfficiency', 'Value': 0.3456, 'OriginalValue': 0.4}]}}, {'Slot': 'MainEngines', 'Item': 'int_engine_size4_class2', 'On': True, 'Priority': 0, 'Value': 58139}, {'Slot': 'FrameShiftDrive', 'Item': 'int_hyperdrive_overcharge_size5_class5', 'On': True, 'Priority': 0, 'Value': 5971622, 'Engineering': {'BlueprintName': 'FSD_LongRange', 'Level': 5, 'Quality': 1, 'ExperimentalEffect': 'special_fsd_heavy', 'Modifiers': [{'Label': 'Mass', 'Value': 26, 'OriginalValue': 20}, {'Label': 'Integrity', 'Value': 93.84, 'OriginalValue': 120}, {'Label': 'PowerDraw', 'Value': 0.69, 'OriginalValue': 0.6}, {'Label': 'FSDOptimalMass', 'Value': 1894.1, 'OriginalValue': 1175}]}}, {'Slot': 'LifeSupport', 'Item': 'int_lifesupport_size4_class2', 'On': True, 'Priority': 0, 'Value': 27661}, {'Slot': 'PowerDistributor', 'Item': 'int_powerdistributor_size4_class5', 'On': True, 'Priority': 0, 'Value': 432247, 'Engineering': {'BlueprintName': 'PowerDistributor_HighFrequency', 'Level': 5, 'Quality': 1, 'ExperimentalEffect': 'special_powerdistributor_fast', 'Modifiers': [{'Label': 'WeaponsCapacity', 'Value': 29.184, 'OriginalValue': 32}, {'Label': 'WeaponsRecharge', 'Value': 5.278, 'OriginalValue': 3.5}, {'Label': 'EnginesCapacity', 'Value': 20.976, 'OriginalValue': 23}, {'Label': 'EnginesRecharge', 'Value': 2.8652, 'OriginalValue': 1.9}, {'Label': 'SystemsCapacity', 'Value': 20.976, 'OriginalValue': 23}, {'Label': 'SystemsRecharge', 'Value': 2.8652, 'OriginalValue': 1.9}]}}, {'Slot': 'Radar', 'Item': 'int_sensors_size5_class2', 'On': True, 'Priority': 0, 'Value': 77454, 'Engineering': {'BlueprintName': 'Sensor_LightWeight', 'Level': 3, 'Quality': 1, 'Modifiers': [{'Label': 'Mass', 'Value': 4, 'OriginalValue': 8}, {'Label': 'Integrity', 'Value': 53.9, 'OriginalValue': 77}, {'Label': 'SensorTargetScanAngle', 'Value': 25.5, 'OriginalValue': 30}]}}, {'Slot': 'FuelTank', 'Item': 'int_fueltank_size5_class3', 'On': True, 'Priority': 1, 'Value': 95306}, {'Slot': 'Slot01_Size6', 'Item': 'int_cargorack_size6_class1', 'On': True, 'Priority': 1, 'Value': 353525}, {'Slot': 'Slot02_Size5', 'Item': 'int_guardianfsdbooster_size5', 'On': True, 'Priority': 0, 'Value': 6321023}, {'Slot': 'Slot03_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Value': 33472}, {'Slot': 'Slot04_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Value': 33472}, {'Slot': 'Slot05_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Value': 10296}, {'Slot': 'Slot06_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Value': 10296}, {'Slot': 'Slot07_Size2', 'Item': 'int_fuelscoop_size2_class5', 'On': True, 'Priority': 0, 'Value': 277719}, {'Slot': 'Slot08_Size1', 'Item': 'int_detailedsurfacescanner_tiny', 'On': True, 'Priority': 0, 'Value': 243750}, {'Slot': 'Slot09_Size1', 'Item': 'int_supercruiseassist', 'On': True, 'Priority': 0, 'Value': 8892}, {'Slot': 'Slot10_Size1', 'Item': 'int_dockingcomputer_advanced', 'On': True, 'Priority': 1, 'Value': 13172}]}, 'supercharge_multiplier': 4, 'injection_multiplier': 2, 'source': 'Apurui', 'destination': 'Bleae Thua NI-B b27-5'} to https://spansh.co.uk/api/generic/route
+2026-04-12 03:50:28.202 UTC - WARNING - 18624:55220:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:50:28.381 UTC - DEBUG - 18624:64428:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:50:28.382 UTC - DEBUG - 18624:55220:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:50:28.383 UTC - DEBUG - 18624:64428:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:50:28.384 UTC - DEBUG - 18624:55220:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:50:28.385 UTC - DEBUG - 18624:55220:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:50:28.385 UTC - DEBUG - 18624:55220:-1 route.TestHarness:186: Updating route
+2026-04-12 03:50:28.386 UTC - DEBUG - 18624:55220:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:50:28.712 UTC - ERROR - 18624:64428:-1 updater.TestHarness:96: Failed to get changelog, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 94, in get_release
+    r.raise_for_status()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\.venv_win\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:50:28.801 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:28.802 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:28.802 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:28.803 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:28.803 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:28.810 UTC - DEBUG - 18624:55220:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:50:28.818 UTC - DEBUG - 18624:55220:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:50:29.263 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.264 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.264 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.265 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.265 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.265 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:50:29.265 UTC - DEBUG - 18624:55220:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.284 UTC - WARNING - 48032:37572:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:51:01.464 UTC - DEBUG - 48032:43220:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:51:01.465 UTC - DEBUG - 48032:43220:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:51:01.465 UTC - DEBUG - 48032:37572:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:51:01.467 UTC - DEBUG - 48032:37572:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:51:01.468 UTC - DEBUG - 48032:37572:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:51:01.469 UTC - DEBUG - 48032:37572:-1 route.TestHarness:186: Updating route
+2026-04-12 03:51:01.469 UTC - DEBUG - 48032:37572:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:51:01.748 UTC - ERROR - 48032:43220:-1 updater.TestHarness:96: Failed to get changelog, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 94, in get_release
+    r.raise_for_status()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\.venv_win\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:51:01.907 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.908 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.908 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.909 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.910 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:01.917 UTC - DEBUG - 48032:37572:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:51:01.923 UTC - DEBUG - 48032:37572:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:51:02.352 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.353 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.353 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.354 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.354 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.355 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:51:02.355 UTC - DEBUG - 48032:37572:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.114 UTC - WARNING - 38800:59532:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:55:49.294 UTC - DEBUG - 38800:30464:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:55:49.294 UTC - DEBUG - 38800:59532:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:55:49.294 UTC - DEBUG - 38800:30464:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:55:49.295 UTC - DEBUG - 38800:59532:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:55:49.296 UTC - DEBUG - 38800:59532:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:55:49.296 UTC - DEBUG - 38800:59532:-1 route.TestHarness:186: Updating route
+2026-04-12 03:55:49.297 UTC - DEBUG - 38800:59532:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:55:49.622 UTC - ERROR - 38800:30464:-1 updater.TestHarness:96: Failed to get changelog, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 94, in get_release
+    r.raise_for_status()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\.venv_win\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:55:49.740 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.742 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.742 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.743 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.743 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:49.750 UTC - DEBUG - 38800:59532:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:55:49.755 UTC - DEBUG - 38800:59532:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:55:50.195 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.195 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.197 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.197 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.197 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.198 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.198 UTC - DEBUG - 38800:59532:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:55:50.204 UTC - DEBUG - 38800:30504:-1 route_manager.TestHarness:268: Plotting route {'cargo': 0, 'max_time': 60, 'algorithm': 'optimistic', 'fuel_reserve': 4, 'is_supercharged': 0, 'use_supercharge': 1, 'use_injections': 0, 'exclude_secondary': 1, 'refuel_every_scoopable': 0, 'fuel_power': 2.45, 'fuel_multiplier': 0.013, 'optimal_mass': 1894.1, 'base_mass': 297.3, 'tank_size': 32, 'internal_tank_size': 0.5, 'max_fuel_per_jump': 5.2, 'range_boost': 10.5, 'ship_build': {'timestamp': '2025-12-27T18:22:53Z', 'event': 'Loadout', 'Ship': 'mandalay', 'ShipID': 1, 'ShipName': 'Shipping Delay', 'ShipIdent': 'DW-28M', 'HullValue': 16114020, 'ModulesValue': 19520942, 'HullHealth': 1.0, 'UnladenMass': 296.799988, 'CargoCapacity': 112, 'MaxJumpRange': 82.853775, 'FuelCapacity': {'Main': 32.0, 'Reserve': 0.5}, 'Rebuy': 1781749, 'Modules': [{'Slot': 'TinyHardpoint1', 'Item': 'hpt_heatsinklauncher_turret_tiny', 'On': True, 'Priority': 0, 'AmmoInClip': 1, 'AmmoInHopper': 4, 'Health': 1.0, 'Engineering': {'EngineerID': 399999, 'BlueprintID': 129012673, 'BlueprintName': 'Misc_HeatSinkCapacity', 'Level': 1, 'Quality': 1.0, 'Modifiers': [{'Label': 'AmmoMaximum', 'Value': 4.0, 'OriginalValue': 2.0, 'LessIsGood': 0}, {'Label': 'ReloadTime', 'Value': 17.5, 'OriginalValue': 10.0, 'LessIsGood': 1}]}}, {'Slot': 'PaintJob', 'Item': 'paintjob_mandalay_02_06', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Armour', 'Item': 'mandalay_armour_grade1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Engineering': {'Engineer': 'Selene Jean', 'EngineerID': 300210, 'BlueprintID': 128673644, 'BlueprintName': 'Armour_HeavyDuty', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_armour_chunky', 'ExperimentalEffect_Localised': 'Deep Plating', 'Modifiers': [{'Label': 'DefenceModifierHealthMultiplier', 'Value': 156.608002, 'OriginalValue': 79.999992, 'LessIsGood': 0}, {'Label': 'KineticResistance', 'Value': -17.419994, 'OriginalValue': -20.000004, 'LessIsGood': 0}, {'Label': 'ThermicResistance', 'Value': 2.150005, 'OriginalValue': 0.0, 'LessIsGood': 0}, {'Label': 'ExplosiveResistance', 'Value': -36.989986, 'OriginalValue': -39.999996, 'LessIsGood': 0}]}}, {'Slot': 'PowerPlant', 'Item': 'int_powerplant_size4_class5', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 1405203, 'Engineering': {'Engineer': 'Hera Tani', 'EngineerID': 300090, 'BlueprintID': 128673760, 'BlueprintName': 'PowerPlant_Armoured', 'Level': 1, 'Quality': 1.0, 'ExperimentalEffect': 'special_powerplant_cooled', 'ExperimentalEffect_Localised': 'Thermal Spread', 'Modifiers': [{'Label': 'Mass', 'Value': 5.2, 'OriginalValue': 5.0, 'LessIsGood': 1}, {'Label': 'Integrity', 'Value': 123.199997, 'OriginalValue': 88.0, 'LessIsGood': 0}, {'Label': 'PowerCapacity', 'Value': 16.223999, 'OriginalValue': 15.6, 'LessIsGood': 0}, {'Label': 'HeatEfficiency', 'Value': 0.3456, 'OriginalValue': 0.4, 'LessIsGood': 1}]}}, {'Slot': 'MainEngines', 'Item': 'int_engine_size5_class5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 4478720, 'Engineering': {'Engineer': 'Professor Palin', 'EngineerID': 300220, 'BlueprintID': 128673659, 'BlueprintName': 'Engine_Dirty', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_engine_overloaded', 'ExperimentalEffect_Localised': 'Drag Drives', 'Modifiers': [{'Label': 'Integrity', 'Value': 90.100006, 'OriginalValue': 106.0, 'LessIsGood': 0}, {'Label': 'PowerDraw', 'Value': 6.8544, 'OriginalValue': 6.12, 'LessIsGood': 1}, {'Label': 'EngineOptimalMass', 'Value': 735.0, 'OriginalValue': 840.0, 'LessIsGood': 0}, {'Label': 'EngineOptPerformance', 'Value': 145.599991, 'OriginalValue': 100.0, 'LessIsGood': 0}, {'Label': 'EngineHeatRate', 'Value': 2.288, 'OriginalValue': 1.3, 'LessIsGood': 1}]}}, {'Slot': 'FrameShiftDrive', 'Item': 'int_hyperdrive_overcharge_size5_class5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 5971625, 'Engineering': {'Engineer': 'Elvira Martuuk', 'EngineerID': 300160, 'BlueprintID': 128673694, 'BlueprintName': 'FSD_LongRange', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_fsd_heavy', 'ExperimentalEffect_Localised': 'Mass Manager', 'Modifiers': [{'Label': 'Mass', 'Value': 26.0, 'OriginalValue': 20.0, 'LessIsGood': 1}, {'Label': 'Integrity', 'Value': 93.840004, 'OriginalValue': 120.0, 'LessIsGood': 0}, {'Label': 'PowerDraw', 'Value': 0.69, 'OriginalValue': 0.6, 'LessIsGood': 1}, {'Label': 'FSDOptimalMass', 'Value': 1894.099976, 'OriginalValue': 1175.0, 'LessIsGood': 0}]}}, {'Slot': 'LifeSupport', 'Item': 'int_lifesupport_size4_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 27664}, {'Slot': 'PowerDistributor', 'Item': 'int_powerdistributor_size3_class5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 154373, 'Engineering': {'Engineer': 'Hera Tani', 'EngineerID': 300090, 'BlueprintID': 128673742, 'BlueprintName': 'PowerDistributor_PriorityEngines', 'Level': 3, 'Quality': 1.0, 'ExperimentalEffect': 'special_powerdistributor_fast', 'ExperimentalEffect_Localised': 'Super Conduits', 'Modifiers': [{'Label': 'WeaponsCapacity', 'Value': 20.9664, 'OriginalValue': 24.0, 'LessIsGood': 0}, {'Label': 'WeaponsRecharge', 'Value': 2.82464, 'OriginalValue': 2.8, 'LessIsGood': 0}, {'Label': 'EnginesCapacity', 'Value': 24.191998, 'OriginalValue': 18.0, 'LessIsGood': 0}, {'Label': 'EnginesRecharge', 'Value': 1.7576, 'OriginalValue': 1.3, 'LessIsGood': 0}, {'Label': 'SystemsCapacity', 'Value': 15.724799, 'OriginalValue': 18.0, 'LessIsGood': 0}, {'Label': 'SystemsRecharge', 'Value': 1.23032, 'OriginalValue': 1.3, 'LessIsGood': 0}]}}, {'Slot': 'Radar', 'Item': 'int_sensors_size5_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 77458, 'Engineering': {'Engineer': 'Hera Tani', 'EngineerID': 300090, 'BlueprintID': 128740671, 'BlueprintName': 'Sensor_LightWeight', 'Level': 3, 'Quality': 1.0, 'Modifiers': [{'Label': 'Mass', 'Value': 4.0, 'OriginalValue': 8.0, 'LessIsGood': 1}, {'Label': 'Integrity', 'Value': 53.899998, 'OriginalValue': 77.0, 'LessIsGood': 0}, {'Label': 'SensorTargetScanAngle', 'Value': 25.5, 'OriginalValue': 30.0, 'LessIsGood': 0}]}}, {'Slot': 'FuelTank', 'Item': 'int_fueltank_size5_class3', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 95310}, {'Slot': 'Slot01_Size6', 'Item': 'int_cargorack_size6_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 353527}, {'Slot': 'Slot02_Size5', 'Item': 'int_guardianfsdbooster_size5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 6321023}, {'Slot': 'Slot03_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 33470}, {'Slot': 'Slot04_Size4', 'Item': 'int_cargorack_size4_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 33470}, {'Slot': 'Slot05_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 10299}, {'Slot': 'Slot06_Size3', 'Item': 'int_cargorack_size3_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 10299}, {'Slot': 'Slot07_Size2', 'Item': 'int_fuelscoop_size2_class5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 284844}, {'Slot': 'Slot08_Size1', 'Item': 'int_detailedsurfacescanner_tiny', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 250000, 'Engineering': {'Engineer': 'Lei Cheung', 'EngineerID': 300120, 'BlueprintID': 128740149, 'BlueprintName': 'Sensor_Expanded', 'Level': 3, 'Quality': 0.918, 'Modifiers': [{'Label': 'PowerDraw', 'Value': 0.0, 'OriginalValue': 0.0, 'LessIsGood': 1}, {'Label': 'DSS_PatchRadius', 'Value': 25.836, 'OriginalValue': 20.0, 'LessIsGood': 0}]}}, {'Slot': 'Slot09_Size1', 'Item': 'int_supercruiseassist', 'On': True, 'Priority': 0, 'Health': 1.0}, {'Slot': 'Slot10_Size1', 'Item': 'int_dockingcomputer_advanced', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 13170}, {'Slot': 'ShipKitWings', 'Item': 'mandalay_shipkita_wings2', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'WeaponColour', 'Item': 'weaponcustomisation_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Decal1', 'Item': 'decal_powerplay_aislingduval', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Decal2', 'Item': 'decal_trade_elite05', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Decal3', 'Item': 'decal_trade_elite05', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipName0', 'Item': 'nameplate_trader03_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipName1', 'Item': 'nameplate_trader03_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipID0', 'Item': 'nameplate_shipid_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipID1', 'Item': 'nameplate_shipid_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'EngineColour', 'Item': 'enginecustomisation_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'PlanetaryApproachSuite', 'Item': 'int_planetapproachsuite_advanced', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 487}, {'Slot': 'VesselVoice', 'Item': 'voicepack_verity', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipCockpit', 'Item': 'mandalay_cockpit', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'CargoHatch', 'Item': 'modularcargobaydoorfdl', 'On': True, 'Priority': 2, 'Health': 1.0}]}, 'supercharge_multiplier': 4, 'injection_multiplier': 2, 'source': 'Apurui', 'destination': 'Bleae Thua NI-B b27-5'} to https://spansh.co.uk/api/generic/route
+2026-04-12 03:56:52.185 UTC - DEBUG - 38800:30504:-1 route_manager.TestHarness:230: Storing route history Apurui, Bleae Thua NI-B b27-5
+2026-04-12 03:56:52.185 UTC - DEBUG - 38800:30504:-1 route_manager.TestHarness:238: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']
+2026-04-12 03:56:52.185 UTC - DEBUG - 38800:30504:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:56:52.186 UTC - DEBUG - 38800:30504:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:56:52.186 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 19 ['Apurui', False, 0, 2025.12, 32, 0, False, False]
+2026-04-12 03:56:52.187 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 18 ['Col 285 Sector BG-O d6-83', False, 74.81, 1952.74, 27.15, 4.85, False, False]
+2026-04-12 03:56:52.187 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 17 ['Col 285 Sector RP-C b27-8', False, 77.71, 1876.26, 21.99, 5.16, False, True]
+2026-04-12 03:56:52.187 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 16 ['Swoilz JD-E b4-5', False, 78.95, 1803.88, 16.8, 5.18, False, True]
+2026-04-12 03:56:52.188 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 15 ['R CrA Sector PX-T b3-6', False, 78.88, 1730.08, 11.81, 5.0, False, True]
+2026-04-12 03:56:52.188 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 14 ['Corona Austr. Dark Region OC-U b3-2', False, 79.74, 1654.9, 32, 4.96, True, True]
+2026-04-12 03:56:52.188 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 13 ['PSR J1856-3754', True, 75.41, 1608.07, 27.05, 4.95, False, False]
+2026-04-12 03:56:52.189 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 12 ['Col 359 Sector LM-Z b28-0', False, 311.0, 1357.03, 21.89, 5.16, False, True]
+2026-04-12 03:56:52.189 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 11 ['Col 359 Sector ST-V b30-2', False, 78.13, 1306.73, 16.84, 5.05, False, True]
+2026-04-12 03:56:52.189 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 10 ['Col 359 Sector DH-Q b33-3', False, 79.8, 1254.87, 11.7, 5.14, False, True]
+2026-04-12 03:56:52.190 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 9 ['Col 359 Sector KN-R c18-11', False, 79.8, 1213.09, 32, 4.96, True, True]
+2026-04-12 03:56:52.190 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 8 ['Col 359 Sector VZ-G d10-45', True, 76.22, 1185.97, 26.92, 5.08, False, False]
+2026-04-12 03:56:52.190 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 7 ['Swoiwns GI-H d11-27', True, 273.79, 976.69, 23.15, 3.78, False, False]
+2026-04-12 03:56:52.191 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 6 ['Swoiwns XQ-B d14-16', True, 301.28, 815.41, 18.49, 4.66, False, False]
+2026-04-12 03:56:52.191 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 5 ['Bleia Eohn KM-C d62', True, 175.75, 718.8, 17.28, 1.2, False, False]
+2026-04-12 03:56:52.191 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 4 ['Bleia Eohn RY-Y d1-24', True, 172.32, 584.39, 16.15, 1.14, False, False]
+2026-04-12 03:56:52.192 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 3 ['M25 Sector BQ-Y d69', True, 216.53, 478.2, 14.17, 1.98, False, False]
+2026-04-12 03:56:52.192 UTC - INFO - 38800:30504:-1 route.TestHarness:106: Jumps remaining: 2 ['M25 Sector PI-T d3-51', True, 283.46, 279.96, 10.39, 3.77, False, False]
+2026-04-12 03:56:52.192 UTC - DEBUG - 38800:30504:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:56:52.193 UTC - DEBUG - 38800:30504:-1 route.TestHarness:62: Next stop: 0 Col 285 Sector BG-O d6-83
+2026-04-12 03:56:52.205 UTC - INFO - 38800:59532:-1 route.TestHarness:106: Jumps remaining: 19 ['Apurui', False, 0, 2025.12, 32, 0, False, False, 18]
+2026-04-12 03:56:52.206 UTC - INFO - 38800:59532:-1 route.TestHarness:106: Jumps remaining: 19 ['Apurui', False, 0, 2025.12, 32, 0, False, False, 18]
+2026-04-12 03:59:31.837 UTC - WARNING - 13304:63216:0 hotkeys.TestHarness:8: EDMC Hotkeys not installed
+2026-04-12 03:59:32.008 UTC - DEBUG - 13304:64312:-1 updater.TestHarness:131: Checking for update
+2026-04-12 03:59:32.009 UTC - DEBUG - 13304:63216:-1 route_manager.TestHarness:452: Loaded 89 modules from local file
+2026-04-12 03:59:32.009 UTC - DEBUG - 13304:64312:-1 updater.TestHarness:92: Requesting https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:59:32.010 UTC - DEBUG - 13304:63216:-1 route.TestHarness:16: Init, offset: 0
+2026-04-12 03:59:32.012 UTC - DEBUG - 13304:63216:-1 route.TestHarness:160: System Name 0
+2026-04-12 03:59:32.012 UTC - DEBUG - 13304:63216:-1 route.TestHarness:186: Updating route
+2026-04-12 03:59:32.013 UTC - DEBUG - 13304:63216:-1 route.TestHarness:197: We aren't on the route
+2026-04-12 03:59:32.371 UTC - ERROR - 13304:64312:-1 updater.TestHarness:96: Failed to get changelog, exception info:
+Traceback (most recent call last):
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\utils\updater.py", line 94, in get_release
+    r.raise_for_status()
+  File "c:\Users\derek\AppData\Local\EDMarketConnector\plugins\EDMC-NeutronDancer-dev\.venv_win\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/dwomble/EDMC-NeutronDancer/releases/latest
+2026-04-12 03:59:32.522 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.522 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.524 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.524 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.525 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.537 UTC - DEBUG - 13304:63216:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:59:32.546 UTC - DEBUG - 13304:63216:-1 route.TestHarness:62: Next stop: 0 PSR J1752-2806
+2026-04-12 03:59:32.960 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.961 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.962 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.962 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.963 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.964 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.964 UTC - DEBUG - 13304:63216:-1 route.TestHarness:143: Dist remaining 0: 2025.12
+2026-04-12 03:59:32.970 UTC - DEBUG - 13304:36268:-1 route_manager.TestHarness:268: Plotting route {'cargo': 0, 'max_time': 60, 'algorithm': 'optimistic', 'fuel_reserve': 12, 'is_supercharged': 0, 'use_supercharge': 1, 'use_injections': 0, 'exclude_secondary': 1, 'refuel_every_scoopable': 0, 'fuel_power': 2.5025, 'fuel_multiplier': 0.011, 'optimal_mass': 7528.04, 'base_mass': 1366.44, 'tank_size': 128, 'internal_tank_size': 1.14, 'max_fuel_per_jump': 6.8, 'range_boost': 10.5, 'ship_build': {'timestamp': '2026-01-16T22:59:07Z', 'event': 'Loadout', 'Ship': 'explorer_nx', 'ShipID': 2, 'ShipName': 'Perviy', 'ShipIdent': 'DW-10E', 'ModulesValue': 259154503, 'HullHealth': 1.0, 'UnladenMass': 1365.300049, 'CargoCapacity': 16, 'MaxJumpRange': 82.052895, 'FuelCapacity': {'Main': 128.0, 'Reserve': 1.14}, 'Rebuy': 12957726, 'Modules': [{'Slot': 'Armour', 'Item': 'explorer_nx_armour_grade1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 8549540}, {'Slot': 'Decal1', 'Item': 'decal_caspianownersclub_01', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Decal2', 'Item': 'decal_explorer_elite05', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Decal3', 'Item': 'decal_exobio_elite01', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipName0', 'Item': 'nameplate_explorer01_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipName1', 'Item': 'nameplate_explorer01_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipID0', 'Item': 'nameplate_shipid_doubleline_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipID1', 'Item': 'nameplate_shipid_doubleline_white', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'PowerPlant', 'Item': 'int_powerplant_size5_class5', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 3794047, 'Engineering': {'Engineer': 'Hera Tani', 'EngineerID': 300090, 'BlueprintID': 128673764, 'BlueprintName': 'PowerPlant_Armoured', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_powerplant_cooled', 'ExperimentalEffect_Localised': 'Thermal Spread', 'Modifiers': [{'Label': 'Mass', 'Value': 12.0, 'OriginalValue': 10.0, 'LessIsGood': 1}, {'Label': 'Integrity', 'Value': 233.200012, 'OriginalValue': 106.0, 'LessIsGood': 0}, {'Label': 'PowerCapacity', 'Value': 22.848, 'OriginalValue': 20.4, 'LessIsGood': 0}, {'Label': 'HeatEfficiency', 'Value': 0.3168, 'OriginalValue': 0.4, 'LessIsGood': 1}]}}, {'Slot': 'MainEngines', 'Item': 'int_engine_size7_class5_gravityoptimised_mkii', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 59993261, 'Engineering': {'Engineer': 'Professor Palin', 'EngineerID': 300220, 'BlueprintID': 128673659, 'BlueprintName': 'Engine_Dirty', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_engine_overloaded', 'ExperimentalEffect_Localised': 'Drag Drives', 'Modifiers': [{'Label': 'Integrity', 'Value': 122.400002, 'OriginalValue': 144.0, 'LessIsGood': 0}, {'Label': 'PowerDraw', 'Value': 10.2144, 'OriginalValue': 9.12, 'LessIsGood': 1}, {'Label': 'EngineOptimalMass', 'Value': 1890.0, 'OriginalValue': 2160.0, 'LessIsGood': 0}, {'Label': 'EngineOptPerformance', 'Value': 145.599991, 'OriginalValue': 100.0, 'LessIsGood': 0}, {'Label': 'EngineHeatRate', 'Value': 2.288, 'OriginalValue': 1.3, 'LessIsGood': 1}]}}, {'Slot': 'FrameShiftDrive', 'Item': 'int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 71991912, 'Engineering': {'Engineer': 'Elvira Martuuk', 'EngineerID': 300160, 'BlueprintID': 128673694, 'BlueprintName': 'FSD_LongRange', 'Level': 5, 'Quality': 1.0, 'ExperimentalEffect': 'special_fsd_heavy', 'ExperimentalEffect_Localised': 'Mass Manager', 'Modifiers': [{'Label': 'Mass', 'Value': 208.0, 'OriginalValue': 160.0, 'LessIsGood': 1}, {'Label': 'Integrity', 'Value': 147.016006, 'OriginalValue': 188.0, 'LessIsGood': 0}, {'Label': 'PowerDraw', 'Value': 1.2075, 'OriginalValue': 1.05, 'LessIsGood': 1}, {'Label': 'FSDOptimalMass', 'Value': 7528.039551, 'OriginalValue': 4670.0, 'LessIsGood': 0}]}}, {'Slot': 'LifeSupport', 'Item': 'int_lifesupport_size5_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 69713}, {'Slot': 'PowerDistributor', 'Item': 'int_powerdistributor_size5_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 69713, 'Engineering': {'Engineer': 'Marco Qwent', 'EngineerID': 300200, 'BlueprintID': 128673742, 'BlueprintName': 'PowerDistributor_PriorityEngines', 'Level': 3, 'Quality': 1.0, 'ExperimentalEffect': 'special_powerdistributor_fast', 'ExperimentalEffect_Localised': 'Super Conduits', 'Modifiers': [{'Label': 'WeaponsCapacity', 'Value': 27.081598, 'OriginalValue': 31.0, 'LessIsGood': 0}, {'Label': 'WeaponsRecharge', 'Value': 3.22816, 'OriginalValue': 3.2, 'LessIsGood': 0}, {'Label': 'EnginesCapacity', 'Value': 29.567999, 'OriginalValue': 22.0, 'LessIsGood': 0}, {'Label': 'EnginesRecharge', 'Value': 2.5688, 'OriginalValue': 1.9, 'LessIsGood': 0}, {'Label': 'SystemsCapacity', 'Value': 19.219198, 'OriginalValue': 22.0, 'LessIsGood': 0}, {'Label': 'SystemsRecharge', 'Value': 1.79816, 'OriginalValue': 1.9, 'LessIsGood': 0}]}}, {'Slot': 'Radar', 'Item': 'int_sensors_size8_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 1530326}, {'Slot': 'FuelTank', 'Item': 'int_fueltank_size7_class3', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Slot01_Size7', 'Item': 'int_fuelscoop_size7_class5', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 80011016}, {'Slot': 'Slot02_Size6', 'Item': 'int_repairer_size6_class5', 'On': False, 'Priority': 2, 'Health': 1.0, 'Value': 13430578}, {'Slot': 'Slot03_Size6', 'Item': 'int_repairer_size6_class5', 'On': False, 'Priority': 2, 'Health': 1.0, 'Value': 13430578}, {'Slot': 'Slot04_Size5', 'Item': 'int_guardianfsdbooster_size5', 'On': True, 'Priority': 3, 'Health': 1.0, 'Value': 5688921}, {'Slot': 'Slot05_Size5', 'Item': 'int_shieldgenerator_size5_class2', 'On': True, 'Priority': 3, 'Health': 1.0, 'Value': 165879}, {'Slot': 'Slot06_Size5', 'Item': 'int_buggybay_size2_class2', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 20429}, {'Slot': 'Slot09_Size4', 'Item': 'int_corrosionproofcargorack_size4_class1', 'On': True, 'Priority': 1, 'Health': 1.0, 'Value': 82774}, {'Slot': 'Slot10_Size3', 'Item': 'int_dronecontrol_repair_size3_class5', 'On': True, 'Priority': 2, 'Health': 1.0, 'Value': 75816}, {'Slot': 'Slot12_Size1', 'Item': 'int_detailedsurfacescanner_tiny', 'On': True, 'Priority': 0, 'Health': 1.0, 'Value': 250000}, {'Slot': 'Slot13_Size1', 'Item': 'int_supercruiseassist', 'On': True, 'Priority': 2, 'Health': 1.0}, {'Slot': 'Slot14_Size1', 'Item': 'int_dockingcomputer_advanced', 'On': True, 'Priority': 2, 'Health': 1.0}, {'Slot': 'PlanetaryApproachSuite', 'Item': 'int_planetapproachsuite_advanced', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Bobble01', 'Item': 'bobble_trophy_exploration', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'Bobble10', 'Item': 'bobble_trophy_exploration', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'VesselVoice', 'Item': 'voicepack_verity', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'ShipCockpit', 'Item': 'explorer_nx_cockpit', 'On': True, 'Priority': 1, 'Health': 1.0}, {'Slot': 'CargoHatch', 'Item': 'modularcargobaydoor', 'On': True, 'Priority': 2, 'Health': 1.0}]}, 'supercharge_multiplier': 6, 'injection_multiplier': 2, 'source': 'Apurui', 'destination': 'Bleae Thua NI-B b27-5'} to https://spansh.co.uk/api/generic/route
+2026-04-12 04:00:35.036 UTC - DEBUG - 13304:36268:-1 route_manager.TestHarness:230: Storing route history Apurui, Bleae Thua NI-B b27-5
+2026-04-12 04:00:35.036 UTC - DEBUG - 13304:36268:-1 route_manager.TestHarness:238: Route history updated: ['Apurui', 'Start', 'Swoilz PC-G b3-7', 'End', 'Bleae Thua NI-B b27-5', 'Bleae Thua ZE-I b23-1', 'Voqooe BI-H d11-864', 'Kuwemaki', 'Sirius', 'Alrai']

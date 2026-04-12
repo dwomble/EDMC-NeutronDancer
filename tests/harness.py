@@ -139,14 +139,14 @@ class TestHarness:
         self.loadouts:Dict[str, dict] = self._load_loadouts()
 
         plugin_start3(str(self.live_dir))
-        
+
         # This got stuck with annoying PhotoImage
         try:
             root:tk.Tk = tk.Tk()
             parent:tk.Frame = tk.Frame(root)
+            root.withdraw()
         except:
             pass
-        root.withdraw()
 
         plugin_app(parent)
 

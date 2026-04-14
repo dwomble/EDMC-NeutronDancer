@@ -1,18 +1,14 @@
 """
 Test suite for EDMC Neutron Dancer plugin using pytest.
-
-Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
-Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb=short
 """
-
 import pytest # type: ignore
 import sys
 import os
 import shutil
 from pathlib import Path
-from typing import Generator, Optional, Any
+from typing import Generator
 from time import sleep
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import json
 import time
 import logging
@@ -607,6 +603,3 @@ class TestPlotting:
         # Galaxy plotter's results vary based on a number of factors.
         assert harness.plugin.route.total_jumps() <= 28
         assert harness.plugin.route.total_jumps() >= 11
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])

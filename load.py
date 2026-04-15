@@ -77,7 +77,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
         case 'SendText':        
-            if entry.get('Message').startswith("!nd "):
+            if entry.get('Message', '').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
                     case "prev" | "previous":
                         Context.ui.goto_prev_waypoint()

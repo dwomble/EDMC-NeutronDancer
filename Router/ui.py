@@ -678,6 +678,7 @@ class UI():
         params["from"] = next((x for x in self.query_systems(frm) if x.casefold() == frm.casefold()), None)
         if params['from'] == None:
             self.show_frame('Neutron')
+            self.source_ac.set_text(frm, False)
             self.source_ac.set_error_style()
             return
 
@@ -685,6 +686,7 @@ class UI():
         params["to"] = next((x for x in self.query_systems(to) if x.casefold() == to.casefold()), None)
         if params['to'] == None:
             self.show_frame('Neutron')
+            self.dest_ac.set_text(to, False)
             self.dest_ac.set_error_style()
             return
 
@@ -747,6 +749,7 @@ class UI():
         params["source"] = next((x for x in self.query_systems(src) if x.casefold() == src.casefold()), None)
         if params['source'] == None:
             self.show_frame('Galaxy')
+            self.gal_source_ac.set_text(src, False)
             self.gal_source_ac.set_error_style()
             return
 
@@ -754,6 +757,7 @@ class UI():
         params['destination'] = next((x for x in self.query_systems(dest) if x.casefold() == dest.casefold()), None)
         if params['destination'] == None:
             self.show_frame('Galaxy')
+            self.gal_dest_ac.set_text(dest, False)
             self.gal_dest_ac.set_error_style()
             return
 

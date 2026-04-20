@@ -61,6 +61,7 @@ class UI():
 
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
         #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
         #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
@@ -510,12 +511,14 @@ class UI():
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
+        if Context.route.neutron() == True:
+            image = self.neutron_img
+
         if Context.route.refuel() == True:
-            image:tk.PhotoImage = self.fuel_img
+            image = self.fuel_img
             wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -666,21 +669,21 @@ class UI():
     def neutron_plot(self) -> None:
         """ Perform a neutron plotter plot """
         self.hide_error()
-        self._show_busy_gui(True)
-
         self.source_ac.hide_list()
         self.dest_ac.hide_list()
 
         params:dict = {}
 
-        params['from'] = self.source_ac.get().strip()
-        if params['from'] not in self.query_systems(params['from']):
+        frm:str = self.source_ac.get().strip()
+        params["from"] = next((x for x in self.query_systems(frm) if x.casefold() == frm.casefold()), None)
+        if params['from'] == None:
             self.show_frame('Neutron')
             self.source_ac.set_error_style()
             return
 
-        params['to'] = self.dest_ac.get().strip()
-        if params['to'] not in self.query_systems(params['to']):
+        to = self.dest_ac.get().strip()
+        params["to"] = next((x for x in self.query_systems(to) if x.casefold() == to.casefold()), None)
+        if params['to'] == None:
             self.show_frame('Neutron')
             self.dest_ac.set_error_style()
             return
@@ -695,14 +698,13 @@ class UI():
             return
 
         Context.router.plot_route('Neutron', params)
+        self._show_busy_gui(True)
 
 
     @catch_exceptions
     def galaxy_plot(self) -> None:
         """ Perform a galaxy plotter plot """
         self.hide_error()
-        self._show_busy_gui(True)
-
         self.gal_source_ac.hide_list()
         self.gal_dest_ac.hide_list()
 
@@ -741,19 +743,22 @@ class UI():
             'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
             }
 
-        params['source'] = self.gal_source_ac.get().strip()
-        if params['source'] not in self.query_systems(params['source']):
+        src = self.gal_source_ac.get().strip()
+        params["source"] = next((x for x in self.query_systems(src) if x.casefold() == src.casefold()), None)
+        if params['source'] == None:
             self.show_frame('Galaxy')
             self.gal_source_ac.set_error_style()
             return
 
-        params['destination'] = self.gal_dest_ac.get().strip()
-        if params['destination'] not in self.query_systems(params['destination']):
+        dest = self.gal_dest_ac.get().strip()
+        params['destination'] = next((x for x in self.query_systems(dest) if x.casefold() == dest.casefold()), None)
+        if params['destination'] == None:
             self.show_frame('Galaxy')
             self.gal_dest_ac.set_error_style()
             return
 
         Context.router.plot_route('Galaxy', params)
+        self._show_busy_gui(True)
 
 
     def show_error(self, error:str|None = None) -> None:
@@ -783,7 +788,7 @@ class UI():
             self.sub_fr.grid_remove()
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)
-            self.busy_fr.after(250, update, 0)
+            self.busy_fr.after(0, update, 0)
             return
 
         self.busy_fr.grid_remove()

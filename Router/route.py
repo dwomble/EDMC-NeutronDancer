@@ -84,6 +84,13 @@ class Route:
         return self.route[self.offset][ind] in TRUE
 
 
+    def neutron(self) -> bool:
+        """ Return whether we need to neutron boost at this waypoint """
+        ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
+        Debug.logger.debug(f"{self.hdrs} {ind}")
+        if ind == None: return False
+        return self.route[self.offset][ind] in TRUE
+
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
         if self.route == [] or self.jc == None: return 0
@@ -140,7 +147,6 @@ class Route:
         """ Distance remaining if we know it """
         if self.route == [] or self.dc == None: return 0
         if offset == None: offset = self.offset
-        Debug.logger.debug(f"Dist remaining {offset}: {self.route[offset][self.dc]}")
         return self.route[offset][self.dc]
 
 

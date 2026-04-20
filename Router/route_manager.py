@@ -184,7 +184,6 @@ class Router():
                 Context.overlay.display_countdown('Carrier', jstr, end)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
                 Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
-                Debug.logger.debug(f"Carrier {self.carrier_id} jumping to {entry.get('SystemName', '')}")
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
@@ -194,7 +193,6 @@ class Router():
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
-                Debug.logger.debug(f"Carrier is in {self.carrier_location}")
                 if Context.route.fleetcarrier == True:
                     Context.route.update_route(0, self.carrier_location)
                     Context.ui.update_waypoint()
@@ -220,7 +218,6 @@ class Router():
 
     def cooldown_complete(self) -> None:
         """ Show an informational messagebox indicating a carrier cooldown has completed. """
-        Debug.logger.debug(f"Cooldown complete notification triggered.")
         self.carrier_state = CarrierStates.Idle
         Context.ui.cooldown_complete()
 
@@ -257,6 +254,7 @@ class Router():
                 return False
 
         self.last_plot = which
+        self._store_history()
 
         Thread(target=self._plotter, args=(url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
@@ -265,7 +263,6 @@ class Router():
 
     def _plotter(self, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
-        Debug.logger.debug(f"Plotting route {params} to {url}")
 
         self.cancel_plot = False
         try:
@@ -318,8 +315,6 @@ class Router():
                         continue
                     r.append(waypoint[c])
                 rte.append(r)
-
-            self._store_history()
 
             Context.route = Route(hdrs, rte)
             Context.route.offset = 0

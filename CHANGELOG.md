@@ -1,5 +1,22 @@
 # EDMC-NeutronDancer Changelog
 
+## v1.9.0 2026-04-2x
+
+### Changes
+
+* Added route icon to indicate neutron star
+
+### Bug Fixes
+
+* Addressed failure to pickup changes to source and destination if not matched with dropdown list
+* Fixed bug where source or destination could be incorrectly reported in the busy frame
+
+## v1.8.1 2026-03-11
+
+### Bug Fixes
+
+* Hotfix for Linux clipboard [Issue 23](https://github.com/dwomble/EDMC-NeutronDancer/issues/23)
+
 ## v1.8.0 2026-03-09
 
 ### New Features

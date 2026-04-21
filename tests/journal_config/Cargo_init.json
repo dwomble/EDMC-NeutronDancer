@@ -1,4 +1,8 @@
-{ "event":"Cargo", "Vessel":"Ship", "Count":200, "Inventory":[
-    { "Name":"cmmcomposite", "Name_Localised":"CMM Composite", "Count":200, "Stolen":0 }
-]
+{
+    "event":"Cargo",
+    "Vessel":"Ship",
+    "Count":200,
+    "Inventory":[
+        { "Name":"cmmcomposite", "Name_Localised":"CMM Composite", "Count":200, "Stolen":0 }
+    ]
 }

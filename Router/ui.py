@@ -524,7 +524,8 @@ class UI():
             #wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-
+        if config.get_int('theme') > 0 and isinstance(self.waypoint_btn, tk.Button):
+            self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """

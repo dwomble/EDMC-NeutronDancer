@@ -276,7 +276,7 @@ class Router():
                 return
 
             tries = 0
-            while tries < limit:
+            while tries < limit+1:
                 if config.shutting_down or self.cancel_plot: return # Quit
                 response:dict = json.loads(results.content)
                 job:str = response["job"]

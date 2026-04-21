@@ -14,6 +14,8 @@ import time
 import logging
 import tkinter as tk
 
+from urllib3 import request
+
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(plugin_dir))
@@ -216,6 +218,10 @@ class TestCargo:
 
     def test_cargo_event(self, harness:TestHarness):
         """Test cargo event updates."""
+        Path(Path(__file__).parent / "journal_folder" / "Cargo.json").unlink(missing_ok=True)
+        shutil.copy(Path(__file__).parent / "journal_config" / "cargo_init.json",
+                    Path(__file__).parent / "journal_folder" / "Cargo.json")
+
         harness.play_sequence('add_cargo')
         assert harness.plugin.router.cargo == 200
         harness.play_sequence('remove_cargo')
@@ -603,7 +609,7 @@ class TestPlotting:
         assert harness.plugin.router.src == 'Apurui'
         assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
 
-        assert harness.plugin.route.total_jumps() == 18
+        assert harness.plugin.route.total_jumps() in [18, 21, 28] # Galaxy routes can vary based on current conditions
 
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""

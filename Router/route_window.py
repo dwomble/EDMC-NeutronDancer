@@ -66,6 +66,7 @@ class RouteWindow:
 
     def close(self) -> None:
         """ On close save our geometry """
+        if self.window == None: return
         Context.router.window_geometries['route'] = self.window.winfo_geometry()
         self.window.destroy()
         return

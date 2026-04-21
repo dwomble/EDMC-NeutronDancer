@@ -506,9 +506,13 @@ class UI():
 
         wp:str = Context.route.next_stop()
         copy_to_clipboard(self.parent, wp)
-        if Context.route.jumps_to_wp() != 0:
-            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
+
+        if Context.route.jumps_remaining() > 0:
+            # Show progress through route
+            jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
+            tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+            wp += f" ({hfplus(jumps)}/{hfplus(tjumps)})"
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
@@ -517,7 +521,7 @@ class UI():
 
         if Context.route.refuel() == True:
             image = self.fuel_img
-            wp = lbls['refuel_now'] + ' ' + wp + ' '
+            #wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
 
@@ -552,7 +556,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40,
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=32,
                                                         command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)

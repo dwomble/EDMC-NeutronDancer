@@ -562,6 +562,7 @@ class TestPlotting:
         ship = harness.plugin.router.ship
         assert ship is not None
         assert ship.name == 'Shipping Delay'
+        assert harness.plugin.route.route == []
 
         galaxy_params:dict = {
             "cargo": 0,
@@ -618,6 +619,7 @@ class TestPlotting:
         ship = harness.plugin.router.ship
         assert ship is not None
         assert ship.name == 'Perviy'
+        assert harness.plugin.route.route == []
 
         galaxy_params:dict = {
             "cargo": 0,
@@ -647,14 +649,12 @@ class TestPlotting:
         res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
         assert res == True
 
-        assert harness.plugin.route.route == []
         # Wait for plot completion while processing events
         elapsed = 0
         while elapsed < 62 and harness.plugin.route.route == []:
             harness.plugin.ui.parent.update()
             time.sleep(0.1)
             elapsed += 0.1
-
 
         assert harness.plugin.route is not None
         assert harness.plugin.router.src == galaxy_params['source']

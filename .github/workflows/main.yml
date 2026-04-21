@@ -1,9 +1,8 @@
 name: VirusTotal Scan
 on:
-  workflow_run:
-    workflows: ["Build Release"] 
-    types: [completed]
-
+  release:
+    types:
+      - published
 jobs:
   vt_scan:
     permissions:

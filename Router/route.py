@@ -84,6 +84,13 @@ class Route:
         return self.route[self.offset][ind] in TRUE
 
 
+    def neutron(self) -> bool:
+        """ Return whether we need to neutron boost at this waypoint """
+        ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
+
+        if ind == None: return False
+        return self.route[self.offset][ind] in TRUE
+
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
         if self.route == [] or self.jc == None: return 0
@@ -102,13 +109,8 @@ class Route:
         if offset >= len(self.route)-1: return 0
 
         # No jump count column
-        if self.jc == None:
-            Debug.logger.info(f"Jumps remaining: {len(self.route[offset:])} {self.route[offset]}")
-            return len(self.route[offset:])-1
-
-        syscol:int|None = self.colind('System Name')  # We want to use the system name rather than the body name to count jumps
-        if syscol == None: syscol = self.sc # Fallback to whatever column we use for the system if we don't have a system name column
-        return sum([j[self.jc] for i, j in enumerate(self.route[offset:]) if i == 0 or self.route[i-1][syscol] != j[syscol]])
+        if self.jc == None: return len(self.route[offset:])-1
+        return sum([j[self.jc] for j in self.route[offset+1:]])
 
 
     def perc_jumps_rem(self, offset:int|None = None) -> float:
@@ -140,7 +142,6 @@ class Route:
         """ Distance remaining if we know it """
         if self.route == [] or self.dc == None: return 0
         if offset == None: offset = self.offset
-        Debug.logger.debug(f"Dist remaining {offset}: {self.route[offset][self.dc]}")
         return self.route[offset][self.dc]
 
 

@@ -34,7 +34,7 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 
   - *Exclude Secondary Stars* Prevent the system using secondary Neutron stars and scoopable stars to help with the route
 
-  - *Refuel Every Scoopable* Refuel every time you encounter a scoopable star
+  - *Refuel Every Scoopable* Refuel every time you encounter a scoopable star. If you include secondary stars it's presumed you'll select this or you may accidentally refuel while Supercharging and go over the expected weight.
 
 ### Usage
 
@@ -93,5 +93,3 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Let me know if you have any suggestions.
 
 Fly dangerous! o7
-
-

@@ -593,13 +593,64 @@ class TestPlotting:
         res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
         assert res == True
 
-        # Wait for the plot to complete
-        time.sleep(62)
+        # Wait for plot completion while processing events
+        elapsed = 0
+        while elapsed < 64 and harness.plugin.route.route == []:
+            harness.plugin.ui.parent.update()
+            time.sleep(0.1)
+            elapsed += 0.1
 
-        assert harness.plugin.route is not None
         assert harness.plugin.router.src == 'Apurui'
         assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
 
-        # Galaxy plotter's results vary based on a number of factors.
-        assert harness.plugin.route.total_jumps() <= 28
-        assert harness.plugin.route.total_jumps() >= 11
+        assert harness.plugin.route.total_jumps() == 18
+
+    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
+        """Perform a live galaxy plot with a caspian explorer and check results."""
+
+        harness.plugin.router.swap_ship(2)
+        ship = harness.plugin.router.ship
+        assert ship is not None
+        assert ship.name == 'Perviy'
+
+        galaxy_params:dict = {
+            "cargo": 0,
+            "max_time": 60,
+            "algorithm": "optimistic",
+            "fuel_reserve": 12,
+            "is_supercharged": 0,
+            "use_supercharge": 1,
+            "use_injections": 0,
+            "exclude_secondary": 0,
+            "refuel_every_scoopable": 0,
+            "fuel_power": ship.fuel_power,
+            "fuel_multiplier": ship.fuel_multiplier,
+            "optimal_mass": ship.optimal_mass,
+            "base_mass": ship.base_mass,
+            "tank_size": ship.tank_size,
+            "internal_tank_size": ship.internal_tank_size,
+            "max_fuel_per_jump": ship.max_fuel_per_jump,
+            "range_boost": 10.5,
+            "ship_build": ship.loadout,
+            "supercharge_multiplier": ship.supercharge_multiplier,
+            "injection_multiplier": ship.injection_multiplier,
+            "source": "HIP 87621",
+            "destination": "Bleae Thua ED-D c12-5"
+        }
+
+        res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+        assert res == True
+
+        assert harness.plugin.route.route == []
+        # Wait for plot completion while processing events
+        elapsed = 0
+        while elapsed < 62 and harness.plugin.route.route == []:
+            harness.plugin.ui.parent.update()
+            time.sleep(0.1)
+            elapsed += 0.1
+
+
+        assert harness.plugin.route is not None
+        assert harness.plugin.router.src == galaxy_params['source']
+        assert harness.plugin.router.dest == galaxy_params['destination']
+        assert harness.plugin.route.total_jumps() == 9

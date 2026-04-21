@@ -61,6 +61,7 @@ class UI():
 
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
         #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
         #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
@@ -287,6 +288,7 @@ class UI():
             init = names[0]
 
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
+        self.ship.trace_add("write", self.ship_selected)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
@@ -294,7 +296,7 @@ class UI():
         col += 1
 
         self.cargo_entry:Placeholder = Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
-        self.set_entry(self.cargo_entry, str(params.get('cargo', 0)))
+        self.set_entry(self.cargo_entry, str(Context.router.cargo))
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         Tooltip(self.cargo_entry, tts["cargo"])
 
@@ -504,18 +506,24 @@ class UI():
 
         wp:str = Context.route.next_stop()
         copy_to_clipboard(self.parent, wp)
-        if Context.route.jumps_to_wp() != 0:
-            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         self._update_progbar()
+
+        if Context.route.jumps_remaining() > 0:
+            # Show progress through route
+            jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
+            tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+            wp += f" ({hfplus(jumps)}/{hfplus(tjumps)})"
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
+        if Context.route.neutron() == True:
+            image = self.neutron_img
+
         if Context.route.refuel() == True:
-            image:tk.PhotoImage = self.fuel_img
-            wp = lbls['refuel_now'] + ' ' + wp + ' '
+            image = self.fuel_img
+            #wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-
 
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
@@ -548,7 +556,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=40,
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=32,
                                                         command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
@@ -590,12 +598,21 @@ class UI():
                 self.dest_ac.set_text(param, False)
                 self.gal_dest_ac.set_text(param, False)
             case _:
-                for ship in Context.router.ships.values():
-                    if ship.name == param:
-                        self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
-                        self.multiplier.set(ship.supercharge_multiplier)
-                        # Set ship in the galaxy form
-                        return
+                param = self.ship.get() if param == "None" else param
+                ship:list[Ship] = [ship for ship in Context.router.ships.values() if ship.name == param]
+                if ship == []: return
+                self.range_entry.set_text(ship[0].get_range(Context.router.cargo), False)
+                self.multiplier.set(ship[0].supercharge_multiplier)
+                cargo:int = Context.router.cargo if ship[0].id == Context.router.ship_id else 0
+                self.cargo_entry.set_text(cargo, False)
+                return
+
+
+    @catch_exceptions
+    def ship_selected(self, *args) -> None:
+        """ Update the galaxy plotter when the ship dropdown changes """
+        ship_name:str = self.ship.get()
+        self.menu_callback('ship', ship_name)
 
 
     def set_entry(self, which:Autocompleter|Placeholder|None, value:str) -> None:
@@ -634,6 +651,15 @@ class UI():
         [menu.add_command(label=ship, command=lambda item=ship: self.ship.set(item)) for ship in ships]
 
 
+    def update_cargo(self, cargo:int) -> None:
+        """ Update the cargo entry when the cargo changes """
+
+        if not Context.router.ship or self.ship.get() != Context.router.ship.name:
+            return
+
+        self.cargo_entry.set_text(str(cargo), False)
+        self.range_entry.set_text(str(Context.router.ship.get_range(cargo)), False)
+
     @catch_exceptions
     def _export_route(self) -> None:
         if Context.router == None or Context.router.export_route() == False:
@@ -666,22 +692,24 @@ class UI():
     def neutron_plot(self) -> None:
         """ Perform a neutron plotter plot """
         self.hide_error()
-        self._show_busy_gui(True)
-
         self.source_ac.hide_list()
         self.dest_ac.hide_list()
 
         params:dict = {}
 
-        params['from'] = self.source_ac.get().strip()
-        if params['from'] not in self.query_systems(params['from']):
+        frm:str = self.source_ac.get().strip()
+        params["from"] = next((x for x in self.query_systems(frm) if x.casefold() == frm.casefold()), None)
+        if params['from'] == None:
             self.show_frame('Neutron')
+            self.source_ac.set_text(frm, False)
             self.source_ac.set_error_style()
             return
 
-        params['to'] = self.dest_ac.get().strip()
-        if params['to'] not in self.query_systems(params['to']):
+        to = self.dest_ac.get().strip()
+        params["to"] = next((x for x in self.query_systems(to) if x.casefold() == to.casefold()), None)
+        if params['to'] == None:
             self.show_frame('Neutron')
+            self.dest_ac.set_text(to, False)
             self.dest_ac.set_error_style()
             return
 
@@ -695,14 +723,13 @@ class UI():
             return
 
         Context.router.plot_route('Neutron', params)
+        self._show_busy_gui(True)
 
 
     @catch_exceptions
     def galaxy_plot(self) -> None:
         """ Perform a galaxy plotter plot """
         self.hide_error()
-        self._show_busy_gui(True)
-
         self.gal_source_ac.hide_list()
         self.gal_dest_ac.hide_list()
 
@@ -741,19 +768,24 @@ class UI():
             'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
             }
 
-        params['source'] = self.gal_source_ac.get().strip()
-        if params['source'] not in self.query_systems(params['source']):
+        src = self.gal_source_ac.get().strip()
+        params["source"] = next((x for x in self.query_systems(src) if x.casefold() == src.casefold()), None)
+        if params['source'] == None:
             self.show_frame('Galaxy')
+            self.gal_source_ac.set_text(src, False)
             self.gal_source_ac.set_error_style()
             return
 
-        params['destination'] = self.gal_dest_ac.get().strip()
-        if params['destination'] not in self.query_systems(params['destination']):
+        dest = self.gal_dest_ac.get().strip()
+        params['destination'] = next((x for x in self.query_systems(dest) if x.casefold() == dest.casefold()), None)
+        if params['destination'] == None:
             self.show_frame('Galaxy')
+            self.gal_dest_ac.set_text(dest, False)
             self.gal_dest_ac.set_error_style()
             return
 
         Context.router.plot_route('Galaxy', params)
+        self._show_busy_gui(True)
 
 
     def show_error(self, error:str|None = None) -> None:
@@ -783,7 +815,7 @@ class UI():
             self.sub_fr.grid_remove()
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)
-            self.busy_fr.after(250, update, 0)
+            self.busy_fr.after(0, update, 0)
             return
 
         self.busy_fr.grid_remove()

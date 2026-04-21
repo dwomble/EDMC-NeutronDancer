@@ -3,7 +3,7 @@ import threading
 import tkinter as tk
 
 from config import config # type: ignore
-
+from utils.debug import Debug
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -18,8 +18,6 @@ class Autocompleter(Placeholder):
     """
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
-
-
         self.func = None
         if 'func' in kw:
             self.func = kw['func']

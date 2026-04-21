@@ -59,7 +59,6 @@ class Route:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
         if self.offset >= len(self.route)-1: return lbls['route_complete']
-        Debug.logger.debug(f"Next stop: {self.sc} {self.route[self.offset+1][self.sc]}")
         return self.route[self.offset+1][self.sc]
 
 
@@ -212,7 +211,6 @@ class Route:
 
     def record_jump(self, dest:str, dist:float) -> None:
         """ Add details of an FSD jump """
-        Debug.logger.debug(f"Jump added")
         self.jumps.append([time(), dest, dist])
 
 

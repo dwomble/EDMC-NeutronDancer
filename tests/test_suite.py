@@ -13,6 +13,7 @@ import json
 import time
 import logging
 import tkinter as tk
+import threading
 
 from urllib3 import request
 
@@ -26,6 +27,14 @@ from Router.constants import CarrierStates, SPANSH_ROUTE
 from Router.route import Route
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+plotter_thread = None
+def capture_thread(*args, **kwargs):
+    global plotter_thread
+    thread = threading.Thread(*args, **kwargs)
+    if kwargs.get('name', '') == "Neutron Dancer route plotting worker":
+        plotter_thread = thread
+    return thread
 
 @pytest.fixture
 def harness() -> Generator:
@@ -58,6 +67,10 @@ def harness() -> Generator:
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
 
     yield test_harness
+
+    # Need to clear the singleton.
+    delattr(test_harness.plugin.router, "_initialized")
+
 
 class TestStartup:
     """Test plugin startup behavior."""
@@ -219,7 +232,7 @@ class TestCargo:
     def test_cargo_event(self, harness:TestHarness):
         """Test cargo event updates."""
         Path(Path(__file__).parent / "journal_folder" / "Cargo.json").unlink(missing_ok=True)
-        shutil.copy(Path(__file__).parent / "journal_config" / "cargo_init.json",
+        shutil.copy(Path(__file__).parent / "journal_config" / "Cargo_init.json",
                     Path(__file__).parent / "journal_folder" / "Cargo.json")
 
         harness.play_sequence('add_cargo')
@@ -312,8 +325,10 @@ class TestShipyardSwap:
 
     def test_swap_unknown_ship(self, harness:TestHarness):
         """Test swapping to an unknown ship."""
-        harness.play_sequence('shipyard_swap_unknown')
+        harness.play_sequence('shipyard_swap')
+        assert harness.plugin.router.ship_id == '106'
 
+        harness.play_sequence('shipyard_swap_unknown')
         assert harness.plugin.router.ship_id == '106'
 
 
@@ -432,12 +447,12 @@ class TestPlotOperations:
 
     def test_plotter_success_creates_route(self, harness:TestHarness) -> None:
         """Test that _plotter successfully creates a route from Spansh response."""
-        # Mock Spansh response for job submission
+        global plotter_thread
+
         job_response = Mock()
         job_response.status_code = 202
         job_response.content = json.dumps({"job": "test-job-id"}).encode()
 
-        # Mock route results response
         result_response = Mock()
         result_response.status_code = 200
         result_response.content = json.dumps({
@@ -449,30 +464,18 @@ class TestPlotOperations:
             }
         }).encode()
 
-        # Track the thread so we can join it
-        plotter_thread = None
-        original_thread = __import__('threading').Thread
 
-        def capture_thread(*args, **kwargs):
-            nonlocal plotter_thread
-            thread = original_thread(*args, **kwargs)
-            if "route plotting worker" in thread.name:
-                plotter_thread = thread
-            return thread
-
-        with patch('threading.Thread', side_effect=capture_thread):
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
             with patch('requests.post', return_value=job_response):
                 with patch('requests.get', return_value=result_response):
                     params = {'from': 'Start', 'to': 'End', 'max_time': 1}
                     harness.plugin.router.plot_route('Neutron', params)
 
-                    # Join the plotter thread if captured
-                    if plotter_thread:
-                        plotter_thread.join(timeout=120)
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
 
-                    # Route should be created and have at least 2 waypoints
-                    assert harness.plugin.route is not None
-                    assert len(harness.plugin.route.route) >= 2
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) >= 2
 
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
@@ -492,7 +495,7 @@ class TestPlotOperations:
                 plotter_thread = thread
             return thread
 
-        with patch('threading.Thread', side_effect=capture_thread):
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
             with patch('requests.post', return_value=error_response):
                 params = {'from': 'Start', 'to': 'End', 'max_time': 1}
                 # Should not raise exception, just handle error gracefully
@@ -526,37 +529,46 @@ class TestPlotting:
 
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot """
+        global plotter_thread
 
-        res:bool = harness.plugin.router.plot_route('Neutron',
-                                             {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                              'range': '60.00', 'efficiency': '60',
-                                              'supercharge_multiplier': '4'})
-        assert res == True
-        time.sleep(20)
-        assert harness.plugin.route is not None
-        assert harness.plugin.route.source() == 'Apurui'
-        assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 31
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '4'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 31
 
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot for a Caspian explorer """
+        global plotter_thread
 
-        res:bool = harness.plugin.router.plot_route('Neutron',
-                                             {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                              'range': '60.00', 'efficiency': '60',
-                                              'supercharge_multiplier': '6'})
-        assert res == True
-        # Wait for the plot to finish
-        time.sleep(20)
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
 
-        assert harness.plugin.route is not None
-        assert harness.plugin.route.source() == 'Apurui'
-        assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 21
 
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '6'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=22)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 21
 
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
+        global plotter_thread
 
         harness.plugin.router.swap_ship(1)
         ship = harness.plugin.router.ship
@@ -597,23 +609,23 @@ class TestPlotting:
         assert ship.internal_tank_size == 0.5
         assert ship.max_fuel_per_jump == 5.2
 
-        res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-        assert res == True
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
 
-        # Wait for plot completion while processing events
-        elapsed = 0
-        while elapsed < 64 and harness.plugin.route.route == []:
-            harness.plugin.ui.parent.update()
-            time.sleep(0.1)
-            elapsed += 0.1
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
 
-        assert harness.plugin.router.src == 'Apurui'
-        assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
 
-        assert harness.plugin.route.total_jumps() in [18, 21, 28] # Galaxy routes can vary based on current conditions
+            assert harness.plugin.router.src == 'Apurui'
+            assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
+
+            # This route seems to vary based on current conditions
+            assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
 
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""
+        global plotter_thread
 
         harness.plugin.router.swap_ship(2)
         ship = harness.plugin.router.ship
@@ -646,17 +658,15 @@ class TestPlotting:
             "destination": "Bleae Thua ED-D c12-5"
         }
 
-        res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-        assert res == True
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
 
-        # Wait for plot completion while processing events
-        elapsed = 0
-        while elapsed < 62 and harness.plugin.route.route == []:
-            harness.plugin.ui.parent.update()
-            time.sleep(0.1)
-            elapsed += 0.1
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
 
-        assert harness.plugin.route is not None
-        assert harness.plugin.router.src == galaxy_params['source']
-        assert harness.plugin.router.dest == galaxy_params['destination']
-        assert harness.plugin.route.total_jumps() == 9
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=62)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == galaxy_params['source']
+            assert harness.plugin.router.dest == galaxy_params['destination']
+            assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"

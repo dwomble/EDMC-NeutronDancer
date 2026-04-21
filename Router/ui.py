@@ -524,7 +524,8 @@ class UI():
             #wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-
+        if config.get_int('theme') > 0 and isinstance(self.waypoint_btn, tk.Button):
+            self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """
@@ -556,6 +557,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
+        image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
         self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=32,
                                                         command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])

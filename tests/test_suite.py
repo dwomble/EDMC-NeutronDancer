@@ -1,8 +1,6 @@
 """
 Test suite for EDMC Neutron Dancer plugin using pytest.
 """
-import threading
-
 import pytest # type: ignore
 import sys
 import os

@@ -87,7 +87,7 @@ class Route:
     def neutron(self) -> bool:
         """ Return whether we need to neutron boost at this waypoint """
         ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
-        Debug.logger.debug(f"{self.hdrs} {ind}")
+
         if ind == None: return False
         return self.route[self.offset][ind] in TRUE
 

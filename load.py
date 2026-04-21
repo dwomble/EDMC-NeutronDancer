@@ -76,7 +76,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'Cargo':
             Context.router.cargo = entry.get('Count', 0)
-        case 'SendText':        
+        case 'SendText':
             if entry.get('Message', '').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
                     case "prev" | "previous":
@@ -85,6 +85,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.goto_next_waypoint()
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+
+    Context.router.cargo = sum(state.get('Cargo', {}).values())
+    Context.ui.update_cargo(Context.router.cargo)
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:

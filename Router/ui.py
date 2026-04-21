@@ -288,6 +288,7 @@ class UI():
             init = names[0]
 
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
+        self.ship.trace_add("write", self.ship_selected)
         self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
@@ -295,7 +296,7 @@ class UI():
         col += 1
 
         self.cargo_entry:Placeholder = Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
-        self.set_entry(self.cargo_entry, str(params.get('cargo', 0)))
+        self.set_entry(self.cargo_entry, str(Context.router.cargo))
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         Tooltip(self.cargo_entry, tts["cargo"])
 
@@ -593,12 +594,21 @@ class UI():
                 self.dest_ac.set_text(param, False)
                 self.gal_dest_ac.set_text(param, False)
             case _:
-                for ship in Context.router.ships.values():
-                    if ship.name == param:
-                        self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
-                        self.multiplier.set(ship.supercharge_multiplier)
-                        # Set ship in the galaxy form
-                        return
+                param = self.ship.get() if param == "None" else param
+                ship:list[Ship] = [ship for ship in Context.router.ships.values() if ship.name == param]
+                if ship == []: return
+                self.range_entry.set_text(ship[0].get_range(Context.router.cargo), False)
+                self.multiplier.set(ship[0].supercharge_multiplier)
+                cargo:int = Context.router.cargo if ship[0].id == Context.router.ship_id else 0
+                self.cargo_entry.set_text(cargo, False)
+                return
+
+
+    @catch_exceptions
+    def ship_selected(self, *args) -> None:
+        """ Update the galaxy plotter when the ship dropdown changes """
+        ship_name:str = self.ship.get()
+        self.menu_callback('ship', ship_name)
 
 
     def set_entry(self, which:Autocompleter|Placeholder|None, value:str) -> None:
@@ -636,6 +646,15 @@ class UI():
         menu.delete(0, "end")
         [menu.add_command(label=ship, command=lambda item=ship: self.ship.set(item)) for ship in ships]
 
+
+    def update_cargo(self, cargo:int) -> None:
+        """ Update the cargo entry when the cargo changes """
+
+        if not Context.router.ship or self.ship.get() != Context.router.ship.name:
+            return
+
+        self.cargo_entry.set_text(str(cargo), False)
+        self.range_entry.set_text(str(Context.router.ship.get_range(cargo)), False)
 
     @catch_exceptions
     def _export_route(self) -> None:

@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 plotter_thread = None
 def capture_thread(*args, **kwargs):
     global plotter_thread
+
     thread = threading.Thread(*args, **kwargs)
     if kwargs.get('name', '') == "Neutron Dancer route plotting worker":
         plotter_thread = thread
@@ -130,6 +131,7 @@ class TestShipLoadout:
         assert harness.plugin.router.ship is not None
         assert hasattr(harness.plugin.router.ship, 'range')
         assert harness.plugin.router.ship.range > 0
+
 
 class TestImporting:
     """Test importing functionality for different route types."""
@@ -448,6 +450,7 @@ class TestPlotOperations:
     def test_plotter_success_creates_route(self, harness:TestHarness) -> None:
         """Test that _plotter successfully creates a route from Spansh response."""
         global plotter_thread
+        plotter_thread = None
 
         job_response = Mock()
         job_response.status_code = 202
@@ -530,6 +533,7 @@ class TestPlotting:
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot """
         global plotter_thread
+        plotter_thread = None
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
 
@@ -550,9 +554,9 @@ class TestPlotting:
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot for a Caspian explorer """
         global plotter_thread
+        plotter_thread = None
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-
 
             res:bool = harness.plugin.router.plot_route('Neutron',
                                                 {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
@@ -570,6 +574,7 @@ class TestPlotting:
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
         global plotter_thread
+        plotter_thread = None
 
         harness.plugin.router.swap_ship(1)
         ship = harness.plugin.router.ship
@@ -628,6 +633,7 @@ class TestPlotting:
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""
         global plotter_thread
+        plotter_thread = None
 
         harness.plugin.router.swap_ship(2)
         ship = harness.plugin.router.ship

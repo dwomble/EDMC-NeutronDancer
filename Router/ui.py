@@ -925,11 +925,6 @@ class UI():
                     nb.Label(prefsfr, text=k[1]).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     col += 1
                     tk.Entry(prefsfr, textvariable=vars[k[0]], width=8, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-                case 'ColorPicker':
-                    btn:tk.Button = tk.Button(prefsfr, text=k[1], foreground=self.ovf.text_colour, background=self.ovf.background,
-                                              command=partial(colour_picker, ovrprefs, k[1], vars[k[0]]))
-                    btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-                    cbtns.append(btn)
             col += 1
         row += 1
         ttk.Separator(frame).grid(row=row, columnspan=3, pady=5 * 2, sticky=tk.EW)

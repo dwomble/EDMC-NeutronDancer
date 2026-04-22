@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -14,13 +15,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: master
-
-#    - name: Rebase from GH
-#      id: Rebase
-#      run: |
-#        git config --global user.name "github-actions[bot]"
-#        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-#        git pull --rebase origin HEAD:master
+        fetch-depth: 0
 
     - name: Get the Release Tag
       id: get_version
@@ -31,53 +26,31 @@ jobs:
           # Overwrite the file 'release' with the tag name
           echo "${{ env.VERSION }}" | sed 's/^v//' > version
 
-    - name: Commit and Push updated version file
+    - name: Commit and push updated version file
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add version
-        git commit -m "Auto-generated report"
+        git diff --cached --quiet || git commit -m "Update version to ${{ env.VERSION }}"
         git push origin HEAD:master
 
     - name: Zip Folder
       run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*" "tests/*"
 
     - name: Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
       with:
         files: ${{ github.event.repository.name }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+    - name: List files for debugging
+      run: ls -R
+
+    - name: VirusTotal Scan
+      uses: cssnr/virustotal-action@v1
       with:
-        name: build-output
-        path: dist/
-
-  virus_scan:
-    needs: build
-
-    permissions:
-      contents: write
-      pull-requests: write
-
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-
-      - name: List files for debugging
-        run: ls -R
-
-      - name: VirusTotal Scan
-        uses: cssnr/virustotal-action@v1
-        with:
-          vt_api_key: ${{ secrets.VT_API_KEY }}
-          file_globs: ${{ github.event.repository.name }}.zip
-          release_heading: '### Virus Scan'
-          update_release: true
+        vt_api_key: ${{ secrets.VT_API_KEY }}
+        file_globs: ${{ github.event.repository.name }}.zip
+        release_heading: '### Virus Scan'
+        update_release: true

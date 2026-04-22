@@ -55,6 +55,7 @@ jobs:
         path: dist/
 
   virus_scan:
+    needs: build
 
     permissions:
       contents: write

@@ -46,17 +46,18 @@ jobs:
       with:
         name: build-output
         path: dist/        
-        
   virus_scan:
     permissions:
       contents: write
       pull-requests: write  
     runs-on: ubuntu-latest
     steps:
+      - name: List files for debugging
+        run: ls -R        
       - name: VirusTotal Scan
         uses: cssnr/virustotal-action@v1
         with:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           file_globs: ${{ github.event.repository.name }}.zip
-          elease_heading: '### Virus Scan'
+          release_heading: '### Virus Scan'
           update_release: true

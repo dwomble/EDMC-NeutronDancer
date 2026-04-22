@@ -26,8 +26,10 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add version
-        git commit -m "Auto-generated report"
+
+        git pull --rebase origin HEAD:master  # Fetches and integrates remote changes
+        git add .
+        git commit -m "Automated update"
         git push origin HEAD:master
 
     - name: Zip Folder
@@ -40,20 +42,20 @@ jobs:
         files: ${{ github.event.repository.name }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: build-output
-        path: dist/        
+        path: dist/
   virus_scan:
     permissions:
       contents: write
-      pull-requests: write  
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: List files for debugging
-        run: ls -R        
+        run: ls -R
       - name: VirusTotal Scan
         uses: cssnr/virustotal-action@v1
         with:

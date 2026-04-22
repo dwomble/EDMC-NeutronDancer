@@ -546,6 +546,7 @@ class TestPlotting:
             assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
             assert harness.plugin.route.total_jumps() == 31
 
+    @pytest.mark.manual_only
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot for a Caspian explorer """
         global plotter_thread
@@ -623,6 +624,7 @@ class TestPlotting:
             # This route seems to vary based on current conditions
             assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
 
+    @pytest.mark.manual_only
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""
         global plotter_thread

@@ -1,10 +1,13 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.9.0 2026-04-2x
+## v1.9.0 2026-04-22
 
 ### Changes
 
 * Added route icon to indicate neutron star
+* Improved release build process to include `virustotal`
+* Updated `github` automated unit tests to exclude slow tests
+* Added `flake8` checks to `github` automated unit tests
 
 ### Bug Fixes
 

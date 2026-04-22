@@ -13,6 +13,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+#    - name: Rebase from GH
+#      id: Rebase
+#      run: |
+#        git config --global user.name "github-actions[bot]"
+#        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#        git pull --rebase origin HEAD:master
+
     - name: Get the Release Tag
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -26,10 +33,8 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-        git pull --rebase origin HEAD:master  # Fetches and integrates remote changes
-        git add .
-        git commit -m "Automated update"
+        git add version
+        git commit -m "Auto-generated report"
         git push origin HEAD:master
 
     - name: Zip Folder
@@ -48,14 +53,19 @@ jobs:
       with:
         name: build-output
         path: dist/
+
   virus_scan:
+
     permissions:
       contents: write
       pull-requests: write
+
     runs-on: ubuntu-latest
     steps:
+
       - name: List files for debugging
         run: ls -R
+
       - name: VirusTotal Scan
         uses: cssnr/virustotal-action@v1
         with:

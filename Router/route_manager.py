@@ -326,6 +326,7 @@ class Router():
 
             Context.route = Route(hdrs, rte)
             Context.route.offset = 0
+            Context.route.update_route(0, self.system)
 
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')

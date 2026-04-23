@@ -673,9 +673,16 @@ class UI():
     def _clear_route(self) -> None:
         """ Display a confirmation dialog for clearing the current route """
         clear:bool = confirmDialog.askyesno(Context.plugin_title, lbls["clear_route_yesno"])
-        if clear == True:
-            self.show_frame(Context.router.last_plot)
-            Context.route = Route()
+        if not clear: return
+
+        # Reverse the route
+        if Context.router.dest == Context.router.system:
+            Debug.logger.debug(f"Reversing route as we're at the end")
+            self.dest_ac.set_text(Context.router.src, False)
+            self.source_ac.set_text(Context.router.dest, False)
+
+        self.show_frame(Context.router.last_plot)
+        Context.route = Route()
 
 
     @catch_exceptions

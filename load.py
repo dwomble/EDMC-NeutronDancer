@@ -60,13 +60,15 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
+    Context.router.system = system
+    Context.router.cargo = sum(state.get('Cargo', {}).values())
+    Context.ui.update_cargo(Context.router.cargo)
+
     match entry['event']:
         case 'Startup':
-            Context.router.system = system
             Context.router.carrier_state = CarrierStates.Idle
             if Context.route.route != []: Context.route.update_route(0, system)
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
-            Context.router.system = system
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
             Context.router.carrier_event(entry)
@@ -74,8 +76,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.set_ship(entry)
         case 'ShipyardSwap':
             Context.router.swap_ship(entry.get('ShipID', ''))
-        case 'Cargo':
-            Context.router.cargo = entry.get('Count', 0)
         case 'SendText':
             if entry.get('Message', '').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
@@ -85,9 +85,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.goto_next_waypoint()
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
-
-    Context.router.cargo = sum(state.get('Cargo', {}).values())
-    Context.ui.update_cargo(Context.router.cargo)
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:

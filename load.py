@@ -91,6 +91,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
+    if Context.router:
+        Context.router.dashboard_entry(cmdr, is_beta, entry)
     if Context.overlay:
         Context.overlay.dashboard_entry(cmdr, is_beta, entry)
 

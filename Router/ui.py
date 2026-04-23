@@ -65,7 +65,7 @@ class UI():
         #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
         #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
-        self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red')
+        self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red', justify=tk.CENTER)
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
         self.hide_error()
 
@@ -498,34 +498,34 @@ class UI():
     def update_waypoint(self) -> None:
         if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
+        route:Route = Context.route
+        self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset == 0 else tk.NORMAL)
+        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
+        self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
+        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
 
-        self.waypoint_prev_btn.config(state=tk.DISABLED if Context.route.offset == 0 else tk.NORMAL)
-        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
-        self.waypoint_next_btn.config(state=tk.DISABLED if Context.route.offset >= len(Context.route.route) -1 else tk.NORMAL)
-        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
-
-        wp:str = Context.route.next_stop()
+        wp:str = route.next_stop()
         copy_to_clipboard(self.parent, wp)
         self._update_progbar()
 
-        if Context.route.jumps_remaining() > 0:
+        if route.jumps_remaining() > 0:
             # Show progress through route
-            jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
-            tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+            jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
+            tjumps:tuple = tuple([route.total_jumps(), 'int'])
             wp += f" ({hfplus(jumps)}/{hfplus(tjumps)})"
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
-        if Context.route.neutron() == True:
+        if route.neutron() == True:
             image = self.neutron_img
 
-        if Context.route.refuel() == True:
+        if route.refuel() == True:
             image = self.fuel_img
-            #wp = lbls['refuel_now'] + ' ' + wp + ' '
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
         if config.get_int('theme') > 0 and isinstance(self.waypoint_btn, tk.Button):
             self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
+
 
     def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
         """ Create the route display frame """
@@ -794,7 +794,7 @@ class UI():
         if error == None: return
         Debug.logger.error(f"Showing error {error}")
         self.error_lbl['text'] = error
-        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.W)
+        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.CENTER)
 
 
     def hide_error(self) -> None:

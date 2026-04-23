@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from threading import Thread
 
 from config import config # type: ignore
+import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus, copy_to_clipboard
 
@@ -114,6 +115,13 @@ class Router():
             Debug.logger.debug("No UI available to switch ship; skipping UI update.")
 
 
+    def dashboard_entry(self, cmdr, is_beta, entry) -> None:
+        """ Copy next waypoint to clipboard on galaxy map entry """
+        if not Context.ui.parent or not Context.route.next_stop() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
+            return
+        copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+
+
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a jump in order to update the route, the UI etc."""
 
@@ -125,7 +133,7 @@ class Router():
             self._store_history()
 
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
-            Debug.logger.debug(f"Updating route")
+            Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
             Context.ui.update_waypoint()
             self.update_jump_overlay()
 
@@ -225,10 +233,10 @@ class Router():
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
         Debug.logger.debug(f"Storing route history {self.src}, {self.dest}")
-        if self.src != '' and self.src:
-            self.history.insert(0, self.src)
         if self.dest != '' and self.dest not in self.history:
             self.history.insert(0, self.dest)
+        if self.src != '' and self.src:
+            self.history.insert(0, self.src)
         if "" in self.history:
             self.history.remove("")
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
@@ -318,6 +326,7 @@ class Router():
 
             Context.route = Route(hdrs, rte)
             Context.route.offset = 0
+            Context.route.update_route(0, self.system)
 
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')

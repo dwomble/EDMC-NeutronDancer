@@ -5,6 +5,9 @@
 ### Changes
 
 * Added route icon to indicate neutron star
+* Added waypoint progress to next stop button
+* Now (re-)copies next jump to clipboard on entry to Galaxy Map
+* If a route is cleared once completed the source and destination are reversed
 * Improved release build process to include `virustotal`
 * Updated `github` automated unit tests to exclude slow tests
 * Added `flake8` checks to `github` automated unit tests
@@ -45,7 +48,7 @@
 
 ### New Features
 
-* Added !nd chat commands for next, previous, and copy. [Issue 14](https://github.com/dwomble/EDMC-NeutronDancer/issues/14)
+* Added `!nd` chat commands for `next`, `previous`, and `copy`. [Issue 14](https://github.com/dwomble/EDMC-NeutronDancer/issues/14)
 * Added overlay support [Issue 6](https://github.com/dwomble/EDMC-NeutronDancer/issues/6)
 
 ### Changes

@@ -133,7 +133,7 @@ class Router():
             self._store_history()
 
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
-            Debug.logger.debug(f"Updating route")
+            Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
             Context.ui.update_waypoint()
             self.update_jump_overlay()
 

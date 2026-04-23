@@ -87,8 +87,9 @@ class Route:
         """ Return whether we need to neutron boost at this waypoint """
         ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
 
-        if ind == None: return False
-        return self.route[self.offset][ind] in TRUE
+        if ind == None or self.offset+1 >= len(self.route): return False
+        return self.route[self.offset+1][ind] in TRUE
+
 
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
@@ -105,7 +106,7 @@ class Route:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
         if self.route == []: return -1
         if offset == None: offset = self.offset
-        if offset >= len(self.route)-1: return 0
+        if offset+1 >= len(self.route): return 0
 
         # No jump count column
         if self.jc == None: return len(self.route[offset:])-1

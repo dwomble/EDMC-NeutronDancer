@@ -801,7 +801,7 @@ class UI():
         if error == None: return
         Debug.logger.error(f"Showing error {error}")
         self.error_lbl['text'] = error
-        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.CENTER)
+        self.error_lbl.grid(row=1, column=0, columnspan=2, padx=5, sticky=tk.EW)
 
 
     def hide_error(self) -> None:

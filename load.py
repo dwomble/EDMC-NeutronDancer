@@ -60,10 +60,6 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
-    Context.router.system = system
-    Context.router.cargo = sum(state.get('Cargo', {}).values())
-    Context.ui.update_cargo(Context.router.cargo)
-
     match entry['event']:
         case 'Startup':
             Context.router.carrier_state = CarrierStates.Idle
@@ -85,6 +81,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.goto_next_waypoint()
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+
+    Context.router.system = system
+    Context.router.cargo = sum(state.get('Cargo', {}).values())
+    Context.ui.update_cargo(Context.router.cargo)
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:

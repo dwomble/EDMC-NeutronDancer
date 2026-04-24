@@ -751,13 +751,14 @@ class UI():
             self.show_frame('Galaxy')
             self.show_error(errs['no_ship'])
             return
-
+        res:int = int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0
+        Debug.logger.debug(f"Fuel reserve: {res}")
         params:dict = {
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
             #'max_time': int(self.time_limit.get()),
             'max_time': 60,
             'algorithm': self.algorithm.get(),
-            'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
+            'reserve_size': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,
             'use_supercharge': 1 if self.gallb.selection_includes(self.optionlist.index('use_supercharge')) else 0,
             'use_injections': 1 if self.gallb.selection_includes(self.optionlist.index('use_injections')) else 0,
@@ -771,7 +772,6 @@ class UI():
             'internal_tank_size': Context.router.ships[ship_id].internal_tank_size,
             'max_fuel_per_jump': Context.router.ships[ship_id].max_fuel_per_jump,
             'range_boost': Context.router.ships[ship_id].range_boost,
-            'ship_build': Context.router.ships[ship_id].loadout,
             'supercharge_multiplier': Context.router.ships[ship_id].supercharge_multiplier,
             'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
             }

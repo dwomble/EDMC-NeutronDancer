@@ -140,7 +140,6 @@ class Router():
 
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
-        Debug.logger.debug(f"Updating jump overlay")
         wp:str = Context.route.next_stop()
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
@@ -162,7 +161,6 @@ class Router():
             jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
             jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
 
-        Debug.logger.debug(f"Next refuel {next_refuel}")
         message.append({'size': "normal", 'text': f"{jstr}"})
         Context.overlay.display_frame('Default', message, ttl=120)
         Context.overlay.display_frame('Galaxy Map', message, ttl=120)
@@ -232,7 +230,6 @@ class Router():
 
     def _store_history(self) -> None:
         """ Upon route completion store src, dest and ship data """
-        Debug.logger.debug(f"Storing route history {self.src}, {self.dest}")
         if self.dest != '' and self.dest not in self.history:
             self.history.insert(0, self.dest)
         if self.src != '' and self.src:
@@ -240,7 +237,6 @@ class Router():
         if "" in self.history:
             self.history.remove("")
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
-        Debug.logger.debug(f"Route history updated: {self.history}")
 
 
     def plot_route(self, which:str, params:dict) -> bool:
@@ -343,7 +339,7 @@ class Router():
     def plot_error(self, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        Debug.logger.debug(f"Result: {response} {json.loads(response.content)}")
+        Debug.logger.info(f"Result: {response} {json.loads(response.content)}")
         err:str = errs["no_response"]
         #if response:
         #    Debug.logger.info(f"Server response: {response.json()}")
@@ -400,7 +396,6 @@ class Router():
     def _get_module_data(self) -> None:
         """ Download module data from Coriolis """
         try:
-            Debug.logger.debug(f"Getting module data")
             modules:list = []
             for key, url  in {"fsd": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/frame_shift_drive.json",
                               "gfsb": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/internal/guardian_fsd_booster.json",

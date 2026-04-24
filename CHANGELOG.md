@@ -17,6 +17,7 @@
 * Addressed failure to pickup changes to source and destination if not matched with dropdown list
 * Fixed bug where source or destination could be incorrectly reported in the busy frame
 * Made the router handle cargo changes more intelligently
+* Fix for [Issue 35](https://github.com/dwomble/EDMC-NeutronDancer/issues/35) fuel reserve not being sent correctly to Spansh
 
 ## v1.8.1 2026-03-11
 

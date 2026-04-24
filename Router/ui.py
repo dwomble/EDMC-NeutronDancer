@@ -771,7 +771,6 @@ class UI():
             'internal_tank_size': Context.router.ships[ship_id].internal_tank_size,
             'max_fuel_per_jump': Context.router.ships[ship_id].max_fuel_per_jump,
             'range_boost': Context.router.ships[ship_id].range_boost,
-            'ship_build': Context.router.ships[ship_id].loadout,
             'supercharge_multiplier': Context.router.ships[ship_id].supercharge_multiplier,
             'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
             }

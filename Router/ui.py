@@ -758,7 +758,7 @@ class UI():
             #'max_time': int(self.time_limit.get()),
             'max_time': 60,
             'algorithm': self.algorithm.get(),
-            'fuel_reserve': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
+            'reserve_size': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,
             'use_supercharge': 1 if self.gallb.selection_includes(self.optionlist.index('use_supercharge')) else 0,
             'use_injections': 1 if self.gallb.selection_includes(self.optionlist.index('use_injections')) else 0,

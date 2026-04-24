@@ -751,7 +751,8 @@ class UI():
             self.show_frame('Galaxy')
             self.show_error(errs['no_ship'])
             return
-
+        res:int = int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0
+        Debug.logger.debug(f"Fuel reserve: {res}")
         params:dict = {
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
             #'max_time': int(self.time_limit.get()),

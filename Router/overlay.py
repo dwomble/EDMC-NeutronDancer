@@ -87,7 +87,6 @@ class Overlay():
 
     def redraw_frames(self) -> None:
         """ Redraw all overlay frames """
-        Debug.logger.debug(f"Redrawing frames")
         [self.redraw_frame(fr) for fr in self.msgs]
 
 
@@ -207,7 +206,7 @@ class Overlay():
 
         stop.clear()
         Context.overlay.display_frame(frame, '', ttl=1)
-        Debug.logger.debug("Countdown thread is ending.")
+        #Debug.logger.debug("Countdown thread is ending.")
 
 
     def stop_countdown(self, frame:str) -> None:
@@ -222,7 +221,7 @@ class Overlay():
         Like display message but with a countdown either until a specific time or for some number of seconds
         The countdown should be in a variable t in the content string
         """
-        Debug.logger.debug(f"Countdown starting {content} {end}")
+        #Debug.logger.debug(f"Countdown starting {content} {end}")
         if end == None or frame not in self.ovfrs: return
         self.stop_countdown(frame)
         self.stoppers[frame] = Event()

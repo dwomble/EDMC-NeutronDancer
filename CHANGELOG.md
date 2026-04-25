@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.9.0 2026-04-22
+## v1.9.0 2026-04-24
 
 ### Changes
 

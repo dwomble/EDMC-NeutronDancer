@@ -310,8 +310,8 @@ class UI():
 
         col += 1
         self.fuel_res:Placeholder = Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
-        if params.get('fuel_reserve', 0) != 0:
-            self.set_entry(self.fuel_res, str(params.get('fuel_reserve', 0)))
+        if params.get('reserve_size', 0) != 0:
+            self.set_entry(self.fuel_res, str(params.get('reserve_size', 0)))
         Tooltip(self.fuel_res, tts["fuel_reserve"])
         self.fuel_res.grid(row=row, column=col, padx=5, pady=5)
 

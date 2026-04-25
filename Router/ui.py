@@ -100,7 +100,7 @@ class UI():
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
         self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
         if Context.updater.releasenotes != "":
-            Tooltip(self.update, text=tts["releasenotes"].format(c=Context.updater.releasenotes))
+            Tooltip(self.update, markdown=tts["releasenotes"].format(c=Context.updater.releasenotes))
         self.update.bind("<Button-1>", partial(self.cancel_update))
         self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
@@ -791,7 +791,6 @@ class UI():
             self.gal_dest_ac.set_error_style()
             return
 
-        Debug.logger.debug(f"params: {params}")
         Context.router.plot_route('Galaxy', params)
         self._show_busy_gui(True)
 

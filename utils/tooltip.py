@@ -3,7 +3,11 @@
 # may be useful for some purposes in (or almost in ;) the current project scope
 # Ideas gleaned from PySol
 
+from .debug import Debug, catch_exceptions
+from .tkrichtext import RichLabel
 import tkinter as tk
+from tkinter import ttk
+from typing import Optional, Tuple
 
 DELAY: int = 500 # Delay before tooltip appears in ms
 
@@ -49,10 +53,18 @@ class TooltipBase:
         tw.wm_geometry("+%d+%d" % (x, y))
         self.showcontents()
 
-    def showcontents(self, text="Your text here"):
-        # Override this in derived class
-        label = tk.Label(self.tipwindow, text=text, justify=tk.LEFT,
-                      background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+    @catch_exceptions
+    def showcontents(self, **kwargs):
+        if 'markdown' in kwargs:
+            label:tk.Label|RichLabel = RichLabel(self.tipwindow, markdown=kwargs['markdown'],
+                                                 background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+        elif 'html' in kwargs:
+            label:tk.Label|RichLabel = RichLabel(self.tipwindow, html=kwargs['html'],
+                                                 background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+        else:
+            label:tk.Label|RichLabel = tk.Label(self.tipwindow, text=kwargs['text'], justify=tk.LEFT,
+                                                background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+
         label.pack()
 
     def hidetip(self):
@@ -64,9 +76,125 @@ class TooltipBase:
 
 class Tooltip(TooltipBase):
 
-    def __init__(self, button, text):
+    def __init__(self, button, text:str='', **kwargs):
         TooltipBase.__init__(self, button)
-        self.text = text
+        self.args = kwargs
+        if text != '':
+            self.args['text'] = text
 
     def showcontents(self):
-        TooltipBase.showcontents(self, self.text)
+        TooltipBase.showcontents(self, **self.args)
+
+
+class TreeTooltip:
+    """Simple tooltip helper for Treeview widgets."""
+
+    def __init__(self, tree:ttk.Treeview) -> None:
+        self._tree = tree
+        self._tip: Optional[tk.Toplevel] = None
+        self._cell_texts: dict[Tuple[str, str], str] = {}
+        self._heading_texts: dict[str, str] = {}
+        self._current_key: Optional[Tuple[str, str]] = None
+
+        tree.bind("<Motion>", self._on_motion, add="+")
+        tree.bind("<Leave>", self._hide_tip, add="+")
+        tree.bind("<ButtonPress>", self._hide_tip, add="+")
+
+    def clear(self) -> None:
+        self._cell_texts.clear()
+        self._current_key = None
+        self._hide_tip()
+
+    def set_heading_tooltip(self, column_name: str, text: Optional[str]) -> None:
+        try:
+            columns = tuple(self._tree.cget("columns"))
+        except tk.TclError:
+            return
+        try:
+            idx = columns.index(column_name)
+        except ValueError:
+            return
+        col_id = f"#{idx + 1}"
+        if text:
+            self._heading_texts[col_id] = text
+        else:
+            self._heading_texts.pop(col_id, None)
+
+    def set_cell_text(self, item: str, column: str, text: Optional[str]) -> None:
+        key = (item, column)
+        if text:
+            self._cell_texts[key] = text
+        elif key in self._cell_texts:
+            del self._cell_texts[key]
+        if self._current_key == key and not text:
+            self._hide_tip()
+
+    def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
+        region = self._tree.identify_region(event.x, event.y)
+        column = self._tree.identify_column(event.x)
+
+        if region == "heading":
+            key = ("", column or "")
+            if key == self._current_key:
+                return
+            self._hide_tip()
+            heading_text = self._heading_texts.get(column)
+            if heading_text:
+                self._current_key = key
+                x = event.x_root + 16
+                y = event.y_root + 12
+                self._show_tip(x, y, heading_text)
+            return
+
+        item = self._tree.identify_row(event.y)
+        key = (item or "", column or "")
+        if key == self._current_key:
+            return
+        self._hide_tip()
+        if not item or key not in self._cell_texts:
+            return
+        self._current_key = key
+        x = event.x_root + 16
+        y = event.y_root + 12
+        self._show_tip(x, y, self._cell_texts[key])
+
+    def _show_tip(self, x: int, y: int, text: str) -> None:
+        try:
+            tip = tk.Toplevel(self._tree)
+        except tk.TclError:
+            return
+        tip.wm_overrideredirect(True)
+        tip.wm_geometry(f"+{x}+{y}")
+        try:
+            style = ttk.Style(self._tree)
+        except tk.TclError:
+            tip.destroy()
+            return
+        try:
+            tree_background = self._tree.cget("background")
+        except tk.TclError:
+            tree_background = None
+        bg = (
+            style.lookup("TLabel", "background")
+            or style.lookup("TFrame", "background")
+            or tree_background
+            or "#ffffe0"
+        )
+        fg = style.lookup("TLabel", "foreground") or "#000000"
+        label = tk.Label(
+            tip,
+            text=text,
+            background=bg,
+            foreground=fg,
+            relief="solid",
+            borderwidth=1,
+            justify="left",
+        )
+        label.pack(ipadx=4, ipady=2)
+        self._tip = tip
+
+    def _hide_tip(self, *_: object) -> None:
+        if self._tip is not None:
+            self._tip.destroy()
+            self._tip = None
+        self._current_key = None

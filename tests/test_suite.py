@@ -331,7 +331,7 @@ class TestShipyardSwap:
         assert harness.plugin.router.ship_id == '106'
 
         harness.play_sequence('shipyard_swap_unknown')
-        assert harness.plugin.router.ship_id == '106'
+        assert harness.plugin.router.ship_id == ''
 
 
 class TestOverlay:

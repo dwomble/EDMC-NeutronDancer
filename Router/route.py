@@ -21,7 +21,7 @@ class Route:
 
         self.sc:int|None = self.colind()
         self.jc:int|None = self.colind('Jumps')
-        self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
+        self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
         if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrier == False:
@@ -34,7 +34,7 @@ class Route:
 
             # Recalc, they may have moved.
             self.sc:int|None = self.colind()
-            self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
+            self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
 
     def source(self) -> str:

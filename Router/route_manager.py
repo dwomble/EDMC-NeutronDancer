@@ -414,18 +414,18 @@ class Router():
             Context.modules = modules
 
             # Temporary hack since Coriolis doens't yet have the new MkII overcharge boosters
-            Context.modules.append({
-                "class": 8,
-                "cost": 82042060,
-                "fuelmul": 0.011,
-                "fuelpower": 2.5025,
-                "mass": 160,
-                "maxfuel": 6.8,
-                "optmass": 4670,
-                "power": 1.15,
-                "rating": "A",
-                "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
-            })
+#            Context.modules.append({
+#                "class": 8,
+#                "cost": 82042060,
+#                "fuelmul": 0.011,
+#                "fuelpower": 2.5025,
+#                "mass": 160,
+#                "maxfuel": 6.8,
+#                "optmass": 4670,
+#                "power": 1.15,
+#                "rating": "A",
+#                "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
+#            })
 
             Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
             dir:Path = Path(Context.plugin_dir) / DATA_DIR

@@ -12,7 +12,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus, copy_to_clipboard
 
-from .constants import ovr, errs, lbls, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import ovr, errs, lbls, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -397,9 +397,9 @@ class Router():
         """ Download module data from Coriolis """
         try:
             modules:list = []
-            for key, url  in {"fsd": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/frame_shift_drive.json",
-                              "gfsb": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/internal/guardian_fsd_booster.json",
-                              "ft": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/fuel_tank.json"}.items():
+            for key, url  in {"fsd": f"{GH_MODULES}/standard/frame_shift_drive.json",
+                              "gfsb": f"{GH_MODULES}/internal/guardian_fsd_booster.json",
+                              "ft": f"{GH_MODULES}/standard/fuel_tank.json"}.items():
                 r:Response = requests.get(url, timeout=10)
                 if r.status_code != 200:
                     Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")

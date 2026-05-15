@@ -16,8 +16,12 @@ GH_VERSION:str = f"https://raw.githubusercontent.com/{GH_USER}/{GH_PROJECT}/mast
 GH_RELEASE_INFO:str = f"https://api.github.com/repos/{GH_USER}/{GH_PROJECT}/releases/latest"
 GH_CHANGELOG:str = f"{GH_BASE}/blob/master/CHANGELOG.md#"
 
+# Check for updates at most once per day
+UPDATE_CHECK_INTERVAL:int = (3600 * 24)
+
 # Coriolis Modules GH
 GH_MODULES:str = "https://raw.githubusercontent.com/Brighter-Applications/coriolis-data/master/modules"
+
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"

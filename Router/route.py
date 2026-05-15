@@ -6,10 +6,10 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], cols:list = [], offset:int = 0, jumps:list = []) -> None:
+    def __init__(self, hdrs:list = [], cols:list = [], offset:int = 0) -> None:
         self.hdrs:list = hdrs
         self.route:list = cols
-        self.jumps:list = jumps
+        self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
 
@@ -225,4 +225,4 @@ class Route:
 
 
     def to_dict(self) -> list:
-        return [self.hdrs, self.route, self.offset, self.jumps]
+        return [self.hdrs, self.route, self.offset]

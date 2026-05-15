@@ -31,7 +31,7 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_version = version
     Context.plugin_useragent = f"{GH_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir))
-    Context.updater.check_for_update(Context.plugin_version)
+    Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
 
     return NAME
 
@@ -63,7 +63,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     match entry['event']:
         case 'Startup':
             Context.router.carrier_state = CarrierStates.Idle
-            if Context.route.route != []: Context.route.update_route(0, system)
+            if Context.route.route != []:
+                Context.route.update_route(0, system)
+                Context.route.jumps = []
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
@@ -81,6 +83,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.goto_next_waypoint()
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+        # Add shutdown
+        case 'Shutdown':
+            if Context.route.route != []: Context.route.jumps = []
 
     Context.router.system = system
     Context.router.cargo = sum(state.get('Cargo', {}).values())

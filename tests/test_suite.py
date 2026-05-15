@@ -98,7 +98,7 @@ class TestStartup:
         """Test retrieving module data from Coriolis """
         harness.plugin.modules = []
         harness.plugin.router._get_module_data()
-        assert len(harness.plugin.modules) == 89
+        assert len(harness.plugin.modules) == 88
 class TestStateManagement:
     """Test router state management."""
 
@@ -908,7 +908,7 @@ class DisabledRouteWindowDisplay:
         """Test show() with empty columns - should return without error."""
         window:RouteWindow = harness.plugin.ui.window_route
 
-        empty_route = Route(['System Name', 'Jumps'], [], 0, [])
+        empty_route = Route(['System Name', 'Jumps'], [], 0)
         # Empty route should not crash
         assert empty_route.hdrs == ['System Name', 'Jumps']
         assert empty_route.route == []
@@ -923,7 +923,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         assert route.hdrs == hdrs
         assert len(route.route) == 3
@@ -943,7 +943,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', 'False']
         ]
         hdrs = ['System Name', 'Jumps', 'Neutron']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         assert route.refuel() == False
         assert route.neutron() == False  # Next waypoint doesn't need neutron
@@ -961,7 +961,7 @@ class DisabledRouteWindowDisplay:
             ['System C', '8', '50', 'False']
         ]
         hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         assert route.fleetcarrier == True
         assert route.refuel() == False  # Depends on refuel column
@@ -979,7 +979,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         assert route.next_stop() == 'Apurui'  # Next after current (Sol)
 
@@ -996,7 +996,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 2, [])  # At last waypoint
+        route = Route(hdrs, route_data, 2)  # At last waypoint
 
         assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
 
@@ -1008,7 +1008,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         # First system (offset 0)
         assert route.jumps_to_system() == 0  # Already there
@@ -1024,7 +1024,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         assert route.jumps_remaining() == 15  # 10 + 5
 
@@ -1037,7 +1037,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         route.update_route(1)  # Move to Apurui
         assert route.jumps_remaining() == 5  # Only Bleae Thua remains
@@ -1051,7 +1051,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         total = route.total_jumps()
         remaining = route.jumps_remaining()
@@ -1066,7 +1066,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         route.update_route(2)  # Move to last waypoint (Bleae Thua)
         assert route.perc_jumps_rem() == 0
@@ -1081,7 +1081,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', '50']
         ]
         hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         assert route.total_dist() == 100  # At start, total distance
 
@@ -1094,7 +1094,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', '50']
         ]
         hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         assert route.dist_remaining() == 0  # Sol has 0 distance remaining
 
@@ -1107,7 +1107,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', '50']
         ]
         hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         route.update_route(1)  # Move to Apurui
         assert route.dist_remaining() == 100  # Distance to Bleae Thua
@@ -1121,7 +1121,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', 'Fuel']
         ]
         hdrs = ['System Name', 'Jumps', 'Refuel']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         # Check next waypoint for refuel
         route.update_route(1)  # Now at Apurui
@@ -1136,7 +1136,7 @@ class DisabledRouteWindowDisplay:
             ['Bleae Thua', '5', 'False']
         ]
         hdrs = ['System Name', 'Jumps', 'Neutron']
-        route = Route(hdrs, route_data, 0, route_data)
+        route = Route(hdrs, route_data, 0)
 
         # Check if next waypoint needs neutron
         route.update_route(1)  # Now at Apurui
@@ -1151,7 +1151,7 @@ class DisabledRouteWindowDisplay:
             ['C', '2']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         assert route.get_waypoint(0) == 'B'
 
@@ -1163,7 +1163,7 @@ class DisabledRouteWindowDisplay:
             ['B', '1']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 1, [])
+        route = Route(hdrs, route_data, 1)
 
         assert route.get_waypoint(0) == 'none'  # tbls['none']
 
@@ -1176,7 +1176,7 @@ class DisabledRouteWindowDisplay:
             ['C', '2']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         initial_offset = route.offset
         result = route.update_route(1)
@@ -1192,7 +1192,7 @@ class DisabledRouteWindowDisplay:
             ['C', '2']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 2, [])
+        route = Route(hdrs, route_data, 2)
 
         final_offset = route.offset
         result = route.update_route(-1)
@@ -1208,7 +1208,7 @@ class DisabledRouteWindowDisplay:
             ['C', '2']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         result = route.update_route(100)  # Way beyond
         assert route.offset == len(route_data) - 1  # Stay at last valid position
@@ -1222,7 +1222,7 @@ class DisabledRouteWindowDisplay:
             ['C', '2']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         result = route.update_route(-100)  # Way before
         assert route.offset == 0  # Stay at first position
@@ -1234,7 +1234,7 @@ class DisabledRouteWindowDisplay:
             ['Sol', '0']
         ]
         hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0, [])
+        route = Route(hdrs, route_data, 0)
 
         # Record a jump
         dest = 'Jupiter'

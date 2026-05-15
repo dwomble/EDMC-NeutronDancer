@@ -487,8 +487,9 @@ class Router():
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        (hdrs, route, offset, jumps) = dict.get('route', ([], [], 0, []))
-        Context.route = Route(hdrs, route, offset, jumps)
+        r = dict.get('route', ([], [], 0))
+        (hdrs, route, offset) = r[0:3]
+        Context.route = Route(hdrs, route, offset)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 

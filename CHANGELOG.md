@@ -1,5 +1,20 @@
 # EDMC-NeutronDancer Changelog
 
+## v1.10.0 2025-??-??
+
+### New Features
+
+* Refuel reminder is automatically removed once you've refueled
+
+### Changes
+
+* Checking for new versions is done at most daily to prevent GitHub API overload
+
+### Bug Fixes
+
+* Improved tracking of jump statistics
+* Corrected miscalculation of jumps to refuel
+
 ## v1.9.0 2026-04-24
 
 ### Changes

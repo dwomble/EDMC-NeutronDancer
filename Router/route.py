@@ -68,12 +68,10 @@ class Route:
 
         ind:int|None = self.colind("Refuel") or self.colind("Restock")
         if ind == None: return None
-
         if self.route[self.offset][ind] in TRUE: return 0
-        # TODO: Not sure about this logic. It's trying to deal with a started or not started route but still...
-        start:int = 1
+
         waypoint_range:list = self.route[self.offset:len(self.route)]
-        return next((i + start for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
+        return next((i for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
 
 
     def refuel(self) -> bool:

@@ -505,10 +505,10 @@ class UI():
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
 
         wp:str = route.next_stop()
-        copy_to_clipboard(self.parent, wp)
         self._update_progbar()
 
         if route.jumps_remaining() > 0:
+            copy_to_clipboard(self.parent, wp)
             # Show progress through route
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])

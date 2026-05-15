@@ -9,6 +9,7 @@
 ### Changes
 
 * Checking for new versions is done at most daily to prevent GitHub API overload
+* Stop copying "End of the Road" to the clipboard
 
 ### Bug Fixes
 

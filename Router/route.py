@@ -13,7 +13,10 @@ class Route:
         self.offset:int = offset
         self.fleetcarrier:bool = False
 
-        Debug.logger.debug(f"Init, offset: {self.offset}")
+        self.sc:int|None = None
+        self.jc:int|None = None
+        self.dc:int|None = None
+
         if hdrs == [] or cols == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)

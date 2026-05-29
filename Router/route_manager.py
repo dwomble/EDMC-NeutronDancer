@@ -208,6 +208,22 @@ class Router():
                 Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
 
 
+    @catch_exceptions
+    def fuel_event(self, state:dict) -> None:
+        """ Set fuel_full to true or false """
+
+        fuel:float = -1
+        with open(Path(config.get_str("journaldir") / "Status.json"), 'r') as file:
+            status:dict = json.load(file)
+            fuel = status.get('Fuel', {}).get('FuelMain', 0.0)
+        Context.route.fuel_full = (fuel >= float(state.get('FuelCapacity', 0.0)))
+
+        # Update the UI as we may need to hide the refuel notification
+        if Context.route.jumps_remaining() > 0:
+            Context.ui.update_waypoint()
+            self.update_jump_overlay()
+
+
     def jump_complete(self) -> None:
         """ If we didn't get a notification of the carrier jump completion complete it """
         if self.carrier_state != CarrierStates.Jumping: return

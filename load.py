@@ -83,6 +83,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         Context.ui.goto_next_waypoint()
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+        case 'Refueling': # Read fuel from Status.json
+            Context.router.fuel_event(state)
         # Add shutdown
         case 'Shutdown':
             if Context.route.route != []: Context.route.jumps = []

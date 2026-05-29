@@ -12,6 +12,7 @@ class Route:
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
+        self.fuel_full = False
 
         self.sc:int|None = None
         self.jc:int|None = None
@@ -79,6 +80,7 @@ class Route:
 
     def refuel(self) -> bool:
         """ Return whether we need to refuel at this waypoint """
+        if self.fuel_full == True: return False
         ind:int|None = self.colind('Refuel') or self.colind('Restock')
         if ind == None: return False
         return self.route[self.offset][ind] in TRUE
@@ -105,7 +107,7 @@ class Route:
 
     def jumps_remaining(self, offset:int|None = None) -> int:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
-        if self.route == []: return -1
+        if self.route == []: return 0
         if offset == None: offset = self.offset
         if offset+1 >= len(self.route): return 0
 

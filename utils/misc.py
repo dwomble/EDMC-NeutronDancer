@@ -83,14 +83,14 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
 def frame(parent:tk.Widget, **kw) -> tk.Frame:
     """ Deal with EDMC theme/color weirdness """
     fr:tk.Frame = tk.Frame(parent, kw)
-    theme.register(fr)
+    theme.update(fr)
     return fr
 
 
 def labelframe(parent:tk.Widget, **kw) -> tk.LabelFrame:
     """ Deal with EDMC theme/color weirdness """
     fr:tk.LabelFrame = tk.LabelFrame(parent, kw)
-    theme.register(fr)
+    theme.update(fr)
     return fr
 
 
@@ -109,7 +109,7 @@ def button(fr:tk.Frame|tk.Toplevel, gopts:dict|None = None, **kw) -> tk.Button|t
 def label(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Label|ttk.Label:
     """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
     ttkl:ttk.Label = ttk.Label(fr, **kw)
-    theme.register(ttkl)
+    theme.update(ttkl)
     return ttkl
 
 
@@ -142,6 +142,7 @@ def combobox(fr:tk.Frame, v:tk.StringVar, gopts:dict|None = None, **kw) -> ttk.C
     tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
     tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
     theme.register(tkcb)
+
     if gopts is not None:
         theme.register_alternate((ttkcb, tkcb, tkcb), gopts)
 
@@ -152,17 +153,19 @@ def listbox(fr:tk.Frame, items:list, getopts:dict|None = None) -> tk.Listbox:
     """ Deal with EDMC theme/color weirdness by creating tk listbox for dark mode """
     # @TODO: Switch the plain mode for a treeview?
     rows:int = min(len(items), 10)
+
     lb1:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
     lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
-    for i in range(len(items)):
-        lb1.insert(tk.END, items[i])
     theme.register(lb1)
+
     lb2:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
     lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
     lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
-    for i in range(len(items)):
-        lb2.insert(tk.END, items[i])
     theme.register(lb2)
+
+    for i in range(len(items)):
+        lb1.insert(tk.END, items[i])
+        lb2.insert(tk.END, items[i])
 
     if getopts is not None:
         theme.register_alternate((lb1, lb2, lb2), getopts)
@@ -170,12 +173,17 @@ def listbox(fr:tk.Frame, items:list, getopts:dict|None = None) -> tk.Listbox:
     return lb1 if config.get_int('theme') == 0 else lb2
 
 
-def checkbox(fr:tk.Frame, **kw) -> ttk.Checkbutton|tk.Checkbutton:
+def checkbox(fr:tk.Frame, getopts:dict|None = None, **kw) -> ttk.Checkbutton|tk.Checkbutton:
     """ Deal with EDMC theme/color weirdness by creating tk for dark mode """
-    if config.get_int('theme') == 0: return ttk.Checkbutton(fr, **kw)
+    ttkcb:ttk.Checkbutton = ttk.Checkbutton(fr, **kw)
+    theme.register(ttkcb)
 
-    box:tk.Checkbutton = tk.Checkbutton(fr, **kw)
-    return box
+    tkcb:tk.Checkbutton = tk.Checkbutton(fr, **kw)
+    theme.register(tkcb)
+    if getopts is not None:
+        theme.register_alternate((ttkcb, tkcb, tkcb), getopts)
+
+    return ttkcb if config.get_int('theme') == 0 else tkcb
 
 
 def scale(fr:tk.Frame, gopts:dict|None, **kw) -> tk.Scale|ttk.Scale:

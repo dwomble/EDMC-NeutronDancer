@@ -127,7 +127,6 @@ class Autocompleter(Placeholder):
             if self.lb_up:
                 self.hide_list()
 
-    @catch_exceptions
     def show_list(self, height) -> None:
         self.lb["height"] = height
         if not self.lb_up and self.parent.focus_get() is self:

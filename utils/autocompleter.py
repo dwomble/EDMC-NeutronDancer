@@ -2,8 +2,10 @@ import queue
 import threading
 import tkinter as tk
 
+from theme import theme # type: ignore
 from config import config # type: ignore
-from utils.debug import Debug
+
+from utils.debug import Debug, catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -31,6 +33,7 @@ class Autocompleter(Placeholder):
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
+        theme.update(self.lb)
 
         self.lb.pack(fill=tk.BOTH, expand=True)
         self.popup.withdraw()
@@ -124,9 +127,12 @@ class Autocompleter(Placeholder):
             if self.lb_up:
                 self.hide_list()
 
+    @catch_exceptions
     def show_list(self, height) -> None:
         self.lb["height"] = height
         if not self.lb_up and self.parent.focus_get() is self:
+            self.popup.configure(bg=theme.current['background'])
+            self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], selectbackground=theme.current['activebackground'], selectforeground=theme.current['activeforeground'])
             x:int = self.winfo_rootx()
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")

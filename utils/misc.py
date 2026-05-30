@@ -11,6 +11,7 @@ from typing import Any
 from functools import reduce
 import operator
 
+from theme import theme # type: ignore
 from config import config # type: ignore
 
 from utils.debug import Debug, catch_exceptions
@@ -61,11 +62,11 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     # Still nothing? Then run all the ones we can find regardless of session type.
     for cmd in cmds:
         if shutil.which(cmd.split()[0]):
-            clipboard_cli = cmd
+            cli:str = cmd
             try:
-                subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
+                subprocess.run(cli.split(), input=text.encode('utf-8'), check=True)
             except subprocess.CalledProcessError as e:
-                Debug.logger.error(f"Failed to run {clipboard_cli}: {e}")
+                Debug.logger.error(f"Failed to run {cli}: {e}")
 
     if clipboard_cli != None:
         return
@@ -82,40 +83,53 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
 def frame(parent:tk.Widget, **kw) -> tk.Frame:
     """ Deal with EDMC theme/color weirdness """
     fr:tk.Frame = tk.Frame(parent, kw)
+    theme.register(fr)
     return fr
 
 
 def labelframe(parent:tk.Widget, **kw) -> tk.LabelFrame:
     """ Deal with EDMC theme/color weirdness """
     fr:tk.LabelFrame = tk.LabelFrame(parent, kw)
+    theme.register(fr)
     return fr
 
 
-def button(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Button|ttk.Button:
+def button(fr:tk.Frame|tk.Toplevel, gopts:dict|None = None, **kw) -> tk.Button|ttk.Button:
     """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
-        #Debug.logger.debug(f"Button {btn} {kw}")
-        #return btn
-    return tk.Button(fr, padx=10,**kw)
+    ttkb:ttk.Button = ttk.Button(fr, **kw)
+    theme.register(ttkb)
+    tkb:tk.Button = tk.Button(fr, padx=10, **kw)
+    theme.register(tkb)
+    if gopts is not None:
+        theme.register_alternate((ttkb, tkb, tkb), gopts)
+
+    return ttkb if config.get_int('theme') == 0 else tkb
 
 
 def label(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Label|ttk.Label:
     """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
-    return ttk.Label(fr, **kw)
+    ttkl:ttk.Label = ttk.Label(fr, **kw)
+    theme.register(ttkl)
+    return ttkl
 
 
-def radiobutton(fr:tk.Frame, **kw) -> tk.Radiobutton|ttk.Radiobutton:
+def radiobutton(fr:tk.Frame, gopts:dict|None = None, **kw) -> tk.Radiobutton|ttk.Radiobutton:
     """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    if config.get_int('theme') == 0: return ttk.Radiobutton(fr, **kw)
+    ttkrb:ttk.Radiobutton = ttk.Radiobutton(fr, **kw)
+    theme.register(ttkrb)
+    tkrb:tk.Radiobutton = tk.Radiobutton(fr, **kw)
+    tkrb.config(fg=config.get_str('dark_text'))
+    theme.register(tkrb)
+    if gopts is not None:
+        theme.register_alternate((ttkrb, tkrb, tkrb), gopts)
 
-    rb:tk.Radiobutton = tk.Radiobutton(fr, **kw)
-    rb.config(fg=config.get_str('dark_text'))
-    return rb
+    return ttkrb if config.get_int('theme') == 0 else tkrb
 
 
-def combobox(fr:tk.Frame, v:tk.StringVar, **kw) -> ttk.Combobox|tk.OptionMenu:
+def combobox(fr:tk.Frame, v:tk.StringVar, gopts:dict|None = None, **kw) -> ttk.Combobox|tk.OptionMenu:
     """ Deal with EDMC theme/color weirdness by creating tk.optionmenu for dark mode """
-    if config.get_int('theme') == 0: return ttk.Combobox(fr, textvariable=v, state='readonly', **kw)
+    ttkcb:ttk.Combobox = ttk.Combobox(fr, textvariable=v, state='readonly', **kw)
+    theme.register(ttkcb)
 
     value:str = ''
     values:list = []
@@ -124,24 +138,36 @@ def combobox(fr:tk.Frame, v:tk.StringVar, **kw) -> ttk.Combobox|tk.OptionMenu:
     if len(kw.get('values', [])) > 1:
         values = kw['values'][1:]
 
-    om:tk.OptionMenu = tk.OptionMenu(fr, v, value, *values)
-    om.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
-    return om
+    tkcb:tk.OptionMenu = tk.OptionMenu(fr, v, value, *values)
+    tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+    tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
+    theme.register(tkcb)
+    if gopts is not None:
+        theme.register_alternate((ttkcb, tkcb, tkcb), gopts)
+
+    return ttkcb if config.get_int('theme') == 0 else tkcb
 
 
-def listbox(fr:tk.Frame, items:list) -> tk.Listbox:
+def listbox(fr:tk.Frame, items:list, getopts:dict|None = None) -> tk.Listbox:
     """ Deal with EDMC theme/color weirdness by creating tk listbox for dark mode """
     # @TODO: Switch the plain mode for a treeview?
     rows:int = min(len(items), 10)
-    lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
-    lb.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
+    lb1:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
+    lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
     for i in range(len(items)):
-        lb.insert(tk.END, items[i])
+        lb1.insert(tk.END, items[i])
+    theme.register(lb1)
+    lb2:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
+    lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
+    lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
+    for i in range(len(items)):
+        lb2.insert(tk.END, items[i])
+    theme.register(lb2)
 
-    if config.get_int('theme') == 0: return lb
+    if getopts is not None:
+        theme.register_alternate((lb1, lb2, lb2), getopts)
 
-    lb.configure(selectbackground='gray25', highlightbackground='black', background='black')
-    return lb
+    return lb1 if config.get_int('theme') == 0 else lb2
 
 
 def checkbox(fr:tk.Frame, **kw) -> ttk.Checkbutton|tk.Checkbutton:
@@ -152,14 +178,17 @@ def checkbox(fr:tk.Frame, **kw) -> ttk.Checkbutton|tk.Checkbutton:
     return box
 
 
-def scale(fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
+def scale(fr:tk.Frame, gopts:dict|None, **kw) -> tk.Scale|ttk.Scale:
     """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    sc = tk.Scale(fr, kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+    tksc1:tk.Scale = tk.Scale(fr, kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+    theme.register(tksc1)
+    tksc2:tk.Scale = tk.Scale(fr, kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+    tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
+    theme.register(tksc2)
+    if gopts is not None:
+        theme.register_alternate((tksc1, tksc2, tksc2), gopts)
 
-    if config.get_int('theme') == 0: return sc
-
-    sc.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
-    return sc
+    return tksc1 if config.get_int('theme') == 0 else tksc2
 
 
 def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:

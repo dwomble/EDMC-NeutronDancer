@@ -9,6 +9,7 @@ import requests
 import json
 import myNotebook as nb # type: ignore
 
+from theme import theme # type: ignore
 from config import config # type: ignore
 
 from utils.tooltip import Tooltip
@@ -156,9 +157,10 @@ class UI():
         self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=BOLD)
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
-        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, text=" "+btns["plot_route"]+" ",
+        gopts:dict = {'row': row, 'column': col, 'sticky': tk.W}
+        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, gopts, text=" "+btns["plot_route"]+" ",
                                                    command=lambda: self.show_frame(Context.router.last_plot))
-        plot_gui_btn.grid(row=row, column=col, sticky=tk.W)
+        plot_gui_btn.grid(gopts)
 
         return title_fr
 
@@ -186,12 +188,15 @@ class UI():
     def _plot_switcher(self, fr:tk.Frame, row:int, col:int) -> None:
         """ Switch between the two route plotters """
         sfr:tk.Frame = frame(fr, width=self.frwidth)
-        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron',
+        gopts:dict = {'row': 0, 'column': 0, 'padx': 5, 'pady': 5}
+        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, gopts, text=lbls["neutron_router"], variable=self.router, value='Neutron',
                                                         command=lambda: self.show_frame('Neutron'))
-        r1.grid(row=0, column=0, padx=5, pady=5)
-        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
+        r1.grid(gopts)
+
+        gopts = {'row': 0, 'column': 1, 'padx': 5, 'pady': 5}
+        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, gopts, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
                                                         command=lambda: self.show_frame('Galaxy'))
-        r2.grid(row=0, column=1, padx=5, pady=5)
+        r2.grid(gopts)
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         # This has to be a tk.Button or EDMC's theme throws some kind of error about setting a foreground
         r3:tk.Button = tk.Button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
@@ -264,13 +269,14 @@ class UI():
         col += 2
 
         self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
-        self.gallb:tk.Listbox = listbox(plot_fr, [lbls[v] for v in self.optionlist])
+        gopts:dict = {'row': row, 'column': col, 'rowspan': 3, 'padx': 5, 'pady': 5}
+        self.gallb:tk.Listbox = listbox(plot_fr, [lbls[v] for v in self.optionlist], getopts=gopts)
         Tooltip(self.gallb, tts['galaxy_options'])
 
         for i, item in enumerate(self.optionlist):
             if params.get(item, False) == True:
                 self.gallb.selection_set(i)
-        self.gallb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
+        self.gallb.grid(gopts)
 
         # Row two
         row += 1; col = 0
@@ -289,9 +295,10 @@ class UI():
 
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.ship.trace_add("write", self.ship_selected)
-        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, values=names, width=10)
+        gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5}
+        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, gopts, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
-        self.shipdd.grid(row=row, column=col, padx=5, pady=5)
+        self.shipdd.grid(gopts)
 
         col += 1
 
@@ -304,9 +311,10 @@ class UI():
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
-        algodd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.algorithm, values=algorithms, width=10)
+        gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5}
+        algodd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.algorithm, gopts, values=algorithms, width=10)
         Tooltip(algodd, tts["select_algorithm"])
-        algodd.grid(row=row, column=col, padx=5, pady=5)
+        algodd.grid(gopts)
 
         col += 1
         self.fuel_res:Placeholder = Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
@@ -328,16 +336,20 @@ class UI():
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         r = 0; col = 0
-        self.gal_import_route_btn:tk.Button|ttk.Button = button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
-        self.gal_import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts:dict = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.gal_import_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
+        self.gal_import_route_btn.grid(gopts)
         col += 1
 
-        self.gal_plot_route_btn:tk.Button|ttk.Button = button(btn_frame, text=btns["calculate_route"], command=lambda: self.galaxy_plot())
-        self.gal_plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.gal_plot_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.galaxy_plot())
+
+        self.gal_plot_route_btn.grid(gopts)
         col += 1
 
-        self.gal_cancel_plot:tk.Button|ttk.Button = button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('Default'))
-        self.gal_cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.gal_cancel_plot:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
+        self.gal_cancel_plot.grid(gopts)
 
         return plot_fr
 
@@ -376,7 +388,7 @@ class UI():
 
         self._plot_switcher(plot_fr, row, col)
 
-        row +=1; col = 0
+        row += 1; col = 0
         self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
         Tooltip(self.source_ac, tts["source_system"])
         if Context.router.src != '': self.set_entry(self.source_ac, Context.router.src)
@@ -397,9 +409,10 @@ class UI():
         self.dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.efficiency_slider:tk.Scale|ttk.Scale = scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
+        gopts:dict = {'row': row, 'column': col}
+        self.efficiency_slider:tk.Scale|ttk.Scale = scale(plot_fr, gopts, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         Tooltip(self.efficiency_slider, tts["efficiency"])
-        self.efficiency_slider.grid(row=row, column=col)
+        self.efficiency_slider.grid(gopts)
         self.efficiency_slider.set(params.get('efficiency', 60))
 
         row += 1; col = 0
@@ -410,32 +423,37 @@ class UI():
         l1:tk.Label|ttk.Label = label(plot_fr, text=lbls["supercharge_label"])
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
-        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
+        gopts = {'row': row, 'column': col}
+        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, gopts, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
         Tooltip(r1, tts['standard_multiplier'])
+        r1.grid(gopts)
 
-        r1.grid(row=row, column=col)
         col += 1
-        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        gopts = {'row': row, 'column': col}
+        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, gopts, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
-        r2.grid(row=row, column=col)
+        r2.grid(gopts)
 
         row += 1; col = 0
         btn_frame:tk.Frame = frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         r = 0; col = 0
-        self.import_route_btn:tk.Button|ttk.Button = button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
-        self.import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts:dict = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.import_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
+        self.import_route_btn.grid(gopts)
         col += 1
 
-        self.plot_route_btn:tk.Button|ttk.Button = button(btn_frame, text=btns["calculate_route"], command=lambda: self.neutron_plot())
-        self.plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.plot_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.neutron_plot())
+        self.plot_route_btn.grid(gopts)
         col += 1
 
-        self.cancel_plot:tk.Button|ttk.Button = button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('Default'))
-        self.cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.cancel_plot:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
+        self.cancel_plot.grid(gopts)
 
         return plot_fr
 

@@ -1,5 +1,6 @@
 import tkinter as tk
 from functools import partial
+from theme import theme  # type: ignore
 from config import config  # type: ignore
 
 class Placeholder(tk.Entry):
@@ -29,6 +30,7 @@ class Placeholder(tk.Entry):
 
         if parent is not None:
             tk.Entry.__init__(self, parent, **kw)
+            theme.register(self)
 
         self.var = tk.StringVar()
         self["textvariable"] = self.var

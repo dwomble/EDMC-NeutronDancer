@@ -570,20 +570,23 @@ class UI():
         fr1.grid(row=1, column=0, sticky=tk.EW)
 
         row:int = 0; col:int = 0
-        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
+        gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
+        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
-        self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+        self.waypoint_prev_btn.grid(gopts)
 
         col += 1
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, text=Context.route.next_stop(), width=32,
+        gopts = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.EW}
+        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, gopts, text=Context.route.next_stop(), width=32,
                                                         command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
-        self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
+        self.waypoint_btn.grid(gopts)
 
         col += 1
-        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
+        gopts = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
+        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
-        self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+        self.waypoint_next_btn.grid(gopts)
 
         fr2:tk.Frame = frame(route_fr)
         fr2.grid_columnconfigure(0, weight=0)
@@ -591,17 +594,20 @@ class UI():
         fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
-        self.export_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["export_route"], command=lambda: self._export_route())
-        self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.export_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["export_route"], command=lambda: self._export_route())
+        self.export_route_btn.grid(gopts)
 
         col += 1
-        self.show_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["show_route"],
+        gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.show_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["show_route"],
                                                           command=lambda: self.window_route.show(Context.route))
-        self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        self.show_route_btn.grid(gopts)
 
         col += 1
-        self.clear_route_btn:tk.Button|ttk.Button = button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
-        self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
+        gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
+        self.clear_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["clear_route"], command=lambda: self._clear_route())
+        self.clear_route_btn.grid(gopts)
 
         return route_fr
 
@@ -837,6 +843,11 @@ class UI():
         self.show_spinner:bool = enable
         # Show the busy image
         if enable == True:
+            # In case the user has changed themes since loading, get the appropriate image
+            image:str = os.path.join(Context.plugin_dir, ASSET_DIR,
+                                     "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
+            self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
+
             self.sub_fr.grid_remove()
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)

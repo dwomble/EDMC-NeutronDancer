@@ -177,7 +177,7 @@ class Route:
     def get_waypoint(self, inc:int = 0) -> str:
         """ Return the system of a waypoint relative to our current offset """
         inc += 1 # Offset is our current location, but waypoint needs to show the next not the current
-        if self.route == [] or self.offset + inc >= len(self.route)-1 or self.offset+inc < 0: return tts["none"]
+        if self.route == [] or self.offset + inc >= len(self.route) or self.offset+inc < 0: return tts["none"]
 
         return self.route[self.offset+inc][self.sc]
 

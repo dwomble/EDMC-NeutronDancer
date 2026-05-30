@@ -138,7 +138,7 @@ lbls:dict = {
     "exclude_secondary": "Exclude Secondary Stars",
     "refuel_every_scoopable": "Refuel Every scoopable",
     "cooldown_complete": "Carrier cooldown completed",
-    "plotting": "Plotting route {s} to {d}",
+    "plotting": "Plotting route from {s} to {d}",
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": " jumps/hr",

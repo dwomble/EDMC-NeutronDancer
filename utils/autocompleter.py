@@ -161,16 +161,10 @@ class Autocompleter(Placeholder):
         self.after(100, self.update_me)
 
     def set_text(self, text, placeholder_style=True) -> None:
-        if placeholder_style:
-            self['fg'] = self.placeholder_color
-        else:
-            self.set_default_style()
-
         try:
             self.var.trace_remove("write", self.traceid)
         except:
             pass
         finally:
-            self.delete(0, tk.END)
-            self.insert(0, text)
+            super().set_text(text, placeholder_style)
             self.traceid = self.var.trace_add('write', self.changed)

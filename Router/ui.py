@@ -399,7 +399,6 @@ class UI():
         self.range_entry.grid(row=row, column=col)
         Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
-        self.range_entry.var.trace_add('write', self.check_range)
         self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
 
         row += 1; col = 0

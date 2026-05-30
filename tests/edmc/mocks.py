@@ -111,12 +111,36 @@ for name, val in _cfg_attrs.items():
 sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
-theme_mod = _types.ModuleType("theme")
-theme_mod.theme = _types.SimpleNamespace() # type:ignore
-theme_mod.theme.name = "default"
-theme_mod.theme.dark = False
-sys.modules['theme'] = theme_mod
+class MockTheme:
+    def __init__(self):
+        if hasattr(self, '_initialized'): return
+        self._initialized = True
+    def register(self, widget) -> None:  # noqa: CCR001, C901
+        pass
+    def register_alternate(self, pair, gridopts) -> None:
+        pass
+    def button_bind(self, widget, command, image) -> None:
+        pass
+    def update(self, widget) -> None:
+        pass
+    def apply(self, root) -> None:
+        pass
 
+_theme_attrs = {
+    'name': "default",
+    'dark': False
+}
+
+_theme = _types.ModuleType('theme')
+_theme.theme = MockTheme()  # type:ignore
+for name, val in MockTheme.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_theme, name, val)
+
+for name, val in _theme_attrs.items():
+    setattr(_theme, name, val)
+
+sys.modules['theme'] = _theme
 
 class MockCAPIData:
     def __init__(self, data = None, source_host = None, source_endpoint = None, request_cmdr = None) -> None:

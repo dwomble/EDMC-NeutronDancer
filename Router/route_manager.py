@@ -428,22 +428,8 @@ class Router():
                 modules = modules + data.get(key, [])
 
             Context.modules = modules
-
-            # Temporary hack since Coriolis doens't yet have the new MkII overcharge boosters
-#            Context.modules.append({
-#                "class": 8,
-#                "cost": 82042060,
-#                "fuelmul": 0.011,
-#                "fuelpower": 2.5025,
-#                "mass": 160,
-#                "maxfuel": 6.8,
-#                "optmass": 4670,
-#                "power": 1.15,
-#                "rating": "A",
-#                "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
-#            })
-
             Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
+
             dir:Path = Path(Context.plugin_dir) / DATA_DIR
             dir.mkdir(parents=True, exist_ok=True)
             file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
@@ -460,11 +446,16 @@ class Router():
         """ Load state from files """
 
         # Get the FSD data from Coriolis' github repo
+        Context.modules = []
         file = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
         if file.exists():
             with open(file) as json_file:
                 Context.modules = json.load(json_file)
                 Debug.logger.debug(f"Loaded {len(Context.modules)} modules from local file")
+
+        # We need this so do it synchronously
+        if Context.modules == []:
+            self._get_module_data()
 
         if not file.exists() or file.stat().st_mtime < time() - 86400:
             Debug.logger.debug("Module data is more than a day old, downloading fresh data")

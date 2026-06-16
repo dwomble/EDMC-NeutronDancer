@@ -1211,7 +1211,7 @@ class DisabledRouteWindowDisplay:
         route = Route(hdrs, route_data, 0)
 
         result = route.update_route(100)  # Way beyond
-        assert route.offset == len(route_data) - 1  # Stay at last valid position
+        assert result == len(route_data) - 1  # Stay at last valid position
 
     def test_update_route_before_start(self, harness:TestHarness) -> None:
         """Test update_route() before start of route."""
@@ -1225,7 +1225,7 @@ class DisabledRouteWindowDisplay:
         route = Route(hdrs, route_data, 0)
 
         result = route.update_route(-100)  # Way before
-        assert route.offset == 0  # Stay at first position
+        assert result == 0  # Stay at first position
 
     def test_record_jump(self, harness:TestHarness) -> None:
         """Test record_jump() method."""

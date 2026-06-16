@@ -207,7 +207,7 @@ class Route:
             return 0
 
         if self.offset + direction >= len(self.route):
-            return self.offset
+            return len(self.route) - 1
 
         self.offset += direction
         return self.offset

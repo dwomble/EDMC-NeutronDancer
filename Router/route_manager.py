@@ -10,9 +10,9 @@ from threading import Thread
 from config import config # type: ignore
 import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
-from utils.misc import hfplus, copy_to_clipboard
+from utils.misc import copy_to_clipboard
 
-from .constants import ovr, errs, lbls, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import ovr, errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -135,41 +135,13 @@ class Router():
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
             Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
             Context.ui.update_waypoint()
-            self.update_jump_overlay()
-
-
-    def update_jump_overlay(self) -> None:
-        """ Update overlay after a waypoint """
-        wp:str = Context.route.next_stop()
-        if Context.route.jumps_to_wp() != 0:
-            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
-
-        message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
-        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
-        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
-        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
-        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
-        if Context.route.total_dist() > 0:
-            jstr += f", {lbls['distance']} "
-            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
-            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
-
-        next_refuel:int|None = Context.route.next_refuel()
-        if next_refuel is not None and next_refuel == 0:
-            jstr += ", ⛽ " + lbls["refuel_now"]
-        if next_refuel is not None and next_refuel > 0:
-            jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
-            jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
-
-        message.append({'size': "normal", 'text': f"{jstr}"})
-        Context.overlay.display_frame('Default', message, ttl=120)
-        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+            Context.overlay.update_jump_overlay()
 
 
     def update_route(self, i:int) -> None:
         """ Called by the UI when next or prev is clicked """
         Context.route.update_route(i)
-        self.update_jump_overlay()
+        Context.overlay.update_jump_overlay()
 
 
     @catch_exceptions
@@ -221,7 +193,7 @@ class Router():
         # Update the UI as we may need to hide the refuel notification
         if Context.route.jumps_remaining() > 0:
             Context.ui.update_waypoint()
-            self.update_jump_overlay()
+            Context.overlay.update_jump_overlay()
 
 
     def jump_complete(self) -> None:
@@ -342,7 +314,7 @@ class Router():
 
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')
-            self.update_jump_overlay()
+            Context.overlay.update_jump_overlay()
             self.save()
 
         except Exception as e:

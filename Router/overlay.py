@@ -16,7 +16,9 @@ from config import config # type: ignore
 import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
+from utils.misc import hfplus
 from .context import Context
+from .constants import lbls
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -85,6 +87,40 @@ class Overlay():
             return
 
 
+    def update_jump_overlay(self) -> None:
+        """ Update overlay after a waypoint """
+        wp:str = Context.route.next_stop()
+        if Context.route.jumps_to_wp() != 0:
+            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
+
+        message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
+        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
+        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
+        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
+        if Context.route.total_dist() > 0:
+            jstr += f", {lbls['distance']} "
+            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
+            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
+
+        next_refuel:int|None = Context.route.next_refuel()
+        if next_refuel is not None and next_refuel == 0:
+            jstr += ", ⛽ " + lbls["refuel_now"]
+        if next_refuel is not None and next_refuel > 0:
+            rem_jumps:tuple = tuple([Context.route.jumps_remaining(), 'int', '0'])
+            tot_jumps:tuple = tuple([Context.route.total_jumps(), 'int'])
+            jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
+            if Context.route.total_dist() > 0:
+                dist_rem:float = Context.route.total_dist() - Context.route.dist_remaining()
+                tot_dist:tuple = tuple([Context.route.total_dist(), 'float', '0'])
+                jstr += f" ({hfplus(dist_rem)}/{hfplus(Context.route.total_dist())} ly)"
+            jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
+
+        message.append({'size': "normal", 'text': f"{jstr}"})
+        Context.overlay.display_frame('Default', message, ttl=120)
+        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+
+
     def redraw_frames(self) -> None:
         """ Redraw all overlay frames """
         [self.redraw_frame(fr) for fr in self.msgs]
@@ -145,6 +181,7 @@ class Overlay():
             'controller_preview_box_mode': "last",
         }
         define_plugin_group(**kw)
+
 
     @catch_exceptions
     def display_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
@@ -332,8 +369,10 @@ class Overlay():
         Debug.logger.info(f"Saved frames to EDMC config")
         return True
 
+
     def _from_dict(self, name, data:dict) -> None:
         self.ovfrs[name] = OvFrame(**data)
+
 
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """

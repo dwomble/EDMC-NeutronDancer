@@ -516,7 +516,8 @@ class UI():
         if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
         route:Route = Context.route
-        self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset == 0 else tk.NORMAL)
+        Debug.logger.debug(f"Route: {route.offset}")
+        self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset < 0 else tk.NORMAL)
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, route.get_waypoint(1))

@@ -6,7 +6,7 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], cols:list = [], offset:int = 0) -> None:
+    def __init__(self, hdrs:list = [], cols:list = [], offset:int = -1) -> None:
         self.hdrs:list = hdrs
         self.route:list = cols
         self.jumps:list = []
@@ -54,7 +54,7 @@ class Route:
     def jumps_to_system(self, offset:int|None = None) -> int:
         """ How many jumps to reach this system? """
         if self.route == []: return -1
-        if offset == None: offset = self.offset
+        if offset == None: offset = max(0, self.offset)
         if offset >= len(self.route) or self.jc == None: return -1
         return self.route[offset][self.jc]
 
@@ -108,7 +108,7 @@ class Route:
     def jumps_remaining(self, offset:int|None = None) -> int:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
         if self.route == []: return 0
-        if offset == None: offset = self.offset
+        if offset == None: offset = max(0, self.offset)
         if offset+1 >= len(self.route): return 0
 
         # No jump count column
@@ -144,7 +144,7 @@ class Route:
     def dist_remaining(self, offset:int|None = None) -> int:
         """ Distance remaining if we know it """
         if self.route == [] or self.dc == None: return 0
-        if offset == None: offset = self.offset
+        if offset == None: offset = max(0, self.offset)
         return self.route[offset][self.dc]
 
 
@@ -191,20 +191,21 @@ class Route:
         if self.route == []: return -1
 
         if direction == 0: # Figure out if we're on the route
+            self.offset = -1
             for i, r in enumerate(self.route):
                 if r[self.sc] == system:
                     self.offset = i
                     break
 
             # We aren't on the route so just return
-            if self.route[self.offset][self.sc] != system:
+            if self.offset == -1:
                 Debug.logger.debug(f"We aren't on the route")
                 return -1
             Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.sc]}")
 
         # Are we at one end or the other?
-        if self.offset + direction < 0:
-            return 0
+        if self.offset + direction < -1:
+            return -1
 
         if self.offset + direction >= len(self.route):
             return self.offset

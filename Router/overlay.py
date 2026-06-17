@@ -60,6 +60,8 @@ class Overlay():
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
+        self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display",
+                                    "Refuel: {rj}\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr")
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
         self.stoppers:dict[str, Event] = {}
         self._load_prefs()
@@ -87,6 +89,7 @@ class Overlay():
             return
 
 
+
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
         wp:str = Context.route.next_stop()
@@ -94,29 +97,41 @@ class Overlay():
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
-        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
-        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
-        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
-        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
-        if Context.route.total_dist() > 0:
-            jstr += f", {lbls['distance']} "
-            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
-            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
+
+        # next jump distance. {jd}
+        # Distance to next checkpoint. {dc}
+        # Distance remaining {dr}
+        # Distance (or jumps) to next refuel {rd}
+        # Jumps completed {jc}
+        # Jumps remaining {jr}
+        # Jumps total {jt}
+        # Distance completed {dc}
+        # Distance remaining {dr}
+        # Distance total {dt}
+        # Refuel jumps {rj}
+        # Progress bar
+        # Speed statistics (like on the route window – distance / hour, jumps per hour) {dh} {jh}
+
+
+        jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0']))
+        jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
+        jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
+
+        dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
+        dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
+        dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
+
+        dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '0']))
+        jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '0']))
 
         next_refuel:int|None = Context.route.next_refuel()
-        if next_refuel is not None and next_refuel == 0:
-            jstr += ", ⛽ " + lbls["refuel_now"]
-        if next_refuel is not None and next_refuel > 0:
-            rem_jumps:tuple = tuple([Context.route.jumps_remaining(), 'int', '0'])
-            tot_jumps:tuple = tuple([Context.route.total_jumps(), 'int'])
-            jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
-            if Context.route.total_dist() > 0:
-                dist_rem:float = Context.route.total_dist() - Context.route.dist_remaining()
-                tot_dist:tuple = tuple([Context.route.total_dist(), 'float', '0'])
-                jstr += f" ({hfplus(dist_rem)}/{hfplus(Context.route.total_dist())} ly)"
-            jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
+        rj:str = hfplus(tuple([next_refuel, 'int', '0']))
+        if next_refuel == 0:
+            rj = " ⛽ " + lbls["refuel_now"]
+        if next_refuel is None:
+            rj = ""
 
-        message.append({'size': "normal", 'text': f"{jstr}"})
+        message.append({'size': "normal", 'text': f"{self.progress_display}"})
         Context.overlay.display_frame('Default', message, ttl=120)
         Context.overlay.display_frame('Galaxy Map', message, ttl=120)
 
@@ -332,10 +347,17 @@ class Overlay():
 
         row:int = 0; col:int = 0
         nb.Label(ovrprefs, text="Overlays", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
+        row += 1; col = 0
+
+        nb.Label(ovrprefs, text="Progress Display", justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        col += 1
+        pv:tk.StringVar = tk.StringVar(value=self.progress_display)
+        pv.trace_add("write", lambda *args: config.set(f"{Context.plugin_name}_progress_display", self.progress_display))
+        nb.Entry(ovrprefs, width=30, textvariable=pv).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
+        row += 1; col = 0
 
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
-        row += 1; col = 0
         for name, fr in self.ovfrs.items():
             nb.Label(ovrprefs, text=name, justify=tk.LEFT).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
             col += 1

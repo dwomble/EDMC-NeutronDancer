@@ -5,6 +5,7 @@
 ### New Features
 
 * Refuel reminder is automatically removed once you've refueled
+* Added customizable progress text to overlay
 
 ### Changes
 

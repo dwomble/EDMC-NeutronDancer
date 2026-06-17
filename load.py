@@ -54,7 +54,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.ui = UI(parent)
     Context.hotkeys = Hotkeys()
 
-    parent.after(5000, Context.router.update_jump_overlay)
+    parent.after(5000, Context.overlay.update_jump_overlay)
 
     return Context.ui.frame
 

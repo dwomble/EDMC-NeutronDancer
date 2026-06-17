@@ -42,6 +42,7 @@ def capture_thread(*args, **kwargs):
         plotter_thread = thread
     return thread
 
+
 @pytest.fixture
 def harness() -> Generator:
     """Provide a fresh test harness for each test."""
@@ -99,6 +100,8 @@ class TestStartup:
         harness.plugin.modules = []
         harness.plugin.router._get_module_data()
         assert len(harness.plugin.modules) == 88
+
+
 class TestStateManagement:
     """Test router state management."""
 
@@ -117,7 +120,7 @@ class TestShipLoadout:
         """Test bad loadout event."""
         harness.fire_event({"event": "bad", "Ship":"naughty", "ShipID":100000, "ShipName":"Dummy", "ShipIdent":"Dumdum"})
 
-        assert hasattr(harness.plugin.router.ship, "ship_id") == False
+        assert not hasattr(harness.plugin.router.ship, "ship_id")
 
     def test_loadout_event(self, harness:TestHarness) -> None:
         """Test loading a ship."""
@@ -131,7 +134,6 @@ class TestShipLoadout:
         assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
         assert harness.plugin.router.ships[shipid] is harness.plugin.router.ship
-
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -158,7 +160,6 @@ class TestImporting:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == False
 
-
     def test_import_route_neutron(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -177,7 +178,6 @@ class TestImporting:
         assert harness.plugin.router.src == 'Bleae Thua NI-B b27-5'
         assert harness.plugin.router.dest == 'Voqooe BI-H d11-864'
         assert harness.plugin.route.total_jumps() == 74
-
 
     def test_import_route_fc(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "fc-Bleae-Voqooe.csv")
@@ -201,7 +201,6 @@ class TestImporting:
 
 class TestExporting:
     """CSV Export"""
-
     def test_export_noroute(self, harness:TestHarness) -> None:
         """ Trying to export without a route """
         harness.plugin.route = Route()
@@ -248,6 +247,7 @@ class TestCargo:
         assert harness.plugin.router.cargo == 200
         harness.play_sequence('remove_cargo')
         assert harness.plugin.router.cargo == 0
+
 
 class TestChatCommands:
     """Test !nd chat commands"""
@@ -339,7 +339,6 @@ class TestShipyardSwap:
         ship:Ship = harness.plugin.router.ship
 
         assert repr(ship) == f"ID {ship.id}, name {ship.name}, type {ship.type}, unladen range {ship.range:.2f}ly)"
-
 
     def test_swap_existing_ship(self, harness:TestHarness):
         """Test swapping to a previously loaded ship."""
@@ -447,6 +446,7 @@ class TestEventSequences:
         harness.fire_event(events[1])
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
 
+
 class TestPlotOperations:
     """Test individual plotting functions"""
 
@@ -543,6 +543,7 @@ class TestPlotOperations:
                                 'supercharge_multiplier': '4'})
         assert len(harness.plugin.route.hdrs) == 6
         assert len(harness.plugin.route.route) == 9
+
 
 class TestPlotting:
     """Test end to end plotting functionality (neutron/galaxy routes)."""
@@ -730,7 +731,6 @@ class TestRouteWindow:
         route = Route()
 
         window.show(route)
-
         assert window.window is None
 
     def test_show_creates_window_for_populated_route(self, harness: TestHarness) -> None:
@@ -1211,7 +1211,7 @@ class DisabledRouteWindowDisplay:
         route = Route(hdrs, route_data, 0)
 
         result = route.update_route(100)  # Way beyond
-        assert route.offset == len(route_data) - 1  # Stay at last valid position
+        assert result == len(route_data) - 1  # Stay at last valid position
 
     def test_update_route_before_start(self, harness:TestHarness) -> None:
         """Test update_route() before start of route."""
@@ -1225,7 +1225,7 @@ class DisabledRouteWindowDisplay:
         route = Route(hdrs, route_data, 0)
 
         result = route.update_route(-100)  # Way before
-        assert route.offset == 0  # Stay at first position
+        assert result == 0  # Stay at first position
 
     def test_record_jump(self, harness:TestHarness) -> None:
         """Test record_jump() method."""

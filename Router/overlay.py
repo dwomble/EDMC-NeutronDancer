@@ -89,9 +89,10 @@ class Overlay():
             return
 
 
-
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
+        if not self._get_overlay(): return
+
         wp:str = Context.route.next_stop()
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"

@@ -138,7 +138,7 @@ class Overlay():
             rd = ""
 
         # ✨ ◄ ⭐ ►
-        ns:str = "🌀 " if Context.route.is_neutron() else ""
+        ns:str = "🌀" if Context.route.is_neutron() else ""
 
         message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, ns=ns)})
         Context.overlay.display_frame('Default', message, ttl=120)

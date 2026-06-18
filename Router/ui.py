@@ -534,7 +534,7 @@ class UI():
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
-        if route.neutron() == True:
+        if route.is_neutron() == True:
             image = self.neutron_img
 
         if route.refuel() == True:

@@ -12,7 +12,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import copy_to_clipboard
 
-from .constants import ovr, errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -156,17 +156,13 @@ class Router():
                 self.carrier_dest:str = entry.get('SystemName', '')
                 end:datetime = datetime.fromisoformat(entry.get("DepartureTime", ''))
 
-                jstr:str = ovr['jump'].format(d=self.carrier_dest, t='{t}')
-                if entry.get('CarrierType', '') == 'SquadronCarrier':
-                    jstr = 'Squadron ' + jstr
-                Context.overlay.display_countdown('Carrier', jstr, end)
+                Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
                 Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
-                Context.overlay.stop_countdown('Carrier')
-                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 60)
+                Context.overlay.display_carrier('Cooldown', 60)
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
@@ -176,8 +172,7 @@ class Router():
                     Context.ui.update_waypoint()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-                Context.overlay.stop_countdown('Carrier')
-                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
+                Context.overlay.display_carrier('Cooldown', 300)
 
 
     @catch_exceptions
@@ -206,8 +201,7 @@ class Router():
             Context.ui.update_waypoint()
         self.carrier_state = CarrierStates.Cooldown
         Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-        Context.overlay.stop_countdown('Carrier')
-        Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
+        Context.overlay.display_carrier('Cooldown', 300)
 
 
     def cooldown_complete(self) -> None:
@@ -466,7 +460,7 @@ class Router():
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        r = dict.get('route', ([], [], 0))
+        r = dict.get('route', ([], [], -1))
         (hdrs, route, offset) = r[0:3]
         Context.route = Route(hdrs, route, offset)
         self.ship = Ship(dict.get('ship', {}))

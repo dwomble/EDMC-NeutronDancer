@@ -75,7 +75,7 @@ Neutron Dancer is very flexible about CSV formats. It requires a column called "
 
 To import a CSV click **Import** and select an appropriate file such as that exported by the various Spansh route plotters.
 
-### Following the route
+### Following the Route
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/3e44b43e-919d-46f9-82ef-fdb0d1a0e19d" />
 
@@ -97,7 +97,7 @@ The **Export route** button will open a file dialog allowing you to save the cur
 
 ### Overlay Support
 
-This requires the EDMC Modern Overlay to be installed, older overlays aren't supported.
+This requires the [EDMC Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) to be installed, older overlays aren't supported.
 
 To enable overlay display, in the EDMC select File -> Settings and in the settings window select Navl's Neutron Dancer, activate the overlay frames you want and choose the text colour.
 
@@ -151,6 +151,3 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a star.
 
 Fly dangerous! o7
-
-
-

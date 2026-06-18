@@ -18,7 +18,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus
 from .context import Context
-from .constants import lbls
+from .constants import lbls, ovr
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -99,20 +99,22 @@ class Overlay():
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
-        # next jump distance. {jd}
-        # Distance to next checkpoint. {dc}
-        # Distance remaining {dr}
-        # Distance (or jumps) to next refuel {rd}
+        # The following variables are available for the progress display:
         # Jumps completed {jc}
         # Jumps remaining {jr}
         # Jumps total {jt}
-        # Distance completed {dc}
+
+        # Distance to next checkpoint. {dc}
         # Distance remaining {dr}
         # Distance total {dt}
-        # Refuel jumps {rj}
-        # Progress bar
-        # Speed statistics (like on the route window – distance / hour, jumps per hour) {dh} {jh}
 
+        # Distance per hour {dh}
+        # Jumps per hour {jh}
+
+        # Refuel jumps {rj}
+        # Distance (or jumps) to next refuel {rd}
+
+        # Progress bar
 
         jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0']))
         jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
@@ -125,16 +127,38 @@ class Overlay():
         dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '0']))
         jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '0']))
 
-        next_refuel:int|None = Context.route.next_refuel()
+        next_refuel:int|None = Context.route.jumps_to_refuel()
         rj:str = hfplus(tuple([next_refuel, 'int', '0']))
+        rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '0']))
         if next_refuel == 0:
             rj = " ⛽ " + lbls["refuel_now"]
+            rd = " ⛽ " + lbls["refuel_now"]
         if next_refuel is None:
             rj = ""
+            rd = ""
 
-        message.append({'size': "normal", 'text': f"{self.progress_display}"})
+        # ✨ ◄ ⭐ ►
+        ns:str = "🌀 " if Context.route.is_neutron() else ""
+
+        message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, ns=ns)})
         Context.overlay.display_frame('Default', message, ttl=120)
         Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+
+
+    def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
+        """ Display carrier arrival info """
+        cstr:str = ''
+
+        Context.overlay.stop_countdown('Carrier')
+        match type:
+            case 'Carrier':
+                cstr = ovr['jump'].format(d=destination, t='{t}')
+            case 'SquadronCarrier':
+                cstr = 'Squadron ' + ovr['jump'].format(d=destination, t='{t}')
+            case 'Cooldown':
+                cstr = ovr['cooldown']
+
+        Context.overlay.display_countdown('Carrier', cstr, end)
 
 
     def redraw_frames(self) -> None:

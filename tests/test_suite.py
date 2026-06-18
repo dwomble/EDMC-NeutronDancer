@@ -298,7 +298,7 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_copy(self, harness:TestHarness):
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
@@ -946,7 +946,7 @@ class DisabledRouteWindowDisplay:
         route = Route(hdrs, route_data, 0)
 
         assert route.refuel() == False
-        assert route.neutron() == False  # Next waypoint doesn't need neutron
+        assert route.is_neutron() == False  # Next waypoint doesn't need neutron
 
     def test_route_with_tritium_column(self, harness:TestHarness) -> None:
         """Test fleet carrier route with tritium column."""
@@ -1140,7 +1140,7 @@ class DisabledRouteWindowDisplay:
 
         # Check if next waypoint needs neutron
         route.update_route(1)  # Now at Apurui
-        assert route.neutron() == False  # Bleae Thua doesn't need neutron
+        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
 
     def test_get_waypoint_next(self, harness:TestHarness) -> None:
         """Test get_waypoint() for next waypoint."""

@@ -66,7 +66,7 @@ class Route:
         return self.route[self.offset+1][self.sc]
 
 
-    def next_refuel(self) -> int|None:
+    def jumps_to_refuel(self) -> int|None:
         """ Returns how many jumps until the next fuel stop. Returns None if no fuel stops. """
         if self.route == [] or self.offset >= len(self.route): return None
 
@@ -78,6 +78,17 @@ class Route:
         return next((i for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
 
 
+    def dist_to_refuel(self) -> int|None:
+        """ Returns distance to the next fuel stop. Returns None if no fuel stops. """
+        if self.route == [] or self.offset >= len(self.route) or self.dc == None: return None
+
+        ind:int|None = self.colind("Refuel") or self.colind("Restock")
+        if ind == None: return None
+        if self.route[self.offset][ind] in TRUE: return 0
+        refind:int|None = next((i for i, wp in enumerate(self.route[self.offset:len(self.route)]) if wp[ind] in TRUE), None)
+        return self.route[self.offset][self.dc] - self.route[self.offset+refind][self.dc] if refind is not None else None
+
+
     def refuel(self) -> bool:
         """ Return whether we need to refuel at this waypoint """
         if self.fuel_full == True: return False
@@ -86,7 +97,7 @@ class Route:
         return self.route[self.offset][ind] in TRUE
 
 
-    def neutron(self) -> bool:
+    def is_neutron(self) -> bool:
         """ Return whether we need to neutron boost at this waypoint """
         ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
 

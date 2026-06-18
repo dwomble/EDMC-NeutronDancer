@@ -36,7 +36,7 @@ class Context:
     modules:list = field(default_factory=list) # Module details from Coriolis
 
     # Global objects
-    route:Route = Route([], [], 0)
+    route:Route = Route([], [], -1)
     router:'Router' = None
     csv:'CSV' = None
     overlay:'Overlay' = None

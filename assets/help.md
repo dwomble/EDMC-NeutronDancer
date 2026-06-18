@@ -48,13 +48,11 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 
 1. When selecting the next system in the galaxy map you should target the system rather than plotting to it. This is because the game sometimes incorrectly calculates how far you can jump and will not allow you to plot within the galaxy map when you are jumping to your maximum range with missing fuel.
 
-
 ## Importing routes
 
 Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters.
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
-
 
 ## Following routes
 
@@ -74,19 +72,57 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 The Neutron Dancer doesn't (yet) directly plot fleet carrier routes but it can import and monitor them. When it does it functions just like for a Neutron route. It will also notify you when the jump cooldown is finished.
 
+## Overlay Support
+
+The Neutron Dancer supports the [EDMC Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) and has three frames that can be individually positioned, enabeled, and disabled.
+
+1. *Default* when enabled this will display the next jump in the current route and other details in the ship main window
+1. *Galaxy Map*, this displays the same information as *Default* but only shows in the Galaxy Map so the colour and location can be distinct
+1. *Carrier*, this displays carrier jump and cooldown timers
+
+
+### Frame management
+
+Each frame may be enabled and disabled from the Neutron Dancer preferences. The text colour may also be configured here. Position, background, and border can be configured using Modern Overlay's [controller](https://github.com/SweetJonnySauce/EDMCModernOverlay/wiki/Overlay-Controller).
+
+The *Default* and *Galaxy Map* frames include a customizable format string with a default value of
+  `Refuel: {rj}\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr`
+
+It accepts the following fields
+
+- {jc} Jumps completed
+- {jr} Jumps remaining
+- {jt} Jumps total
+- {dc} Distance to next checkpoint
+- {dr} Distance remaining
+- {dt} Distance total
+- {dh} Distance travelled per hour
+- {jh} Jumps performed per hour
+- {rj} Jumps to next refuel star
+- {rd} Distance to next refuel
+
+### Chat Commands
+
+This enables management of Neutron Dancer without tabbing out of the game. Simply bring up a chat window and type in `!nd` and a command. Supported commands are:
+
+- `next` – move to the next waypoint
+- `previous` (or just `prev`) – move to the previous waypoint
+- `copy` – re-insert the next waypoint into the past buffer
+
+### Hotkeys
+
+If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) plugin you can define hotkeys for the `next`, `previous`, and `copy` commands.
 
 ## Tips
 
-* Almost every component has a tooltip to provide further information or hints on use.
-* Many components have a right-click context menu with shortcuts.
-
+- Almost every component has a tooltip to provide further information or hints on use.
+- Many components have a right-click context menu with shortcuts.
 
 ## Credits
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
 This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
-
 
 ## Suggestions
 

@@ -429,7 +429,7 @@ class TestOverlay:
         default_call = next((c for c in captured if c[0] == 'Default'), None)
         assert default_call is not None
 
-        progress_line:str = default_call[1][1]['text']
+        progress_line:str = default_call[1][2]['text']
         assert progress_line == 'PD jc=16 jr=383 jt=399 dc=369 dr=16.1K dt=16.5K dh=0 jh=0 rj= rd= ns=🌀'
 
 
@@ -461,7 +461,7 @@ class TestEventSequences:
         # Final state check
         assert harness.plugin.route.jumps_remaining() == 0
 
-        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj= rd= ns=' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj= rd= ns=' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
 
 
     def test_carrier_jump_noroute(self, harness:TestHarness) -> None:

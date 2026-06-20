@@ -1,3 +1,4 @@
+from email import message
 import json
 from dataclasses import dataclass, asdict
 from functools import partial
@@ -8,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from copy import deepcopy
 
 import tkinter as tk
-from tkinter import ttk, colorchooser as tkColorChooser
+from tkinter import colorchooser as tkColorChooser
 import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
@@ -18,7 +19,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus
 from .context import Context
-from .constants import lbls, ovr
+from .constants import lbls, ovr, cnf
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -60,6 +61,7 @@ class Overlay():
         # Only initialize if it's the first time
         if hasattr(self, '_initialized'): return
 
+        self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display",
                                     "Refuel: {rj}\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr")
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
@@ -99,22 +101,28 @@ class Overlay():
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
+        if self.progress_bar:
+            message.append({'size': 'normal', 'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) / Context.route.total_dist() * 200), 'width': 200,'colour': '#00ff00'})
+
+        # Galaxy map frame jusy shows next jump
+        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+
         # The following variables are available for the progress display:
-        # Jumps completed {jc}
-        # Jumps remaining {jr}
-        # Jumps total {jt}
+            # Jumps completed {jc}
+            # Jumps remaining {jr}
+            # Jumps total {jt}
 
-        # Distance to next checkpoint. {dc}
-        # Distance remaining {dr}
-        # Distance total {dt}
+            # Distance to next checkpoint. {dc}
+            # Distance remaining {dr}
+            # Distance total {dt}
 
-        # Distance per hour {dh}
-        # Jumps per hour {jh}
+            # Distance per hour {dh}
+            # Jumps per hour {jh}
 
-        # Refuel jumps {rj}
-        # Distance (or jumps) to next refuel {rd}
+            # Refuel jumps {rj}
+            # Distance (or jumps) to next refuel {rd}
 
-        # Progress bar
+            # Neutron star next stop {ns}
 
         jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0']))
         jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
@@ -137,12 +145,11 @@ class Overlay():
             rj = ""
             rd = ""
 
-        # ✨ ◄ ⭐ ►
+        # or: ✨ ◄ ⭐ ► ◄ 𐫰 ►
         ns:str = "🌀" if Context.route.is_neutron() else ""
 
         message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, ns=ns)})
         Context.overlay.display_frame('Default', message, ttl=120)
-        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
 
 
     def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
@@ -243,15 +250,24 @@ class Overlay():
             id:str = f"{Context.plugin_name}-{frame}-{i}"
             args:dict = {
                 'msgid': id,
-                'text': c.get('text', ''),
-                'color': c.get('colour', fr.text_colour),
                 'x': 0,
                 'y': y,
                 'ttl': c.get('ttl', ttl), # @TODO: ttl needs to be a datetime
                 'size': c.get('size', 'normal')
             }
             if fr.visible == True:
-                overlay.send_message(**args)
+                if 'progressbar' in c:
+                    args['shape'] = 'rect'
+                    args['color'] = '#000000ff'
+                    args['fill'] = c.get('colour', fr.text_colour)
+                    args['w'] = int(c.get('progressbar', 0) * 100 / c.get('width', 100))
+                    args['h'] = c.get('height', 20)
+                    overlay.send_shape(**args)
+                else:
+                    args['text'] = c.get('text', '')
+                    args['color'] = c.get('colour', fr.text_colour)
+                    overlay.send_message(**args)
+
             if frame not in self.msgs: self.msgs[frame] = {}
             self.msgs[frame][id] = args
             y += 20 # @TODO This needs to adapt to text size
@@ -358,8 +374,8 @@ class Overlay():
             return True if val.isdigit() or val == '' else False
 
         pref_opts:list = [
-            ('enabled', 'Enable', tk.BooleanVar, tk.Checkbutton),
-            ('text_colour', 'Foreground', tk.StringVar, 'ColorPicker'),
+            ('enabled', cnf["enable"], tk.BooleanVar, tk.Checkbutton),
+            ('text_colour', cnf["foreground"], tk.StringVar, 'ColorPicker'),
             ]
 
         # Hide existing messages. Redraw them in the new location when the user clicks save
@@ -371,16 +387,21 @@ class Overlay():
         ovrprefs.grid()
 
         row:int = 0; col:int = 0
-        nb.Label(ovrprefs, text="Overlays", justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
-        row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
-        nb.Label(ovrprefs, text="Progress Display", justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["progress_bar"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
         col += 1
-        pv:tk.StringVar = tk.StringVar(value=self.progress_display)
-        pv.trace_add("write", lambda *args: config.set(f"{Context.plugin_name}_progress_display", self.progress_display))
-        nb.Entry(ovrprefs, width=30, textvariable=pv).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
-        row += 1; col = 0
+        self.pb:tk.BooleanVar = tk.BooleanVar(value=self.progress_bar)
+        nb.Checkbutton(ovrprefs, text="Enable", variable=self.pb).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
 
+        row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["progress_display"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        col += 1
+        self.pv:tk.StringVar = tk.StringVar(value=self.progress_display)
+        nb.Entry(ovrprefs, width=30, textvariable=self.pv).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
+
+        row += 1; col = 0
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():
@@ -398,9 +419,9 @@ class Overlay():
                         btn.grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
                         cbtns[name] = btn
                 col += 1
+
         row += 1; col = 0
-        nb.Label(ovrprefs, text="To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
-                 justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
+        nb.Label(ovrprefs, text=cnf["controller"], justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
 
         return ovrprefs
 
@@ -411,6 +432,8 @@ class Overlay():
 
         for name, fr in self.ovfrs.items():
             config.set(f"{Context.plugin_name}_{name}_overlay", json.dumps(asdict(fr)))
+        config.set(f"{Context.plugin_name}_progress_bar", str(self.pb.get()))
+        config.set(f"{Context.plugin_name}_progress_display", self.pv.get())
 
         self.redraw_frames()
         Debug.logger.info(f"Saved frames to EDMC config")

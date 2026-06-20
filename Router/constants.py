@@ -208,12 +208,12 @@ errs:dict = {
 
 cnf:dict = {
     "version": "Version",
-    "overlay": "Overlay",
-    "overlay_enable": "Enable overlay",
-    "overlay_position": "Overlay Position",
-    "X": "X",
-    "Y": "Y",
-    "overlay_colour": "Overlay Colour"
+    "overlays": "Overlays",
+    "enable": "Enable",
+    "foreground": "Foreground",
+    "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
+    "progress_bar": "Progress Bar",
+    "progress_display": "Progress Display"
 }
 
 ovr:dict = {

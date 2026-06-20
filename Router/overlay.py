@@ -102,7 +102,7 @@ class Overlay():
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
         if self.progress_bar:
-            message.append({'size': 'normal', 'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) / Context.route.total_dist() * 200), 'width': 200,'colour': '#00ff00'})
+            message.append({'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) / Context.route.total_dist() * 200), 'width': 200,'colour': '#00ff00'})
 
         # Galaxy map frame jusy shows next jump
         Context.overlay.display_frame('Galaxy Map', message, ttl=120)
@@ -177,7 +177,7 @@ class Overlay():
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs: return
         self.ovfrs[frame].visible = True
-        [overlay.send_message(**m) for m in self.msgs[frame].values()]
+        [overlay.send_message(**m) if m.get('msgid') else overlay.send_shape(**m) for m in self.msgs[frame].values()]
 
 
     def clear_frames(self) -> None:
@@ -207,9 +207,11 @@ class Overlay():
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
             tmp['ttl'] = 1
-            tmp['text'] = ''
-            #Debug.logger.debug(f"Hiding frame {tmp}")
-            overlay.send_message(**tmp)
+            if tmp.get('msgid'):
+                tmp['text'] = ''
+                overlay.send_message(**tmp)
+            if tmp.get('shapeid'):
+                overlay.send_shape(**tmp)
 
 
     @catch_exceptions
@@ -249,14 +251,13 @@ class Overlay():
         for i, c in enumerate(content):
             id:str = f"{Context.plugin_name}-{frame}-{i}"
             args:dict = {
-                'msgid': id,
                 'x': 0,
                 'y': y,
-                'ttl': c.get('ttl', ttl), # @TODO: ttl needs to be a datetime
-                'size': c.get('size', 'normal')
+                'ttl': c.get('ttl', ttl) # @TODO: ttl needs to be a datetime
             }
             if fr.visible == True:
                 if 'progressbar' in c:
+                    args['shapeid'] = id
                     args['shape'] = 'rect'
                     args['color'] = '#000000ff'
                     args['fill'] = c.get('colour', fr.text_colour)
@@ -264,8 +265,10 @@ class Overlay():
                     args['h'] = c.get('height', 20)
                     overlay.send_shape(**args)
                 else:
+                    args['msgid'] = id
                     args['text'] = c.get('text', '')
                     args['color'] = c.get('colour', fr.text_colour)
+                    args['size'] = c.get('size', 'normal')
                     overlay.send_message(**args)
 
             if frame not in self.msgs: self.msgs[frame] = {}
@@ -374,7 +377,7 @@ class Overlay():
             return True if val.isdigit() or val == '' else False
 
         pref_opts:list = [
-            ('enabled', cnf["enable"], tk.BooleanVar, tk.Checkbutton),
+            ('enabled', cnf["enable"], tk.BooleanVar, nb.Checkbutton),
             ('text_colour', cnf["foreground"], tk.StringVar, 'ColorPicker'),
             ]
 
@@ -390,18 +393,6 @@ class Overlay():
         nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
         row += 1; col = 0
-        nb.Label(ovrprefs, text=cnf["progress_bar"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
-        col += 1
-        self.pb:tk.BooleanVar = tk.BooleanVar(value=self.progress_bar)
-        nb.Checkbutton(ovrprefs, text="Enable", variable=self.pb).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
-
-        row += 1; col = 0
-        nb.Label(ovrprefs, text=cnf["progress_display"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
-        col += 1
-        self.pv:tk.StringVar = tk.StringVar(value=self.progress_display)
-        nb.Entry(ovrprefs, width=30, textvariable=self.pv).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
-
-        row += 1; col = 0
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():
@@ -411,7 +402,7 @@ class Overlay():
                 var = bind_var(fr, k[0], k[2](value=getattr(fr, k[0])))
                 vars[f"{name}-{k[0]}"] = var
                 match k[3]:
-                    case tk.Checkbutton:
+                    case nb.Checkbutton:
                         nb.Checkbutton(ovrprefs, text=k[1], variable=var).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
                     case 'ColorPicker':
                         btn:tk.Button = tk.Button(ovrprefs, text=k[1], foreground=fr.text_colour, background="#555555",
@@ -422,6 +413,18 @@ class Overlay():
 
         row += 1; col = 0
         nb.Label(ovrprefs, text=cnf["controller"], justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
+
+        row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["progress_bar"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        col += 1
+        self.pb:tk.BooleanVar = tk.BooleanVar(value=self.progress_bar)
+        nb.Checkbutton(ovrprefs, text="Enable", variable=self.pb).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
+
+        row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["progress_display"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        col += 1
+        self.pv:tk.StringVar = tk.StringVar(value=self.progress_display.replace('\n', '\\n'))
+        tk.Entry(ovrprefs, width=80, textvariable=self.pv).grid(row=row, column=col, columnspan=8, padx=5, pady=0, sticky=tk.W)
 
         return ovrprefs
 

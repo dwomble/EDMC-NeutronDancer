@@ -77,7 +77,7 @@ The Neutron Dancer doesn't (yet) directly plot fleet carrier routes but it can i
 The Neutron Dancer supports the [EDMC Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) and has three frames that can be individually positioned, enabeled, and disabled.
 
 1. *Default* when enabled this will display the next jump in the current route and other details in the ship main window
-1. *Galaxy Map*, this displays the same information as *Default* but only shows in the Galaxy Map so the colour and location can be distinct
+1. *Galaxy Map*, this displays the jump destination when in the Galaxy Map so the colour and location can be distinct
 1. *Carrier*, this displays carrier jump and cooldown timers
 
 

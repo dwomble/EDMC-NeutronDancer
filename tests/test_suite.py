@@ -257,11 +257,11 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[0])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_no_next(self, harness:TestHarness):
         """Test next command when at the end of a route"""
@@ -283,11 +283,11 @@ class TestChatCommands:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
         harness.plugin.router.update_route(1)
-        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_no_previous(self, harness:TestHarness):
         """Test prev/previous command when at the beginning of a route"""
@@ -308,7 +308,7 @@ class TestChatCommands:
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[2])
         assert harness.plugin.ui.parent is not None
-        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
     def test_other(self, harness:TestHarness):
         """Test some other random string has no impact"""
@@ -412,16 +412,16 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} ns={ns}"
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
 
         captured:list[tuple[str, list[dict], int]] = []
 
-        def fake_display_frame(self, frame:str, content, size:str = "normal", ttl:int = 120) -> None:
+        def fake_update_frame(self, frame:str, content, size:str = "normal", ttl:int = 120) -> None:
             if isinstance(content, list):
                 captured.append((frame, content, ttl))
 
         monkeypatch.setattr(type(overlay), '_get_overlay', lambda self: object(), raising=False)
-        monkeypatch.setattr(type(overlay), 'display_frame', fake_display_frame, raising=False)
+        monkeypatch.setattr(type(overlay), 'update_frame', fake_update_frame, raising=False)
 
         overlay.update_jump_overlay()
 
@@ -430,7 +430,7 @@ class TestOverlay:
         assert default_call is not None
 
         progress_line:str = default_call[1][2]['text']
-        assert progress_line == 'PD jc=16 jr=383 jt=399 dc=369 dr=16.1K dt=16.5K dh=0 jh=0 rj= rd= ns=🌀'
+        assert progress_line == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=🌀'
 
 
 class TestEventSequences:
@@ -446,7 +446,7 @@ class TestEventSequences:
         assert res == True
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} ns={ns}"
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
 
         # Follow the route
         for event in harness.events.get('full_route_scenario', []):
@@ -456,14 +456,12 @@ class TestEventSequences:
                     assert harness.plugin.router.ship_id == str(event.get('ShipID'))
                 case 'Location' | 'FSDJump':
                     assert harness.plugin.router.system == event.get('StarSystem', '')
-                    assert "Next: " + harness.plugin.route.next_stop() == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-0"]["text"]
+                    assert "Next: " + harness.plugin.route.next_stop() == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
 
         # Final state check
         assert harness.plugin.route.jumps_remaining() == 0
 
-        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj= rd= ns=' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
-
-
+        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj=0 rd=0 st=✨' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
     def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
         """Test carrier jump with docking."""
         events:list = harness.events.get('carrier_events', [])

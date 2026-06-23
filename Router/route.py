@@ -198,7 +198,6 @@ class Route:
         Step forwards or backwards through the route.
         If no direction is given pickup from wherever we are on the route
         """
-        Debug.logger.debug(f"Updating route")
         if self.route == []: return -1
 
         if direction == 0: # Figure out if we're on the route

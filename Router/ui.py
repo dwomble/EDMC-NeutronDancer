@@ -120,8 +120,6 @@ class UI():
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True
-        Context.overlay.clear_frame('Default')
-        Context.overlay.clear_frame('Galaxy Map')
         self.sub_fr.grid_remove()
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -516,7 +514,6 @@ class UI():
         if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
         route:Route = Context.route
-        Debug.logger.debug(f"Route: {route.offset}")
         self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset < 0 else tk.NORMAL)
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
@@ -706,7 +703,7 @@ class UI():
             self.source_ac.set_text(Context.router.dest, False)
 
         self.show_frame(Context.router.last_plot)
-        Context.route = Route()
+        Context.route = Route([], [], -1)
 
 
     @catch_exceptions

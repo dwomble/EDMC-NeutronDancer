@@ -50,9 +50,11 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
-    Context.overlay = Overlay()
     Context.ui = UI(parent)
     Context.hotkeys = Hotkeys()
+    Context.overlay = Overlay()
+    if Context.route.route != []:
+        Context.overlay.show_frame('Default')
 
     parent.after(5000, Context.overlay.update_jump_overlay)
 
@@ -60,6 +62,8 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
+    if Context.router == None: return
+
     match entry['event']:
         case 'Startup':
             Context.router.carrier_state = CarrierStates.Idle

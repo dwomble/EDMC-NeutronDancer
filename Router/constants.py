@@ -212,6 +212,7 @@ cnf:dict = {
     "enable": "Enable",
     "foreground": "Foreground",
     "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
+    "default_overlay": "Default Overlay Options",
     "progress_bar": "Progress Bar",
     "progress_display": "Progress Display"
 }

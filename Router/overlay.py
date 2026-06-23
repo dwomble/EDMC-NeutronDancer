@@ -63,13 +63,13 @@ class Overlay():
 
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display",
-                                    "Refuel: {rj}\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr")
+                                    "Refuel: {rj}, {jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining, {jh} jumps/hr, {dh} ly/hr")
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
         self.stoppers:dict[str, Event] = {}
         self._load_prefs()
         # Set defaults
         self.ovfrs['Default'].x = 100; self.ovfrs['Default'].y = 900
-        self.ovfrs['Galaxy Map'].x = 500; self.ovfrs['Galaxy Map'].y = 200; self.ovfrs['Galaxy Map'].visible = False
+        self.ovfrs['Galaxy Map'].x = 500; self.ovfrs['Galaxy Map'].y = 200
         self.ovfrs['Carrier'].x = 1000; self.ovfrs['Carrier'].y = 900
         for k, fr in self.ovfrs.items():
             fr.name = k
@@ -90,7 +90,7 @@ class Overlay():
             Debug.logger.warning(f"EDMCOverlay is not running {e}")
             return
 
-
+    @catch_exceptions
     def update_jump_overlay(self) -> None:
         """ Update overlay after a waypoint """
         if not self._get_overlay(): return
@@ -101,11 +101,11 @@ class Overlay():
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
-        if self.progress_bar:
-            message.append({'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) / Context.route.total_dist() * 200), 'width': 200,'colour': '#00ff00'})
+        # Galaxy map frame just shows next jump
+        Context.overlay.update_frame('Galaxy Map', message, ttl=120)
 
-        # Galaxy map frame jusy shows next jump
-        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+        if self.progress_bar:
+            message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
         # The following variables are available for the progress display:
             # Jumps completed {jc}
@@ -122,7 +122,7 @@ class Overlay():
             # Refuel jumps {rj}
             # Distance (or jumps) to next refuel {rd}
 
-            # Neutron star next stop {ns}
+            # Star type next stop {st}
 
         jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0']))
         jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
@@ -135,21 +135,19 @@ class Overlay():
         dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '0']))
         jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '0']))
 
-        next_refuel:int|None = Context.route.jumps_to_refuel()
-        rj:str = hfplus(tuple([next_refuel, 'int', '0']))
+        rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '0']))
         rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '0']))
-        if next_refuel == 0:
-            rj = " ⛽ " + lbls["refuel_now"]
-            rd = " ⛽ " + lbls["refuel_now"]
-        if next_refuel is None:
-            rj = ""
-            rd = ""
 
         # or: ✨ ◄ ⭐ ► ◄ 𐫰 ►
-        ns:str = "🌀" if Context.route.is_neutron() else ""
+        st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
-        message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, ns=ns)})
-        Context.overlay.display_frame('Default', message, ttl=120)
+        try:
+            message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, st=st)})
+        except Exception as e:
+            Debug.logger.warning(f"Error formatting progress display: {e}")
+            message.append({'size': "normal", 'text': "Error formatting progress display"})
+
+        Context.overlay.update_frame('Default', message, ttl=120)
 
 
     def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
@@ -175,9 +173,8 @@ class Overlay():
 
     def redraw_frame(self, frame:str = "") -> None:
         overlay = self._get_overlay()
-        if not overlay or frame not in self.msgs: return
-        self.ovfrs[frame].visible = True
-        [overlay.send_message(**m) if m.get('msgid') else overlay.send_shape(**m) for m in self.msgs[frame].values()]
+        if not overlay or frame not in self.msgs or not self.ovfrs[frame].visible: return
+        [overlay.send_message(**m) if 'msgid' in m else overlay.send_shape(**m) for m in self.msgs[frame].values()]
 
 
     def clear_frames(self) -> None:
@@ -211,8 +208,27 @@ class Overlay():
                 tmp['text'] = ''
                 overlay.send_message(**tmp)
             if tmp.get('shapeid'):
+                tmp['fill'] = '#00000000'
+                tmp['color'] = '#00000000'
                 overlay.send_shape(**tmp)
 
+    def show_frames(self) -> None:
+        """ Show all overlay frames """
+        [self.show_frame(fr) for fr in self.ovfrs]
+
+    def show_frame(self, frame:str = "") -> None:
+        """ Show a message frame """
+        overlay = self._get_overlay()
+        if not overlay or frame not in self.msgs: return
+
+        Debug.logger.debug(f"Showing overlay frame {frame}")
+        self.ovfrs[frame].visible = True
+        for m in self.msgs[frame].values():
+            tmp:dict = deepcopy(m)
+            if tmp.get('msgid'):
+                overlay.send_message(**tmp)
+            if tmp.get('shapeid'):
+                overlay.send_shape(**tmp)
 
     @catch_exceptions
     def create_frame(self, group:str, ovf:OvFrame) -> None:
@@ -233,47 +249,58 @@ class Overlay():
 
 
     @catch_exceptions
-    def display_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
-        """ Display/update a frame with a set of messages """
+    def update_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
+        """ Update a frame with a set of messages. If its visible the display it otherwise just store it for later. """
 
         overlay = self._get_overlay()
         #Debug.logger.debug(f"Display called for {frame} {content}")
         if not overlay or frame not in self.ovfrs: return
         fr:OvFrame = self.ovfrs[frame]
 
-        if fr.enabled == False: return
-
         if isinstance(content, str): content = [{'size': size, 'text': content}]
 
-        self.ovfrs[frame].visible = True
         self.msgs[frame] = {}
         y:int = 0
         for i, c in enumerate(content):
+            if frame not in self.msgs: self.msgs[frame] = {}
             id:str = f"{Context.plugin_name}-{frame}-{i}"
             args:dict = {
                 'x': 0,
                 'y': y,
                 'ttl': c.get('ttl', ttl) # @TODO: ttl needs to be a datetime
             }
-            if fr.visible == True:
-                if 'progressbar' in c:
-                    args['shapeid'] = id
-                    args['shape'] = 'rect'
-                    args['color'] = '#000000ff'
-                    args['fill'] = c.get('colour', fr.text_colour)
-                    args['w'] = int(c.get('progressbar', 0) * 100 / c.get('width', 100))
-                    args['h'] = c.get('height', 20)
+            if 'progressbar' in c:
+                args['shapeid'] = id + "-a"
+                args['shape'] = 'rect'
+                args['color'] = c.get('colour', fr.text_colour)
+                args['fill'] = '#00000000'
+                args['w'] = c.get('width', 100)
+                args['h'] = c.get('height', 16)
+                if fr.visible == True:
                     overlay.send_shape(**args)
-                else:
-                    args['msgid'] = id
-                    args['text'] = c.get('text', '')
-                    args['color'] = c.get('colour', fr.text_colour)
-                    args['size'] = c.get('size', 'normal')
-                    overlay.send_message(**args)
+                self.msgs[frame][args['shapeid']] = args
 
-            if frame not in self.msgs: self.msgs[frame] = {}
-            self.msgs[frame][id] = args
-            y += 20 # @TODO This needs to adapt to text size
+                argsb:dict = deepcopy(args)
+                argsb['shapeid'] = id + "-b"
+                argsb['shape'] = 'rect'
+                argsb['color'] = c.get('colour', fr.text_colour)
+                argsb['fill'] = c.get('colour', fr.text_colour)
+                argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
+                argsb['h'] = c.get('height', 16)
+                if fr.visible == True:
+                    overlay.send_shape(**argsb)
+                self.msgs[frame][argsb['shapeid']] = argsb
+                y += 20
+            else:
+                args['msgid'] = id
+                args['text'] = c.get('text', '')
+                args['color'] = c.get('colour', fr.text_colour)
+                args['size'] = c.get('size', 'normal')
+                if fr.visible == True:
+                    overlay.send_message(**args)
+                self.msgs[frame][args['msgid']] = args
+                y += 25 if args['size'] == 'large' else 20
+
 
 
     def _timedelta_str(self, delta:timedelta) -> str:
@@ -297,11 +324,10 @@ class Overlay():
             rem = end - datetime.now(tz=end.tzinfo)
             display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
-            if self.ovfrs[frame].visible == True:
-                Context.overlay.display_frame(frame, display, ttl=1)
+            Context.overlay.update_frame(frame, display, ttl=1)
 
         stop.clear()
-        Context.overlay.display_frame(frame, '', ttl=1)
+        Context.overlay.update_frame(frame, '', ttl=1)
         #Debug.logger.debug("Countdown thread is ending.")
 
 
@@ -336,12 +362,11 @@ class Overlay():
             self.hide_frame('Default')
             self.hide_frame('Galaxy Map')
         elif entry.get("GuiFocus") == edmc_data.GuiFocusNoFocus:
-            self.redraw_frame('Default')
+            self.show_frame('Default')
             self.hide_frame('Galaxy Map')
         elif entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
-            self.ovfrs['Galaxy Map'].visible = True
-            self.redraw_frame('Galaxy Map')
             self.hide_frame('Default')
+            self.show_frame('Galaxy Map')
         else:
             self.hide_frame('Default')
             self.hide_frame('Galaxy Map')
@@ -415,6 +440,8 @@ class Overlay():
         nb.Label(ovrprefs, text=cnf["controller"], justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
 
         row += 1; col = 0
+        nb.Label(ovrprefs, text=cnf["default_overlay"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        row += 1; col = 0
         nb.Label(ovrprefs, text=cnf["progress_bar"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
         col += 1
         self.pb:tk.BooleanVar = tk.BooleanVar(value=self.progress_bar)
@@ -428,25 +455,31 @@ class Overlay():
 
         return ovrprefs
 
-
+    @catch_exceptions
     def save_prefs(self) -> bool:
         """ Serialize and save the frames dictionary to EDMC config. """
         # Store the serialized frames in the config
 
         for name, fr in self.ovfrs.items():
             config.set(f"{Context.plugin_name}_{name}_overlay", json.dumps(asdict(fr)))
-        config.set(f"{Context.plugin_name}_progress_bar", str(self.pb.get()))
-        config.set(f"{Context.plugin_name}_progress_display", self.pv.get())
+        self.progress_bar = self.pb.get()
+        config.set(f"{Context.plugin_name}_progress_bar", self.progress_bar)
+        self.progress_display = self.pv.get().replace('\\n', '\n')
+        config.set(f"{Context.plugin_name}_progress_display", self.progress_display)
 
+        self.update_jump_overlay()
         self.redraw_frames()
+
         Debug.logger.info(f"Saved frames to EDMC config")
         return True
 
 
+    @catch_exceptions
     def _from_dict(self, name, data:dict) -> None:
         self.ovfrs[name] = OvFrame(**data)
 
 
+    @catch_exceptions
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
 

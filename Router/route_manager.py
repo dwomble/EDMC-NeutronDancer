@@ -69,7 +69,9 @@ class Router():
 
         self._load()
 
-        if Context.route.route != []: Context.route.update_route(0, self.system)
+        if Context.route.route != []:
+            Context.route.update_route(0, self.system)
+
         self._initialized = True
 
 
@@ -350,8 +352,10 @@ class Router():
             self.src = Context.route.source()
             self.dest = Context.route.destination()
 
-            Context.route.offset = 0
+            Context.route.update_route(0, self.system)
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+            Context.overlay.update_jump_overlay()
+            Context.overlay.show_frame('Default')
 
             return True
 

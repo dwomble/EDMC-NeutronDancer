@@ -103,10 +103,14 @@ Three overlays are available.
 
 Each can be individually enabled and frame size, color, position, background, text alignment etc. are all configurable.
 
+<img width="410" height="122" alt="overlay" src="https://github.com/user-attachments/assets/bd492595-1cfa-4ac1-aaac-810a42e0cd4a" />
+
 The `Default` frame can be further customized with:
 
 - A progress bar showing route progress
 - A customizable route details string that can display a wide variety of route information
+
+<img width="777" height="56" alt="overlay_customization" src="https://github.com/user-attachments/assets/b86abb00-aba7-44e3-8006-ef32066c53de" />
 
 ### Chat Commands
 

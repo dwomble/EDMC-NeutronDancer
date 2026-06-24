@@ -19,7 +19,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus
 from .context import Context
-from .constants import lbls, ovr, cnf
+from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -62,8 +62,7 @@ class Overlay():
         if hasattr(self, '_initialized'): return
 
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
-        self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display",
-                                    "Refuel: {rj}, {jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining, {jh} jumps/hr, {dh} ly/hr")
+        self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
         self.stoppers:dict[str, Event] = {}
         self._load_prefs()

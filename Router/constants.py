@@ -34,13 +34,11 @@ DATA_DIR = 'data'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
 
+# Font info
 FONT:tuple = ("Helvetica", 9, "normal")
 BOLD:tuple = ("Helvetica", 9, "bold")
 
 # Map from returned data to our header names
-#HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
-#                "Jumps": "jumps", "Neutron": "neutron_star", "Refuel": "must_refuel"}
-
 HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                    "distance_jumped": "Distance Jumped", "distance": "Distance",
                    "distance_left": "Distance Rem", "distance_to_destination": "Distance Rem",
@@ -48,7 +46,6 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "jumps": "Jumps", "neutron_star": "Neutron", "has_neutron": "Neutron", "is_scoopable": "Scoopable",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
-
 
 # Headers that we accept
 HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
@@ -87,6 +84,8 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
 TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
 
+# Overlay progress display default
+OVERLAY_PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
 class CarrierStates(Enum):
     Idle = auto()
     Jumping = auto()

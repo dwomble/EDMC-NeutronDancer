@@ -30,12 +30,12 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 ## Installation
 
 - Open your EDMC plugins folder - in EDMC settings, select "Plugins" tab, click the "Open" button.
-- Create a folder inside the plugins folder and call it whatever you want, **NeutronDancer** for instance
+- Create a folder inside the plugins folder and call it whatever you want, **NeutronDancer** for instance.
 - Download the latest release [here](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest) and unzip it.
 - Open the folder you created and put all the files and folders you extracted inside
-- Restart EDMC
+- Restart EDMC.
 
-## Usage
+## Route Plotting
 
 <img width="481" height="53" alt="neutron_dance" src="https://github.com/user-attachments/assets/32a2034a-06f6-4805-87c6-dab7fbddd57a" />
 
@@ -46,7 +46,7 @@ Neutron dancer supports two direct route creation methods:
 1. The simpler Spansh Neutron Plotter
 1. The more sophisticated Spansh Galaxy Plotter
 
-it also supports CSV file import in a wide variety of formats
+It also supports CSV file import in a wide variety of formats
 
 1. Road to Riches
 1. Expressway to Exomastery
@@ -59,8 +59,6 @@ To use the Neutron Plotter, enter your source and destination systems, ship rang
 
 <img width="384" height="163" alt="Screenshot 2025-12-27 164632" src="https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2" />
 
-Next click **Calculate** to query Spansh and plot your route.
-
 ### Galaxy Plotting
 
 This works the same as the Neutron Plotter but because the Galaxy Plotter is much more sophisticated the options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
@@ -72,8 +70,6 @@ This works the same as the Neutron Plotter but because the Galaxy Plotter is muc
 ### CSV Import
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
-
-To import a CSV click **Import** and select an appropriate file such as that exported by the various Spansh route plotters.
 
 ### Following the Route
 
@@ -95,19 +91,22 @@ The **Show route** button will open a window showing progress and the details of
 
 The **Export route** button will open a file dialog allowing you to save the current route as a CSV.
 
-### Overlay Support
+### Overlays
 
 This requires the [EDMC Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) to be installed, older overlays aren't supported.
 
-To enable overlay display, in the EDMC select File -> Settings and in the settings window select Navl's Neutron Dancer, activate the overlay frames you want and choose the text colour.
-
 Three overlays are available.
 
-1. _Default_ when enabled this will display the next jump in the current route and other details in the ship main window
-2. _Galaxy Map_, this displays the same information as _Default_ but only shows in the Galaxy Map so the colour and location can be distinct
-3. _Carrier_, this displays carrier jump and cooldown timers
+1. *Default* displays the next jump in the current route and other details in the ship main window
+1. *Galaxy Map* replaces the default frame when in the Galaxy Map and displays just the jump destination
+1. *Carrier* displays carrier jump and cooldown timers
 
-To change overlay frame positions, set backgrounds, text alignment etc. use Modern Overlay's controller.
+Each can be individually enabled and frame size, color, position, background, text alignment etc. are all configurable.
+
+The `Default` frame can be further customized with:
+
+- A progress bar showing route progress
+- A customizable route details string that can display a wide variety of route information
 
 ### Chat Commands
 

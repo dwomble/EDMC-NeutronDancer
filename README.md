@@ -1,6 +1,7 @@
-<img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" />
+<!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
+<img width="125" height="125" alt="neutrondancer_logo125_white" src="https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597" />
 
-# Navl's Neutron Dancer
+<h1>Navl's Neutron Dancer</h1>
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
 [![CodeQL](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql)
@@ -75,7 +76,7 @@ Neutron Dancer is very flexible about CSV formats. It requires a column called "
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/3e44b43e-919d-46f9-82ef-fdb0d1a0e19d" />
 
-Once your route is plotted, and every time you reach a waypoint, the next one is automatically copied to your clipboard. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
+Once your route is plotted, and every time you reach a waypoint, the next one is automatically copied to your clipboard when you enter the Galaxy Map. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
 
 If for some reason, your clipboard should be empty or contain other stuff that you copied yourself, click on the **System Name** button, and the waypoint will be copied again to your clipboard.
 

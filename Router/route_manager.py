@@ -119,7 +119,7 @@ class Router():
 
     def dashboard_entry(self, cmdr, is_beta, entry) -> None:
         """ Copy next waypoint to clipboard on galaxy map entry """
-        if not Context.ui.parent or not Context.route.jumps_remaining() or not Context.route.next_stop() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
+        if not Context.ui.parent or not Context.route.jumps_remaining() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
             return
         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
@@ -186,6 +186,7 @@ class Router():
         with open(Path(config.get_str("journaldir") / "Status.json"), 'r') as file:
             status:dict = json.load(file)
             fuel = status.get('Fuel', {}).get('FuelMain', 0.0)
+
         Context.route.fuel_full = (fuel >= float(state.get('FuelCapacity', 0.0)))
 
         # Update the UI as we may need to hide the refuel notification

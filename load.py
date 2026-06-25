@@ -57,13 +57,11 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
         Context.overlay.show_frame('Default')
 
     parent.after(5000, Context.overlay.update_jump_overlay)
-
     return Context.ui.frame
 
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     if Context.router == None: return
-
 
     match entry['event']:
         case 'Startup':
@@ -90,9 +88,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
         case 'Refueling': # Read fuel from Status.json
             Context.router.fuel_event(state)
-        # Add shutdown
         case 'Shutdown':
             if Context.route.route != []: Context.route.jumps = []
+            Context.router.save()
 
     Context.router.system = system
     Context.router.cargo = sum(state.get('Cargo', {}).values())

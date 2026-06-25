@@ -77,8 +77,8 @@ class MockConfig:
         )
 
     def delete(self, key: str, *, suppress=False) -> None:
-        if key in self.data:
-            del self.data[key]
+        if key.lower() in self.data:
+            del self.data[key.lower()]
 
 def appversion() -> semantic_version.Version:
     return semantic_version.Version('10.0.0')

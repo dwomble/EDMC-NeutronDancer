@@ -51,14 +51,6 @@ class Route:
         return self.route[-1][self.sc]
 
 
-    def jumps_to_system(self, offset:int|None = None) -> int:
-        """ How many jumps to reach this system? """
-        if self.route == []: return -1
-        if offset == None: offset = max(0, self.offset)
-        if offset >= len(self.route) or self.jc == None: return -1
-        return self.route[offset][self.jc]
-
-
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
@@ -108,7 +100,8 @@ class Route:
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
         if self.route == [] or self.jc == None: return 0
-        return self.route[self.offset][self.jc]
+        if self.offset+1 >= len(self.route): return 0
+        return self.route[self.offset+1][self.jc]
 
 
     def total_jumps(self) -> int:
@@ -186,7 +179,7 @@ class Route:
 
 
     def get_waypoint(self, inc:int = 0) -> str:
-        """ Return the system of a waypoint relative to our current offset """
+        """ Return the system of a waypoint relative to our current offset, used to get the next waypoint or the previous waypoint."""
         inc += 1 # Offset is our current location, but waypoint needs to show the next not the current
         if self.route == [] or self.offset + inc >= len(self.route) or self.offset+inc < 0: return tts["none"]
 
@@ -214,7 +207,7 @@ class Route:
             Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.sc]}")
 
         # Are we at one end or the other?
-        if self.offset + direction < -1:
+        if self.offset + direction < 0:
             return -1
 
         if self.offset + direction >= len(self.route):

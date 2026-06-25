@@ -866,21 +866,6 @@ class UI():
         Context.router.update_route(-1)
         self.update_waypoint()
 
-    @catch_exceptions
-    def check_range(self, one, two, three) -> None:
-        """ Validate the range entry """
-
-        self.range_entry.set_default_style()
-
-        value:str = self.range_entry.var.get()
-        if value == '' or value == self.range_entry.placeholder:
-            return
-
-        if not re.match(r"^\d+(\.\d+)?$", value):
-            Debug.logger.info(f"Invalid range entry {value}")
-            self.range_entry.set_error_style()
-        return
-
 
     @catch_exceptions
     def query_systems(self, inp:str) -> list:
@@ -903,21 +888,6 @@ class UI():
         if self.parent == None or self.cooldown_popup == False: return
         message:str = NAME + "\n" + lbls['cooldown_complete']
         PopupNotice(message, 60000, self.parent)
-
-
-    @catch_exceptions
-    def chat(self, message:str = '') -> None:
-        """ Handle commands via in game chat messages """
-        if not message.startswith("!nd "):
-            return
-
-        match message[4:]:
-            case "prev" | "previous":
-                self.goto_prev_waypoint()
-            case "next":
-                self.goto_next_waypoint()
-            case _:
-                copy_to_clipboard(self.parent, Context.route.next_stop())
 
 
     @catch_exceptions

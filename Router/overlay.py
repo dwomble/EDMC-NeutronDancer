@@ -19,7 +19,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import hfplus
 from .context import Context
-from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf
+from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf, errs
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -144,7 +144,7 @@ class Overlay():
             message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, st=st)})
         except Exception as e:
             Debug.logger.warning(f"Error formatting progress display: {e}")
-            message.append({'size': "normal", 'text': "Error formatting progress display"})
+            message.append({'size': "normal", 'text': errs["format_error"]})
 
         Context.overlay.update_frame('Default', message, ttl=120)
 

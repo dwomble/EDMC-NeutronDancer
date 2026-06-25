@@ -127,6 +127,7 @@ class Router():
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a jump in order to update the route, the UI etc."""
 
+        Context.route.fuel_full = False # We just jumped so we can't be full anymore
         if Context.route.route == [] or Context.route.fleetcarrier == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 

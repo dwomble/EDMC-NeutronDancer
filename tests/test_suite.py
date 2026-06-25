@@ -30,6 +30,7 @@ from Router.constants import CarrierStates, SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
 from Router.route_window import RouteWindow
+from Router.hotkeys import Hotkeys
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -583,23 +584,24 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
 
-        captured:list[tuple[str, list[dict], int]] = []
-
-        def fake_update_frame(self, frame:str, content, size:str = "normal", ttl:int = 120) -> None:
-            if isinstance(content, list):
-                captured.append((frame, content, ttl))
-
-        monkeypatch.setattr(type(overlay), '_get_overlay', lambda self: object(), raising=False)
-        monkeypatch.setattr(type(overlay), 'update_frame', fake_update_frame, raising=False)
-
         overlay.update_jump_overlay()
 
-        assert captured != []
-        default_call = next((c for c in captured if c[0] == 'Default'), None)
-        assert default_call is not None
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=🌀'
 
-        progress_line:str = default_call[1][2]['text']
-        assert progress_line == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=🌀'
+    def test_redraw_frames(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure redraw_frames renders using the configured progress_display template."""
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        overlay.redraw_frames()
+
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=0 jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=✨'
+
 
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure update_jump_overlay handles invalid progress_display format."""
@@ -630,6 +632,41 @@ class TestOverlay:
 
         progress_line:str = default_call[1][2]['text']
         assert progress_line == "Error formatting progress display"
+
+class TestHotkeyCommands:
+    """Test hotkey commands"""
+
+    def test_next_hotkey(self, harness:TestHarness) -> None:
+        """Test next hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
+
+        Hotkeys.next()
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+
+    def test_previous_hotkey(self, harness:TestHarness) -> None:
+        """Test previous hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.route.offset = 1
+        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+
+        Hotkeys.previous()
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+
+    def test_copy_hotkey(self, harness:TestHarness) -> None:
+        """Test copy hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        Hotkeys.copy()
+        assert harness.plugin.ui.parent is not None
+        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
 
 class TestEventSequences:

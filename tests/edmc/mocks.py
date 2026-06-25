@@ -227,6 +227,28 @@ _l10n.Locale = _locale # type: ignore
 _l10n._Locale = _l10n # type: ignore
 
 sys.modules['l10n'] = _l10n
+
+class MockEDMCHotkeys:
+    class Action:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    def __init__(self):
+        self.register_action_calls = []
+
+    def register_action(self, action):
+        self.register_action_calls.append(action)
+        return True
+
+_mock_edmchotkeys = MockEDMCHotkeys()
+_edmchotkeys = _types.ModuleType('EDMCHotkeys')
+for name, val in MockEDMCHotkeys.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_edmchotkeys, name, val)
+setattr(_edmchotkeys, 'register_action_calls', _mock_edmchotkeys.register_action_calls)
+setattr(_edmchotkeys, 'register_action', _mock_edmchotkeys.register_action)
+sys.modules['EDMCHotkeys'] = _edmchotkeys
+
 class MockEDMCOverlay:
     def __init__(self): pass
 

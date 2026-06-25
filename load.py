@@ -81,9 +81,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if entry.get('Message', '').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
                     case "prev" | "previous":
-                        Context.ui.goto_prev_waypoint()
+                        Context.router.update_route(-1)
                     case "next":
-                        Context.ui.goto_next_waypoint()
+                        Context.router.update_route(1)
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
         case 'Refueling': # Read fuel from Status.json

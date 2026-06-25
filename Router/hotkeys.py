@@ -38,11 +38,11 @@ class Hotkeys:
     @staticmethod
     def next(*, payload=None, source="hotkey", hotkey=None) -> None:
         if Context.route.route == []: return
-        Context.ui.goto_next_waypoint()
+        Context.router.update_route(1)
     @staticmethod
     def previous(*, payload=None, source="hotkey", hotkey=None) -> None:
         if Context.route.route == []: return
-        Context.ui.goto_prev_waypoint()
+        Context.router.update_route(-1)
     @staticmethod
     def copy(*, payload=None, source="hotkey", hotkey=None) -> None:
         if Context.route.route == []: return

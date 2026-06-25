@@ -568,7 +568,7 @@ class UI():
 
         row:int = 0; col:int = 0
         gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
-        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["prev"], width=3, command=lambda: self.goto_prev_waypoint())
+        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["prev"], width=3, command=lambda: Context.router.update_route(-1))
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
         self.waypoint_prev_btn.grid(gopts)
 
@@ -581,7 +581,7 @@ class UI():
 
         col += 1
         gopts = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
-        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["next"], width=3, command=lambda: self.goto_next_waypoint())
+        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["next"], width=3, command=lambda: Context.router.update_route(1))
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
         self.waypoint_next_btn.grid(gopts)
 
@@ -853,18 +853,6 @@ class UI():
 
         self.busy_fr.grid_remove()
         self.sub_fr.grid()
-
-
-    def goto_next_waypoint(self) -> None:
-        """ Move to the next waypoint """
-        Context.router.update_route(1)
-        self.update_waypoint()
-
-
-    def goto_prev_waypoint(self) -> None:
-        """ Move back to the previous waypoint """
-        Context.router.update_route(-1)
-        self.update_waypoint()
 
 
     @catch_exceptions

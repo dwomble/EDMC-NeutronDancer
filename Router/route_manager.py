@@ -142,8 +142,9 @@ class Router():
 
 
     def update_route(self, i:int) -> None:
-        """ Called by the UI when next or prev is clicked """
+        """ Called to move forward or backward along the route 1 == forward, -1 == back """
         Context.route.update_route(i)
+        Context.ui.update_waypoint()
         Context.overlay.update_jump_overlay()
 
 

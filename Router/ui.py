@@ -16,7 +16,7 @@ from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
-from utils.misc import frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice, copy_to_clipboard
+from utils.misc import singleton, frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
@@ -25,6 +25,7 @@ from .route import Route
 from .context import Context
 from .route_window import RouteWindow
 
+@singleton
 class UI():
     """
         The main UI for the router.
@@ -33,20 +34,9 @@ class UI():
           - Plot, a plot entry frame with neutron and galaxy route variants
           - Route, displays the route navigation
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self, parent:tk.Widget|None = None) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
-        # Initialise the UI
+        # Initialise the UI.
         if parent == None:
             Debug.logger.info(f"No parent")
             return
@@ -88,12 +78,11 @@ class UI():
         self._load_prefs()
 
         # Wait a while before deciding if we should show the update text
-        parent.after(30000, lambda: self.show_update())
-        self._initialized = True
+        parent.after(30000, lambda: self.show_plugin_update())
 
 
     @catch_exceptions
-    def show_update(self) -> None:
+    def show_plugin_update(self) -> None:
         """ Display the update text if appropriate"""
         if Context.updater.update_available == False or Context.updater.install_update == False or Context.updater.zip_downloaded == "":
             return
@@ -102,12 +91,12 @@ class UI():
         self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
         if Context.updater.releasenotes != "":
             Tooltip(self.update, markdown=tts["releasenotes"].format(c=Context.updater.releasenotes))
-        self.update.bind("<Button-1>", partial(self.cancel_update))
+        self.update.bind("<Button-1>", partial(self.cancel_plugin_update))
         self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
 
     @catch_exceptions
-    def cancel_update(self, tkEvent = None) -> None:
+    def cancel_plugin_update(self, tkEvent = None) -> None:
         """ Cancel the update if they click """
         #webbrowser.open(GH_LATEST)
         Context.updater.install_update = False
@@ -128,7 +117,7 @@ class UI():
         match which:
             case 'Route':
                 self.sub_fr = self.route_fr
-                self.update_waypoint()
+                self.update_progress()
 
             case 'Neutron':
                 self.source_ac.set_text(self.gal_source_ac.get(), self.gal_source_ac.get() == lbls["source_system"]) # Update when we switch views
@@ -510,7 +499,7 @@ class UI():
 
 
     @catch_exceptions
-    def update_waypoint(self) -> None:
+    def update_progress(self) -> None:
         if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
         route:Route = Context.route
@@ -871,7 +860,7 @@ class UI():
         """ Show an informational messagebox indicating a carrier cooldown has completed. """
         Debug.logger.debug(f"Cooldown complete notification triggered.")
 
-        self.update_waypoint()
+        self.update_progress()
 
         if self.parent == None or self.cooldown_popup == False: return
         message:str = NAME + "\n" + lbls['cooldown_complete']

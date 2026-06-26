@@ -222,28 +222,41 @@ class TestRouteNavigation:
         assert harness.plugin.route.total_jumps() == 74
 
     def test_jumps_remaining_neutron(self, harness:TestHarness) -> None:
-        """Test jumps remaining for neutron route."""
+        """Test jumps remaining for neutron route (one with a jumps column)."""
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.jumps_remaining() == 66
 
         offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
         assert offset == 0
+        assert harness.plugin.route.jumps_remaining() == 66
+
         offset:int = harness.plugin.route.update_route(1)
         assert offset == 1
         assert harness.plugin.route.jumps_remaining() == 54
 
     def test_jumps_remaining_galaxy(self, harness:TestHarness) -> None:
-        """Test jumps remaining for galaxy route."""
+        """Test jumps remaining for galaxy route (one without a jumps column)."""
         filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
 
+        # Not yet on the route
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.jumps_remaining() == 74
+
+        # Start of route
         offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
         assert offset == 0
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
-        assert harness.plugin.route.jumps_remaining() == 73
+        assert harness.plugin.route.jumps_remaining() == 74
+
+        # Partway along
+        offset:int = harness.plugin.route.update_route(0, 'Gria Drye JT-O d7-172')
+        assert offset == 22
+        assert harness.plugin.route.jumps_remaining() == 52
+
 
     def test_perc_jumps_remaining(self, harness:TestHarness) -> None:
         """Test percentage of jumps remaining for neutron route."""

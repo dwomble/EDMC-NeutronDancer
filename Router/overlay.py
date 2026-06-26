@@ -17,7 +17,7 @@ from config import config # type: ignore
 import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
-from utils.misc import hfplus
+from utils.misc import singleton, hfplus
 from .context import Context
 from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf, errs
 
@@ -41,26 +41,13 @@ class OvFrame:
     text_colour:str = "#ffffff"
     ttl:int = 0
 
+@singleton
 class Overlay():
     """
     Overlay frame manager.
-     - Currently it just supports a single frame and simple messages but will be extended in future.
-     - Each frame can display multiple messages with different text sizes.
     """
 
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
     def __init__(self) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
@@ -75,7 +62,6 @@ class Overlay():
             self.create_frame(Context.plugin_name, fr)
 
         self.msgs:dict = {}
-        self._initialized = True
 
 
     def _get_overlay(self):

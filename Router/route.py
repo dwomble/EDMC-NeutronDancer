@@ -6,26 +6,24 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], cols:list = [], offset:int = -1) -> None:
+    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1) -> None:
         self.hdrs:list = hdrs
-        self.route:list = cols
+        self.route:list = route
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
         self.fuel_full = False
 
-        self.sc:int|None = None
-        self.jc:int|None = None
-        self.dc:int|None = None
+        self.sc:int|None = None # System name column index
+        self.jc:int|None = None # Jumps column index
+        self.dc:int|None = None # Distance column index
 
-        if hdrs == [] or cols == []: return
+        if hdrs == [] or route == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
         self.fleetcarrier = any('tritium' in h.lower() for h in hdrs)
 
-        self.sc:int|None = self.colind()
         self.jc:int|None = self.colind('Jumps')
-        self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
         if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrier == False:
@@ -33,12 +31,11 @@ class Route:
             if self.jc != None: jr = self.jc+1
 
             self.hdrs.insert(jr, 'Jumps Rem' if self.jc != None else 'Waypoints Rem')
-            for i in range(0, len(cols)):
+            for i in range(0, len(route)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
-            # Recalc, they may have moved.
-            self.sc:int|None = self.colind()
-            self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
+        self.sc:int|None = self.colind()
+        self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
 
     def source(self) -> str:

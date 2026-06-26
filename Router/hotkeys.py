@@ -1,5 +1,5 @@
 from utils.debug import Debug, catch_exceptions
-from utils.misc import copy_to_clipboard
+from utils.misc import singleton, copy_to_clipboard
 from .context import Context
 
 try:
@@ -9,18 +9,13 @@ except ImportError:
     hotkeys = None
 
 
+@singleton
 class Hotkeys:
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    """
+    Hotkey manager.
+    """
 
     def __init__(self) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
         if not hotkeys: return
 
         for cmd in ["next", "previous", "copy"]:
@@ -33,7 +28,6 @@ class Hotkeys:
                             cardinality="single"
                             )):
                 Debug.logger.debug(f"Error registering {cmd} hotkey")
-        self._initialized = True
 
     @staticmethod
     def next(*, payload=None, source="hotkey", hotkey=None) -> None:

@@ -2,19 +2,39 @@ import subprocess
 import os
 import sys
 import shutil
-import tkinter as tk
-from tkinter import ttk
 import re
 from datetime import datetime
 from math import floor
 from typing import Any
 from functools import reduce
 import operator
+import threading
+
+import tkinter as tk
+from tkinter import ttk
 
 from theme import theme # type: ignore
 from config import config # type: ignore
 
 from utils.debug import Debug, catch_exceptions
+
+
+"""
+    Class decorators
+"""
+def singleton(cls):
+    instances = {}
+    lock = threading.Lock()
+
+    def get_instance(*args, **kwargs):
+        if cls in instances:
+            return instances[cls]
+        with lock:
+            if cls not in instances:
+                instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance
 
 """
   Miscellaneous utility functions

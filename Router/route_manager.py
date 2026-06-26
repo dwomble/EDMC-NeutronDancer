@@ -10,7 +10,7 @@ from threading import Thread
 from config import config # type: ignore
 import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
-from utils.misc import copy_to_clipboard
+from utils.misc import singleton, copy_to_clipboard
 
 from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
@@ -21,22 +21,14 @@ SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
                   'window_geometries' : {}}
+
+@singleton
 class Router():
     """
     Class to manage routes, all the route data and state information.
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self, test:bool = False) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
 
         # Current location data and settings
         self.system:str = ""
@@ -71,8 +63,6 @@ class Router():
 
         if Context.route.route != []:
             Context.route.update_route(0, self.system)
-
-        self._initialized = True
 
 
     def swap_ship(self, ship_id:str) -> None:
@@ -137,14 +127,14 @@ class Router():
 
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
             Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
-            Context.ui.update_waypoint()
+            Context.ui.update_progress()
             Context.overlay.update_jump_overlay()
 
 
     def update_route(self, i:int) -> None:
         """ Called to move forward or backward along the route 1 == forward, -1 == back """
         Context.route.update_route(i)
-        Context.ui.update_waypoint()
+        Context.ui.update_progress()
         Context.overlay.update_jump_overlay()
 
 
@@ -173,7 +163,7 @@ class Router():
                 self.carrier_location = entry.get('StarSystem', '')
                 if Context.route.fleetcarrier == True:
                     Context.route.update_route(0, self.carrier_location)
-                    Context.ui.update_waypoint()
+                    Context.ui.update_progress()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.overlay.display_carrier('Cooldown', 300)
@@ -192,7 +182,7 @@ class Router():
 
         # Update the UI as we may need to hide the refuel notification
         if Context.route.jumps_remaining() > 0:
-            Context.ui.update_waypoint()
+            Context.ui.update_progress()
             Context.overlay.update_jump_overlay()
 
 
@@ -203,7 +193,7 @@ class Router():
         self.carrier_location = self.carrier_destination
         if Context.route.fleetcarrier == True:
             Context.route.update_route(0, self.carrier_location)
-            Context.ui.update_waypoint()
+            Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
         Context.ui.frame.after(300000, lambda: self.cooldown_complete())
         Context.overlay.display_carrier('Cooldown', 300)

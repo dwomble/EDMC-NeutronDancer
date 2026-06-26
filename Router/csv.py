@@ -6,31 +6,21 @@ import re
 
 from .constants import HEADERS, ROUTE_DIR, errs
 from utils.debug import Debug, catch_exceptions
+from utils.misc import singleton
 from .context import Context
 
+@singleton
 class CSV:
     """
     Class to import and export routes as CSV files
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
         self.roadtoriches:bool
         self.fleetcarrier:bool
         self.headers:list
         self.route:list
         self.error:str = ""
-
-        self._initialized = True
 
 
     def choose_file(self) -> str:

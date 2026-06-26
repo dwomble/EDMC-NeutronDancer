@@ -9,11 +9,9 @@ from semantic_version import Version # type: ignore
 from config import config # type: ignore
 from Router.constants import GH_PROJECT, GH_RELEASE_INFO, UPDATE_CHECK_INTERVAL
 from utils.debug import Debug
-from utils.misc import singleton
 
 TIMEOUT=10
 
-@singleton
 class Updater():
     """
     Handle checking for, and installing, updates
@@ -21,7 +19,19 @@ class Updater():
     Call check_for_update() at plugin startup. It's asynchonrous.
     Install the update when you choose (commonly on shutdown).
     """
+    # Singleton pattern
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
     def __init__(self, plugin_dir:str='') -> None:
+        # Only initialize if it's the first time
+        if hasattr(self, '_initialized'): return
+
         if plugin_dir != '': self.plugin_dir:str = plugin_dir
 
         self.update_available:bool = False # Is there an update available?
@@ -31,6 +41,10 @@ class Updater():
 
         self.download_url:str = ""
         self.zip_downloaded:str = "" # ZIP file that was downloaded
+
+        # Make sure we're actually initialized
+        if self.plugin_dir != '':
+            self._initialized = True
 
 
     def download_zip(self) -> None:

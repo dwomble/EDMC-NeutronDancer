@@ -19,10 +19,9 @@ from config import config # type: ignore
 from utils.debug import Debug, catch_exceptions
 
 
-"""
-    Class decorators
-"""
+""" Class decorators """
 def singleton(cls):
+    """ A thread-safe implementation of Singleton. Note this will break unittest.mock.patch """
     instances = {}
     lock = threading.Lock()
 
@@ -36,9 +35,7 @@ def singleton(cls):
 
     return get_instance
 
-"""
-  Miscellaneous utility functions
-"""
+""" Miscellaneous utility functions """
 def get_by_path(dic:dict[str, Any], keys:list[str], default:Any = None) -> Any:
     """ Return an element from a nested object by item sequence. """
     try:

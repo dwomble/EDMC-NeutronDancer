@@ -8,14 +8,10 @@ except ImportError:
     Debug.logger.warning(f"EDMC Hotkeys not installed")
     hotkeys = None
 
-
 @singleton
 class Hotkeys:
-    """
-    Hotkey manager.
-    """
-
     def __init__(self) -> None:
+        # Only initialize if it's the first time
         if not hotkeys: return
 
         for cmd in ["next", "previous", "copy"]:

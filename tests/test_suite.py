@@ -55,7 +55,6 @@ def harness() -> Generator:
 
     # Almost every test needs to be live.
     test_harness = TestHarness(live_requests=True)
-    test_harness.set_edmc_config()
 
     # This is ND-specific. /assets is where the images are stored
     import Router.constants
@@ -77,9 +76,6 @@ def harness() -> Generator:
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
 
     yield test_harness
-
-    # Need to clear the singleton.
-    delattr(test_harness.plugin.router, "_initialized")
 
 
 class TestStartup:
@@ -656,7 +652,7 @@ class TestHotkeyCommands:
         assert res == True
         assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
-        Hotkeys.next()
+        harness.plugin.hotkeys.next()
         assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_previous_hotkey(self, harness:TestHarness) -> None:
@@ -668,7 +664,7 @@ class TestHotkeyCommands:
         harness.plugin.route.offset = 1
         assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
 
-        Hotkeys.previous()
+        harness.plugin.hotkeys.previous()
         assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_copy_hotkey(self, harness:TestHarness) -> None:
@@ -677,7 +673,7 @@ class TestHotkeyCommands:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
 
-        Hotkeys.copy()
+        harness.plugin.hotkeys.copy()
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 

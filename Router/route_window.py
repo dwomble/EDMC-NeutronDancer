@@ -107,7 +107,7 @@ class RouteWindow:
             lbl = ttk.Label(frm, text=dstr, font=FONT)
             lbl.pack(side=tk.LEFT, padx=5)
 
-
+    @catch_exceptions
     def _table(self, parent:tk.Frame, route:Route, scale:float) -> int:
         """ Display the route table and return the width required """
 

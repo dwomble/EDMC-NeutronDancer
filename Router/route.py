@@ -31,7 +31,7 @@ class Route:
             if self.jc != None: jr = self.jc+1
 
             self.hdrs.insert(jr, 'Jumps Rem' if self.jc != None else 'Waypoints Rem')
-            for i in range(0, len(route)-1):
+            for i in range(0, len(route)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
         self.sc:int|None = self.colind()

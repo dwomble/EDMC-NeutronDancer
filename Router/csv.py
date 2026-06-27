@@ -61,7 +61,7 @@ class CSV:
 
                 fields:list = list(route_reader.fieldnames)
                 hdrs:list = []
-                hdrs = [h for h in HEADERS if h in fields]
+                hdrs = [h for h in fields if h in HEADERS]
 
                 # Append any remaining fields
                 for f in fields:

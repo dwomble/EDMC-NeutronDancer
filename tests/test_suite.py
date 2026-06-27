@@ -148,7 +148,7 @@ class TestRouteNavigation:
         offset:int = harness.plugin.route.update_route(-1)
         assert offset == -1
         dest:str = harness.plugin.route.next_stop()
-        assert dest == 'Bleae Thua RX-L d7-28'
+        assert dest == 'Bleae Thua NI-B b27-5'
 
     def test_end_of_route(self, harness:TestHarness) -> None:
         """Test start of route."""
@@ -466,7 +466,7 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_no_previous(self, harness:TestHarness):
         """Test prev/previous command when not yet on the route"""
@@ -609,7 +609,7 @@ class TestOverlay:
 
         overlay.redraw_frames()
 
-        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=0 jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=✨'
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=✨'
 
 
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
@@ -1134,7 +1134,8 @@ class TestRouteWindow:
         )
 
         assert tuple(tree["columns"]) == tuple(harness.plugin.route.hdrs)
-        assert len(tree.get_children()) == len(harness.plugin.route.route)
+        children = tree.get_children()
+        assert len(children) == len(harness.plugin.route.route)
 
         selected = tree.selection()
         assert len(selected) == 1

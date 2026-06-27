@@ -4,11 +4,11 @@ Test harness for EDMC plugins.
 This harness simulates EDMC's journal entry events and provides tools to test
 the plugin's routing functionality without running the full EDMC application.
 """
+from operator import mod
 import shutil
 import threading
 threading.get_native_id = lambda: 0
 
-import os
 import atexit
 import json
 import sys
@@ -20,7 +20,7 @@ from time import sleep, monotonic
 import logging
 import tkinter as tk
 import threading
-from typing import Any
+from typing import Any, Literal
 from types import SimpleNamespace
 
 edmc_dir:Path = Path(__file__).parent / 'edmc'
@@ -34,8 +34,9 @@ test_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(test_dir))
 
 import tests.edmc.requests
-import tests.edmc.mocks as mocks
 from tests.edmc.TkScheduler import HarnessTkScheduler
+import tests.edmc.mocks as mocks
+from tests.edmc.monitor import monitor
 
 CONFIG_FILES:dict = {
     'Backpack': ('Backpack.json', "Items"),
@@ -62,9 +63,14 @@ STARTUP_ATTRS:dict = {
     'StationType': 'StationType'
 }
 
-import tests.edmc.requests
-import tests.edmc.mocks as mocks
-from tests.edmc.monitor import monitor
+
+def reset_plugin_modules() -> None:
+    """Clear plugin modules so each test can import a fresh plugin runtime."""
+    for module_name in list(sys.modules):
+        if module_name == 'load' or module_name.startswith('Router'):
+            sys.modules.pop(module_name, None)
+
+
 class TestHarness:
     """ Main test harness. """
     # Prevent pytest from trying to collect this helper class as a test class
@@ -76,7 +82,7 @@ class TestHarness:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, plugin_dir:Optional[str] = None, live_requests:bool = False):
+    def __init__(self, plugin_dir:Optional[str] = None, live_requests:bool = False, overlay:bool|str = True, hotkeys:bool = True) -> None:
         """ Initialize the test harness. """
 
         if plugin_dir is None:
@@ -107,6 +113,8 @@ class TestHarness:
         self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
         self.set_requests_mode(live_requests)
+        self.set_overlay_mode(overlay)
+        self.set_hotkeys_mode(hotkeys)
 
         if not hasattr(self, '_original_threading_excepthook'):
             self._original_threading_excepthook = threading.excepthook
@@ -130,65 +138,59 @@ class TestHarness:
 
         self._initialized = True
 
-    def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
-        """Record unhandled worker-thread exceptions so tests can fail deterministically."""
-        exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
-        thread_name = getattr(args.thread, 'name', '<unknown>')
-        self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
-
-        if hasattr(self, '_original_threading_excepthook') and self._original_threading_excepthook:
-            self._original_threading_excepthook(args)
-
-    def assert_no_unhandled_exceptions(self) -> None:
-        """Fail the current test if any unhandled thread exceptions were captured."""
-        self.pump_ui(timeout_s=0.4)
-
-        scheduler_failures: list[str] = []
-        if hasattr(self, '_tk_scheduler'):
-            scheduler_failures = self._tk_scheduler.consume_failures()
-            if scheduler_failures:
-                self.unhandled_exceptions.extend(scheduler_failures)
-
-        if not self.unhandled_exceptions:
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Dispose the singleton harness instance so the next test starts clean."""
+        if cls._instance is None:
             return
 
-        failures = "\n".join(f"- {item}" for item in self.unhandled_exceptions)
-        self.unhandled_exceptions.clear()
-        raise AssertionError(
-            "Unhandled exception(s) were raised by background thread(s):\n"
-            f"{failures}"
-        )
+        instance = cls._instance
 
-    def pump_ui(self, timeout_s:float = 0.2, poll_interval_s:float = 0.01) -> None:
-        """Pump deferred Tk callbacks and process pending UI events."""
-        if not hasattr(self, 'root'):
-            return
-
-        end_time = monotonic() + max(timeout_s, 0.0)
-
-        while True:
-            callbacks_ran = 0
-            if hasattr(self, '_tk_scheduler'):
-                callbacks_ran = self._tk_scheduler.drain_due_callbacks()
-
+        if hasattr(instance, '_tk_scheduler'):
             try:
-                self.root.update_idletasks()
-                self.root.update()
-            except tk.TclError:
-                return
+                instance._tk_scheduler.uninstall()
+            except Exception:
+                pass
+            del instance._tk_scheduler
 
-            pending = self._tk_scheduler.pending_count() if hasattr(self, '_tk_scheduler') else 0
-            if pending == 0 and callbacks_ran == 0:
-                return
-            if monotonic() >= end_time:
-                return
+        if hasattr(instance, 'root'):
+            try:
+                instance.root.destroy()
+            except Exception:
+                pass
 
-            sleep(poll_interval_s)
+        if hasattr(instance, '_original_threading_excepthook'):
+            threading.excepthook = instance._original_threading_excepthook
+
+        cls._instance = None
 
     def set_requests_mode(self, live_requests:bool) -> None:
         """ Set whether the harness should use live HTTPS requests or mocked responses. """
         self.live_requests = live_requests
         tests.edmc.requests.live_requests(live_requests)
+
+    def set_overlay_mode(self, which:bool|str = True) -> None:
+        """ Set which overlay mocks should be used. """
+
+        for module_name in ('EDMCOverlay', 'EDMCOverlay.edmcoverlay', 'overlay_plugin', 'overlay_plugin.overlay_api'):
+            sys.modules.pop(module_name, None)
+
+        match which:
+            case 'All' | 'Any' | 'Modern' | True:
+                sys.modules['EDMCOverlay'] = mocks._edmcoverlay
+                sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
+                sys.modules['overlay_plugin'] = mocks._overlay_plugin
+                sys.modules['overlay_plugin.overlay_api'] = mocks._overlay_api
+            case 'Legacy':
+                sys.modules['EDMCOverlay'] = mocks._edmcoverlay
+                sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
+            case 'None' | False | None:
+                pass
+
+    def set_hotkeys_mode(self, hotkeys:bool = True) -> None:
+        """ Set whether the harness should simulate hotkeys being active. """
+        if hotkeys: return
+        sys.modules.pop('EDMCHotkeys', None)
 
     def set_edmc_config(self, config_file:str = "config.toml") -> None:
         """ Load a config file from the config directory and set it in the mock config object. """
@@ -241,6 +243,26 @@ class TestHarness:
         except Exception as e:
             logging.warning(f"Warning: Could not load {format} config file {config_path}: {e}")
             return {}
+
+    def assert_no_unhandled_exceptions(self) -> None:
+        """Fail the current test if any unhandled thread exceptions were captured."""
+        self._pump_ui(timeout_s=0.4)
+
+        scheduler_failures: list[str] = []
+        if hasattr(self, '_tk_scheduler'):
+            scheduler_failures = self._tk_scheduler.consume_failures()
+            if scheduler_failures:
+                self.unhandled_exceptions.extend(scheduler_failures)
+
+        if not self.unhandled_exceptions:
+            return
+
+        failures = "\n".join(f"- {item}" for item in self.unhandled_exceptions)
+        self.unhandled_exceptions.clear()
+        raise AssertionError(
+            "Unhandled exception(s) were raised by background thread(s):\n"
+            f"{failures}"
+        )
 
     def load_state(self, source:str) -> dict:
         """ Load monitor state from a json file. """
@@ -348,7 +370,7 @@ class TestHarness:
             except Exception as e:
                 logging.error(f"Error in journal handler: {e}")
                 raise
-        self.pump_ui()
+        self._pump_ui()
 
     def play_sequence(self, name:str, delay:float = 0.5, state:dict = {}) -> None:
         """ Fire a sequence of events """
@@ -356,6 +378,40 @@ class TestHarness:
             self.fire_event(event, state=state)
             state = {}  # Clear state after the first event
             sleep(delay)
+
+    def register_dashboard_handler(self, handler: Callable, commander:str|None = None, is_beta:bool|None = None) -> None:
+        """ Register a dashboard event handler (simulates dashboard_entry callback). """
+        self.dashboard_handlers.append(handler)
+        if commander:
+            self.monitor.cmdr = commander
+        if is_beta is not None:
+            self.monitor.is_beta = is_beta
+
+    def fire_dashboard_event(self, state:dict = {}) -> None:
+        """ Fire a dashboard event through the harness. """
+
+        # Read the current status if we have one
+        status:dict = {}
+        status_path = Path(__file__).parent / "journal_folder" / "Status.json"
+        if status_path.is_file():
+            with open(status_path, 'r') as file:
+                status = json.load(file)
+
+        # Merge any changes from the provided state into the status
+        if state != {}:
+            status.update(state)
+
+        for handler in self.dashboard_handlers:
+            try:
+                handler(
+                    cmdr=self.monitor.cmdr,
+                    is_beta=self.monitor.is_beta,
+                    entry=status
+                )
+            except Exception as e:
+                logging.error(f"Error in dashboard handler: {e}")
+                raise
+        self._pump_ui()
 
     def _update_journal_files(self, event:dict, state:dict = {}) -> None:
         """ Simulate EDMC's journal file updates based on the event type. """
@@ -408,36 +464,37 @@ class TestHarness:
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']][0], 'w') as f:
                     json.dump(event, f)
 
-    def register_dashboard_handler(self, handler: Callable, commander:str|None = None, is_beta:bool|None = None) -> None:
-        """ Register a dashboard event handler (simulates dashboard_entry callback). """
-        self.dashboard_handlers.append(handler)
-        if commander:
-            self.monitor.cmdr = commander
-        if is_beta is not None:
-            self.monitor.is_beta = is_beta
+    def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
+        """Record unhandled worker-thread exceptions so tests can fail deterministically."""
+        exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
+        thread_name = getattr(args.thread, 'name', '<unknown>')
+        self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
 
-    def fire_dashboard_event(self, state:dict = {}) -> None:
-        """ Fire a dashboard event through the harness. """
+        if hasattr(self, '_original_threading_excepthook') and self._original_threading_excepthook:
+            self._original_threading_excepthook(args)
 
-        # Read the current status if we have one
-        status:dict = {}
-        status_path = Path(__file__).parent / "journal_folder" / "Status.json"
-        if status_path.is_file():
-            with open(status_path, 'r') as file:
-                status = json.load(file)
+    def _pump_ui(self, timeout_s:float = 0.2, poll_interval_s:float = 0.01) -> None:
+        """Pump deferred Tk callbacks and process pending UI events."""
+        if not hasattr(self, 'root'):
+            return
 
-        # Merge any changes from the provided state into the status
-        if state != {}:
-            status.update(state)
+        end_time = monotonic() + max(timeout_s, 0.0)
 
-        for handler in self.dashboard_handlers:
+        while True:
+            callbacks_ran = 0
+            if hasattr(self, '_tk_scheduler'):
+                callbacks_ran = self._tk_scheduler.drain_due_callbacks()
+
             try:
-                handler(
-                    cmdr=self.monitor.cmdr,
-                    is_beta=self.monitor.is_beta,
-                    entry=status
-                )
-            except Exception as e:
-                logging.error(f"Error in dashboard handler: {e}")
-                raise
-        self.pump_ui()
+                self.root.update_idletasks()
+                self.root.update()
+            except tk.TclError:
+                return
+
+            pending = self._tk_scheduler.pending_count() if hasattr(self, '_tk_scheduler') else 0
+            if pending == 0 and callbacks_ran == 0:
+                return
+            if monotonic() >= end_time:
+                return
+
+            sleep(poll_interval_s)

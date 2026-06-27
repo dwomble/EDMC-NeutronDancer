@@ -6,8 +6,7 @@ import sys
 import os
 import shutil
 from pathlib import Path
-from typing import Generator
-from time import sleep
+from typing import TYPE_CHECKING, Generator
 from unittest.mock import Mock, patch
 import json
 import time
@@ -16,8 +15,6 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 
-from urllib3 import request
-
 from tests.edmc import edmc_data
 from utils.treeviewplus import TreeviewPlus
 
@@ -25,8 +22,8 @@ from utils.treeviewplus import TreeviewPlus
 plugin_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(plugin_dir))
 
-# Config is already mocked by conftest.py
-from harness import TestHarness
+if TYPE_CHECKING:
+    from harness import TestHarness
 from Router.constants import CarrierStates, SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
@@ -44,9 +41,8 @@ def capture_thread(*args, **kwargs):
         plotter_thread = thread
     return thread
 
-
 @pytest.fixture
-def harness() -> Generator:
+def harness(request) -> Generator:
     """Provide a fresh test harness for each test."""
 
     # We want a standard route.json for each test
@@ -54,8 +50,17 @@ def harness() -> Generator:
     shutil.copy(Path(__file__).parent / "config" / "route_init.json",
                 Path(__file__).parent / "data" / "route.json")
 
-    # Almost every test needs to be live.
-    test_harness = TestHarness(live_requests=True)
+    overlay = 'All'
+    if request.node.get_closest_marker('overlay'):
+        overlay = request.node.get_closest_marker('overlay').args[0]
+
+    hotkeys = request.node.get_closest_marker('hotkeys') or True
+    from harness import TestHarness, reset_plugin_modules
+
+    TestHarness.reset_instance()
+    reset_plugin_modules()
+
+    test_harness = TestHarness(live_requests=True, overlay=overlay, hotkeys=hotkeys)
 
     # This is ND-specific. /assets is where the images are stored
     import Router.constants
@@ -81,6 +86,8 @@ def harness() -> Generator:
 
     yield test_harness
 
+    test_harness.assert_no_unhandled_exceptions()
+    TestHarness.reset_instance()
 
 class TestStartup:
     """Test plugin startup behavior."""
@@ -541,6 +548,21 @@ class TestShipyardSwap:
 class TestOverlay:
     """Test overlay functionality."""
 
+    @pytest.mark.overlay('None')
+    def test_no_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is None
+
+    @pytest.mark.overlay('Legacy')
+    def test_legacy_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is None
+
+    @pytest.mark.overlay('Modern')
+    def test_modern_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is not None
+
     def test_countdown_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure countdown starts the countdown thread."""
 
@@ -752,58 +774,6 @@ class TestHotkeyCommands:
         harness.plugin.hotkeys.copy()
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
-
-
-class TestEventSequences:
-    """Test complex multi-step event scenarios."""
-
-    def test_full_route_scenario(self, harness:TestHarness, monkeypatch):
-        """Test a complete route scenario with jumps."""
-        harness.plugin.router.system = 'Apurui'
-
-        # Import a route
-        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
-
-        # Follow the route
-        for event in harness.events.get('full_route_scenario', []):
-            harness.fire_event(event)
-            match event.get('event'):
-                case 'ShipyardSwap':
-                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
-                case 'Location' | 'FSDJump':
-                    assert harness.plugin.router.system == event.get('StarSystem', '')
-                    assert "Next: " + harness.plugin.route.next_stop() == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
-
-        # Final state check
-        assert harness.plugin.route.jumps_remaining() == 0
-
-        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj=0 rd=0 st=✨' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
-
-
-    def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
-        """Test carrier jump with docking."""
-        events:list = harness.events.get('carrier_events', [])
-        harness.fire_event(events[0])
-        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
-        harness.fire_event(events[1])
-        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
-
-    def test_carrier_jump_route(self, harness:TestHarness):
-        """Test carrier jump with docking."""
-        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-
-        events:list = harness.events.get('carrier_events', [])
-        harness.fire_event(events[0])
-        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
-        harness.fire_event(events[1])
-        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
-
 
 class TestPlotOperations:
     """Test individual plotting functions"""
@@ -1509,3 +1479,75 @@ class DisabledRouteWindowDisplay:
         assert len(route.jumps) == 1
         assert route.jumps[0][1] == dest
         assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
+
+class TestEventSequences:
+    """Test complex multi-step event scenarios."""
+
+    def test_full_route_scenario(self, harness:TestHarness):
+        """Test a complete route scenario with jumps."""
+        harness.plugin.router.system = 'Apurui'
+
+        # Import a route
+        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        # Follow the route
+        for event in harness.events.get('full_route_scenario', []):
+            harness.fire_event(event)
+            match event.get('event'):
+                case 'ShipyardSwap':
+                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
+                case 'Location' | 'FSDJump':
+                    assert harness.plugin.router.system == event.get('StarSystem', '')
+                    assert "Next: " + harness.plugin.route.next_stop() == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+
+        # Final state check
+        assert harness.plugin.route.jumps_remaining() == 0
+
+        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj=0 rd=0 st=✨' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
+
+    @pytest.mark.overlay('None')
+    def test_full_route_scenario_no_overlay(self, harness:TestHarness):
+        """Test a complete route scenario with jumps."""
+        harness.plugin.router.system = 'Apurui'
+
+        # Import a route
+        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        # Follow the route
+        for event in harness.events.get('full_route_scenario', []):
+            harness.fire_event(event)
+            match event.get('event'):
+                case 'ShipyardSwap':
+                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
+                case 'Location' | 'FSDJump':
+                    assert harness.plugin.router.system == event.get('StarSystem', '')
+
+        # Final state check
+        assert harness.plugin.route.jumps_remaining() == 0
+
+
+    def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
+        """Test carrier jump with docking."""
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
+        harness.fire_event(events[1])
+        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
+
+    def test_carrier_jump_route(self, harness:TestHarness):
+        """Test carrier jump with docking."""
+        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
+        harness.fire_event(events[1])
+        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown

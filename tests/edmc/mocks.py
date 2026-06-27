@@ -247,6 +247,7 @@ for name, val in MockEDMCHotkeys.__dict__.items():
         setattr(_edmchotkeys, name, val)
 setattr(_edmchotkeys, 'register_action_calls', _mock_edmchotkeys.register_action_calls)
 setattr(_edmchotkeys, 'register_action', _mock_edmchotkeys.register_action)
+
 sys.modules['EDMCHotkeys'] = _edmchotkeys
 
 class MockEDMCOverlay:
@@ -276,13 +277,13 @@ _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():
     if not name.startswith('__'):
         setattr(_edmcoverlay, name, val)
-sys.modules['EDMCOverlay'] = _edmcoverlay
+#sys.modules['EDMCOverlay'] = _edmcoverlay
 
 _overlay = _types.ModuleType('edmcoverlay')
 for name, val in Mockedmcoverlay.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay, name, val)
-sys.modules['EDMCOverlay.edmcoverlay'] = _overlay
+#sys.modules['EDMCOverlay.edmcoverlay'] = _overlay
 
 # Mock up the modern overlay and its plugin
 class MockOverlay_Plugin:
@@ -295,13 +296,13 @@ _overlay_plugin = _types.ModuleType('overlay_plugin')
 for name, val in MockOverlay_Plugin.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay_plugin, name, val)
-sys.modules['overlay_plugin'] = _overlay_plugin
+#sys.modules['overlay_plugin'] = _overlay_plugin
 
 _overlay_api = _types.ModuleType('overlay_api')
 for name, val in Mockoverlay_api.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay_api, name, val)
-sys.modules['overlay_plugin.overlay_api'] = _overlay_api
+#sys.modules['overlay_plugin.overlay_api'] = _overlay_api
 
 # Mock watchdog for file system monitoring
 class MockFileSystemEvent:

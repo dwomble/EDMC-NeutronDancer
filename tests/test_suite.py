@@ -24,11 +24,12 @@ sys.path.insert(0, str(plugin_dir))
 
 if TYPE_CHECKING:
     from harness import TestHarness
-from Router.constants import CarrierStates, SPANSH_ROUTE, NAME, lbls
+    from Router.route_window import RouteWindow
+
+from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
-from Router.route_window import RouteWindow
-from Router.hotkeys import Hotkeys
+
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -55,8 +56,8 @@ def harness(request) -> Generator:
         overlay = request.node.get_closest_marker('overlay').args[0]
 
     hotkeys = request.node.get_closest_marker('hotkeys') or True
-    from harness import TestHarness, reset_plugin_modules
 
+    from harness import TestHarness, reset_plugin_modules
     TestHarness.reset_instance()
     reset_plugin_modules()
 
@@ -1047,6 +1048,7 @@ class TestRouteWindow:
 
     def test_window_is_singleton(self, harness: TestHarness) -> None:
         """RouteWindow should reuse the existing singleton instance."""
+        from Router.route_window import RouteWindow
         window:RouteWindow = harness.plugin.ui.window_route
         duplicate:RouteWindow = RouteWindow(harness.parent.winfo_toplevel())
 
@@ -1128,7 +1130,6 @@ class TestRouteWindow:
 
     def test_show_renders_summary_section(self, harness: TestHarness) -> None:
         """show() should render summary labels for progress, jumps and distance."""
-
         window:RouteWindow = harness.plugin.ui.window_route
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
 
@@ -1192,6 +1193,7 @@ class TestRouteWindow:
 
     def test_table_selection_copies_system_name(self, harness: TestHarness) -> None:
         """Selecting a table row should copy the system name to the clipboard."""
+        from Router.route_window import RouteWindow
         window: RouteWindow = harness.plugin.ui.window_route
         filename: str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
 
@@ -1227,6 +1229,7 @@ class DisabledRouteWindowDisplay:
 
     def test_empty_headers_no_display(self, harness:TestHarness) -> None:
         """Test show() with empty headers - should return without error."""
+        from Router.route_window import RouteWindow
         window:RouteWindow = harness.plugin.ui.window_route
 
         empty_route = harness.plugin.route
@@ -1535,6 +1538,7 @@ class TestEventSequences:
 
     def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
         """Test carrier jump with docking."""
+        from Router.constants import CarrierStates
         events:list = harness.events.get('carrier_events', [])
         harness.fire_event(events[0])
         assert harness.plugin.router.carrier_state == CarrierStates.Jumping
@@ -1543,8 +1547,9 @@ class TestEventSequences:
 
     def test_carrier_jump_route(self, harness:TestHarness):
         """Test carrier jump with docking."""
+        from Router.constants import CarrierStates
         filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
-        res:bool = harness.plugin.router.import_route(filename)
+        harness.plugin.router.import_route(filename)
 
         events:list = harness.events.get('carrier_events', [])
         harness.fire_event(events[0])

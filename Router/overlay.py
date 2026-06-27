@@ -55,6 +55,7 @@ class Overlay():
         self._load_prefs()
         # Set defaults
         self.ovfrs['Default'].x = 100; self.ovfrs['Default'].y = 900
+        self.ovfrs['Default'].visible = True
         self.ovfrs['Galaxy Map'].x = 500; self.ovfrs['Galaxy Map'].y = 200
         self.ovfrs['Carrier'].x = 1000; self.ovfrs['Carrier'].y = 900
         for k, fr in self.ovfrs.items():
@@ -109,7 +110,7 @@ class Overlay():
 
             # Star type next stop {st}
 
-        jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0']))
+        jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
         jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
         jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
 
@@ -158,7 +159,7 @@ class Overlay():
 
     def redraw_frame(self, frame:str = "") -> None:
         overlay = self._get_overlay()
-        if not overlay or frame not in self.msgs or not self.ovfrs[frame].visible: return
+        if not overlay or frame not in self.msgs or not self.ovfrs[frame].visible or not self.ovfrs[frame].enabled: return
         [overlay.send_message(**m) if 'msgid' in m else overlay.send_shape(**m) for m in self.msgs[frame].values()]
 
 
@@ -204,9 +205,8 @@ class Overlay():
     def show_frame(self, frame:str = "") -> None:
         """ Show a message frame """
         overlay = self._get_overlay()
-        if not overlay or frame not in self.msgs: return
+        if not overlay or frame not in self.msgs or not self.ovfrs[frame].enabled: return
 
-        Debug.logger.debug(f"Showing overlay frame {frame}")
         self.ovfrs[frame].visible = True
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
@@ -238,7 +238,6 @@ class Overlay():
         """ Update a frame with a set of messages. If its visible the display it otherwise just store it for later. """
 
         overlay = self._get_overlay()
-        #Debug.logger.debug(f"Display called for {frame} {content}")
         if not overlay or frame not in self.ovfrs: return
         fr:OvFrame = self.ovfrs[frame]
 
@@ -261,7 +260,7 @@ class Overlay():
                 args['fill'] = '#00000000'
                 args['w'] = c.get('width', 100)
                 args['h'] = c.get('height', 16)
-                if fr.visible == True:
+                if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
 
@@ -272,7 +271,7 @@ class Overlay():
                 argsb['fill'] = c.get('colour', fr.text_colour)
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
                 argsb['h'] = c.get('height', 16)
-                if fr.visible == True:
+                if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
                 y += 20
@@ -281,11 +280,10 @@ class Overlay():
                 args['text'] = c.get('text', '')
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
-                if fr.visible == True:
+                if fr.visible == True and fr.enabled == True:
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
                 y += 25 if args['size'] == 'large' else 20
-
 
 
     def _timedelta_str(self, delta:timedelta) -> str:

@@ -503,7 +503,7 @@ class UI():
         if Context.route.route == [] or not hasattr(self, 'waypoint_btn'):
             return
         route:Route = Context.route
-        self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset < 0 else tk.NORMAL)
+        self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset <= -1 else tk.NORMAL)
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
@@ -514,7 +514,7 @@ class UI():
         if route.jumps_remaining() > 0:
             copy_to_clipboard(self.parent, wp)
             # Show progress through route
-            jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
+            jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '-' if route.offset < 0 else '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])
             wp += f" ({hfplus(jumps)}/{hfplus(tjumps)})"
 

@@ -31,7 +31,7 @@ class Route:
             if self.jc != None: jr = self.jc+1
 
             self.hdrs.insert(jr, 'Jumps Rem' if self.jc != None else 'Waypoints Rem')
-            for i in range(0, len(route)):
+            for i in range(0, len(route)-1):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
         self.sc:int|None = self.colind()
@@ -113,6 +113,7 @@ class Route:
         if offset+1 >= len(self.route): return 0
 
         # No jump count column
+        j = len(self.route[offset:])-1
         if self.jc == None: return len(self.route[offset:])-1
         return sum([j[self.jc] for j in self.route[offset+1:]])
 
@@ -205,10 +206,12 @@ class Route:
 
         # Are we at one end or the other?
         if self.offset + direction < 0:
-            return -1
+            self.offset = -1
+            return self.offset
 
         if self.offset + direction >= len(self.route):
-            return len(self.route) - 1
+            self.offset = len(self.route)-1
+            return self.offset
 
         self.offset += direction
         return self.offset

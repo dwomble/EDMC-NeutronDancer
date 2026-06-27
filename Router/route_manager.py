@@ -133,6 +133,7 @@ class Router():
 
     def update_route(self, i:int) -> None:
         """ Called to move forward or backward along the route 1 == forward, -1 == back """
+        Debug.logger.debug(f"Update route {i} {Context.route.get_waypoint()}")
         Context.route.update_route(i)
         Context.ui.update_progress()
         Context.overlay.update_jump_overlay()

@@ -102,6 +102,7 @@ class TestHarness:
 
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
+        self.dashboard_handlers: list[Callable] = []
         self.config = mocks.MockConfig()
         self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
@@ -406,3 +407,37 @@ class TestHarness:
                      event[CONFIG_FILES[event['event']][1]] = state.get(CONFIG_FILES[event['event']][1], [])
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']][0], 'w') as f:
                     json.dump(event, f)
+
+    def register_dashboard_handler(self, handler: Callable, commander:str|None = None, is_beta:bool|None = None) -> None:
+        """ Register a dashboard event handler (simulates dashboard_entry callback). """
+        self.dashboard_handlers.append(handler)
+        if commander:
+            self.monitor.cmdr = commander
+        if is_beta is not None:
+            self.monitor.is_beta = is_beta
+
+    def fire_dashboard_event(self, state:dict = {}) -> None:
+        """ Fire a dashboard event through the harness. """
+
+        # Read the current status if we have one
+        status:dict = {}
+        status_path = Path(__file__).parent / "journal_folder" / "Status.json"
+        if status_path.is_file():
+            with open(status_path, 'r') as file:
+                status = json.load(file)
+
+        # Merge any changes from the provided state into the status
+        if state != {}:
+            status.update(state)
+
+        for handler in self.dashboard_handlers:
+            try:
+                handler(
+                    cmdr=self.monitor.cmdr,
+                    is_beta=self.monitor.is_beta,
+                    entry=status
+                )
+            except Exception as e:
+                logging.error(f"Error in dashboard handler: {e}")
+                raise
+        self.pump_ui()

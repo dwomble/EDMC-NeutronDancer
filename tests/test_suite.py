@@ -18,6 +18,7 @@ import threading
 
 from urllib3 import request
 
+from tests.edmc import edmc_data
 from utils.treeviewplus import TreeviewPlus
 
 # Setup path for imports
@@ -60,7 +61,7 @@ def harness() -> Generator:
     import Router.constants
     Router.constants.ASSET_DIR = "../assets"
 
-    from load import plugin_start3, plugin_app, journal_entry
+    from load import plugin_start3, plugin_app, journal_entry, dashboard_entry
 
     # Prevent network updater thread from making tests hang on teardown.
     with patch('load.Updater.check_for_update', return_value=None):
@@ -74,6 +75,9 @@ def harness() -> Generator:
     # ND-specific, this is the journal handling function and the default journal params
     test_harness.load_events("journal_events.json")
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
+
+    # This is the dashboard handlling function
+    test_harness.register_dashboard_handler(dashboard_entry, 'Testy', True)
 
     yield test_harness
 
@@ -567,19 +571,48 @@ class TestOverlay:
     def test_clear_frames(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure clearings all frames removes the messages."""
 
-        called:dict[str, bool] = {'flag': False}
-
-        def fake_countdown(self, frame, content, end, stop) -> None:
-            # Simulate some work then set flag
-            called['flag'] = True
-
-        monkeypatch.setattr(type(harness.plugin.overlay), '_countdown', fake_countdown, raising=False)
         events:list = harness.events.get('carrier_events', [])
         harness.fire_event(events[0])
         harness.fire_event(events[2])
+
         assert harness.plugin.overlay.msgs != {}
         harness.plugin.overlay.clear_frames()
+
         assert harness.plugin.overlay.msgs == {}
+
+    def test_hide_show_frames(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure hiding all frames set them as hidden."""
+
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        harness.fire_event(events[2])
+
+        assert harness.plugin.overlay.msgs != {}
+        harness.plugin.overlay.hide_frames()
+
+        frames = harness.plugin.overlay.ovfrs
+        for fr in harness.plugin.overlay.ovfrs:
+            assert frames[fr].visible == False or fr not in harness.plugin.overlay.msgs
+
+        harness.plugin.overlay.show_frames()
+
+        frames = harness.plugin.overlay.ovfrs
+        for fr in harness.plugin.overlay.ovfrs:
+            assert frames[fr].visible == True or fr not in harness.plugin.overlay.msgs
+
+    def test_redraw_frames(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure redraw_frames renders using the configured progress_display template."""
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        overlay.redraw_frames()
+
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=✨'
 
     def test_update_jump_overlay(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure update_jump_overlay renders using the configured progress_display template."""
@@ -597,21 +630,6 @@ class TestOverlay:
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=🌀'
 
-    def test_redraw_frames(self, harness:TestHarness, monkeypatch) -> None:
-        """Ensure redraw_frames renders using the configured progress_display template."""
-
-        overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
-
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        overlay.redraw_frames()
-
-        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=✨'
-
-
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure update_jump_overlay handles invalid progress_display format."""
 
@@ -624,23 +642,81 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "invalid={unknown}"
 
-        captured:list[tuple[str, list[dict], int]] = []
-
-        def fake_update_frame(self, frame:str, content, size:str = "normal", ttl:int = 120) -> None:
-            if isinstance(content, list):
-                captured.append((frame, content, ttl))
-
-        monkeypatch.setattr(type(overlay), '_get_overlay', lambda self: object(), raising=False)
-        monkeypatch.setattr(type(overlay), 'update_frame', fake_update_frame, raising=False)
-
         overlay.update_jump_overlay()
 
-        assert captured != []
-        default_call = next((c for c in captured if c[0] == 'Default'), None)
-        assert default_call is not None
-
-        progress_line:str = default_call[1][2]['text']
+        progress_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
         assert progress_line == "Error formatting progress display"
+
+    def test_hide_show_default_frame(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure changing the view updates the overlay."""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.update_jump_overlay()
+
+        msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == True
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusExternalPanel})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == False
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == True
+
+    def test_show_hide_galaxy_frame(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure changing the view updates the overlay."""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.update_jump_overlay()
+
+        msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusGalaxyMap})
+        assert harness.plugin.overlay.ovfrs["Galaxy Map"].visible == True
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Galaxy Map"].visible == False
+
+    def test_show_prefs(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure saving preferences works, or at least doesn't crash."""
+
+        res = harness.plugin.overlay.prefs_display(harness.parent)
+        # Should return a child frame of the parent window
+        assert res in harness.parent.winfo_children()
+
+    def test_save_prefs(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure saving preferences works."""
+
+        overlay = harness.plugin.overlay
+        res = overlay.prefs_display(harness.parent)
+
+        # Should return a child frame of the parent window
+        assert res in harness.parent.winfo_children()
+
+        # Save preferences
+        overlay.pb.set(False)
+        overlay.save_prefs()
+        assert harness.config.get_bool(f"{harness.plugin.plugin_name}_progress_bar", True) == False
+
+        # Save preferences
+        overlay.pb.set(True)
+        overlay.save_prefs()
+        assert harness.config.get_bool(f"{harness.plugin.plugin_name}_progress_bar", False) == True
 
 class TestHotkeyCommands:
     """Test hotkey commands"""

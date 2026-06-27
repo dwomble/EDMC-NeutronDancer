@@ -50,14 +50,14 @@ class Overlay():
     def __init__(self) -> None:
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
-        self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame(), 'Galaxy Map': OvFrame(), 'Carrier': OvFrame()}
+        self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900),
+                                         'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200),
+                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900)
+                                         }
         self.stoppers:dict[str, Event] = {}
+
         self._load_prefs()
-        # Set defaults
-        self.ovfrs['Default'].x = 100; self.ovfrs['Default'].y = 900
-        self.ovfrs['Default'].visible = True
-        self.ovfrs['Galaxy Map'].x = 500; self.ovfrs['Galaxy Map'].y = 200
-        self.ovfrs['Carrier'].x = 1000; self.ovfrs['Carrier'].y = 900
+
         for k, fr in self.ovfrs.items():
             fr.name = k
             self.create_frame(Context.plugin_name, fr)

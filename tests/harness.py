@@ -176,7 +176,7 @@ class TestHarness:
             sys.modules.pop(module_name, None)
 
         match which:
-            case 'All' | 'Any' | 'Modern' | True:
+            case 'Modern' | True:
                 sys.modules['EDMCOverlay'] = mocks._edmcoverlay
                 sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
                 sys.modules['overlay_plugin'] = mocks._overlay_plugin
@@ -184,7 +184,7 @@ class TestHarness:
             case 'Legacy':
                 sys.modules['EDMCOverlay'] = mocks._edmcoverlay
                 sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
-            case 'None' | False | None:
+            case 'None' | False:
                 pass
 
     def set_hotkeys_mode(self, hotkeys:bool = True) -> None:

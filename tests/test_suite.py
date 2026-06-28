@@ -51,7 +51,7 @@ def harness(request) -> Generator:
     shutil.copy(Path(__file__).parent / "config" / "route_init.json",
                 Path(__file__).parent / "data" / "route.json")
 
-    overlay = 'All'
+    overlay = 'Modern'
     if request.node.get_closest_marker('overlay'):
         overlay = request.node.get_closest_marker('overlay').args[0]
 

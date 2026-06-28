@@ -1,17 +1,20 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.10.0 2025-??-??
+## v1.10.0 2026-??-??
 
 ### New Features
 
-* Refuel reminder is automatically removed once you've refueled
 * Added customizable progress text to overlay
+* Added optional progress bar to the jump overlay
+* Refuel reminder is automatically removed once you've refueled
 
 ### Changes
 
-* Checking for new versions is done at most daily to prevent GitHub API overload
+* Checking for new versions is now done at most daily to prevent GitHub API overload
 * Stop copying "End of the Road" to the clipboard
 * Modified to use EDMC dynamic themes
+* Added more unittests
+* Improved and updated `help.md` and `README.md` documentation
 
 ### Bug Fixes
 

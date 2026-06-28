@@ -2,23 +2,10 @@
 
 There are two Neutron route plotting options.
 
-1. Neutron Plotter
 1. Galaxy Plotter
+1. Neutron Plotter
 
 You can switch between them with the radio buttons.
-
-## Neutron Plotter
-
-This is the simple Spansh neutron route plotter. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
-
-Next click **Calculate** to query Spansh and plot your route.
-
-![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
-
-- *Routing Efficiency* is the route directness. Increase this to reduce how far off the direct route the system will plot to get to a neutron star (An efficiency of 100 will not deviate from the direct route in order to plot from A to B and will most likely break down the journey into 20000 LY blocks).
-
-- *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
-
 
 ## Galaxy Plotter
 
@@ -66,6 +53,18 @@ If you don't select *exclude secondary stars* it's presumed you'll select this o
 1. If you find yourself out of sync with a generated route then you should find the next refuelling stop in the route and plot to it within the galaxy map. Once you have refuelled at that refuelling stop then you can continue along the route as normal.
 
 1. Due to the complexity of the galaxy plotter and the calculations involved a route plotted in Neutron Dancer may vary *slightly* from one created through the web interface.
+
+## Neutron Plotter
+
+This is the simple Spansh neutron route plotter. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
+
+Next click **Calculate** to query Spansh and plot your route.
+
+![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
+
+- *Routing Efficiency* is the route directness. Increase this to reduce how far off the direct route the system will plot to get to a neutron star (An efficiency of 100 will not deviate from the direct route in order to plot from A to B and will most likely break down the journey into 20000 LY blocks).
+
+- *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
 ## Importing Routes
 

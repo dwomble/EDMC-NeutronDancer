@@ -1,39 +1,43 @@
 <!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
 <img width="125" height="125" alt="neutrondancer_logo125_white" src="https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597" />
 
-<h1>Navl's Neutron Dancer</h1>
+# Navl's Neutron Dancer
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
 [![CodeQL](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NEutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by plotting a route using [Spansh](https://www.spansh.co.uk/plotter) within [EDMC](https://github.com/EDCD/EDMarketConnector) and automatically copying the next waypoint on the route to your clipboard. It can work for almost any router by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galacy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and automatically copying the next waypoint into your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
-The original goal of this fork was support for the new 6x overcharge of the Caspian and a cleaner UI. It has grown beyond that into a significant rewrite.
+The original goal of this fork was support for the new 6x overcharge of the Caspian Explorer and a cleaner UI. It has grown beyond that into a significant rewrite.
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984" />
 
 ## Key Features
 
-- The easiest way to use Spansh' sophisticated **Galaxy Plotter** from within EDMC
-- Spansh **Neutron Plotting** directly from within EDMC
-- CSV import supports almost any route file including Road to Riches, Expressway to Exomastery, Tourist planner, and Fleetcarrier plotter
-- Next jump is automatically put into the paste buffer
-- History tracking remembers your current waypoint as well as ships, loadouts, and destinations
-- Route export makes it easy to save a route for later reuse
-- Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications
-- Tracks and reports statistics including jumps and distance per hour
-- Supports [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display of routes and countdown timers
-- Supports chat commands (`!nd next`, `!nd previous`, `!nd copy`) for single screen operation
-- Supports [Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) for next waypoint, previous waypoint, and copy to clipboard operations.
+- Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
+- Use Spansh's **Neutron Plotter** directly from EDMC.
+- Next destination is automatically put into the paste buffer.
+- Remembers your route, progress, ships, loadouts, and destinations across sessions.
+- Refuel locations and Neutron stars are highlighted.
+- Star name autocompletion
+- CSV import supports almost any route file including Road to Riches, Expressway to Exomastery, Tourist planner, and Fleetcarrier plotter.
+- Route export makes it easy to save a route for later reuse.
+- Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications.
+- Tracks and reports statistics including jumps and distance per hour.
+- Single screen and VR support via
+  - [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display of routes and countdown timers.
+  - Chat commands (`!nd next`, `!nd previous`, `!nd copy`)
+  - [Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) for next waypoint, previous waypoint, and copy to clipboard operations.
+- Full EDMC theme support
 
 ## Installation
 
-- Open your EDMC plugins folder - in EDMC settings, select "Plugins" tab, click the "Open" button.
-- Create a folder inside the plugins folder and call it whatever you want, **NeutronDancer** for instance.
-- Download the latest release [here](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest) and unzip it.
-- Open the folder you created and put all the files and folders you extracted inside
+- Download and unzip the latest `EDMC-NeutronDancer.zip` from [here](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest).
+- Open your EDMC plugins folder (in EDMC settings, select "Plugins" tab, click the "Open" button).
+- Create a folder inside the plugins folder and call it whatever you want, **EDMC-NeutronDancer** for instance.
+- Copy the unzipped files into this folder.
 - Restart EDMC.
 
 ## Route Plotting
@@ -44,8 +48,8 @@ By default Neutron Dancer starts in a minimized mode in order to be as unobtrusi
 
 Neutron dancer supports two direct route creation methods:
 
+1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
-1. The more sophisticated Spansh Galaxy Plotter
 
 It also supports CSV file import in a wide variety of formats
 
@@ -54,23 +58,21 @@ It also supports CSV file import in a wide variety of formats
 1. Tourist planner
 1. Fleetcarrier plotter, etc.
 
-### Neutron Plotting
-
-To use the Neutron Plotter, enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. When you complete a route Neutron Dancer saves the source, destination, and ship details for easy entry. These are available from a right click menu to simplify entry.
-
-<img width="384" height="163" alt="Screenshot 2025-12-27 164632" src="https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2" />
-
 ### Galaxy Plotting
 
-This works the same as the Neutron Plotter but because the Galaxy Plotter is much more sophisticated the options available are also more complex and using the wrong values can lead to **getting stuck** so make sure you understand them before taking a route.
+To use the Galaxy Plotter, also known as the *exact plotter*, enter your source and destination systems, select the ship and set any other options and choose `Calculate`. The Galaxy Plotter options are explained in the help window as well as at [Spansh](https://spansh.co.uk/exact-plotter).
 
 <img width="439" height="239" alt="Screenshot 2026-01-16 173246" src="https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f" />
 
-**Note** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. This means you need to have switched to this ship for it to be able to plot it.
+When you complete a route Neutron Dancer saves the source, destination, and ship details for easy entry. These are available from a right click menu to simplify entry.
 
-### CSV Import
+**Note:** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. For Neutron Dancer to know this information you must have switched to this ship to plot a route for it.
 
-Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
+### Neutron Plotting
+
+This works like the Galaxy plotter but is simpler and produces less efficient routes.
+
+<img width="384" height="163" alt="Screenshot 2025-12-27 164632" src="https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2" />
 
 ### Following the Route
 
@@ -88,7 +90,11 @@ The progress bar has a Tooltip that provides the number of jumps remaining and d
 
 The **Show route** button will open a window showing progress and the details of the plotted route. The current waypoint is hightlighted and progress includes waypoints completed and remaining, distance completed and remaining, jumps and lightyears per hour. For each jump the details include waypoints, distance traveled and remaining, fuel used and remaining, tritium used and remaining, whether to refueld and whether a star is a neutron star or scoopable depending on the type of route being followed.
 
-### Export Route
+### CSV Import
+
+Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values. If there is a column for refueling it will use that too.
+
+### Route Export
 
 The **Export route** button will open a file dialog allowing you to save the current route as a CSV.
 
@@ -119,15 +125,15 @@ This enables management of Neutron Dancer without tabbing out of the game. Simpl
 
 - `next` – move to the next waypoint
 - `previous` (or just `prev`) – move to the previous waypoint
-- `copy` – re-insert the next waypoint into the past buffer
+- `copy` – re-copy the next waypoint into the past buffer
 
 ### Hotkeys
 
-If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) plugin you can define hotkeys for the chat commands listed above.
+If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) plugin you can define hotkeys for the `next`, `previous` and `copy` commands.
 
 ### Saving State
 
-If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off and catch up any jumps made while EDMC was inactive.
+If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off and even catch up any progress made while EDMC was inactive.
 
 It also saves ship details and source and destination systems for easy entry.
 

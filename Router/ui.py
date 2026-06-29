@@ -12,11 +12,12 @@ import myNotebook as nb # type: ignore
 from theme import theme # type: ignore
 from config import config # type: ignore
 
+import utils.th as th
 from utils.tooltip import Tooltip
 from utils.autocompleter import Autocompleter
 from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, frame, labelframe, button, label, radiobutton, combobox, scale, listbox, hfplus, PopupNotice, copy_to_clipboard
+from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
@@ -45,10 +46,10 @@ class UI():
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
 
-        self.frame:tk.Frame = frame(parent, borderwidth=2)
+        self.frame:th.Frame = th.Frame(parent, borderwidth=2)
         self.frame.grid(sticky=tk.NSEW)
 
-        self.update:tk.Label
+        self.update:th.Label
 
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
@@ -56,7 +57,7 @@ class UI():
         #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
         #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
-        self.error_lbl:tk.Label|ttk.Label = label(self.frame, text="", foreground='red', justify=tk.CENTER)
+        self.error_lbl:th.Label = th.Label(self.frame, text="", foreground='red', justify=tk.CENTER)
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
         self.hide_error()
 
@@ -65,13 +66,13 @@ class UI():
 
         self.progbar:ttk.Progressbar # Overall progress bar
 
-        self.title_fr:tk.Frame = self._create_title_fr(self.frame)
-        self.neutron_fr:tk.Frame = self._create_neutron_fr(self.frame)
-        self.galaxy_fr:tk.Frame = self._create_galaxy_fr(self.frame)
-        self.busy_fr:tk.Frame = self._create_busy_fr(self.frame)
-        self.route_fr:tk.Frame = self._create_route_fr(self.frame)
+        self.title_fr:th.Frame = self._create_title_fr(self.frame)
+        self.neutron_fr:th.Frame = self._create_neutron_fr(self.frame)
+        self.galaxy_fr:th.Frame = self._create_galaxy_fr(self.frame)
+        self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
+        self.route_fr:th.Frame = self._create_route_fr(self.frame)
 
-        self.sub_fr:tk.Frame = self.title_fr
+        self.sub_fr:th.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
 
         self.cooldown_popup:bool = True
@@ -88,7 +89,7 @@ class UI():
             return
 
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
-        self.update = tk.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
+        self.update = th.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
         if Context.updater.releasenotes != "":
             Tooltip(self.update, markdown=tts["releasenotes"].format(c=Context.updater.releasenotes))
         self.update.bind("<Button-1>", partial(self.cancel_plugin_update))
@@ -137,22 +138,22 @@ class UI():
         self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
 
 
-    def _create_title_fr(self, parent:tk.Frame) -> tk.Frame:
+    def _create_title_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the base/title frame """
-        title_fr:tk.Frame = frame(parent)
+        title_fr:th.Frame = th.Frame(parent)
         col:int = 0; row:int = 0
-        self.lbl:tk.Label|ttk.Label = label(title_fr, text=lbls["plot_title"], font=BOLD)
+        self.lbl:th.Label = th.Label(title_fr, text=lbls["plot_title"], font=BOLD)
         self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
         col += 1
         gopts:dict = {'row': row, 'column': col, 'sticky': tk.W}
-        plot_gui_btn:tk.Button|ttk.Button = button(title_fr, gopts, text=" "+btns["plot_route"]+" ",
-                                                   command=lambda: self.show_frame(Context.router.last_plot))
+        plot_gui_btn:th.Button = th.Button(title_fr, gopts, text=" "+btns["plot_route"]+" ",
+                                         command=lambda: self.show_frame(Context.router.last_plot))
         plot_gui_btn.grid(gopts)
 
         return title_fr
 
 
-    def _create_busy_fr(self, parent:tk.Frame) -> tk.Frame:
+    def _create_busy_fr(self, parent:th.Frame) -> th.Frame:
         """ Spinner image for route plotting """
 
         image:str = os.path.join(Context.plugin_dir, ASSET_DIR,
@@ -161,32 +162,32 @@ class UI():
         self.frameSpd:int = 50
 
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
-        busy_fr:tk.Frame = frame(parent)
-        self.route_lbl:ttk.Label|tk.Label = label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest),
+        busy_fr:th.Frame = th.Frame(parent)
+        self.route_lbl:th.Label = th.Label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest),
                                                   justify=tk.CENTER, font=BOLD)
         self.route_lbl.pack(pady=5, anchor=tk.CENTER)
-        self.busyimg:ttk.Label|tk.Label = label(busy_fr, image=self.frames[0], justify=tk.CENTER)
+        self.busyimg:th.Label = th.Label(busy_fr, image=self.frames[0], justify=tk.CENTER)
         self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
-        cancel:tk.Button|ttk.Button = button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
+        cancel:th.Button = th.Button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
         cancel.pack(anchor=tk.CENTER)
         return busy_fr
 
 
-    def _plot_switcher(self, fr:tk.Frame, row:int, col:int) -> None:
+    def _plot_switcher(self, fr:th.Frame, row:int, col:int) -> None:
         """ Switch between the two route plotters """
-        sfr:tk.Frame = frame(fr, width=self.frwidth)
+        sfr:th.Frame = th.Frame(fr, width=self.frwidth)
         gopts:dict = {'row': 0, 'column': 0, 'padx': 5, 'pady': 5}
-        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, gopts, text=lbls["neutron_router"], variable=self.router, value='Neutron',
-                                                        command=lambda: self.show_frame('Neutron'))
+        r1:th.Radiobutton = th.Radiobutton(sfr, gopts, text=lbls["neutron_router"], variable=self.router, value='Neutron',
+                                            command=lambda: self.show_frame('Neutron'))
         r1.grid(gopts)
 
         gopts = {'row': 0, 'column': 1, 'padx': 5, 'pady': 5}
-        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(sfr, gopts, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
-                                                        command=lambda: self.show_frame('Galaxy'))
+        r2:th.Radiobutton = th.Radiobutton(sfr, gopts, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
+                                            command=lambda: self.show_frame('Galaxy'))
         r2.grid(gopts)
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         # This has to be a tk.Button or EDMC's theme throws some kind of error about setting a foreground
-        r3:tk.Button = tk.Button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
+        r3:th.Button = th.Button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.EW)
 
@@ -223,10 +224,10 @@ class UI():
         return
 
 
-    def _create_galaxy_fr(self, parent:tk.Frame) -> tk.Frame:
+    def _create_galaxy_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the galaxy route plotting frame """
 
-        plot_fr:tk.Frame = frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
         row:int = 2
         col:int = 0
 
@@ -257,7 +258,7 @@ class UI():
 
         self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
         gopts:dict = {'row': row, 'column': col, 'rowspan': 3, 'padx': 5, 'pady': 5}
-        self.gallb:tk.Listbox = listbox(plot_fr, [lbls[v] for v in self.optionlist], getopts=gopts)
+        self.gallb:th.Listbox = th.Listbox(plot_fr, [lbls[v] for v in self.optionlist], gopts)
         Tooltip(self.gallb, tts['galaxy_options'])
 
         for i, item in enumerate(self.optionlist):
@@ -283,7 +284,7 @@ class UI():
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.ship.trace_add("write", self.ship_selected)
         gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5}
-        self.shipdd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.ship, gopts, values=names, width=10)
+        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.ship, gopts, values=names, width=10)
         Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(gopts)
 
@@ -299,7 +300,7 @@ class UI():
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
         gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5}
-        algodd:ttk.Combobox|tk.OptionMenu = combobox(plot_fr, self.algorithm, gopts, values=algorithms, width=10)
+        algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, gopts, values=algorithms, width=10)
         Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(gopts)
 
@@ -319,32 +320,32 @@ class UI():
 
         # Row 5
         row += 1; col = 0
-        btn_frame:tk.Frame = frame(plot_fr)
+        btn_frame:th.Frame = th.Frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         r = 0; col = 0
         gopts:dict = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.gal_import_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
+        self.gal_import_route_btn:th.Button = th.Button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
         self.gal_import_route_btn.grid(gopts)
         col += 1
 
         gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.gal_plot_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.galaxy_plot())
+        self.gal_plot_route_btn:th.Button = th.Button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.galaxy_plot())
 
         self.gal_plot_route_btn.grid(gopts)
         col += 1
 
         gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.gal_cancel_plot:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
+        self.gal_cancel_plot:th.Button  = th.Button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
         self.gal_cancel_plot.grid(gopts)
 
         return plot_fr
 
 
-    def _create_neutron_fr(self, parent:tk.Frame) -> tk.Frame:
+    def _create_neutron_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the neutron route plotting frame """
 
-        plot_fr:tk.Frame = frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
         row:int = 2
         col:int = 0
 
@@ -396,7 +397,7 @@ class UI():
         col += 2
 
         gopts:dict = {'row': row, 'column': col}
-        self.efficiency_slider:tk.Scale|ttk.Scale = scale(plot_fr, gopts, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
+        self.efficiency_slider:th.Scale = th.Scale(plot_fr, gopts, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(gopts)
         self.efficiency_slider.set(params.get('efficiency', 60))
@@ -406,39 +407,39 @@ class UI():
         self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
 
         # Create radio buttons
-        l1:tk.Label|ttk.Label = label(plot_fr, text=lbls["supercharge_label"])
+        l1:th.Label = th.Label(plot_fr, text=lbls["supercharge_label"])
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
         gopts = {'row': row, 'column': col}
-        r1:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, gopts, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
+        r1:th.Radiobutton = th.Radiobutton(plot_fr, gopts, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
         Tooltip(r1, tts['standard_multiplier'])
         r1.grid(gopts)
 
         col += 1
         gopts = {'row': row, 'column': col}
-        r2:tk.Radiobutton|ttk.Radiobutton = radiobutton(plot_fr, gopts, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        r2:th.Radiobutton = th.Radiobutton(plot_fr, gopts, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
         r2.grid(gopts)
 
         row += 1; col = 0
-        btn_frame:tk.Frame = frame(plot_fr)
+        btn_frame:th.Frame = th.Frame(plot_fr)
         btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         r = 0; col = 0
         gopts:dict = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.import_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
+        self.import_route_btn:th.Button = th.Button(btn_frame, gopts, text=btns["import_route"], command=lambda: self.import_route())
         self.import_route_btn.grid(gopts)
         col += 1
 
         gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.plot_route_btn:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.neutron_plot())
+        self.plot_route_btn:th.Button = th.Button(btn_frame, gopts, text=btns["calculate_route"], command=lambda: self.neutron_plot())
         self.plot_route_btn.grid(gopts)
         col += 1
 
         gopts = {'row': r, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.cancel_plot:tk.Button|ttk.Button = button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
+        self.cancel_plot:th.Button = th.Button(btn_frame, gopts, text=btns["cancel"], command=lambda: self.show_frame('Default'))
         self.cancel_plot.grid(gopts)
 
         return plot_fr
@@ -531,11 +532,11 @@ class UI():
             self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
 
 
-    def _create_route_fr(self, parent:tk.Frame) -> tk.Frame:
+    def _create_route_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the route display frame """
 
-        route_fr:tk.Frame = frame(parent)
-        self.bar_fr:tk.LabelFrame = labelframe(route_fr, border=0, height=10, width=self.frwidth)
+        route_fr:th.Frame = th.Frame(parent)
+        self.bar_fr:th.LabelFrame = th.LabelFrame(route_fr, border=0, height=10, width=self.frwidth)
         self.bar_fr.grid_rowconfigure(0, weight=1)
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
@@ -549,7 +550,7 @@ class UI():
 
         parent.after(5000, self._update_progbar) # We may need to wait til TK has finished loading before updating the progress bar
 
-        fr1:tk.Frame = frame(route_fr, width=self.frwidth-10)
+        fr1:th.Frame = th.Frame(route_fr, width=self.frwidth-10)
         fr1.grid_columnconfigure(0, weight=0)
         fr1.grid_columnconfigure(1, weight=1)
         fr1.grid_columnconfigure(2, weight=0)
@@ -557,42 +558,43 @@ class UI():
 
         row:int = 0; col:int = 0
         gopts:dict = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
-        self.waypoint_prev_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["prev"], width=3, command=lambda: Context.router.update_route(-1))
+        self.waypoint_prev_btn:th.Button = th.Button(fr1, gopts, text=btns["prev"], width=3, command=lambda: Context.router.update_route(-1))
         self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
         self.waypoint_prev_btn.grid(gopts)
 
         col += 1
         gopts = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.EW}
-        self.waypoint_btn:tk.Button|ttk.Button = button(fr1, gopts, text=Context.route.next_stop(), width=32,
-                                                        command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
+        self.waypoint_btn:th.Button = th.Button(fr1, gopts, text=Context.route.next_stop(), width=32,
+                                              command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
         Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(gopts)
 
         col += 1
         gopts = {'row': row, 'column': col, 'padx': 5, 'pady': 5, 'sticky': tk.W}
-        self.waypoint_next_btn:tk.Button|ttk.Button = button(fr1, gopts, text=btns["next"], width=3, command=lambda: Context.router.update_route(1))
+        self.waypoint_next_btn:th.Button = th.Button(fr1, gopts, text=btns["next"], width=3,
+                                                     command=lambda: Context.router.update_route(1))
         self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
         self.waypoint_next_btn.grid(gopts)
 
-        fr2:tk.Frame = frame(route_fr)
+        fr2:th.Frame = th.Frame(route_fr)
         fr2.grid_columnconfigure(0, weight=0)
         fr2.grid_columnconfigure(1, weight=0)
         fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
         gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.export_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["export_route"], command=lambda: self._export_route())
+        self.export_route_btn:th.Button = th.Button(fr2, gopts, text=btns["export_route"], command=lambda: self._export_route())
         self.export_route_btn.grid(gopts)
 
         col += 1
         gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.show_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["show_route"],
-                                                          command=lambda: self.window_route.show(Context.route))
+        self.show_route_btn:th.Button = th.Button(fr2, gopts, text=btns["show_route"],
+                                                  command=lambda: self.window_route.show(Context.route))
         self.show_route_btn.grid(gopts)
 
         col += 1
         gopts = {'row': row, 'column': col, 'padx': 5, 'sticky': tk.W}
-        self.clear_route_btn:tk.Button|ttk.Button = button(fr2, gopts, text=btns["clear_route"], command=lambda: self._clear_route())
+        self.clear_route_btn:th.Button = th.Button(fr2, gopts, text=btns["clear_route"], command=lambda: self._clear_route())
         self.clear_route_btn.grid(gopts)
 
         return route_fr
@@ -652,14 +654,7 @@ class UI():
 
         # Ship dropdown
         ships:list = [Context.router.ships[id].name for id in Context.router.shiplist if id in Context.router.ships]
-        if isinstance(self.shipdd, ttk.Combobox):
-            self.shipdd['values'] = ships
-            return
-
-        # TK OptionMenu sucks for updating values, so we have to do it manually
-        menu:tk.Menu = self.shipdd["menu"]
-        menu.delete(0, "end")
-        [menu.add_command(label=ship, command=lambda item=ship: self.ship.set(item)) for ship in ships]
+        self.shipdd.set_menu(ships)
 
 
     def update_cargo(self, cargo:int) -> None:

@@ -91,7 +91,7 @@ class UI():
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
         self.update = th.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
         if Context.updater.releasenotes != "":
-            Tooltip(self.update, markdown=tts["releasenotes"].format(c=Context.updater.releasenotes))
+            th.Tooltip(self.update, markdown=tts["releasenotes"].format(c=Context.updater.releasenotes))
         self.update.bind("<Button-1>", partial(self.cancel_plugin_update))
         self.update.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
@@ -177,14 +177,17 @@ class UI():
         sfr:th.Frame = th.Frame(fr, width=self.frwidth)
         r1:th.Radiobutton = th.Radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron',
                                             command=lambda: self.show_frame('Neutron'))
+        th.Tooltip(r1, tts['neutron_plotter'])
         r1.grid(row=0, column=0, padx=5, pady=5)
 
         r2:th.Radiobutton = th.Radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
                                             command=lambda: self.show_frame('Galaxy'))
+        th.Tooltip(r2, tts['galaxy_plotter'])
         r2.grid(row=0, column=1, padx=5, pady=5)
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         # This has to be a tk.Button or EDMC's theme throws some kind of error about setting a foreground
         r3:th.Button = th.Button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
+        th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.EW)
 
@@ -255,7 +258,7 @@ class UI():
 
         self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
         self.gallb:th.Listbox = th.Listbox(plot_fr, [lbls[v] for v in self.optionlist])
-        Tooltip(self.gallb, tts['galaxy_options'])
+        th.Tooltip(self.gallb, tts['galaxy_options'])
 
         for i, item in enumerate(self.optionlist):
             if params.get(item, False) == True:
@@ -280,7 +283,7 @@ class UI():
         self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.ship.trace_add("write", self.ship_selected)
         self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.ship, values=names, width=10)
-        Tooltip(self.shipdd, tts["select_ship"])
+        th.Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
@@ -295,7 +298,7 @@ class UI():
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
         algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=10)
-        Tooltip(algodd, tts["select_algorithm"])
+        th.Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
@@ -387,7 +390,7 @@ class UI():
         col += 2
 
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
-        Tooltip(self.efficiency_slider, tts["efficiency"])
+        th.Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
         self.efficiency_slider.set(params.get('efficiency', 60))
 
@@ -401,12 +404,12 @@ class UI():
         col += 1
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', self.show_menu)
-        Tooltip(r1, tts['standard_multiplier'])
+        th.Tooltip(r1, tts['standard_multiplier'])
         r1.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
-        Tooltip(r2, tts['overcharge_multiplier'])
+        th.Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', self.show_menu)
         r2.grid(row=row, column=col, padx=5, pady=5)
 
@@ -489,9 +492,9 @@ class UI():
             return
         route:Route = Context.route
         self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset <= -1 else tk.NORMAL)
-        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
+        self.waypoint_prev_tt = th.Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
-        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
+        self.waypoint_next_tt = th.Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
 
         wp:str = route.next_stop()
         self._update_progbar()
@@ -511,9 +514,10 @@ class UI():
         if route.refuel() == True:
             image = self.fuel_img
 
+        #self.waypoint_btn.configure(text=wp, compound=tk.LEFT)
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-        if config.get_int('theme') > 0 and isinstance(self.waypoint_btn, tk.Button):
-            self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
+        #if config.get_int('theme') > 0 and isinstance(self.waypoint_btn, tk.Button):
+        #self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT, bg='black', fg=config.get('dark_text'))
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:
@@ -542,19 +546,19 @@ class UI():
 
         row:int = 0; col:int = 0
         self.waypoint_prev_btn:th.Button = th.Button(fr1, text=btns["prev"], width=3, command=lambda: Context.router.update_route(-1))
-        self.waypoint_prev_tt:Tooltip = Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
+        self.waypoint_prev_tt:th.Tooltip = th.Tooltip(self.waypoint_prev_btn, Context.route.get_waypoint(-1))
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
         self.waypoint_btn:th.Button = th.Button(fr1, text=Context.route.next_stop(), width=32,
                                               command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
-        Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
+        self.waypoint_btn_tt:th.Tooltip = th.Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
 
         col += 1
         self.waypoint_next_btn:th.Button = th.Button(fr1, text=btns["next"], width=3,
                                                      command=lambda: Context.router.update_route(1))
-        self.waypoint_next_tt:Tooltip = Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
+        self.waypoint_next_tt:th.Tooltip = th.Tooltip(self.waypoint_next_btn, Context.route.get_waypoint(1))
         self.waypoint_next_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         fr2:th.Frame = th.Frame(route_fr)

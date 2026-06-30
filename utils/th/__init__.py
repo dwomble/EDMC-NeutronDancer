@@ -7,18 +7,24 @@ from tkinter import ttk
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale"]
+from .tooltip import Tooltip
+
+from utils.debug import Debug
+
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip"]
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
     """ A base class for themed widgets that can switch between light and dark mode. """
     def __init__(self, obj:ttk.Widget|tk.Widget, alt:ttk.Widget|tk.Widget|None = None) -> None:
+        object.__setattr__(self, 'images', [])
         object.__setattr__(self, 'obj', obj)
         object.__setattr__(self, 'alt', alt)
 
         theme.register(obj)
         if alt is not None:
             theme.register(alt)
+
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
@@ -34,6 +40,15 @@ class Base:
                 theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
 
         return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
+
+    def configure(self, cnf=None, **kw) -> None:
+        """ Override configure to handle themed buttons. """
+
+        if 'image' in kw and self.alt is not None:
+            object.__setattr__(self, 'images', getattr(self, 'images', []) + [kw['image']])
+        if self.alt is not None:
+            self.alt.configure(cnf, **kw)
+        self.obj.configure(cnf, **kw)
 
 
     def callable_attr(self, name:str, *args, **kw) -> Any:
@@ -75,7 +90,6 @@ class Base:
             return self.alt[key]
         raise KeyError(key)
 
-
 class TopLevel(tk.Toplevel):
     """ A themed toplevel window that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
@@ -103,12 +117,30 @@ class Label(tk.Label):
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        super().__init__(ttk.Button(master, **kw), tk.Button(master, **kw))
+        # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
+        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
+
+        super().__init__(btn, tk.Button(master, **kw))
+
+    def grid(self, *args, **kw) -> Any:
+        """ Override grid to handle themed buttons. """
+        gridopts:dict = {}
+
+        if len(args) > 0 and isinstance(args[0], dict):
+            gridopts.update(args[0])
+        if len(kw) > 0:
+            gridopts.update(kw)
+
+        theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
+
+        return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
 
 class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        super().__init__(tk.Radiobutton(master, **kw), tk.Radiobutton(master, **kw))
+        tkrb:tk.Radiobutton = tk.Radiobutton(master, **kw)
+        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, relief=tk.FLAT, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
+        super().__init__(ttk.Radiobutton(master, **kw), tkrb)
 
 class ComboBox(Base):
     """ A themed combobox that can switch between light and dark mode. """

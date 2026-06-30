@@ -1,6 +1,8 @@
 """
 Test suite for EDMC Neutron Dancer plugin using pytest.
 """
+#from __future__ import annotations
+
 import pytest # type: ignore
 import sys
 import os
@@ -9,7 +11,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator
 from unittest.mock import Mock, patch
 import json
-import time
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -22,14 +23,11 @@ from utils.treeviewplus import TreeviewPlus
 plugin_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(plugin_dir))
 
-if TYPE_CHECKING:
-    from harness import TestHarness
-    from Router.route_window import RouteWindow
-
+from harness import TestHarness, reset_plugin_modules
+from Router.route_window import RouteWindow
 from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
-
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -57,7 +55,6 @@ def harness(request) -> Generator:
 
     hotkeys = request.node.get_closest_marker('hotkeys') or True
 
-    from harness import TestHarness, reset_plugin_modules
     TestHarness.reset_instance()
     reset_plugin_modules()
 

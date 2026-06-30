@@ -152,6 +152,9 @@ lbls:dict = {
 
 # Tooltips
 tts:dict = {
+    'neutron_plotter': "Spansh Neutron Plotter",
+    'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
+    'help': "Help and user guide",
     'source_system': "Source system name, right click for menu",
     'dest_system': "Destination system name, right click for menu",
     "range": "Ship jump range in light years, right click for menu",

@@ -35,7 +35,7 @@ jobs:
         git push origin HEAD:master
 
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".DS_Store" ".gitignore" ".python-version" ".editorconfig" ".isort.cfg" "requirements*.txt" "history/*" "tests/*"
+      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git*"".git*/*" ".DS_Store" ".python-version" ".editorconfig" ".isort.cfg" ".venv/*" "AGENTs.md" "SECURITY.md" "pytest.ini" "pyproject.toml" "requirements*.txt" "history/*" "tests/*"
 
     - name: Release
       uses: softprops/action-gh-release@v2

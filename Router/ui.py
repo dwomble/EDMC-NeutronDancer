@@ -13,9 +13,6 @@ from theme import theme # type: ignore
 from config import config # type: ignore
 
 import utils.th as th
-from utils.tooltip import Tooltip
-from utils.autocompleter import Autocompleter
-from utils.placeholder import Placeholder
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
@@ -164,11 +161,11 @@ class UI():
         busy_fr:th.Frame = th.Frame(parent)
         self.route_lbl:th.Label = th.Label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest),
                                                   justify=tk.CENTER, font=BOLD)
-        self.route_lbl.pack(pady=5, anchor=tk.CENTER)
+        self.route_lbl.grid(row=0, column=0, pady=5, sticky=tk.EW)
         self.busyimg:th.Label = th.Label(busy_fr, image=self.frames[0], justify=tk.CENTER)
-        self.busyimg.pack(anchor=tk.CENTER, fill=tk.BOTH, pady=10)
+        self.busyimg.grid(row=1, column=0, pady=10, sticky=tk.EW)
         cancel:th.Button = th.Button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
-        cancel.pack(anchor=tk.CENTER)
+        cancel.grid(row=2, column=0, pady=5, sticky=tk.EW)
         return busy_fr
 
 
@@ -250,8 +247,8 @@ class UI():
         row +=1; col = 0
 
         # First row
-        self.gal_source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        Tooltip(self.gal_source_ac, tts["source_system"])
+        self.gal_source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
+        th.Tooltip(self.gal_source_ac, tts["source_system"])
         if Context.router.src != '': self.set_entry(self.gal_source_ac, Context.router.src)
         self.gal_source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
         col += 2
@@ -267,8 +264,8 @@ class UI():
 
         # Row two
         row += 1; col = 0
-        self.gal_dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        Tooltip(self.gal_dest_ac, tts["dest_system"])
+        self.gal_dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
+        th.Tooltip(self.gal_dest_ac, tts["dest_system"])
         if Context.router.dest != '': self.set_entry(self.gal_dest_ac, Context.router.dest)
         self.gal_dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
 
@@ -288,10 +285,10 @@ class UI():
 
         col += 1
 
-        self.cargo_entry:Placeholder = Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
+        self.cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
         self.set_entry(self.cargo_entry, str(Context.router.cargo))
         self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
-        Tooltip(self.cargo_entry, tts["cargo"])
+        th.Tooltip(self.cargo_entry, tts["cargo"])
 
         # Row 4
         row += 1; col = 0
@@ -302,25 +299,28 @@ class UI():
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        self.fuel_res:Placeholder = Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
+        self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
         if params.get('reserve_size', 0) != 0:
             self.set_entry(self.fuel_res, str(params.get('reserve_size', 0)))
-        Tooltip(self.fuel_res, tts["fuel_reserve"])
+        th.Tooltip(self.fuel_res, tts["fuel_reserve"])
         self.fuel_res.grid(row=row, column=col, padx=5, pady=5)
 
         # Spansh ignores this unless you're logged in.
         #col += 1
         #self.time_limit:tk.Scale|ttk.Scale = scale(plot_fr, from_=60, to=120, resolution=5, orient=tk.HORIZONTAL)
-        #Tooltip(self.time_limit, tts["calc_time"])
+        #th.Tooltip(self.time_limit, tts["calc_time"])
         #self.time_limit.grid(row=row, column=col, pady=5)
         #self.time_limit.set(params.get('max_time', 60))
 
         # Row 5
         row += 1; col = 0
         btn_frame:th.Frame = th.Frame(plot_fr)
-        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
-
+        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.EW, pady=(5,0))
         r = 0; col = 0
+
+        #btn_frame.columnconfigure(col, weight=1)
+        #col += 1
+
         self.gal_import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
         self.gal_import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
         col += 1
@@ -331,6 +331,9 @@ class UI():
 
         self.gal_cancel_plot:th.Button  = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('Default'))
         self.gal_cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+        col += 1
+
+        #btn_frame.columnconfigure(col, weight=1)
 
         return plot_fr
 
@@ -370,21 +373,21 @@ class UI():
         self._plot_switcher(plot_fr, row, col)
 
         row += 1; col = 0
-        self.source_ac = Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        Tooltip(self.source_ac, tts["source_system"])
+        self.source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
+        th.Tooltip(self.source_ac, tts["source_system"])
         if Context.router.src != '': self.set_entry(self.source_ac, Context.router.src)
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:Placeholder = Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
+        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
         self.range_entry.grid(row=row, column=col)
-        Tooltip(self.range_entry, tts["range"])
+        th.Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
         self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
 
         row += 1; col = 0
-        self.dest_ac = Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        Tooltip(self.dest_ac, tts["dest_system"])
+        self.dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
+        th.Tooltip(self.dest_ac, tts["dest_system"])
         if Context.router.dest != '': self.set_entry(self.dest_ac, Context.router.dest)
         self.dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
@@ -415,7 +418,7 @@ class UI():
 
         row += 1; col = 0
         btn_frame:th.Frame = th.Frame(plot_fr)
-        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.EW, pady=(5,0))
 
         r = 0; col = 0
         self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
@@ -481,7 +484,7 @@ class UI():
             if tt != "": tt += "\n"
             tt += tts['speed'].format(j=hfplus(jr), d=hfplus(dr))
 
-        Tooltip(self.progbar, tt)
+        th.Tooltip(self.progbar, tt)
 
         self.progbar.configure(length=self.frwidth-3, value=self._progress())
 
@@ -531,7 +534,7 @@ class UI():
 
         self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate',
                                        length=self.frwidth-3)
-        self.progtt:Tooltip = Tooltip(self.progbar, text=tts["progress"])
+        self.progtt:th.Tooltip = th.Tooltip(self.progbar, text=tts["progress"])
         self.progbar.rowconfigure(0, weight=1)
         self.progbar.grid(row=0, column=0, pady=0, ipady=0, sticky=tk.EW)
         self._update_progbar()
@@ -610,7 +613,7 @@ class UI():
         self.menu_callback('ship', ship_name)
 
 
-    def set_entry(self, which:Autocompleter|Placeholder|None, value:str) -> None:
+    def set_entry(self, which:th.Autocompleter|th.Placeholder|None, value:str) -> None:
         """ Set an autocompleter or placeholder entry's text and style """
         if which == None: return
         which.delete(0, tk.END)

@@ -7,11 +7,13 @@ from tkinter import ttk
 from theme import theme # type: ignore
 from config import config # type: ignore
 
+from .autocompleter import Autocompleter
+from .placeholder import Placeholder
 from .tooltip import Tooltip
 
 from utils.debug import Debug
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip", "Autocompleter", "Placeholder"]
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
@@ -139,7 +141,7 @@ class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tkrb:tk.Radiobutton = tk.Radiobutton(master, **kw)
-        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, relief=tk.FLAT, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
+        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
         super().__init__(ttk.Radiobutton(master, **kw), tkrb)
 
 class ComboBox(Base):
@@ -155,7 +157,7 @@ class ComboBox(Base):
             values = kw['values'][1:]
 
         tkcb:tk.OptionMenu = tk.OptionMenu(master, v, value, *values)
-        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0)
         tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
 
         super().__init__(ttkcb, tkcb)
@@ -165,12 +167,16 @@ class Listbox(Base):
     def __init__(self, master:tk.Widget, items:list, **kw) -> None:
         # @TODO: Switch the plain mode for a treeview?
         rows:int = min(len(items), 10)
+        if 'selectmode' not in kw:
+            kw['selectmode'] = tk.MULTIPLE
+        if 'exportselection' not in kw:
+            kw['exportselection'] = False
 
-        lb1:tk.Listbox = tk.Listbox(master, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
-        lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
+        lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
+        lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
 
-        lb2:tk.Listbox = tk.Listbox(master, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
-        lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
+        lb2:tk.Listbox = tk.Listbox(master, height=rows, **kw)
+        lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
         lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
 
         for i in range(len(items)):
@@ -187,7 +193,7 @@ class Checkbutton(Base):
 class Scale(Base):
     """ A themed scale that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        tksc1:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
-        tksc2:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
+        tksc1:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
+        tksc2:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
         tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
         super().__init__(tksc1, tksc2)

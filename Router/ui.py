@@ -51,8 +51,6 @@ class UI():
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
         self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
-        #self.countdown_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "countdown.png"))
-        #self.timer_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "timer.png"))
 
         self.error_lbl:th.Label = th.Label(self.frame, text="", foreground='red', justify=tk.CENTER)
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
@@ -346,6 +344,103 @@ class UI():
         col:int = 0
 
         params:dict = Context.router.neutron_params
+
+        # Define the popup menu additions
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
+        destmenu:dict = {}
+        shipmenu:dict = {}
+
+        if Context.router.system != '':
+            srcmenu[Context.router.system] = [self.menu_callback, 'src']
+        for sys in Context.router.history:
+            if sys not in srcmenu:
+                srcmenu[sys] = [self.menu_callback, 'src']
+            if sys not in destmenu:
+                destmenu[sys] = [self.menu_callback, 'dest']
+
+        # Create right click menu
+        for id in Context.router.shiplist[:10]:
+            if id in Context.router.ships:
+                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+
+        if shipmenu != {}:
+            self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
+            for m, f in shipmenu.items():
+                self.menu.add_command(label=m, command=partial(*f, m))
+
+        self._plot_switcher(plot_fr, row, col)
+
+        row += 1; col = 0
+        self.source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
+        th.Tooltip(self.source_ac, tts["source_system"])
+        if Context.router.src != '': self.set_entry(self.source_ac, Context.router.src)
+        self.source_ac.grid(row=row, column=col, columnspan=2)
+        col += 2
+
+        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
+        self.range_entry.grid(row=row, column=col)
+        th.Tooltip(self.range_entry, tts["range"])
+        # Check if we're having a valid range on the fly
+        self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
+
+        row += 1; col = 0
+        self.dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
+        th.Tooltip(self.dest_ac, tts["dest_system"])
+        if Context.router.dest != '': self.set_entry(self.dest_ac, Context.router.dest)
+        self.dest_ac.grid(row=row, column=col, columnspan=2)
+        col += 2
+
+        self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
+        th.Tooltip(self.efficiency_slider, tts["efficiency"])
+        self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
+        self.efficiency_slider.set(params.get('efficiency', 60))
+
+        row += 1; col = 0
+        self.multiplier = tk.IntVar() # Or StringVar() for string values
+        self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
+
+        # Create radio buttons
+        l1:th.Label = th.Label(plot_fr, text=lbls["supercharge_label"])
+        l1.grid(row=row, column=col, padx=5, pady=5)
+        col += 1
+        r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
+        r1.bind('<Button-3>', self.show_menu)
+        th.Tooltip(r1, tts['standard_multiplier'])
+        r1.grid(row=row, column=col, padx=5, pady=5)
+
+        col += 1
+        r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
+        th.Tooltip(r2, tts['overcharge_multiplier'])
+        r2.bind('<Button-3>', self.show_menu)
+        r2.grid(row=row, column=col, padx=5, pady=5)
+
+        row += 1; col = 0
+        btn_frame:th.Frame = th.Frame(plot_fr)
+        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.EW, pady=(5,0))
+
+        r = 0; col = 0
+        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.import_route())
+        self.import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        col += 1
+
+        self.plot_route_btn:th.Button = th.Button(btn_frame, text=btns["calculate_route"], command=lambda: self.neutron_plot())
+        self.plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        col += 1
+
+        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.show_frame('Default'))
+        self.cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+
+        return plot_fr
+
+
+    def _create_trade_fr(self, parent:th.Frame) -> th.Frame:
+        """ Create the trade route planning frame """
+
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        row:int = 2
+        col:int = 0
+
+        params:dict = Context.router.trade_params
 
         # Define the popup menu additions
         srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}

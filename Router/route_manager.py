@@ -18,7 +18,7 @@ from .ship import Ship
 from .route import Route
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
-                  'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {},
+                  'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {}, 'trade_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
                   'window_geometries' : {}}
 
@@ -49,6 +49,7 @@ class Router():
         self.last_plot:str = "Neutron"
         self.galaxy_params:dict = {}
         self.neutron_params:dict = {}
+        self.trade_params:dict = {}
         self.cancel_plot:bool = False
 
         # Carrier

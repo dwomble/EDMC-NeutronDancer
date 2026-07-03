@@ -124,8 +124,8 @@ class Overlay():
         rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '0']))
         rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '0']))
 
-        # or: ✨ ◄ ⭐ ► ◄ 𐫰 ►
-        st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
+        # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► ⚛ 🌀
+        st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "⚛" if Context.route.is_neutron() else "✨"
 
         try:
             message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, st=st)})

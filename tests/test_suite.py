@@ -18,6 +18,7 @@ import threading
 
 from tests.edmc import edmc_data
 from utils.treeviewplus import TreeviewPlus
+import utils.th as th
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent

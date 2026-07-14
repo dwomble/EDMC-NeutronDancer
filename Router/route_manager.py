@@ -331,6 +331,12 @@ class Router():
         Context.ui.show_error(err)
         return
 
+    def clear_route(self) -> None:
+        """ Clear the current route """
+        Context.route = Route([], [], -1)
+        if Context.overlay:
+            Context.overlay.update_jump_overlay()
+        self.save()
 
     @catch_exceptions
     def import_route(self, filename:str = '') -> bool:

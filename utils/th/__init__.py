@@ -161,6 +161,16 @@ class ComboBox(Base):
         tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
 
         super().__init__(ttkcb, tkcb)
+        object.__setattr__(self, '_variable', v)
+
+    def set_menu(self, menu:list[str]) -> None:
+        """ Set the menu for the themed combobox. """
+        self.obj["values"] = menu
+        if self.alt is not None:
+            self.alt['menu'].delete(0, 'end')
+            for item in menu:
+                self.alt['menu'].add_command(label=item, command=tk._setit(self._variable, item))
+            self._variable.set(menu[0])
 
 class Listbox(Base):
     """ A themed listbox that can switch between light and dark mode. """

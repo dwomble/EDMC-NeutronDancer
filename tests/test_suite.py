@@ -1509,7 +1509,7 @@ class TestEventSequences:
         # Final state check
         assert harness.plugin.route.jumps_remaining() == 0
 
-        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=0 jh=0 rj=0 rd=0 st=✨' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
+        assert 'PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304 dh=275K jh=3,600 rj=0 rd=0 st=✨' == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
 
     @pytest.mark.overlay('None')
     def test_full_route_scenario_no_overlay(self, harness:TestHarness):

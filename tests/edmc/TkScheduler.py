@@ -44,8 +44,17 @@ class HarnessTkScheduler:
                 func = lambda: None
                 args = ()
 
-            if threading.get_ident() == scheduler.main_thread_id:
-                return orig_after(self, ms, func, *args)
+            def guarded_func(*cb_args):
+                try:
+                    if hasattr(self, 'winfo_exists') and not self.winfo_exists():
+                        return
+                except Exception:
+                    pass
+
+                try:
+                    func(*cb_args)
+                except tk.TclError:
+                    pass
 
             try:
                 delay_ms = int(ms)
@@ -58,15 +67,12 @@ class HarnessTkScheduler:
                 scheduler.enqueued_count += 1
                 heapq.heappush(
                     scheduler._pending,
-                    (monotonic() + max(delay_ms, 0) / 1000.0, token, func, args),
+                    (monotonic() + max(delay_ms, 0) / 1000.0, token, guarded_func, args),
                 )
 
             return token
 
         def patched_after_idle(self, func, *args):
-            if threading.get_ident() == scheduler.main_thread_id:
-                return orig_after_idle(self, func, *args)
-
             with scheduler._lock:
                 token = f"harness-after-{scheduler._counter}"
                 scheduler._counter += 1

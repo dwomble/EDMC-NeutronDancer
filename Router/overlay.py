@@ -235,14 +235,14 @@ class Overlay():
         define_plugin_group(**kw)
 
     @catch_exceptions
-    def _do_send(self, args:dict) -> None:
+    def _do_send(self, *args, **kwargs) -> None:
         """ Send a message or shape to the overlay """
         overlay = self._get_overlay()
         if not overlay: return
         if 'msgid' in args:
-            overlay.send_message(**args)
+            overlay.send_message(args, kwargs)
         elif 'shapeid' in args:
-            overlay.send_shape(**args)
+            overlay.send_shape(args, kwargs)
 
     @catch_exceptions
     def update_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:

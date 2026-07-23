@@ -2,22 +2,40 @@ import subprocess
 import os
 import sys
 import shutil
-import tkinter as tk
-from tkinter import ttk
 import re
 from datetime import datetime
 from math import floor
 from typing import Any
 from functools import reduce
 import operator
+import threading
 
+import tkinter as tk
+from tkinter import ttk
+
+from theme import theme # type: ignore
 from config import config # type: ignore
 
 from utils.debug import Debug, catch_exceptions
 
-"""
-  Miscellaneous utility functions
-"""
+
+""" Class decorators """
+def singleton(cls):
+    """ A thread-safe implementation of Singleton. Note this will break unittest.mock.patch """
+    instances = {}
+    lock = threading.Lock()
+
+    def get_instance(*args, **kwargs):
+        if cls in instances:
+            return instances[cls]
+        with lock:
+            if cls not in instances:
+                instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance
+
+""" Miscellaneous utility functions """
 def get_by_path(dic:dict[str, Any], keys:list[str], default:Any = None) -> Any:
     """ Return an element from a nested object by item sequence. """
     try:
@@ -61,11 +79,11 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     # Still nothing? Then run all the ones we can find regardless of session type.
     for cmd in cmds:
         if shutil.which(cmd.split()[0]):
-            clipboard_cli = cmd
+            cli:str = cmd
             try:
-                subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
+                subprocess.run(cli.split(), input=text.encode('utf-8'), check=True)
             except subprocess.CalledProcessError as e:
-                Debug.logger.error(f"Failed to run {clipboard_cli}: {e}")
+                Debug.logger.error(f"Failed to run {cli}: {e}")
 
     if clipboard_cli != None:
         return
@@ -75,91 +93,6 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     parent.clipboard_clear()
     parent.clipboard_append(text)
     parent.update()
-
-
-""" UI helpers for dealing with EDMC dark mode """
-
-def frame(parent:tk.Widget, **kw) -> tk.Frame:
-    """ Deal with EDMC theme/color weirdness """
-    fr:tk.Frame = tk.Frame(parent, kw)
-    return fr
-
-
-def labelframe(parent:tk.Widget, **kw) -> tk.LabelFrame:
-    """ Deal with EDMC theme/color weirdness """
-    fr:tk.LabelFrame = tk.LabelFrame(parent, kw)
-    return fr
-
-
-def button(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Button|ttk.Button:
-    """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    if config.get_int('theme') == 0: return ttk.Button(fr, **kw)
-        #Debug.logger.debug(f"Button {btn} {kw}")
-        #return btn
-    return tk.Button(fr, padx=10,**kw)
-
-
-def label(fr:tk.Frame|tk.Toplevel, **kw) -> tk.Label|ttk.Label:
-    """ Deal with EDMC theme/color weirdness by creating tk labels for dark mode """
-    return ttk.Label(fr, **kw)
-
-
-def radiobutton(fr:tk.Frame, **kw) -> tk.Radiobutton|ttk.Radiobutton:
-    """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    if config.get_int('theme') == 0: return ttk.Radiobutton(fr, **kw)
-
-    rb:tk.Radiobutton = tk.Radiobutton(fr, **kw)
-    rb.config(fg=config.get_str('dark_text'))
-    return rb
-
-
-def combobox(fr:tk.Frame, v:tk.StringVar, **kw) -> ttk.Combobox|tk.OptionMenu:
-    """ Deal with EDMC theme/color weirdness by creating tk.optionmenu for dark mode """
-    if config.get_int('theme') == 0: return ttk.Combobox(fr, textvariable=v, state='readonly', **kw)
-
-    value:str = ''
-    values:list = []
-    if len(kw.get('values', [])) > 0:
-        value = kw['values'][0]
-    if len(kw.get('values', [])) > 1:
-        values = kw['values'][1:]
-
-    om:tk.OptionMenu = tk.OptionMenu(fr, v, value, *values)
-    om.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
-    return om
-
-
-def listbox(fr:tk.Frame, items:list) -> tk.Listbox:
-    """ Deal with EDMC theme/color weirdness by creating tk listbox for dark mode """
-    # @TODO: Switch the plain mode for a treeview?
-    rows:int = min(len(items), 10)
-    lb:tk.Listbox = tk.Listbox(fr, height=rows, selectmode=tk.MULTIPLE, exportselection=False)
-    lb.configure(border=0, borderwidth=0, activestyle=tk.NONE, relief=tk.FLAT, highlightthickness=0)
-    for i in range(len(items)):
-        lb.insert(tk.END, items[i])
-
-    if config.get_int('theme') == 0: return lb
-
-    lb.configure(selectbackground='gray25', highlightbackground='black', background='black')
-    return lb
-
-
-def checkbox(fr:tk.Frame, **kw) -> ttk.Checkbutton|tk.Checkbutton:
-    """ Deal with EDMC theme/color weirdness by creating tk for dark mode """
-    if config.get_int('theme') == 0: return ttk.Checkbutton(fr, **kw)
-
-    box:tk.Checkbutton = tk.Checkbutton(fr, **kw)
-    return box
-
-
-def scale(fr:tk.Frame, **kw) -> tk.Scale|ttk.Scale:
-    """ Deal with EDMC theme/color weirdness by creating tk buttons for dark mode """
-    sc = tk.Scale(fr, kw, border=0, borderwidth=0, highlightthickness=0, relief=tk.FLAT)
-
-    if config.get_int('theme') == 0: return sc
-
-    sc.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
-    return sc
 
 
 def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:

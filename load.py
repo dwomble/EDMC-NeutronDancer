@@ -31,7 +31,7 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_version = version
     Context.plugin_useragent = f"{GH_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir))
-    Context.updater.check_for_update(Context.plugin_version)
+    Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
 
     return NAME
 
@@ -50,20 +50,25 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.csv = CSV()
     Context.router = Router()
-    Context.overlay = Overlay()
     Context.ui = UI(parent)
     Context.hotkeys = Hotkeys()
+    Context.overlay = Overlay()
+    if Context.route.route != []:
+        Context.overlay.show_frame('Default')
 
-    parent.after(5000, Context.router.update_jump_overlay)
-
+    parent.after(1000, Context.overlay.update_jump_overlay)
     return Context.ui.frame
 
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
+    if Context.router == None: return
+
     match entry['event']:
         case 'Startup':
             Context.router.carrier_state = CarrierStates.Idle
-            if Context.route.route != []: Context.route.update_route(0, system)
+            if Context.route.route != []:
+                Context.route.update_route(0, system)
+                Context.route.jumps = []
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
@@ -76,11 +81,16 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if entry.get('Message', '').startswith("!nd "):
                 match entry.get('Message', '')[4:]:
                     case "prev" | "previous":
-                        Context.ui.goto_prev_waypoint()
+                        Context.router.update_route(-1)
                     case "next":
-                        Context.ui.goto_next_waypoint()
+                        Context.router.update_route(1)
                     case _:
                         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+        case 'Refueling': # Read fuel from Status.json
+            Context.router.fuel_event(state)
+        case 'Shutdown':
+            if Context.route.route != []: Context.route.jumps = []
+            Context.router.save()
 
     Context.router.system = system
     Context.router.cargo = sum(state.get('Cargo', {}).values())

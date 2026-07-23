@@ -2,10 +2,12 @@ import json
 import os
 import requests
 import zipfile
+import time
 from threading import Thread
 from semantic_version import Version # type: ignore
 
-from Router.constants import GH_PROJECT, GH_RELEASE_INFO
+from config import config # type: ignore
+from Router.constants import GH_PROJECT, GH_RELEASE_INFO, UPDATE_CHECK_INTERVAL
 from utils.debug import Debug
 
 TIMEOUT=10
@@ -142,7 +144,12 @@ class Updater():
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
 
-    def check_for_update(self, version:Version) -> None:
+    def check_for_update(self, version:Version, plugin_name: str) -> None:
         """ Start an update check thread """
+        last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
+        if last >= int(time.time()) - UPDATE_CHECK_INTERVAL: # Check for updates at most once per interval
+            return
+
+        config.set(f"{plugin_name}_last_update_check", int(time.time()))
         thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
         thread.start()

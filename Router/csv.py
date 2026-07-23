@@ -6,31 +6,21 @@ import re
 
 from .constants import HEADERS, ROUTE_DIR, errs
 from utils.debug import Debug, catch_exceptions
+from utils.misc import singleton
 from .context import Context
 
+@singleton
 class CSV:
     """
     Class to import and export routes as CSV files
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
         self.roadtoriches:bool
         self.fleetcarrier:bool
         self.headers:list
         self.route:list
         self.error:str = ""
-
-        self._initialized = True
 
 
     def choose_file(self) -> str:
@@ -55,7 +45,6 @@ class CSV:
         Debug.logger.info(f"Importing route from file: {filename}")
         if len(filename) == 0:
             self.error = errs["no_file"]
-            Debug.logger.debug(f"No filename selected")
             return False
 
         try:
@@ -72,7 +61,7 @@ class CSV:
 
                 fields:list = list(route_reader.fieldnames)
                 hdrs:list = []
-                hdrs = [h for h in HEADERS if h in fields]
+                hdrs = [h for h in fields if h in HEADERS]
 
                 # Append any remaining fields
                 for f in fields:
@@ -143,74 +132,76 @@ class CSV:
         return True
 
 
-    def update_bodies_text(self) -> None:
-        if not self.roadtoriches:
-            return
+    ### The following is currently unused, but may be useful in the future for displaying bodies to scan in the overlay
 
-        # For the bodies to scan use the current system, which is one before the next stop
-        lastsystemoffset:int = Context.route.offset - 1
-        if lastsystemoffset < 0:
-            lastsystemoffset = 0    # Display bodies of the first system
+    # def update_bodies_text(self) -> None:
+    #     if not self.roadtoriches:
+    #         return
 
-        lastsystem:str = self.route[lastsystemoffset][0]
-        bodynames:str = self.route[lastsystemoffset][2]
-        bodysubtypes:str = self.route[lastsystemoffset][3]
+    #     # For the bodies to scan use the current system, which is one before the next stop
+    #     lastsystemoffset:int = Context.route.offset - 1
+    #     if lastsystemoffset < 0:
+    #         lastsystemoffset = 0    # Display bodies of the first system
 
-        waterbodies:list = []
-        rockybodies:list = []
-        metalbodies:list = []
-        earthlikebodies:list = []
-        unknownbodies:list = []
+    #     lastsystem:str = self.route[lastsystemoffset][0]
+    #     bodynames:str = self.route[lastsystemoffset][2]
+    #     bodysubtypes:str = self.route[lastsystemoffset][3]
 
-        for num, name in enumerate(bodysubtypes):
-            shortbodyname:str = bodynames[num].replace(lastsystem + " ", "")
-            if name.lower() == "high metal content world":
-                metalbodies.append(shortbodyname)
-            elif name.lower() == "rocky body":
-                rockybodies.append(shortbodyname)
-            elif name.lower() == "earth-like world":
-                earthlikebodies.append(shortbodyname)
-            elif name.lower() == "water world":
-                waterbodies.append(shortbodyname)
-            else:
-                unknownbodies.append(shortbodyname)
+    #     waterbodies:list = []
+    #     rockybodies:list = []
+    #     metalbodies:list = []
+    #     earthlikebodies:list = []
+    #     unknownbodies:list = []
 
-        bodysubtypeandname:str = ""
-        if len(metalbodies) > 0:
-            bodysubtypeandname += "\n   Metal: " + ', '.join(metalbodies)
-        if len(rockybodies) > 0:
-            bodysubtypeandname += "\n   Rocky: " + ', '.join(rockybodies)
-        if len(earthlikebodies) > 0:
-            bodysubtypeandname += "\n   Earth: " + ', '.join(earthlikebodies)
-        if len(waterbodies) > 0:
-            bodysubtypeandname += "\n   Water: " + ', '.join(waterbodies)
-        if len(unknownbodies) > 0:
-            bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
+    #     for num, name in enumerate(bodysubtypes):
+    #         shortbodyname:str = bodynames[num].replace(lastsystem + " ", "")
+    #         if name.lower() == "high metal content world":
+    #             metalbodies.append(shortbodyname)
+    #         elif name.lower() == "rocky body":
+    #             rockybodies.append(shortbodyname)
+    #         elif name.lower() == "earth-like world":
+    #             earthlikebodies.append(shortbodyname)
+    #         elif name.lower() == "water world":
+    #             waterbodies.append(shortbodyname)
+    #         else:
+    #             unknownbodies.append(shortbodyname)
 
-        self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
+    #     bodysubtypeandname:str = ""
+    #     if len(metalbodies) > 0:
+    #         bodysubtypeandname += "\n   Metal: " + ', '.join(metalbodies)
+    #     if len(rockybodies) > 0:
+    #         bodysubtypeandname += "\n   Rocky: " + ', '.join(rockybodies)
+    #     if len(earthlikebodies) > 0:
+    #         bodysubtypeandname += "\n   Earth: " + ', '.join(earthlikebodies)
+    #     if len(waterbodies) > 0:
+    #         bodysubtypeandname += "\n   Water: " + ', '.join(waterbodies)
+    #     if len(unknownbodies) > 0:
+    #         bodysubtypeandname += "\n   Unknown: " + ', '.join(unknownbodies)
+
+    #     self.bodies = f"\n{lastsystem}:{bodysubtypeandname}"
 
 
-    def plot_edts(self, filename: Path | str) -> None:
-        """ Currently unused """
-        try:
-            with open(filename, 'r') as txtfile:
-                route_txt:list = txtfile.readlines()
-                for row in route_txt:
-                    if row not in (None, "", []):
-                        if row.lstrip().startswith('==='):
-                            jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
-                            self.jumps_left += jumps
+    # def plot_edts(self, filename: Path | str) -> None:
+    #     """ Currently unused """
+    #     try:
+    #         with open(filename, 'r') as txtfile:
+    #             route_txt:list = txtfile.readlines()
+    #             for row in route_txt:
+    #                 if row not in (None, "", []):
+    #                     if row.lstrip().startswith('==='):
+    #                         jumps = int(re.findall(r"\d+ jump", row)[0].rstrip(' jumps'))
+    #                         self.jumps_left += jumps
 
-                            system:str = row[row.find('>') + 1:]
-                            if ',' in system:
-                                systems:list = system.split(',')
-                                for system in systems:
-                                    self.route.append([system.strip(), jumps])
-                                    jumps = 1
-                                    self.jumps_left += jumps
-                            else:
-                                self.route.append([system.strip(), jumps])
-        except Exception as e:
-            Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
-            Context.ui._show_busy_gui(True)
-            Context.ui.show_error("An error occured while reading the file.")
+    #                         system:str = row[row.find('>') + 1:]
+    #                         if ',' in system:
+    #                             systems:list = system.split(',')
+    #                             for system in systems:
+    #                                 self.route.append([system.strip(), jumps])
+    #                                 jumps = 1
+    #                                 self.jumps_left += jumps
+    #                         else:
+    #                             self.route.append([system.strip(), jumps])
+    #     except Exception as e:
+    #         Debug.logger.error("Failed to parse TXT route file, exception info:", exc_info=e)
+    #         Context.ui._show_busy_gui(True)
+    #         Context.ui.show_error("An error occured while reading the file.")

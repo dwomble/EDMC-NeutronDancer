@@ -16,6 +16,12 @@ GH_VERSION:str = f"https://raw.githubusercontent.com/{GH_USER}/{GH_PROJECT}/mast
 GH_RELEASE_INFO:str = f"https://api.github.com/repos/{GH_USER}/{GH_PROJECT}/releases/latest"
 GH_CHANGELOG:str = f"{GH_BASE}/blob/master/CHANGELOG.md#"
 
+# Check for updates at most once per day
+UPDATE_CHECK_INTERVAL:int = (3600 * 24)
+
+# Coriolis Modules GH
+GH_MODULES:str = "https://raw.githubusercontent.com/Brighter-Applications/coriolis-data/master/modules"
+
 # Spansh URLs
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
@@ -28,13 +34,11 @@ DATA_DIR = 'data'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
 
+# Font info
 FONT:tuple = ("Helvetica", 9, "normal")
 BOLD:tuple = ("Helvetica", 9, "bold")
 
 # Map from returned data to our header names
-#HEADER_MAP:dict = {"System Name": "system", "Distance Jumped": "distance_jumped", "Distance Rem": "distance_left",
-#                "Jumps": "jumps", "Neutron": "neutron_star", "Refuel": "must_refuel"}
-
 HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                    "distance_jumped": "Distance Jumped", "distance": "Distance",
                    "distance_left": "Distance Rem", "distance_to_destination": "Distance Rem",
@@ -42,7 +46,6 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "jumps": "Jumps", "neutron_star": "Neutron", "has_neutron": "Neutron", "is_scoopable": "Scoopable",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
-
 
 # Headers that we accept
 HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
@@ -81,6 +84,8 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
 TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
 
+# Overlay progress display default
+OVERLAY_PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
 class CarrierStates(Enum):
     Idle = auto()
     Jumping = auto()
@@ -132,7 +137,7 @@ lbls:dict = {
     "exclude_secondary": "Exclude Secondary Stars",
     "refuel_every_scoopable": "Refuel Every scoopable",
     "cooldown_complete": "Carrier cooldown completed",
-    "plotting": "Plotting route {s} to {d}",
+    "plotting": "Plotting route from {s} to {d}",
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": " jumps/hr",
@@ -147,6 +152,9 @@ lbls:dict = {
 
 # Tooltips
 tts:dict = {
+    'neutron_plotter': "Spansh Neutron Plotter",
+    'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
+    'help': "Help and user guide",
     'source_system': "Source system name, right click for menu",
     'dest_system': "Destination system name, right click for menu",
     "range": "Ship jump range in light years, right click for menu",
@@ -197,17 +205,19 @@ errs:dict = {
     "no_filename": "No filename given",
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
-    "no_ship": "No ship selected"
+    "no_ship": "No ship selected",
+    "format_error": "Error formatting progress display"
 }
 
 cnf:dict = {
     "version": "Version",
-    "overlay": "Overlay",
-    "overlay_enable": "Enable overlay",
-    "overlay_position": "Overlay Position",
-    "X": "X",
-    "Y": "Y",
-    "overlay_colour": "Overlay Colour"
+    "overlays": "Overlays",
+    "enable": "Enable",
+    "foreground": "Foreground",
+    "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
+    "default_overlay": "Default Overlay Options",
+    "progress_bar": "Progress Bar",
+    "progress_display": "Progress Display"
 }
 
 ovr:dict = {

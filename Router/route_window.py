@@ -4,33 +4,22 @@ from tkinter import ttk
 from config import config  # type: ignore
 
 from utils.debug import Debug, catch_exceptions
-from utils.misc import hfplus
+from utils.misc import singleton, hfplus
 from utils.treeviewplus import TreeviewPlus
 
 from .constants import FONT, BOLD, NAME, HEADER_TYPES, lbls
 from .route import Route
 from .context import Context
+
+@singleton
 class RouteWindow:
     """
     Display of the current route in a separate window with overview and details
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self, root:tk.Tk|tk.Toplevel) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
         self.root:tk.Tk|tk.Toplevel = root
         self.window:tk.Toplevel|None = None
-
-        self._initialized = True
 
 
     @catch_exceptions
@@ -118,7 +107,7 @@ class RouteWindow:
             lbl = ttk.Label(frm, text=dstr, font=FONT)
             lbl.pack(side=tk.LEFT, padx=5)
 
-
+    @catch_exceptions
     def _table(self, parent:tk.Frame, route:Route, scale:float) -> int:
         """ Display the route table and return the width required """
 

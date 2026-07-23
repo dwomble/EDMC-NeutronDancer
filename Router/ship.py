@@ -78,9 +78,6 @@ class Ship:
             gfb:dict = [f for f in Context.modules if f['symbol'].lower() == gfbs[0].lower()][0]
             self.range_boost = gfb.get('jumpboost', 0.0) # range boost from guardian FSD booster
 
-        #Debug.logger.debug(f"Calculating range: {self.optimal_mass} {self.base_mass} {self.tank_size} {self.max_fuel_per_jump} {self.fuel_multiplier} {self.fuel_power}")
-        #Debug.logger.debug(f"{self.optimal_mass} / {(self.base_mass + self.internal_tank_size + self.tank_size)} * {(self.max_fuel_per_jump / self.fuel_multiplier)} ^ {(1 / self.fuel_power)}")
-
         # Base range calculation
         self.range:float = self.get_range()
 
@@ -97,7 +94,7 @@ class Ship:
 
 
     def __repr__(self) -> str:
-        return f"Ship(id={self.id}, name {self.name}, type {self.type}, unladen range {self.range:.2f}ly)"
+        return f"ID {self.id}, name {self.name}, type {self.type}, unladen range {self.range:.2f}ly)"
 
     def __str__(self) -> str:
         return self.__repr__()

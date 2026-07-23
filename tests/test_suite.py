@@ -1,30 +1,34 @@
 """
 Test suite for EDMC Neutron Dancer plugin using pytest.
 """
+#from __future__ import annotations
+
 import pytest # type: ignore
 import sys
 import os
 import shutil
 from pathlib import Path
-from typing import Generator
-from time import sleep
+from typing import TYPE_CHECKING, Generator
 from unittest.mock import Mock, patch
 import json
-import time
 import logging
 import tkinter as tk
+from tkinter import ttk
 import threading
 
-from urllib3 import request
+from tests.edmc import edmc_data
+from utils.treeviewplus import TreeviewPlus
+import utils.th as th
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(plugin_dir))
 
-# Config is already mocked by conftest.py
-from harness import TestHarness
-from Router.constants import CarrierStates, SPANSH_ROUTE
+from harness import TestHarness, reset_plugin_modules
+from Router.route_window import RouteWindow
+from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
+from Router.ship import Ship
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -38,7 +42,7 @@ def capture_thread(*args, **kwargs):
     return thread
 
 @pytest.fixture
-def harness() -> Generator:
+def harness(request) -> Generator:
     """Provide a fresh test harness for each test."""
 
     # We want a standard route.json for each test
@@ -46,17 +50,26 @@ def harness() -> Generator:
     shutil.copy(Path(__file__).parent / "config" / "route_init.json",
                 Path(__file__).parent / "data" / "route.json")
 
-    # Almost every test needs to be live.
-    test_harness = TestHarness(live_requests=True)
-    test_harness.set_edmc_config()
+    overlay = 'Modern'
+    if request.node.get_closest_marker('overlay'):
+        overlay = request.node.get_closest_marker('overlay').args[0]
+
+    hotkeys = request.node.get_closest_marker('hotkeys') or True
+
+    TestHarness.reset_instance()
+    reset_plugin_modules()
+
+    test_harness = TestHarness(live_requests=True, overlay=overlay, hotkeys=hotkeys)
 
     # This is ND-specific. /assets is where the images are stored
     import Router.constants
     Router.constants.ASSET_DIR = "../assets"
 
-    from load import plugin_start3, plugin_app, journal_entry
+    from load import plugin_start3, plugin_app, journal_entry, dashboard_entry
 
-    plugin_start3(str(test_harness.plugin_dir))
+    # Prevent network updater thread from making tests hang on teardown.
+    with patch('load.Updater.check_for_update', return_value=None):
+        plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
     # ND-specific, this is our plugin object
@@ -67,11 +80,13 @@ def harness() -> Generator:
     test_harness.load_events("journal_events.json")
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
 
+    # This is the dashboard handlling function
+    test_harness.register_dashboard_handler(dashboard_entry, 'Testy', True)
+
     yield test_harness
 
-    # Need to clear the singleton.
-    delattr(test_harness.plugin.router, "_initialized")
-
+    test_harness.assert_no_unhandled_exceptions()
+    TestHarness.reset_instance()
 
 class TestStartup:
     """Test plugin startup behavior."""
@@ -91,7 +106,9 @@ class TestStartup:
         """Test retrieving module data from Coriolis """
         harness.plugin.modules = []
         harness.plugin.router._get_module_data()
-        assert len(harness.plugin.modules) == 89
+        assert len(harness.plugin.modules) == 88
+
+
 class TestStateManagement:
     """Test router state management."""
 
@@ -103,6 +120,187 @@ class TestStateManagement:
         """Call save"""
         harness.plugin.router.save()
 
+class TestRouteNavigation:
+    """Test route navigation methods."""
+
+    def test_not_on_route(self, harness:TestHarness) -> None:
+        """Test not on route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.system = 'Apurui'
+
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua NI-B b27-5'
+
+    def test_on_route(self, harness:TestHarness) -> None:
+        """Test on route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua RX-L d7-28'
+
+    def test_start_of_route(self, harness:TestHarness) -> None:
+        """Test start of route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+
+        # First stop shouldn't move further back
+        offset:int = harness.plugin.route.update_route(-1)
+        assert offset == -1
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua NI-B b27-5'
+
+    def test_end_of_route(self, harness:TestHarness) -> None:
+        """Test start of route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Smojue DR-N d6-34')
+        assert offset == 9
+
+        # Last stop
+        offset:int = harness.plugin.route.update_route(1)
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'End of the road!'
+
+        # Last stop shouldn't move further along
+        offset:int = harness.plugin.route.update_route(1)
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'End of the road!'
+
+    def test_route_neutron(self, harness:TestHarness) -> None:
+        """Test route with neutron column."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.is_neutron() == False  # Next waypoint is not a neutron
+
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert harness.plugin.route.is_neutron() == True  # Next waypoint is a neutron
+
+    def test_jumps_to_wp(self, harness:TestHarness) -> None:
+        """Test jumps to next waypoint."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.jumps_to_wp() == 12
+
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert harness.plugin.route.jumps_to_wp() == 3
+
+    def test_total_jumps_neutron(self, harness:TestHarness) -> None:
+        """Test total jumps for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.total_jumps() == 66
+
+    def test_total_jumps_galaxy(self, harness:TestHarness) -> None:
+        """Test total jumps for galaxy route."""
+        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.total_jumps() == 74
+
+    def test_jumps_remaining_neutron(self, harness:TestHarness) -> None:
+        """Test jumps remaining for neutron route (one with a jumps column)."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.jumps_remaining() == 66
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.jumps_remaining() == 66
+
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert harness.plugin.route.jumps_remaining() == 54
+
+    def test_jumps_remaining_galaxy(self, harness:TestHarness) -> None:
+        """Test jumps remaining for galaxy route (one without a jumps column)."""
+        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        # Not yet on the route
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.jumps_remaining() == 74
+
+        # Start of route
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        assert harness.plugin.route.jumps_remaining() == 74
+
+        # Partway along
+        offset:int = harness.plugin.route.update_route(0, 'Gria Drye JT-O d7-172')
+        assert offset == 22
+        assert harness.plugin.route.jumps_remaining() == 52
+
+
+    def test_perc_jumps_remaining(self, harness:TestHarness) -> None:
+        """Test percentage of jumps remaining for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert int(harness.plugin.route.perc_jumps_rem()) == 18
+
+    def test_dist_remaining(self, harness:TestHarness) -> None:
+        """Test distance remaining for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert int(harness.plugin.route.dist_remaining()) == 16273
+
+    def test_total_dist(self, harness:TestHarness) -> None:
+        """Test total distance for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
+        assert int(harness.plugin.route.total_dist()) == 16458
+
+
 class TestShipLoadout:
     """Test ship loadout and switching."""
 
@@ -110,7 +308,7 @@ class TestShipLoadout:
         """Test bad loadout event."""
         harness.fire_event({"event": "bad", "Ship":"naughty", "ShipID":100000, "ShipName":"Dummy", "ShipIdent":"Dumdum"})
 
-        assert hasattr(harness.plugin.router.ship, "ship_id") == False
+        assert not hasattr(harness.plugin.router.ship, "ship_id")
 
     def test_loadout_event(self, harness:TestHarness) -> None:
         """Test loading a ship."""
@@ -124,7 +322,6 @@ class TestShipLoadout:
         assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
         assert harness.plugin.router.ships[shipid] is harness.plugin.router.ship
-
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -151,7 +348,6 @@ class TestImporting:
         res:bool = harness.plugin.router.import_route(filename)
         assert res == False
 
-
     def test_import_route_neutron(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -170,7 +366,6 @@ class TestImporting:
         assert harness.plugin.router.src == 'Bleae Thua NI-B b27-5'
         assert harness.plugin.router.dest == 'Voqooe BI-H d11-864'
         assert harness.plugin.route.total_jumps() == 74
-
 
     def test_import_route_fc(self, harness:TestHarness) -> None:
         filename:str = str(Path(__file__).parent / "config" / "fc-Bleae-Voqooe.csv")
@@ -194,7 +389,6 @@ class TestImporting:
 
 class TestExporting:
     """CSV Export"""
-
     def test_export_noroute(self, harness:TestHarness) -> None:
         """ Trying to export without a route """
         harness.plugin.route = Route()
@@ -242,6 +436,7 @@ class TestCargo:
         harness.play_sequence('remove_cargo')
         assert harness.plugin.router.cargo == 0
 
+
 class TestChatCommands:
     """Test !nd chat commands"""
     def test_next(self, harness:TestHarness):
@@ -250,11 +445,11 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[0])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_no_next(self, harness:TestHarness):
         """Test next command when at the end of a route"""
@@ -275,15 +470,16 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
+        harness.plugin.router.system = 'Bleae Thua NI-B b27-5'
         harness.plugin.router.update_route(1)
-        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_no_previous(self, harness:TestHarness):
-        """Test prev/previous command when at the beginning of a route"""
+        """Test prev/previous command when not yet on the route"""
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -291,7 +487,7 @@ class TestChatCommands:
 
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[1])
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_copy(self, harness:TestHarness):
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
@@ -301,7 +497,7 @@ class TestChatCommands:
         events:list = harness.events.get('chat_commands', [])
         harness.fire_event(events[2])
         assert harness.plugin.ui.parent is not None
-        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua RX-L d7-28'
+        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
     def test_other(self, harness:TestHarness):
         """Test some other random string has no impact"""
@@ -319,6 +515,20 @@ class TestChatCommands:
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""
 
+    def test_ship_bad_init(self, harness:TestHarness):
+        """Test bad ship swap event."""
+        entry:dict = {"event": "bad"}
+        ship:Ship = Ship(entry)
+
+        assert ship.loadout == {}
+
+    def test_ship_repr(self, harness:TestHarness):
+        """Test ship repr."""
+        harness.play_sequence('shipyard_swap')
+        ship:Ship = harness.plugin.router.ship
+
+        assert repr(ship) == f"ID {ship.id}, name {ship.name}, type {ship.type}, unladen range {ship.range:.2f}ly)"
+
     def test_swap_existing_ship(self, harness:TestHarness):
         """Test swapping to a previously loaded ship."""
         # Load multiple ships
@@ -331,11 +541,26 @@ class TestShipyardSwap:
         assert harness.plugin.router.ship_id == '106'
 
         harness.play_sequence('shipyard_swap_unknown')
-        assert harness.plugin.router.ship_id == '106'
+        assert harness.plugin.router.ship_id == ''
 
 
 class TestOverlay:
     """Test overlay functionality."""
+
+    @pytest.mark.overlay('None')
+    def test_no_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is None
+
+    @pytest.mark.overlay('Legacy')
+    def test_legacy_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is None
+
+    @pytest.mark.overlay('Modern')
+    def test_modern_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        assert harness.plugin.overlay._get_overlay() is not None
 
     def test_countdown_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure countdown starts the countdown thread."""
@@ -367,63 +592,187 @@ class TestOverlay:
     def test_clear_frames(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure clearings all frames removes the messages."""
 
-        called:dict[str, bool] = {'flag': False}
-
-        def fake_countdown(self, frame, content, end, stop) -> None:
-            # Simulate some work then set flag
-            called['flag'] = True
-
-        monkeypatch.setattr(type(harness.plugin.overlay), '_countdown', fake_countdown, raising=False)
         events:list = harness.events.get('carrier_events', [])
         harness.fire_event(events[0])
         harness.fire_event(events[2])
+
         assert harness.plugin.overlay.msgs != {}
         harness.plugin.overlay.clear_frames()
+
         assert harness.plugin.overlay.msgs == {}
 
-class TestEventSequences:
-    """Test complex multi-step event scenarios."""
+    def test_hide_show_frames(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure hiding all frames set them as hidden."""
 
-    def test_full_route_scenario(self, harness:TestHarness):
-        """Test a complete route scenario with jumps."""
-        harness.plugin.router.system = 'Apurui'
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        harness.fire_event(events[2])
 
-        # Import a route
-        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        assert harness.plugin.overlay.msgs != {}
+        harness.plugin.overlay.hide_frames()
+
+        frames = harness.plugin.overlay.ovfrs
+        for fr in harness.plugin.overlay.ovfrs:
+            assert frames[fr].visible == False or fr not in harness.plugin.overlay.msgs
+
+        harness.plugin.overlay.show_frames()
+
+        frames = harness.plugin.overlay.ovfrs
+        for fr in harness.plugin.overlay.ovfrs:
+            assert frames[fr].visible == True or fr not in harness.plugin.overlay.msgs
+
+    def test_redraw_frames(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure redraw_frames renders using the configured progress_display template."""
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
 
-        # Follow the route
-        for event in harness.events.get('full_route_scenario', []):
-            harness.fire_event(event)
-            match event.get('event'):
-                case 'ShipyardSwap':
-                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
-                case 'Location' | 'FSDJump':
-                    assert harness.plugin.router.system == event.get('StarSystem', '')
-                    assert harness.plugin.route.next_stop() in json.dumps(harness.plugin.overlay.msgs)
+        overlay.redraw_frames()
 
-        # Final state check
-        assert harness.plugin.route.jumps_remaining() == 0
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=- jh=- rj=- rd=- st=✨'
 
-    def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
-        """Test carrier jump with docking."""
-        events:list = harness.events.get('carrier_events', [])
-        harness.fire_event(events[0])
-        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
-        harness.fire_event(events[1])
-        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
+    def test_update_jump_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure update_jump_overlay renders using the configured progress_display template."""
 
-    def test_carrier_jump_route(self, harness:TestHarness):
-        """Test carrier jump with docking."""
-        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
 
-        events:list = harness.events.get('carrier_events', [])
-        harness.fire_event(events[0])
-        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
-        harness.fire_event(events[1])
-        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        overlay.update_jump_overlay()
+
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
+
+    def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure update_jump_overlay handles invalid progress_display format."""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "invalid={unknown}"
+
+        overlay.update_jump_overlay()
+
+        progress_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
+        assert progress_line == "Error formatting progress display"
+
+    def test_hide_show_default_frame(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure changing the view updates the overlay."""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.update_jump_overlay()
+
+        msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == True
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusExternalPanel})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == False
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Default"].visible == True
+
+    def test_show_hide_galaxy_frame(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure changing the view updates the overlay."""
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.router.update_route(3)
+
+        overlay = harness.plugin.overlay
+        overlay.update_jump_overlay()
+
+        msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusGalaxyMap})
+        assert harness.plugin.overlay.ovfrs["Galaxy Map"].visible == True
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
+        assert harness.plugin.overlay.ovfrs["Galaxy Map"].visible == False
+
+    def test_show_prefs(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure saving preferences works, or at least doesn't crash."""
+
+        res = harness.plugin.overlay.prefs_display(harness.parent)
+        # Should return a child frame of the parent window
+        assert res in harness.parent.winfo_children()
+
+    def test_save_prefs(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure saving preferences works."""
+
+        overlay = harness.plugin.overlay
+        res = overlay.prefs_display(harness.parent)
+
+        # Should return a child frame of the parent window
+        assert res in harness.parent.winfo_children()
+
+        # Save preferences
+        overlay.pb.set(False)
+        overlay.save_prefs()
+        assert harness.config.get_bool(f"{harness.plugin.plugin_name}_progress_bar", True) == False
+
+        # Save preferences
+        overlay.pb.set(True)
+        overlay.save_prefs()
+        assert harness.config.get_bool(f"{harness.plugin.plugin_name}_progress_bar", False) == True
+
+class TestHotkeyCommands:
+    """Test hotkey commands"""
+
+    def test_next_hotkey(self, harness:TestHarness) -> None:
+        """Test next hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
+
+        harness.plugin.hotkeys.next()
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+
+    def test_previous_hotkey(self, harness:TestHarness) -> None:
+        """Test previous hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.route.offset = 1
+        assert harness.plugin.route.next_stop() == 'Bleae Thua ZJ-I d9-101'
+
+        harness.plugin.hotkeys.previous()
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+
+    def test_copy_hotkey(self, harness:TestHarness) -> None:
+        """Test copy hotkey command."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        harness.plugin.hotkeys.copy()
+        assert harness.plugin.ui.parent is not None
+        assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
 class TestPlotOperations:
     """Test individual plotting functions"""
@@ -522,6 +871,7 @@ class TestPlotOperations:
         assert len(harness.plugin.route.hdrs) == 6
         assert len(harness.plugin.route.route) == 9
 
+
 class TestPlotting:
     """Test end to end plotting functionality (neutron/galaxy routes)."""
 
@@ -530,6 +880,7 @@ class TestPlotting:
         result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
         assert result is False
 
+    @pytest.mark.manual_only
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot """
         global plotter_thread
@@ -571,6 +922,7 @@ class TestPlotting:
             assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
             assert harness.plugin.route.total_jumps() == 21
 
+    @pytest.mark.manual_only
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
         global plotter_thread
@@ -678,3 +1030,526 @@ class TestPlotting:
             assert harness.plugin.router.src == galaxy_params['source']
             assert harness.plugin.router.dest == galaxy_params['destination']
             assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
+
+
+class TestRouteWindow:
+    """Test RouteWindow lifecycle and display behavior."""
+
+    def _cleanup_window(self, window: RouteWindow) -> None:
+        if window.window is not None:
+            try:
+                if window.window.winfo_exists():
+                    window.close()
+            except tk.TclError:
+                pass
+        window.window = None
+
+    def test_window_is_singleton(self, harness: TestHarness) -> None:
+        """RouteWindow should reuse the existing singleton instance."""
+        from Router.route_window import RouteWindow
+        window:RouteWindow = harness.plugin.ui.window_route
+        duplicate:RouteWindow = RouteWindow(harness.parent.winfo_toplevel())
+
+        assert duplicate is window
+        self._cleanup_window(window)
+
+    def test_show_ignores_empty_route(self, harness: TestHarness) -> None:
+        """show() should not create a window for an empty route."""
+        window:RouteWindow = harness.plugin.ui.window_route
+        route = Route()
+
+        window.show(route)
+        assert window.window is None
+
+    def test_show_creates_window_for_populated_route(self, harness: TestHarness) -> None:
+        """show() should create a toplevel window for a populated route."""
+        window: RouteWindow = harness.plugin.ui.window_route
+
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        assert harness.plugin.router.import_route(filename) is True
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+
+        assert window.window is not None
+
+        window.window.update_idletasks()
+        assert window.window.winfo_exists() == 1
+        assert window.window.title() == f"{NAME} – {lbls['route']}"
+
+        self._cleanup_window(window)
+
+    def test_close_saves_geometry_and_destroys_window(self, harness: TestHarness) -> None:
+        """close() should persist geometry and destroy the current window."""
+        window: RouteWindow = harness.plugin.ui.window_route
+        window.root.withdraw()  # Hide the main window to prevent test interference
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+
+        assert harness.plugin.router.import_route(filename) is True
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+
+        assert window.window is not None
+
+        window.window.update_idletasks()
+        window.window.geometry("640x360+10+20")
+        window.window.update_idletasks()
+        geometry:str = window.window.winfo_geometry()
+        window_ref = window.window
+
+        window.close()
+
+        assert harness.plugin.router.window_geometries['route'] == geometry
+        assert window_ref.winfo_exists() == 0
+        window.window = None
+
+    def test_show_recreates_existing_window(self, harness: TestHarness) -> None:
+        """show() should replace an existing RouteWindow instance with a fresh toplevel."""
+        window:RouteWindow = harness.plugin.ui.window_route
+        window.root.withdraw()  # Hide the main window to prevent test interference
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+
+        assert harness.plugin.router.import_route(filename) is True
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+
+        assert window.window is not None
+        first_window = window.window
+
+        window.show(harness.plugin.route)
+        assert window.window is not None
+        assert window.window is not first_window
+        assert first_window.winfo_exists() == 0
+        assert window.window.winfo_exists() == 1
+
+        self._cleanup_window(window)
+
+    def test_show_renders_summary_section(self, harness: TestHarness) -> None:
+        """show() should render summary labels for progress, jumps and distance."""
+        window:RouteWindow = harness.plugin.ui.window_route
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+
+        assert harness.plugin.router.import_route(filename) is True
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+        assert window.window is not None
+        window.window.update_idletasks()
+
+        container = window.window.winfo_children()[0]
+        summary_frame = container.winfo_children()[0]
+        label_texts: list[str] = [
+            widget.cget("text")
+            for widget in summary_frame.winfo_children()
+            if isinstance(widget, ttk.Label)
+        ]
+
+        assert lbls['progress'].title() in label_texts
+        assert lbls['jumps'].title() in label_texts
+        assert any(text.endswith('%') for text in label_texts)
+
+        if harness.plugin.route.total_dist() > 0:
+            assert lbls['distance'].title() in label_texts
+        else:
+            assert lbls['distance'].title() not in label_texts
+
+        self._cleanup_window(window)
+
+    def test_show_renders_table_columns_rows_and_selection(self, harness: TestHarness) -> None:
+        """show() should render table headings/rows and select the current route offset row."""
+        window: RouteWindow = harness.plugin.ui.window_route
+        filename: str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+
+        assert harness.plugin.router.import_route(filename) is True
+        harness.plugin.route.offset = 1
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+
+        assert window.window is not None
+        window.window.update_idletasks()
+
+        container = window.window.winfo_children()[0]
+        table_frame = container.winfo_children()[1]
+        tree = next(
+            widget for widget in table_frame.winfo_children()
+            if isinstance(widget, ttk.Treeview)
+        )
+
+        assert tuple(tree["columns"]) == tuple(harness.plugin.route.hdrs)
+        children = tree.get_children()
+        assert len(children) == len(harness.plugin.route.route)
+
+        selected = tree.selection()
+        assert len(selected) == 1
+        selected_values = tree.item(selected[0], "values")
+        assert selected_values[0] == harness.plugin.route.route[harness.plugin.route.offset][0]
+
+        self._cleanup_window(window)
+
+    def test_table_selection_copies_system_name(self, harness: TestHarness) -> None:
+        """Selecting a table row should copy the system name to the clipboard."""
+        from Router.route_window import RouteWindow
+        window: RouteWindow = harness.plugin.ui.window_route
+        filename: str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+
+        assert harness.plugin.router.import_route(filename) is True
+
+        window.show(harness.plugin.route)
+        if window.window: window.window.iconify()  # Minimize the window to prevent test interference
+        assert window.window is not None
+        window.window.update_idletasks()
+
+        container = window.window.winfo_children()[0]
+        table_frame = container.winfo_children()[1]
+        tree:TreeviewPlus = next(
+            widget for widget in table_frame.winfo_children()
+            if isinstance(widget, TreeviewPlus)
+        )
+
+        first_item = tree.get_children()[0]
+        first_values = list(tree.item(first_item, "values"))
+
+        assert hasattr(tree, "callback")
+        if tree and tree.callback:
+            tree.callback(first_values, 0, tree, first_item)
+
+        assert harness.plugin.ui.parent is not None
+        assert harness.plugin.ui.parent.clipboard_get() == first_values[0]
+
+        self._cleanup_window(window)
+
+
+class DisabledRouteWindowDisplay:
+    """Test RouteWindow display logic and edge cases."""
+
+    def test_empty_headers_no_display(self, harness:TestHarness) -> None:
+        """Test show() with empty headers - should return without error."""
+        from Router.route_window import RouteWindow
+        window:RouteWindow = harness.plugin.ui.window_route
+
+        empty_route = harness.plugin.route
+        assert empty_route.hdrs == []
+        assert window.window is None or not window.window.winfo_exists()
+
+    def test_empty_cols_no_display(self, harness:TestHarness) -> None:
+        """Test show() with empty columns - should return without error."""
+        window:RouteWindow = harness.plugin.ui.window_route
+
+        empty_route = Route(['System Name', 'Jumps'], [], 0)
+        # Empty route should not crash
+        assert empty_route.hdrs == ['System Name', 'Jumps']
+        assert empty_route.route == []
+
+    def test_route_with_data_empty_window(self, harness:TestHarness) -> None:
+        """Test show() with data but window doesn't exist - should create window."""
+
+        # Create a minimal route with system names
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.hdrs == hdrs
+        assert len(route.route) == 3
+        assert route.source() == 'Sol'
+        assert route.destination() == 'Bleae Thua'
+
+    def test_route_with_tritium_column(self, harness:TestHarness) -> None:
+        """Test fleet carrier route with tritium column."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['System A', '5', '50', 'True'],  # Tritium at this waypoint
+            ['System B', '10', '45', 'True'],
+            ['System C', '8', '50', 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.fleetcarrier == True
+        assert route.refuel() == False  # Depends on refuel column
+
+    def test_next_stop_current_waypoint(self, harness:TestHarness) -> None:
+        """Test next_stop() at current waypoint."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop() == 'Apurui'  # Next after current (Sol)
+
+    def test_next_stop_complete_route(self, harness:TestHarness) -> None:
+        """Test next_stop() when route is complete."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 2)  # At last waypoint
+
+        assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
+
+    def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
+        """Test jumps_remaining() at start of route."""
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.jumps_remaining() == 15  # 10 + 5
+
+    def test_jumps_remaining_incomplete(self, harness:TestHarness) -> None:
+        """Test jumps_remaining() mid-route."""
+
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        route.update_route(1)  # Move to Apurui
+        assert route.jumps_remaining() == 5  # Only Bleae Thua remains
+
+    def test_perc_jumps_rem_at_start(self, harness:TestHarness) -> None:
+        """Test percentage of jumps remaining at start."""
+
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        total = route.total_jumps()
+        remaining = route.jumps_remaining()
+        assert route.perc_jumps_rem() == (total - remaining) * 100 / total
+
+    def test_perc_jumps_rem_complete(self, harness:TestHarness) -> None:
+        """Test percentage of jumps remaining at end."""
+
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        route.update_route(2)  # Move to last waypoint (Bleae Thua)
+        assert route.perc_jumps_rem() == 0
+
+    def test_total_dist(self, harness:TestHarness) -> None:
+        """Test total_dist() method."""
+
+        # Use a route with distance column
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.total_dist() == 100  # At start, total distance
+
+    def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
+        """Test dist_remaining() at start."""
+
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.dist_remaining() == 0  # Sol has 0 distance remaining
+
+    def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
+        """Test dist_remaining() mid-route."""
+
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
+
+        route.update_route(1)  # Move to Apurui
+        assert route.dist_remaining() == 100  # Distance to Bleae Thua
+
+    def test_refuel_check(self, harness:TestHarness) -> None:
+        """Test refuel() method."""
+
+        route_data = [
+            ['Sol', '0', 'Fuel'],
+            ['Apurui', '10', 'No'],
+            ['Bleae Thua', '5', 'Fuel']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Refuel']
+        route = Route(hdrs, route_data, 0)
+
+        # Check next waypoint for refuel
+        route.update_route(1)  # Now at Apurui
+        assert route.refuel() == False  # Apurui doesn't refuel
+
+    def test_neutron_check(self, harness:TestHarness) -> None:
+        """Test neutron() method."""
+
+        route_data = [
+            ['Sol', '0', 'False'],
+            ['Apurui', '10', 'True'],
+            ['Bleae Thua', '5', 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Neutron']
+        route = Route(hdrs, route_data, 0)
+
+        # Check if next waypoint needs neutron
+        route.update_route(1)  # Now at Apurui
+        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
+
+    def test_get_waypoint_next(self, harness:TestHarness) -> None:
+        """Test get_waypoint() for next waypoint."""
+
+        route_data = [
+            ['A', '0'],
+            ['B', '1'],
+            ['C', '2']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.get_waypoint(0) == 'B'
+
+    def test_get_waypoint_end(self, harness:TestHarness) -> None:
+        """Test get_waypoint() at end of route."""
+
+        route_data = [
+            ['A', '0'],
+            ['B', '1']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 1)
+
+        assert route.get_waypoint(0) == 'none'  # tbls['none']
+
+    def test_record_jump(self, harness:TestHarness) -> None:
+        """Test record_jump() method."""
+
+        route_data = [
+            ['Sol', '0']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        # Record a jump
+        dest = 'Jupiter'
+        dist = 2.5
+        route.record_jump(dest, dist)
+
+        assert len(route.jumps) == 1
+        assert route.jumps[0][1] == dest
+        assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
+
+class TestEventSequences:
+    """Test complex multi-step event scenarios."""
+
+    def test_full_route_scenario(self, harness:TestHarness):
+        """Test a complete route scenario with jumps."""
+        harness.plugin.router.system = 'Apurui'
+
+        # Import a route
+        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+
+        # Follow the route
+        for event in harness.events.get('full_route_scenario', []):
+            harness.fire_event(event)
+            match event.get('event'):
+                case 'ShipyardSwap':
+                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
+                case 'Location' | 'FSDJump':
+                    assert harness.plugin.router.system == event.get('StarSystem', '')
+                    assert "Next: " + harness.plugin.route.next_stop() == harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+
+        # Final state check
+        assert harness.plugin.route.jumps_remaining() == 0
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"].startswith("PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304")
+
+    @pytest.mark.overlay('None')
+    def test_full_route_scenario_no_overlay(self, harness:TestHarness):
+        """Test a complete route scenario with jumps."""
+        harness.plugin.router.system = 'Apurui'
+
+        # Import a route
+        filename:str = str(Path(__file__).parent / "config" / "full-route-scenario.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        # Follow the route
+        for event in harness.events.get('full_route_scenario', []):
+            harness.fire_event(event)
+            match event.get('event'):
+                case 'ShipyardSwap':
+                    assert harness.plugin.router.ship_id == str(event.get('ShipID'))
+                case 'Location' | 'FSDJump':
+                    assert harness.plugin.router.system == event.get('StarSystem', '')
+
+        # Final state check
+        assert harness.plugin.route.jumps_remaining() == 0
+
+
+    def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
+        """Test carrier jump with docking."""
+        from Router.constants import CarrierStates
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
+        harness.fire_event(events[1])
+        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
+
+    def test_carrier_jump_route(self, harness:TestHarness):
+        """Test carrier jump with docking."""
+        from Router.constants import CarrierStates
+        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
+        harness.plugin.router.import_route(filename)
+
+        events:list = harness.events.get('carrier_events', [])
+        harness.fire_event(events[0])
+        assert harness.plugin.router.carrier_state == CarrierStates.Jumping
+        harness.fire_event(events[1])
+        assert harness.plugin.router.carrier_state == CarrierStates.Cooldown

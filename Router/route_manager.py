@@ -10,9 +10,9 @@ from threading import Thread
 from config import config # type: ignore
 import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
-from utils.misc import hfplus, copy_to_clipboard
+from utils.misc import singleton, copy_to_clipboard
 
-from .constants import ovr, errs, lbls, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -21,22 +21,14 @@ SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
                   'window_geometries' : {}}
+
+@singleton
 class Router():
     """
     Class to manage routes, all the route data and state information.
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
 
     def __init__(self, test:bool = False) -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
 
         # Current location data and settings
         self.system:str = ""
@@ -69,8 +61,8 @@ class Router():
 
         self._load()
 
-        if Context.route.route != []: Context.route.update_route(0, self.system)
-        self._initialized = True
+        if Context.route.route != []:
+            Context.route.update_route(0, self.system)
 
 
     def swap_ship(self, ship_id:str) -> None:
@@ -117,7 +109,7 @@ class Router():
 
     def dashboard_entry(self, cmdr, is_beta, entry) -> None:
         """ Copy next waypoint to clipboard on galaxy map entry """
-        if not Context.ui.parent or not Context.route.next_stop() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
+        if not Context.ui.parent or not Context.route.jumps_remaining() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
             return
         copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
@@ -125,6 +117,7 @@ class Router():
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a jump in order to update the route, the UI etc."""
 
+        Context.route.fuel_full = False # We just jumped so we can't be full anymore
         if Context.route.route == [] or Context.route.fleetcarrier == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
@@ -134,42 +127,16 @@ class Router():
 
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
             Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
-            Context.ui.update_waypoint()
-            self.update_jump_overlay()
-
-
-    def update_jump_overlay(self) -> None:
-        """ Update overlay after a waypoint """
-        wp:str = Context.route.next_stop()
-        if Context.route.jumps_to_wp() != 0:
-            wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
-
-        message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
-        jumps:tuple = tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '0'])
-        tjumps:tuple = tuple([Context.route.total_jumps(), 'int'])
-        txt:str = lbls['jumps'] if Context.route.jc != None else lbls['waypoints']
-        jstr:str = f"{txt} {hfplus(jumps)}/{hfplus(tjumps)}"
-        if Context.route.total_dist() > 0:
-            jstr += f", {lbls['distance']} "
-            dist:tuple = tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0', ''])
-            jstr += f"{hfplus(dist)}/{hfplus(Context.route.total_dist())} ly"
-
-        next_refuel:int|None = Context.route.next_refuel()
-        if next_refuel is not None and next_refuel == 0:
-            jstr += ", ⛽ " + lbls["refuel_now"]
-        if next_refuel is not None and next_refuel > 0:
-            jstr += ", " + lbls["next_refuel"].format(r=next_refuel)
-            jstr += " " + lbls["jump"] if next_refuel == 1 else " " + lbls["jumps"]
-
-        message.append({'size': "normal", 'text': f"{jstr}"})
-        Context.overlay.display_frame('Default', message, ttl=120)
-        Context.overlay.display_frame('Galaxy Map', message, ttl=120)
+            Context.ui.update_progress()
+            Context.overlay.update_jump_overlay()
 
 
     def update_route(self, i:int) -> None:
-        """ Called by the UI when next or prev is clicked """
+        """ Called to move forward or backward along the route 1 == forward, -1 == back """
+        Debug.logger.debug(f"Update route {i} {Context.route.get_waypoint()}")
         Context.route.update_route(i)
-        self.update_jump_overlay()
+        Context.ui.update_progress()
+        Context.overlay.update_jump_overlay()
 
 
     @catch_exceptions
@@ -184,28 +151,40 @@ class Router():
                 self.carrier_dest:str = entry.get('SystemName', '')
                 end:datetime = datetime.fromisoformat(entry.get("DepartureTime", ''))
 
-                jstr:str = ovr['jump'].format(d=self.carrier_dest, t='{t}')
-                if entry.get('CarrierType', '') == 'SquadronCarrier':
-                    jstr = 'Squadron ' + jstr
-                Context.overlay.display_countdown('Carrier', jstr, end)
+                Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
                 Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
-                Context.overlay.stop_countdown('Carrier')
-                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 60)
+                Context.overlay.display_carrier('Cooldown', 60)
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
                 if Context.route.fleetcarrier == True:
                     Context.route.update_route(0, self.carrier_location)
-                    Context.ui.update_waypoint()
+                    Context.ui.update_progress()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-                Context.overlay.stop_countdown('Carrier')
-                Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
+                Context.overlay.display_carrier('Cooldown', 300)
+
+
+    @catch_exceptions
+    def fuel_event(self, state:dict) -> None:
+        """ Set fuel_full to true or false """
+
+        fuel:float = -1
+        with open(Path(config.get_str("journaldir") / "Status.json"), 'r') as file:
+            status:dict = json.load(file)
+            fuel = status.get('Fuel', {}).get('FuelMain', 0.0)
+
+        Context.route.fuel_full = (fuel >= float(state.get('FuelCapacity', 0.0)))
+
+        # Update the UI as we may need to hide the refuel notification
+        if Context.route.jumps_remaining() > 0:
+            Context.ui.update_progress()
+            Context.overlay.update_jump_overlay()
 
 
     def jump_complete(self) -> None:
@@ -215,11 +194,10 @@ class Router():
         self.carrier_location = self.carrier_destination
         if Context.route.fleetcarrier == True:
             Context.route.update_route(0, self.carrier_location)
-            Context.ui.update_waypoint()
+            Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
         Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-        Context.overlay.stop_countdown('Carrier')
-        Context.overlay.display_countdown('Carrier', ovr['cooldown'], 300)
+        Context.overlay.display_carrier('Cooldown', 300)
 
 
     def cooldown_complete(self) -> None:
@@ -326,7 +304,7 @@ class Router():
 
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')
-            self.update_jump_overlay()
+            Context.overlay.update_jump_overlay()
             self.save()
 
         except Exception as e:
@@ -353,6 +331,12 @@ class Router():
         Context.ui.show_error(err)
         return
 
+    def clear_route(self) -> None:
+        """ Clear the current route """
+        Context.route = Route([], [], -1)
+        if Context.overlay:
+            Context.overlay.update_jump_overlay()
+        self.save()
 
     @catch_exceptions
     def import_route(self, filename:str = '') -> bool:
@@ -368,8 +352,10 @@ class Router():
             self.src = Context.route.source()
             self.dest = Context.route.destination()
 
-            Context.route.offset = 0
+            Context.route.update_route(0, self.system)
             copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+            Context.overlay.update_jump_overlay()
+            Context.overlay.show_frame('Default')
 
             return True
 
@@ -397,9 +383,9 @@ class Router():
         """ Download module data from Coriolis """
         try:
             modules:list = []
-            for key, url  in {"fsd": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/frame_shift_drive.json",
-                              "gfsb": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/internal/guardian_fsd_booster.json",
-                              "ft": "https://raw.githubusercontent.com/EDCD/coriolis-data/master/modules/standard/fuel_tank.json"}.items():
+            for key, url  in {"fsd": f"{GH_MODULES}/standard/frame_shift_drive.json",
+                              "gfsb": f"{GH_MODULES}/internal/guardian_fsd_booster.json",
+                              "ft": f"{GH_MODULES}/standard/fuel_tank.json"}.items():
                 r:Response = requests.get(url, timeout=10)
                 if r.status_code != 200:
                     Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")
@@ -412,22 +398,8 @@ class Router():
                 modules = modules + data.get(key, [])
 
             Context.modules = modules
-
-            # Temporary hack since Coriolis doens't yet have the new MkII overcharge boosters
-            Context.modules.append({
-                "class": 8,
-                "cost": 82042060,
-                "fuelmul": 0.011,
-                "fuelpower": 2.5025,
-                "mass": 160,
-                "maxfuel": 6.8,
-                "optmass": 4670,
-                "power": 1.15,
-                "rating": "A",
-                "symbol": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
-            })
-
             Debug.logger.debug(f"Downloaded {len(Context.modules)} FSD entries from Coriolis")
+
             dir:Path = Path(Context.plugin_dir) / DATA_DIR
             dir.mkdir(parents=True, exist_ok=True)
             file:Path = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
@@ -444,11 +416,16 @@ class Router():
         """ Load state from files """
 
         # Get the FSD data from Coriolis' github repo
+        Context.modules = []
         file = Path(Context.plugin_dir) / DATA_DIR / 'module_data.json'
         if file.exists():
             with open(file) as json_file:
                 Context.modules = json.load(json_file)
                 Debug.logger.debug(f"Loaded {len(Context.modules)} modules from local file")
+
+        # We need this so do it synchronously
+        if Context.modules == []:
+            self._get_module_data()
 
         if not file.exists() or file.stat().st_mtime < time() - 86400:
             Debug.logger.debug("Module data is more than a day old, downloading fresh data")
@@ -487,8 +464,9 @@ class Router():
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        (hdrs, route, offset, jumps) = dict.get('route', ([], [], 0, []))
-        Context.route = Route(hdrs, route, offset, jumps)
+        r = dict.get('route', ([], [], -1))
+        (hdrs, route, offset) = r[0:3]
+        Context.route = Route(hdrs, route, offset)
         self.ship = Ship(dict.get('ship', {}))
         self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 

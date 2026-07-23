@@ -121,17 +121,7 @@ class MockResponse:
 
 
 class MockSession:
-    _instance = None
-
-    # Singleton pattern
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
     def __init__(self) -> None:
-        if hasattr(self, '_initialized'): return
-
         self.calls = []
         self.queued_responses = {'get': {}, 'post': {}, 'put': {}, 'patch': {}, 'delete': {},
                                  'head': {}, 'options': {}}
@@ -149,8 +139,6 @@ class MockSession:
         self.cert = None
         self.timeout = None
         self.trust_env = True
-
-        self._initialized = True
 
     def _mock_request(self, method: str, url: str, **kwargs) -> MockResponse:
         call = {'method': method, 'url': url, **kwargs}

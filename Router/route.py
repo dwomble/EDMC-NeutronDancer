@@ -6,22 +6,24 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], cols:list = [], offset:int = 0, jumps:list = []) -> None:
+    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1) -> None:
         self.hdrs:list = hdrs
-        self.route:list = cols
-        self.jumps:list = jumps
+        self.route:list = route
+        self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
+        self.fuel_full = False
 
-        Debug.logger.debug(f"Init, offset: {self.offset}")
-        if hdrs == [] or cols == []: return
+        self.sc:int|None = None # System name column index
+        self.jc:int|None = None # Jumps column index
+        self.dc:int|None = None # Distance column index
+
+        if hdrs == [] or route == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
         self.fleetcarrier = any('tritium' in h.lower() for h in hdrs)
 
-        self.sc:int|None = self.colind()
         self.jc:int|None = self.colind('Jumps')
-        self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
         if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrier == False:
@@ -29,12 +31,11 @@ class Route:
             if self.jc != None: jr = self.jc+1
 
             self.hdrs.insert(jr, 'Jumps Rem' if self.jc != None else 'Waypoints Rem')
-            for i in range(0, len(cols)):
+            for i in range(0, len(route)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
-            # Recalc, they may have moved.
-            self.sc:int|None = self.colind()
-            self.dc:int|None = self.colind('Distance Remaining' if 'Distance remaining' in self.hdrs else 'Distance Rem')
+        self.sc:int|None = self.colind()
+        self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
 
     def source(self) -> str:
@@ -47,14 +48,6 @@ class Route:
         return self.route[-1][self.sc]
 
 
-    def jumps_to_system(self, offset:int|None = None) -> int:
-        """ How many jumps to reach this system? """
-        if self.route == []: return -1
-        if offset == None: offset = self.offset
-        if offset >= len(self.route) or self.jc == None: return -1
-        return self.route[offset][self.jc]
-
-
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
@@ -62,28 +55,38 @@ class Route:
         return self.route[self.offset+1][self.sc]
 
 
-    def next_refuel(self) -> int|None:
+    def jumps_to_refuel(self) -> int|None:
         """ Returns how many jumps until the next fuel stop. Returns None if no fuel stops. """
         if self.route == [] or self.offset >= len(self.route): return None
 
         ind:int|None = self.colind("Refuel") or self.colind("Restock")
         if ind == None: return None
-
         if self.route[self.offset][ind] in TRUE: return 0
-        # TODO: Not sure about this logic. It's trying to deal with a started or not started route but still...
-        start:int = 1
+
         waypoint_range:list = self.route[self.offset:len(self.route)]
-        return next((i + start for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
+        return next((i for i, wp in enumerate(waypoint_range) if wp[ind] in TRUE), None)
+
+
+    def dist_to_refuel(self) -> int|None:
+        """ Returns distance to the next fuel stop. Returns None if no fuel stops. """
+        if self.route == [] or self.offset >= len(self.route) or self.dc == None: return None
+
+        ind:int|None = self.colind("Refuel") or self.colind("Restock")
+        if ind == None: return None
+        if self.route[self.offset][ind] in TRUE: return 0
+        refind:int|None = next((i for i, wp in enumerate(self.route[self.offset:len(self.route)]) if wp[ind] in TRUE), None)
+        return self.route[self.offset][self.dc] - self.route[self.offset+refind][self.dc] if refind is not None else None
 
 
     def refuel(self) -> bool:
         """ Return whether we need to refuel at this waypoint """
+        if self.fuel_full == True: return False
         ind:int|None = self.colind('Refuel') or self.colind('Restock')
         if ind == None: return False
         return self.route[self.offset][ind] in TRUE
 
 
-    def neutron(self) -> bool:
+    def is_neutron(self) -> bool:
         """ Return whether we need to neutron boost at this waypoint """
         ind:int|None = self.colind('Neutron') or self.colind('Neutron Star')
 
@@ -94,7 +97,8 @@ class Route:
     def jumps_to_wp(self) -> int:
         """ Return the number of jumps to the next waypoint """
         if self.route == [] or self.jc == None: return 0
-        return self.route[self.offset][self.jc]
+        if self.offset+1 >= len(self.route): return 0
+        return self.route[self.offset+1][self.jc]
 
 
     def total_jumps(self) -> int:
@@ -104,11 +108,12 @@ class Route:
 
     def jumps_remaining(self, offset:int|None = None) -> int:
         """ Jumps remaining from this point. Either just rows left or sum of jumps column """
-        if self.route == []: return -1
-        if offset == None: offset = self.offset
+        if self.route == []: return 0
+        if offset == None: offset = max(0, self.offset)
         if offset+1 >= len(self.route): return 0
 
         # No jump count column
+        j = len(self.route[offset:])-1
         if self.jc == None: return len(self.route[offset:])-1
         return sum([j[self.jc] for j in self.route[offset+1:]])
 
@@ -141,7 +146,7 @@ class Route:
     def dist_remaining(self, offset:int|None = None) -> int:
         """ Distance remaining if we know it """
         if self.route == [] or self.dc == None: return 0
-        if offset == None: offset = self.offset
+        if offset == None: offset = max(0, self.offset)
         return self.route[offset][self.dc]
 
 
@@ -172,9 +177,9 @@ class Route:
 
 
     def get_waypoint(self, inc:int = 0) -> str:
-        """ Return the system of a waypoint relative to our current offset """
+        """ Return the system of a waypoint relative to our current offset, used to get the next waypoint or the previous waypoint."""
         inc += 1 # Offset is our current location, but waypoint needs to show the next not the current
-        if self.route == [] or self.offset + inc >= len(self.route)-1 or self.offset+inc < 0: return tts["none"]
+        if self.route == [] or self.offset + inc >= len(self.route) or self.offset+inc < 0: return tts["none"]
 
         return self.route[self.offset+inc][self.sc]
 
@@ -184,26 +189,28 @@ class Route:
         Step forwards or backwards through the route.
         If no direction is given pickup from wherever we are on the route
         """
-        Debug.logger.debug(f"Updating route")
         if self.route == []: return -1
 
         if direction == 0: # Figure out if we're on the route
+            self.offset = -1
             for i, r in enumerate(self.route):
                 if r[self.sc] == system:
                     self.offset = i
                     break
 
             # We aren't on the route so just return
-            if self.route[self.offset][self.sc] != system:
+            if self.offset == -1:
                 Debug.logger.debug(f"We aren't on the route")
                 return -1
             Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.sc]}")
 
         # Are we at one end or the other?
         if self.offset + direction < 0:
-            return 0
+            self.offset = -1
+            return self.offset
 
         if self.offset + direction >= len(self.route):
+            self.offset = len(self.route)-1
             return self.offset
 
         self.offset += direction
@@ -225,4 +232,4 @@ class Route:
 
 
     def to_dict(self) -> list:
-        return [self.hdrs, self.route, self.offset, self.jumps]
+        return [self.hdrs, self.route, self.offset]

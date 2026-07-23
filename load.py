@@ -56,7 +56,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     if Context.route.route != []:
         Context.overlay.show_frame('Default')
 
-    parent.after(5000, Context.overlay.update_jump_overlay)
+    parent.after(1000, Context.overlay.update_jump_overlay)
     return Context.ui.frame
 
 

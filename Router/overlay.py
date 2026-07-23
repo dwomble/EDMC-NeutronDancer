@@ -123,11 +123,11 @@ class Overlay():
         dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
         dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
 
-        dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '0']))
-        jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '0']))
+        dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
+        jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
 
-        rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '0']))
-        rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '0']))
+        rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
+        rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
 
         # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
         st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
@@ -138,7 +138,7 @@ class Overlay():
             Debug.logger.warning(f"Error formatting progress display: {e}")
             message.append({'size': "normal", 'text': errs["format_error"]})
 
-        Context.overlay.update_frame('Default', message, ttl=300)
+        Context.overlay.update_frame('Default', message, ttl=120)
 
 
     def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
@@ -165,7 +165,7 @@ class Overlay():
     def redraw_frame(self, frame:str = "") -> None:
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs or not self.ovfrs[frame].visible or not self.ovfrs[frame].enabled: return
-        [self._do_send(m) for m in self.msgs[frame].values()]
+        [overlay.send_message(**m) if 'msgid' in m else overlay.send_shape(**m) for m in self.msgs[frame].values()]
 
 
     def clear_frames(self) -> None:
@@ -179,6 +179,7 @@ class Overlay():
         if frame in self.msgs:
             del self.msgs[frame]
 
+
     def hide_frames(self) -> None:
         """ Hide all overlay frames """
         [self.hide_frame(fr) for fr in self.ovfrs]
@@ -186,20 +187,21 @@ class Overlay():
 
     @catch_exceptions
     def hide_frame(self, frame:str = "") -> None:
-        """ Hide a message frame, don't clear it """
+        """ Clear a message frame """
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs: return
-        self.ovfrs[frame].visible = True
+
+        self.ovfrs[frame].visible = False
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
             tmp['ttl'] = 1
-            tmp['color'] = '#00000000'
             if tmp.get('msgid'):
-                self._do_send(tmp)
+                tmp['text'] = ''
+                overlay.send_message(**tmp)
             if tmp.get('shapeid'):
                 tmp['fill'] = '#00000000'
-                self._do_send(tmp)
-        self.ovfrs[frame].visible = False
+                tmp['color'] = '#00000000'
+                overlay.send_shape(**tmp)
 
     def show_frames(self) -> None:
         """ Show all overlay frames """
@@ -209,13 +211,14 @@ class Overlay():
         """ Show a message frame """
         overlay = self._get_overlay()
         if not overlay or frame not in self.msgs or not self.ovfrs[frame].enabled: return
+
         self.ovfrs[frame].visible = True
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
             if tmp.get('msgid'):
-                self._do_send(tmp)
+                overlay.send_message(**tmp)
             if tmp.get('shapeid'):
-                self._do_send(tmp)
+                overlay.send_shape(**tmp)
 
     @catch_exceptions
     def create_frame(self, group:str, ovf:OvFrame) -> None:
@@ -234,15 +237,6 @@ class Overlay():
         }
         define_plugin_group(**kw)
 
-    @catch_exceptions
-    def _do_send(self, *args, **kwargs) -> None:
-        """ Send a message or shape to the overlay """
-        overlay = self._get_overlay()
-        if not overlay: return
-        if 'msgid' in args:
-            overlay.send_message(args, kwargs)
-        elif 'shapeid' in args:
-            overlay.send_shape(args, kwargs)
 
     @catch_exceptions
     def update_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
@@ -272,7 +266,7 @@ class Overlay():
                 args['w'] = c.get('width', 100)
                 args['h'] = c.get('height', 16)
                 if fr.visible == True and fr.enabled == True:
-                    self._do_send(args)
+                    overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
 
                 argsb:dict = deepcopy(args)
@@ -283,7 +277,7 @@ class Overlay():
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
                 argsb['h'] = c.get('height', 16)
                 if fr.visible == True and fr.enabled == True:
-                    self._do_send(**argsb)
+                    overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
                 y += 20
             else:
@@ -292,7 +286,7 @@ class Overlay():
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
                 if fr.visible == True and fr.enabled == True:
-                    self._do_send(args)
+                    overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
                 y += 25 if args['size'] == 'large' else 20
 
@@ -464,6 +458,7 @@ class Overlay():
         self.update_jump_overlay()
         self.redraw_frames()
 
+        Debug.logger.info(f"Saved frames to EDMC config")
         return True
 
 

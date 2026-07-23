@@ -20,7 +20,7 @@ deploy.sh
 
 data/*
 routes/*
-updates/*
+updates/**
 tests/data/*
 tests/edmc/EDMarketConnector
 tests/logs/*

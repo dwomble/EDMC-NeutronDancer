@@ -7,6 +7,7 @@
 * Added customizable progress text to overlay
 * Added optional progress bar to the jump overlay
 * Refuel reminder is automatically removed once you've refueled
+* Added alert overlays for Refuel and Neutron boost
 
 ### Changes
 

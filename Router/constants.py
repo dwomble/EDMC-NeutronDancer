@@ -222,5 +222,7 @@ cnf:dict = {
 
 ovr:dict = {
     "jump": "Carrier jump to {d} in {t}",
-    "cooldown": "Carrier cooldown {t}"
+    "cooldown": "Carrier cooldown {t}",
+    "neutron": "Neutron Boost Here",
+    "refuel": "Refuel Here"
 }

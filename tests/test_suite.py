@@ -108,6 +108,15 @@ class TestStartup:
         harness.plugin.router._get_module_data()
         assert len(harness.plugin.modules) == 88
 
+    def test_migration(self, harness:TestHarness) -> None:
+        """ Test route.json migration """
+        shutil.copy(Path(__file__).parent / "config" / "route_1.10.0.json",
+                Path(__file__).parent / "data" / "route.json")
+
+        assert not hasattr(harness.plugin.router, "ships")
+        assert isinstance(harness.plugin.router.shiplist, dict)
+        assert harness.plugin.router.shiplist["1"] == "Shipping Delay"
+
 
 class TestStateManagement:
     """Test router state management."""
@@ -321,7 +330,7 @@ class TestShipLoadout:
         assert harness.plugin.router.ship.name == 'Long Delay'
         assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
-        assert harness.plugin.router.ships[shipid] is harness.plugin.router.ship
+        
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -930,6 +939,7 @@ class TestPlotting:
 
         harness.plugin.router.swap_ship(1)
         ship = harness.plugin.router.ship
+        print(f"{ship}")
         assert ship is not None
         assert ship.name == 'Shipping Delay'
         assert harness.plugin.route.route == []

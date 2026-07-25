@@ -99,5 +99,5 @@ class Ship:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def to_dict(self) -> dict:
+    def _as_dict(self) -> dict:
         return self.loadout

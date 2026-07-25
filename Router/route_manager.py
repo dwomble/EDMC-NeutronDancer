@@ -12,14 +12,14 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, copy_to_clipboard
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
-                  'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {}, 'trade_params': {},
-                  'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
+                  'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {},
+                  'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [],
                   'window_geometries' : {}}
 
 @singleton
@@ -41,8 +41,7 @@ class Router():
         self.ship:Ship|None = None
 
         # Record of used ships and shipyard
-        self.shiplist:list = []
-        self.ships:dict[str, Ship] = {}
+        self.shiplist:dict = {}
         self.history:list = []
 
         # Info about the last route plotted
@@ -65,6 +64,19 @@ class Router():
         if Context.route.route != []:
             Context.route.update_route(0, self.system)
 
+    def shipnames(self) -> list:
+        """ Return a list of shipnames """
+        names:list = list(self.shiplist.values())
+        names.reverse()
+        return names[0:10]
+
+    def shipid(self, name:str) -> str:
+        """ Get a ship's id from its name """
+        for id, ship_name in self.shiplist.items():
+            if name == ship_name:
+                return id
+        return ""
+
 
     def swap_ship(self, ship_id:str) -> None:
         """
@@ -73,17 +85,21 @@ class Router():
         """
         # Normalize ship_id to string since stored keys are strings
         sid = str(ship_id)
-        if sid not in self.ships.keys():
+        if sid not in self.shiplist:
             Debug.logger.info(f"ShipID {sid} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
 
         self.ship_id = sid
+        self.ship = self.load_ship(sid)
+        if not self.ship:
+            Debug.logger.info(f"ShipID {sid} not found in shipyard")
+            self.ship_id = ""
+            return
 
-        self.neutron_params['range'] = self.ships[sid].range
-        self.neutron_params['supercharge_multiplier'] = self.ships[sid].supercharge_multiplier
-        self.ship = self.ships[sid]
+        self.neutron_params['range'] = self.ship.range
+        self.neutron_params['supercharge_multiplier'] = self.ship.supercharge_multiplier
 
 
     def set_ship(self, entry:dict) -> None:
@@ -93,15 +109,18 @@ class Router():
         self.ship_id = str(ship.id)
         self.neutron_params['supercharge_multiplier'] = ship.supercharge_multiplier
         self.neutron_params['range'] = ship.range
-        self.ships[self.ship_id] = ship
 
-        if self.ship_id in self.shiplist:
-            self.shiplist.remove(self.ship_id)
-        self.shiplist.insert(0, self.ship_id)
+        self._save_ship(ship)
+
+        # Re-add so keys are in reverse order
+        if ship.id in self.shiplist:
+            del self.shiplist[ship.id]
+        self.shiplist[ship.id] = ship.name
+
         # Context.ui may be None in headless/test environments; guard the call.
         if getattr(Context, 'ui', None) is not None and hasattr(Context.ui, 'switch_ship'):
             try:
-                Context.ui.switch_ship(self.ship)
+                Context.ui.switch_ship(ship)
             except Exception as e:
                 Debug.logger.exception(f"Error switching ship in UI: {e}")
         else:
@@ -413,6 +432,29 @@ class Router():
 
 
     @catch_exceptions
+    def load_ship(self, id:str) -> Ship|None:
+        """ Load a ship """
+        if id == "": return
+        #if id == self.ship_id: return self.ship
+
+        dir:Path = Path(Context.plugin_dir) / DATA_DIR / SHIP_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        file:Path = dir / f"{id}.json"
+        if file.exists():
+            with open(file) as json_file:
+                return Ship(json.load(json_file))
+
+
+    @catch_exceptions
+    def _save_ship(self, ship:Ship) -> None:
+        dir:Path = Path(Context.plugin_dir) / DATA_DIR / SHIP_DIR
+        dir.mkdir(parents=True, exist_ok=True)
+        file:Path = dir / f"{ship.id}.json"
+        with open(file, 'w') as outfile:
+            json.dump(ship._as_dict(), outfile, indent=4)
+
+
+    @catch_exceptions
     def _load(self) -> None:
         """ Load state from files """
 
@@ -454,9 +496,6 @@ class Router():
         """ Return a Dictionary representation of our data, suitable for serializing """
 
         save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
-
-        save['ship'] = self.ship.to_dict() if self.ship else {}
-        save['ships'] = {k: ship.to_dict() for k, ship in self.ships.items()}
         if Context.route != None:
             save['route'] = Context.route.to_dict()
         return save
@@ -469,8 +508,11 @@ class Router():
         (hdrs, route, offset) = r[0:3]
         Context.route = Route(hdrs, route, offset)
         self.ship = Ship(dict.get('ship', {}))
-        self.ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
+        ships:dict = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 
         # Migrate
-        if self.shiplist == [] and self.ships != {}:
-            self.shiplist = [id for id in self.ships.keys()]
+        if isinstance(self.shiplist, list) and ships != {}:
+            self.shiplist = {}
+            for ship in ships.values(): self.shiplist[ship.id] = ship.name
+            [self._save_ship(ship) for ship in ships.values()]
+            self.save()

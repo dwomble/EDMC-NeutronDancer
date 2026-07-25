@@ -31,6 +31,7 @@ SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 
 # Directory we store our save data in
 DATA_DIR = 'data'
+SHIP_DIR = 'ships'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
 

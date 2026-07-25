@@ -271,8 +271,8 @@ class UI():
 
         # Row three
         row += 1; col = 0
-        if Context.router.shiplist == []: self.show_error(errs["no_ships"])
-        names:list = [Context.router.ships[id].name for id in Context.router.shiplist if id in Context.router.ships]
+        if Context.router.shiplist == {}: self.show_error(errs["no_ships"])
+        names:list = Context.router.shipnames()
         init:str = params.get('ship_build', {}).get('ShipName', '')
         if init == "" and names != []:
             init = names[0]
@@ -361,9 +361,8 @@ class UI():
                 destmenu[sys] = [self.menu_callback, 'dest']
 
         # Create right click menu
-        for id in Context.router.shiplist[:10]:
-            if id in Context.router.ships:
-                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+        for name in Context.router.shipnames():
+            shipmenu[name] = [self.menu_callback, 'ship']
 
         if shipmenu != {}:
             self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
@@ -439,8 +438,8 @@ class UI():
     def show_menu(self, e) -> str:
         # Create right click menu
         shipmenu:dict = {}
-        for id in Context.router.shiplist[:10]:
-            shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+        for name in Context.router.shipnames():
+            shipmenu[name] = [self.menu_callback, 'ship']
 
         if shipmenu != {}:
             menu:tk.Menu = tk.Menu(self.neutron_fr, tearoff=0)
@@ -594,11 +593,16 @@ class UI():
                 self.gal_dest_ac.set_text(param, False)
             case _:
                 param = self.ship.get() if param == "None" else param
-                ship:list[Ship] = [ship for ship in Context.router.ships.values() if ship.name == param]
-                if ship == []: return
-                self.range_entry.set_text(ship[0].get_range(Context.router.cargo), False)
-                self.multiplier.set(ship[0].supercharge_multiplier)
-                cargo:int = Context.router.cargo if ship[0].id == Context.router.ship_id else 0
+                ship_id:str = ""
+                for id, name in Context.router.shiplist.items(): 
+                    if name == param:
+                        ship_id = id
+                
+                ship:Ship|None = Context.router.load_ship(ship_id)
+                if not ship: return
+                self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
+                self.multiplier.set(ship.supercharge_multiplier)
+                cargo:int = Context.router.cargo if ship.id == Context.router.ship_id else 0
                 self.cargo_entry.set_text(cargo, False)
                 return
 
@@ -626,17 +630,16 @@ class UI():
         self.multiplier.set(ship.supercharge_multiplier)
 
         shipmenu:dict = {}
-        for id in Context.router.shiplist[:10]:
-            if id in Context.router.ships:
-                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
+        for name in Context.router.shipnames():
+            shipmenu[name] = [self.menu_callback, 'ship']
+
         self.range_entry.set_menu(shipmenu)
 
         # Galaxy plotter
         self.ship.set(ship.name)
 
         # Ship dropdown
-        ships:list = [Context.router.ships[id].name for id in Context.router.shiplist if id in Context.router.ships]
-        self.shipdd.set_menu(ships)
+        self.shipdd.set_menu(Context.router.shipnames())
 
 
     def update_cargo(self, cargo:int) -> None:
@@ -728,16 +731,14 @@ class UI():
         self.gal_source_ac.hide_list()
         self.gal_dest_ac.hide_list()
 
-        ship_id:str = ''
-        for id, ship in Context.router.ships.items():
-            if ship.name == self.ship.get():
-                ship_id = id
-                break
-
+        ship_id:str = Context.router.shipid(self.ship.get())
         if ship_id == '':
             self.show_frame('Galaxy')
             self.show_error(errs['no_ship'])
             return
+
+        ship:Ship|None = Context.router.load_ship(ship_id)
+        if not ship: return
 
         params:dict = {
             'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
@@ -750,16 +751,16 @@ class UI():
             'use_injections': 1 if self.gallb.selection_includes(self.optionlist.index('use_injections')) else 0,
             'exclude_secondary': 1 if self.gallb.selection_includes(self.optionlist.index('exclude_secondary')) else 0,
             'refuel_every_scoopable': 1 if self.gallb.selection_includes(self.optionlist.index('refuel_every_scoopable')) else 0,
-            'fuel_power': Context.router.ships[ship_id].fuel_power,
-            'fuel_multiplier': Context.router.ships[ship_id].fuel_multiplier,
-            'optimal_mass': Context.router.ships[ship_id].optimal_mass,
-            'base_mass': Context.router.ships[ship_id].base_mass,
-            'tank_size': Context.router.ships[ship_id].tank_size,
-            'internal_tank_size': Context.router.ships[ship_id].internal_tank_size,
-            'max_fuel_per_jump': Context.router.ships[ship_id].max_fuel_per_jump,
-            'range_boost': Context.router.ships[ship_id].range_boost,
-            'supercharge_multiplier': Context.router.ships[ship_id].supercharge_multiplier,
-            'injection_multiplier': Context.router.ships[ship_id].injection_multiplier
+            'fuel_power': ship.fuel_power,
+            'fuel_multiplier': ship.fuel_multiplier,
+            'optimal_mass': ship.optimal_mass,
+            'base_mass': ship.base_mass,
+            'tank_size': ship.tank_size,
+            'internal_tank_size': ship.internal_tank_size,
+            'max_fuel_per_jump': ship.max_fuel_per_jump,
+            'range_boost': ship.range_boost,
+            'supercharge_multiplier': ship.supercharge_multiplier,
+            'injection_multiplier': ship.injection_multiplier
             }
 
         src = self.gal_source_ac.get().strip()

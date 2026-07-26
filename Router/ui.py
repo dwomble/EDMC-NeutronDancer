@@ -100,7 +100,7 @@ class UI():
 
 
     def _update_item(self, which:str, type:str, value:str = "") -> None:
-        """ Update items of the given type from which source to all other destinations """
+        """ Update items of the given type from which source to all other plot types """
         if which != "all":
             sobj = self.plot_frames[which].nametowidget(type)
             value = sobj.get()
@@ -134,9 +134,13 @@ class UI():
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
         Context.router.neutron_params['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
-        if which in self.plot_frames: # Update corresponding fields in other plot frames
-            self._update_item(which, "source_ac")
-            self._update_item(which, "dest_ac")
+
+        # Figure out which frame is currently visible
+        current:str|None = next((key for key, val in self.plot_frames.items() if val == self.sub_fr), None)
+
+        if current in self.plot_frames: # Update corresponding fields in other plot frames
+            self._update_item(current, "source_ac")
+            self._update_item(current, "dest_ac")
 
         match which:
             case 'Route':

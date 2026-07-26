@@ -127,9 +127,13 @@ class Route:
 
     def dist_to_next(self) -> int:
         """ Return the distance to the next waypoint """
-        if self.route == [] or self.dn == None: return 0
+        if self.route == []: return 0
         if self.offset+1 >= len(self.route): return 0
-        return self.route[self.offset+1][self.dn]
+        if self.dn:
+            return self.route[self.offset+1][self.dn]
+        if self.offset >= 0 and self.dc:
+            return self.route[self.offset][self.dc]- self.route[self.offset+1][self.dc]
+        return 0
 
 
     def dist_to_prev(self) -> int:

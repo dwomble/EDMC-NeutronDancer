@@ -88,7 +88,7 @@ class Router():
             self.ship_id = ""
             self.ship = None
             return
-        self.set_ship(ship._as_dict())
+        self.set_ship(ship.as_dict())
 
 
     def set_ship(self, entry:dict) -> None:
@@ -440,7 +440,7 @@ class Router():
         dir.mkdir(parents=True, exist_ok=True)
         file:Path = dir / f"{ship.id}.json"
         with open(file, 'w') as outfile:
-            json.dump(ship._as_dict(), outfile, indent=4)
+            json.dump(ship.as_dict(), outfile, indent=4)
 
 
     @catch_exceptions
@@ -485,6 +485,7 @@ class Router():
         """ Return a Dictionary representation of our data, suitable for serializing """
 
         save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
+        save['ship'] = self.ship.as_dict() if self.ship else {}
         if Context.route != None:
             save['route'] = Context.route.to_dict()
         return save

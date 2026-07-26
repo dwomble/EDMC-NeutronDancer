@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from copy import deepcopy
 
 import tkinter as tk
-from tkinter import colorchooser as tkColorChooser
+from tkinter import font, colorchooser as tkColorChooser
 import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
@@ -402,8 +402,12 @@ class Overlay():
         ovrprefs.rowconfigure(60, weight=1)
         ovrprefs.grid()
 
+        props = font.Font(name="TkDefaultFont", exists=True).actual()
+        props["weight"] = "bold"
+        bold:font.Font = font.Font(**props)
+
         row:int = 0; col:int = 0
-        nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
+        nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT, font=bold).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
         row += 1; col = 0
         # Loop through the frames and create a preferences line for each

@@ -6,6 +6,11 @@ class Ship:
     def __init__(self, entry:dict) -> None:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
 
+        self.id:str = ''
+        self.type:str = ''
+        self.ident:str = ''
+        self.name:str = ''
+
         # The journal loadout entry
         self.loadout:dict = {}
         self.supercharge_multiplier:int = 4
@@ -26,10 +31,10 @@ class Ship:
             }]
 
         # This is used when we're initializing from a journal entry
-        self.id:str = str(entry.get('ShipID', ''))
-        self.type:str = entry.get('Ship', '')
-        self.ident:str = entry.get('ShipIdent', '')
-        self.name:str = entry.get('ShipName', '') or self.ident or self.type
+        self.id = str(entry.get('ShipID', ''))
+        self.type = entry.get('Ship', '')
+        self.ident = entry.get('ShipIdent', '')
+        self.name = entry.get('ShipName', '') or self.ident or self.type
 
         fsd:dict = [m for m in entry.get('Modules', []) if m['Slot'] == 'FrameShiftDrive'][0]
         fsd_type:str = fsd['Item']

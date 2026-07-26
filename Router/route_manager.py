@@ -67,12 +67,12 @@ class Router():
         """ Return a list of shipnames """
         names:list = list(self.shiplist.values())
         names.reverse()
-        return names[0:10]
+        return names
 
     def shipid(self, name:str) -> str:
         """ Get a ship's id from its name """
-        for id, name in self.shiplist.items():
-            if name == self.ship.get():
+        for id, ship in self.shiplist.items():
+            if name == ship:
                 return id
         return ""
 
@@ -82,18 +82,13 @@ class Router():
         Called on a ship swap event to update our current ship information
         On a ship swap we don't get the full loadout so we have torely on our shipyard and hope we've seen this ship before
         """
-        # Normalize ship_id to string since stored keys are strings
-        sid = str(ship_id)
-        if sid not in self.shiplist:
-            Debug.logger.info(f"ShipID {sid} not found in shipyard")
+        ship = self.load_ship(ship_id)
+        if not ship:
+            Debug.logger.info(f"ShipID {ship_id} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
-
-        self.ship_id = sid
-        self.ship = self.load_ship(sid)
-        self.neutron_params['range'] = self.ship.range
-        self.neutron_params['supercharge_multiplier'] = self.ship.supercharge_multiplier
+        self.set_ship(ship._as_dict())
 
 
     def set_ship(self, entry:dict) -> None:
@@ -429,13 +424,13 @@ class Router():
     def load_ship(self, id:str) -> Ship|None:
         """ Load a ship """
         if id == "": return
-        #if id == self.ship_id: return self.ship
-        
+        if id == self.ship_id: return self.ship
+
         dir:Path = Path(Context.plugin_dir) / DATA_DIR / SHIP_DIR
         dir.mkdir(parents=True, exist_ok=True)
         file:Path = dir / f"{id}.json"
         if file.exists():
-            with open(file) as json_file:        
+            with open(file) as json_file:
                 return Ship(json.load(json_file))
 
 
@@ -502,12 +497,12 @@ class Router():
         (hdrs, route, offset) = r[0:3]
         Context.route = Route(hdrs, route, offset)
         self.ship = Ship(dict.get('ship', {}))
-        ships:dict = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
+        ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 
         # Migrate
         if isinstance(self.shiplist, list) and ships != {}:
+            Debug.logger.info(f"Migrating save data to new structure")
             self.shiplist = {}
-            for ship in ships.values(): self.shiplist[ship.id] = ship.name            
-            [self._save_ship(ship) for ship in ships.values()]            
+            for ship in ships.values(): self.shiplist[ship.id] = ship.name
+            [self._save_ship(ship) for ship in ships.values()]
             self.save()
-        

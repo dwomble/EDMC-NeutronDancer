@@ -2,10 +2,9 @@ from email import message
 import json
 from dataclasses import dataclass, asdict
 from functools import partial
-from datetime import datetime, timedelta
 from threading import Thread, Event
 from math import floor
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from copy import deepcopy
 
 import tkinter as tk
@@ -52,7 +51,8 @@ class Overlay():
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900),
                                          'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200),
-                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900)
+                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900),
+                                         'Alert': OvFrame('Alert', x = 640, y = 670, ttl=15)
                                          }
         self.stoppers:dict[str, Event] = {}
 
@@ -84,6 +84,7 @@ class Overlay():
         if Context.route.route == []:
             self.clear_frame('Default')
             self.clear_frame('Galaxy Map')
+            self.clear_frame('Alert')
             return
 
         wp:str = Context.route.next_stop()
@@ -93,7 +94,7 @@ class Overlay():
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
         # Galaxy map frame just shows next jump
-        Context.overlay.update_frame('Galaxy Map', message, ttl=120)
+        self.update_frame('Galaxy Map', message, ttl=120)
 
         if self.progress_bar:
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
@@ -138,14 +139,21 @@ class Overlay():
             Debug.logger.warning(f"Error formatting progress display: {e}")
             message.append({'size': "normal", 'text': errs["format_error"]})
 
-        Context.overlay.update_frame('Default', message, ttl=120)
+        self.update_frame('Default', message, ttl=120)
+
+        if Context.route.refuel() and not Context.route.fuel_full:
+            self.display_alert(ovr["refuel"])
+        elif Context.route.is_neutron() == True:
+            Context.overlay.display_alert(ovr["neutron"])
+        elif Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
+            self.clear_frame("Alert")
 
 
     def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
         """ Display carrier arrival info """
         cstr:str = ''
 
-        Context.overlay.stop_countdown('Carrier')
+        self.stop_countdown('Carrier')
         match type:
             case 'Carrier':
                 cstr = ovr['jump'].format(d=destination, t='{t}')
@@ -154,7 +162,14 @@ class Overlay():
             case 'Cooldown':
                 cstr = ovr['cooldown']
 
-        Context.overlay.display_countdown('Carrier', cstr, end)
+        self.display_countdown('Carrier', cstr, end)
+
+
+    def display_alert(self, message:str = '') -> None:
+        """ Display an alert message """
+        Debug.logger.debug(f"Showing alert {message}")
+        self.show_frame('Alert')
+        self.update_frame('Alert', [{'size': 'large', 'text' : message}], ttl=5)
 
 
     def redraw_frames(self) -> None:
@@ -216,6 +231,7 @@ class Overlay():
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
             if tmp.get('msgid'):
+                Debug.logger.debug(f"Show frame: sending {tmp}")
                 overlay.send_message(**tmp)
             if tmp.get('shapeid'):
                 overlay.send_shape(**tmp)
@@ -264,7 +280,7 @@ class Overlay():
                 args['color'] = c.get('colour', fr.text_colour)
                 args['fill'] = '#00000000'
                 args['w'] = c.get('width', 100)
-                args['h'] = c.get('height', 16)
+                args['h'] = c.get('height', 12)
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
@@ -275,7 +291,7 @@ class Overlay():
                 argsb['color'] = c.get('colour', fr.text_colour)
                 argsb['fill'] = c.get('colour', fr.text_colour)
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
-                argsb['h'] = c.get('height', 16)
+                argsb['h'] = c.get('height', 12)
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
@@ -286,6 +302,7 @@ class Overlay():
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
                 if fr.visible == True and fr.enabled == True:
+                    Debug.logger.debug(f"Show frame: sending {args}")
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
                 y += 25 if args['size'] == 'large' else 20
@@ -312,10 +329,10 @@ class Overlay():
             rem = end - datetime.now(tz=end.tzinfo)
             display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
-            Context.overlay.update_frame(frame, display, ttl=1)
+            self.update_frame(frame, display, ttl=1)
 
         stop.clear()
-        Context.overlay.update_frame(frame, '', ttl=1)
+        self.update_frame(frame, '', ttl=1)
         #Debug.logger.debug("Countdown thread is ending.")
 
 
@@ -409,7 +426,7 @@ class Overlay():
         row:int = 0; col:int = 0
         nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT, font=bold).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
-        row += 1; col = 0
+        row += 1; col = 1
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():

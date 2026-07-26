@@ -36,6 +36,7 @@ class Route:
 
         self.sc:int|None = self.colind()
         self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
+        self.dn:int|None = self.colind('Distance')
 
 
     def source(self) -> str:
@@ -122,6 +123,20 @@ class Route:
         """ Percentage of jumps remaining """
         if self.route == []: return 0
         return (self.total_jumps() - self.jumps_remaining(offset)) * 100 / self.total_jumps()
+
+
+    def dist_to_next(self) -> int:
+        """ Return the distance to the next waypoint """
+        if self.route == [] or self.dn == None: return 0
+        if self.offset+1 >= len(self.route): return 0
+        return self.route[self.offset+1][self.dn]
+
+
+    def dist_to_prev(self) -> int:
+        """ Return the distance to the previous waypoint """
+        if self.route == [] or self.dn == None: return 0
+        if self.offset+1 >= len(self.route): return 0
+        return self.route[self.offset][self.dn]
 
 
     def total_dist(self) -> int:

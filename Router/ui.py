@@ -609,7 +609,9 @@ class UI():
         self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset <= -1 else tk.NORMAL)
         self.waypoint_prev_tt = th.Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
-        self.waypoint_next_tt = th.Tooltip(self.waypoint_next_btn, route.get_waypoint(1))
+        dn:str = hfplus(tuple([Context.route.dist_to_next(), 'float', '0']))
+        nstr:str = route.get_waypoint(1) if route.dist_to_next() == 0 else f"{route.get_waypoint(1)} ({dn} ly)"
+        self.waypoint_next_tt = th.Tooltip(self.waypoint_next_btn, nstr)
 
         wp:str = route.next_stop()
         self._update_progbar()
@@ -626,7 +628,7 @@ class UI():
         if route.is_neutron() == True:
             image = self.neutron_img
 
-        if route.refuel() == True:
+        if route.refuel() == True and not Context.route.fuel_full:
             image = self.fuel_img
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)

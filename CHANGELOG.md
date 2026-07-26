@@ -1,6 +1,16 @@
 # EDMC-NeutronDancer Changelog
 
-## v1.10.0 2026-??-??
+## V2.0.0 2026-??-??
+
+### New Features
+
+* Made the directory for importing and exporting routes configurable in the preferences
+
+### Changes
+
+* Refactored ship loadout storage to be more efficient
+
+## v1.10.0 2026-07-25
 
 ### New Features
 

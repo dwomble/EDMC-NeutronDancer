@@ -218,7 +218,11 @@ cnf:dict = {
     "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
     "default_overlay": "Default Overlay Options",
     "progress_bar": "Progress Bar",
-    "progress_display": "Progress Display"
+    "progress_display": "Progress Display",
+    "options": "Neutron Dancer Options",
+    "select": "Select",
+    "show_carrier_cooldown": "Show Carrier Cooldown Popup",
+    "routes_directory": "Default Route File Directory"
 }
 
 ovr:dict = {

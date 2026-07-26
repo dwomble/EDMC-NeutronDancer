@@ -1,9 +1,11 @@
 import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, font
+from tkinter import filedialog
 import tkinter.messagebox as confirmDialog
 from functools import partial
 from pathlib import Path
+from dataclasses import dataclass
 import re
 import requests
 import json
@@ -17,12 +19,24 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, hdrs, lbls, btns, tts, errs
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, ROUTE_DIR, lbls, btns, tts, errs, cnf
 from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
 
+@dataclass
+class Pref:
+    pref_type:str
+    name:str
+    desc:str
+    var_type:type[tk.StringVar]|type[tk.BooleanVar]
+    entry_type:type[tk.Entry]|type[tk.Checkbutton]
+
+PREFS = [
+    Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, tk.Entry),
+    Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, tk.Checkbutton),
+    ]
 @singleton
 class UI():
     """
@@ -71,6 +85,8 @@ class UI():
         self.show_frame('Route' if Context.route.route != [] else 'Default')
 
         self.cooldown_popup:bool = True
+
+        self.prefs:dict = {}
         self._load_prefs()
 
         # Wait a while before deciding if we should show the update text
@@ -689,10 +705,10 @@ class UI():
             case _:
                 param = self.ship.get() if param == "None" else param
                 ship_id:str = ""
-                for id, name in Context.router.shiplist.items(): 
+                for id, name in Context.router.shiplist.items():
                     if name == param:
                         ship_id = id
-                
+
                 ship:Ship|None = Context.router.load_ship(ship_id)
                 if not ship: return
                 self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
@@ -952,6 +968,16 @@ class UI():
             tk_var.trace_add("write", update_obj)
             return tk_var
 
+        def select_folder(entry:tk.Entry, var:tk.StringVar):
+            # Open the folder selection dialog
+            fpath = filedialog.askdirectory(title="Select a Directory", initialdir=var.get())
+            # Check if the user selected a folder or cancelled
+            if not fpath:
+                return
+            var.set(fpath)
+            entry.delete(0, tk.END)
+            entry.insert(0, fpath)
+
         self.plugin_frame:tk.Frame = parent
         frame:nb.Frame = nb.Frame(parent)
         # Make the second column fill available space
@@ -962,23 +988,36 @@ class UI():
         prefsfr.rowconfigure(60, weight=1)
         prefsfr.grid(sticky=tk.NW)
 
+        props = font.Font(name="TkDefaultFont", exists=True).actual()
+        props["weight"] = "bold"
+        bold:font.Font = font.Font(**props)
+
         row:int = 0; col:int = 0
-        nb.Label(prefsfr, text="Neutron Dancer Options", justify=tk.LEFT).grid(row=row, column=col, padx=10, pady=5, sticky=tk.NW)
+        nb.Label(prefsfr, text=cnf["options"], justify=tk.LEFT, font=bold).grid(row=row, column=col, padx=10, pady=5, sticky=tk.NW)
 
         vars:dict = {}; cbtns:list = []; row += 1; col = 0
         # variable, label, variable type, object type
-        for k in [('cooldown_popup', 'Show Carrier Cooldown Popup', tk.BooleanVar, tk.Checkbutton)]:
-
-            vars[k[0]] = bind_var(self, k[0], k[2](value=getattr(self, k[0])))
-            match k[3]:
-                case tk.Checkbutton:
-                    nb.Checkbutton(prefsfr, text=k[1], variable=vars[k[0]]).grid(row=row, column=col, padx=10, pady=0, sticky=tk.W)
-                case tk.Entry:
-                    nb.Label(prefsfr, text=k[1]).grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+        for k in PREFS:
+            match k.pref_type:
+                case 'bool':
+                    self.prefs[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", False))
+                    nb.Checkbutton(prefsfr, text=k.desc, variable=self.prefs[k.name]).grid(row=row,   column=col, padx=10, pady=0, sticky=tk.W)
+                case 'str':
+                    nb.Label(prefsfr, text=k.name).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
                     col += 1
-                    tk.Entry(prefsfr, textvariable=vars[k[0]], width=8, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-            col += 1
-        row += 1
+                    tk.Entry(prefsfr, textvariable=vars[k.name], width=25, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                case 'dir':
+                    dir = config.get(f"{Context.plugin_name}_{k.name}", str(Path(Context.plugin_dir) / ROUTE_DIR))
+                    self.prefs[k.name] = tk.StringVar(value=dir)
+                    nb.Label(prefsfr, text=k.desc).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
+                    col += 1
+                    entry:tk.Entry = tk.Entry(prefsfr, textvariable=self.prefs[k.name], width=75)
+                    entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    entry.bind("<Button-1>", lambda e, en=entry, v=self.prefs[k.name]: select_folder(en, v))
+
+
+            col = 0;row += 1
+        col = 0
         ttk.Separator(frame).grid(row=row, columnspan=3, pady=5 * 2, sticky=tk.EW)
 
         Context.overlay.prefs_display(frame)
@@ -986,12 +1025,16 @@ class UI():
 
 
     def save_prefs(self) -> None:
-        config.set(f"{Context.plugin_name}_cooldown_popup", bool(self.cooldown_popup))
+        for k in PREFS:
+            var:tk.Variable|None = self.prefs.get(k.name)
+            config.set(f"{Context.plugin_name}_{k.name}", var.get() if var else getattr(self, k.name))
+            setattr(self, k.name, config.get(f"{Context.plugin_name}_{k.name}"))
         Context.overlay.save_prefs()
         return
 
 
     def _load_prefs(self) -> None:
         """ Read frame data from the EDMC config. """
-        res:bool|None = config.get(f"{Context.plugin_name}_cooldown_popup")
-        self.cooldown_popup = res if res != None else True
+        for k in PREFS:
+            res = config.get(f"{Context.plugin_name}_{k.name}")
+            setattr(self, k.name, res)

@@ -666,7 +666,7 @@ class TestOverlay:
 
         overlay.update_jump_overlay()
 
-        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=0 jh=0 rj=0 rd=0 st=⚛'
+        assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure update_jump_overlay handles invalid progress_display format."""

@@ -883,7 +883,7 @@ class TestUIFunctions:
         ui.set_entry(None, "ignored")
 
 
-    def test_switch_ship_and_update_cargo(self, harness:TestHarness) -> None:
+    def test_switch_ship(self, harness:TestHarness) -> None:
         ui = harness.plugin.ui
 
         # Ensure a ship loadout is present
@@ -893,14 +893,9 @@ class TestUIFunctions:
 
         # Switch UI to this ship and verify fields update
         ui.switch_ship(ship)
-        assert ui.ship.get() == ship.name
+        assert ui.shipvar.get() == ship.name
         assert ui.multiplier.get() == ship.supercharge_multiplier
-        assert ui.range_entry.var.get() == str(ship.get_range(harness.plugin.router.cargo))
-
-        # Update cargo and verify cargo and range entries update
-        ui.update_cargo(5)
-        assert ui.cargo_entry.var.get() == '5'
-        assert ui.range_entry.var.get() == str(harness.plugin.router.ship.get_range(5))
+        assert ui.get_item('Neutron', 'range_entry') == str(ship.get_range(harness.plugin.router.cargo))
 
     def test_progress(self, harness:TestHarness):
         """ Test _progress() method"""
@@ -912,7 +907,12 @@ class TestUIFunctions:
 
     def test_update_cargo(self, harness:TestHarness):
         """ test update_cargo() method """
-        result:bool = harness.plugin.ui.update_cargo(12)
+        ui = harness.plugin.ui
+        ui.update_cargo(12)
+
+        # Update cargo and verify cargo and range entries update
+        assert ui.get_item('Galaxy', 'cargo_entry') == '12'
+        assert ui.get_item('Neutron', 'range_entry') == str(harness.plugin.router.ship.get_range(12))
 
 class TestRouteWindow:
     """Test RouteWindow lifecycle and display behavior."""

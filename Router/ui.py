@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import ttk, font
-from tkinter import filedialog
+from tkinter import ttk
 import tkinter.messagebox as confirmDialog
 from functools import partial
 from pathlib import Path
@@ -19,24 +18,11 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, ROUTE_DIR, lbls, btns, tts, errs, cnf
+from .constants import NAME, SPANSH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
 from .route_window import RouteWindow
-
-@dataclass
-class Pref:
-    pref_type:str
-    name:str
-    desc:str
-    var_type:type[tk.StringVar]|type[tk.BooleanVar]
-    entry_type:type[tk.Entry]|type[tk.Checkbutton]
-
-PREFS = [
-    Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, tk.Entry),
-    Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, tk.Checkbutton),
-    ]
 @singleton
 class UI():
     """
@@ -76,18 +62,16 @@ class UI():
         self.progbar:ttk.Progressbar # Overall progress bar
 
         self.title_fr:th.Frame = self._create_title_fr(self.frame)
-        self.neutron_fr:th.Frame = self._create_neutron_fr(self.frame)
-        self.galaxy_fr:th.Frame = self._create_galaxy_fr(self.frame)
         self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
         self.route_fr:th.Frame = self._create_route_fr(self.frame)
 
+        self.plot_frames:dict[str, th.Frame] = {}
+        self.plot_frames['Neutron'] = self._create_neutron_fr(self.frame)
+        self.plot_frames['Galaxy'] = self._create_galaxy_fr(self.frame)
+        self.plot_frames['Trade'] = self._create_trade_fr(self.frame)
+
         self.sub_fr:th.Frame = self.title_fr
         self.show_frame('Route' if Context.route.route != [] else 'Default')
-
-        self.cooldown_popup:bool = True
-
-        self.prefs:dict = {}
-        self._load_prefs()
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_plugin_update())
@@ -115,6 +99,31 @@ class UI():
         self.update.destroy()
 
 
+    def _update_item(self, which:str, type:str, value:str = "") -> None:
+        """ Update items of the given type from which source to all other destinations """
+        if which != "all":
+            sobj = self.plot_frames[which].nametowidget(type)
+            value = sobj.get()
+        for dest in self.plot_frames.values():
+            try:
+                if dest.nametowidget(type) == None:
+                    continue
+                if isinstance(dest.nametowidget(type), th.Placeholder):
+                    dest.nametowidget(type).set_text(value, False)
+                else:
+                    dest.nametowidget(type).set(value)
+                #Debug.logger.debug(f"Updated {dest} {type} to {value}")
+            except Exception as e: # If the widget doesn't exist, just skip it
+                pass
+
+    def get_item(self, which:str, type:str) -> str:
+        """ Get the value of the given type from the given source """
+        try:
+            sobj = self.plot_frames[which].nametowidget(type)
+            return sobj.get()
+        except Exception as e:
+            return ""
+
     @catch_exceptions
     def show_frame(self, which:str = 'Default', destroy:bool = False) -> None:
         """ Display the chosen frame, recreating it if necessary """
@@ -125,6 +134,11 @@ class UI():
 
         Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
         Context.router.neutron_params['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
+        if which in self.plot_frames: # Update corresponding fields in other plot frames
+            self._update_item(which, "source_ac")
+            self._update_item(which, "dest_ac")
+            self._update_item(which, "cargo_entry")
+            self._update_item(which, "fuel_reserve")
 
         match which:
             case 'Route':
@@ -132,15 +146,11 @@ class UI():
                 self.update_progress()
 
             case 'Neutron':
-                self.source_ac.set_text(self.gal_source_ac.get(), self.gal_source_ac.get() == lbls["source_system"]) # Update when we switch views
-                self.dest_ac.set_text(self.gal_dest_ac.get(), self.gal_dest_ac.get() == lbls["dest_system"]) # Update when we switch views
-                self.sub_fr = self.neutron_fr
+                self.sub_fr = self.plot_frames['Neutron']
                 self.router.set('Neutron')
 
             case 'Galaxy':
-                self.gal_source_ac.set_text(self.source_ac.get(), self.source_ac.get() == lbls["source_system"]) # Update when we switch views
-                self.gal_dest_ac.set_text(self.dest_ac.get(), self.dest_ac.get() == lbls["dest_system"]) # Update when we switch views
-                self.sub_fr = self.galaxy_fr
+                self.sub_fr = self.plot_frames['Galaxy']
                 self.router.set('Galaxy')
 
             case _:
@@ -261,27 +271,27 @@ class UI():
         row +=1; col = 0
 
         # First row
-        self.gal_source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        th.Tooltip(self.gal_source_ac, tts["source_system"])
-        if Context.router.src != '': self.set_entry(self.gal_source_ac, Context.router.src)
-        self.gal_source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems, name="source_ac")
+        th.Tooltip(source_ac, tts["source_system"])
+        if Context.router.src != '': self.set_entry(source_ac, Context.router.src)
+        source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
         col += 2
 
-        self.optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
-        self.gallb:th.Listbox = th.Listbox(plot_fr, [lbls[v] for v in self.optionlist])
-        th.Tooltip(self.gallb, tts['galaxy_options'])
+        self.gal_optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
+        self.gal_lb:th.Listbox = th.Listbox(plot_fr, [lbls[v] for v in self.gal_optionlist])
+        th.Tooltip(self.gal_lb, tts['galaxy_options'])
 
-        for i, item in enumerate(self.optionlist):
+        for i, item in enumerate(self.gal_optionlist):
             if params.get(item, False) == True:
-                self.gallb.selection_set(i)
-        self.gallb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
+                self.gal_lb.selection_set(i)
+        self.gal_lb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
 
         # Row two
         row += 1; col = 0
-        self.gal_dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        th.Tooltip(self.gal_dest_ac, tts["dest_system"])
-        if Context.router.dest != '': self.set_entry(self.gal_dest_ac, Context.router.dest)
-        self.gal_dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems, name="dest_ac")
+        th.Tooltip(dest_ac, tts["dest_system"])
+        if Context.router.dest != '': self.set_entry(dest_ac, Context.router.dest)
+        dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
 
         # Row three
         row += 1; col = 0
@@ -291,18 +301,18 @@ class UI():
         if init == "" and names != []:
             init = names[0]
 
-        self.ship:tk.StringVar = tk.StringVar(plot_fr, value=init)
-        self.ship.trace_add("write", self.ship_selected)
-        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.ship, values=names, width=10)
+        self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
+        self.shipvar.trace_add("write", self.ship_selected)
+        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=10)
         th.Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
 
-        self.cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER)
-        self.set_entry(self.cargo_entry, str(Context.router.cargo))
-        self.cargo_entry.grid(row=row, column=col, padx=5, pady=5)
-        th.Tooltip(self.cargo_entry, tts["cargo"])
+        cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER, name="cargo_entry")
+        self.set_entry(cargo_entry, str(Context.router.cargo))
+        cargo_entry.grid(row=row, column=col, padx=5, pady=5)
+        th.Tooltip(cargo_entry, tts["cargo"])
 
         # Row 4
         row += 1; col = 0
@@ -364,7 +374,6 @@ class UI():
         # Define the popup menu additions
         srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
-        shipmenu:dict = {}
 
         if Context.router.system != '':
             srcmenu[Context.router.system] = [self.menu_callback, 'src']
@@ -374,35 +383,26 @@ class UI():
             if sys not in destmenu:
                 destmenu[sys] = [self.menu_callback, 'dest']
 
-        # Create right click menu
-        for name in Context.router.shipnames():
-            shipmenu[name] = [self.menu_callback, 'ship']
-
-        if shipmenu != {}:
-            self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
-            for m, f in shipmenu.items():
-                self.menu.add_command(label=m, command=partial(*f, m))
-
         self._plot_switcher(plot_fr, row, col)
 
         row += 1; col = 0
-        self.source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        th.Tooltip(self.source_ac, tts["source_system"])
-        if Context.router.src != '': self.set_entry(self.source_ac, Context.router.src)
-        self.source_ac.grid(row=row, column=col, columnspan=2)
+        source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems, name="source_ac")
+        th.Tooltip(source_ac, tts["source_system"])
+        if Context.router.src != '': self.set_entry(source_ac, Context.router.src)
+        source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
-        self.range_entry.grid(row=row, column=col)
-        th.Tooltip(self.range_entry, tts["range"])
+        range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry.grid(row=row, column=col)
+        th.Tooltip(range_entry, tts["range"])
         # Check if we're having a valid range on the fly
-        self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
+        range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
 
         row += 1; col = 0
-        self.dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        th.Tooltip(self.dest_ac, tts["dest_system"])
-        if Context.router.dest != '': self.set_entry(self.dest_ac, Context.router.dest)
-        self.dest_ac.grid(row=row, column=col, columnspan=2)
+        dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems, name="dest_ac")
+        th.Tooltip(dest_ac, tts["dest_system"])
+        if Context.router.dest != '': self.set_entry(dest_ac, Context.router.dest)
+        dest_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
@@ -419,14 +419,14 @@ class UI():
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
-        r1.bind('<Button-3>', self.show_menu)
+        r1.bind('<Button-3>', lambda e: self.show_menu(e, 'Neutron'))
         th.Tooltip(r1, tts['standard_multiplier'])
         r1.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         th.Tooltip(r2, tts['overcharge_multiplier'])
-        r2.bind('<Button-3>', self.show_menu)
+        r2.bind('<Button-3>', lambda e: self.show_menu(e, 'Neutron'))
         r2.grid(row=row, column=col, padx=5, pady=5)
 
         row += 1; col = 0
@@ -447,6 +447,22 @@ class UI():
 
         return plot_fr
 
+    def _create_rtor_fr(self, parent:th.Frame) -> th.Frame:
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        row:int = 2
+        col:int = 0
+        # Source
+        # Dest
+        # Range
+        # Radius
+        # Max systems
+        # Use mapping value
+        # Avoid thargoids
+        # Looop
+        # Max dist to arrival
+        # Min scan value
+        return plot_fr
+
 
     def _create_trade_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the trade route planning frame """
@@ -460,7 +476,6 @@ class UI():
         # Define the popup menu additions
         srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
         destmenu:dict = {}
-        shipmenu:dict = {}
 
         if Context.router.system != '':
             srcmenu[Context.router.system] = [self.menu_callback, 'src']
@@ -469,16 +484,6 @@ class UI():
                 srcmenu[sys] = [self.menu_callback, 'src']
             if sys not in destmenu:
                 destmenu[sys] = [self.menu_callback, 'dest']
-
-        # Create right click menu
-        for id in Context.router.shiplist[:10]:
-            if id in Context.router.ships:
-                shipmenu[Context.router.ships[id].name] = [self.menu_callback, 'ship']
-
-        if shipmenu != {}:
-            self.menu:tk.Menu = tk.Menu(plot_fr, tearoff=0)
-            for m, f in shipmenu.items():
-                self.menu.add_command(label=m, command=partial(*f, m))
 
         self._plot_switcher(plot_fr, row, col)
 
@@ -489,7 +494,7 @@ class UI():
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=shipmenu, justify=tk.CENTER)
+        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER)
         self.range_entry.grid(row=row, column=col)
         th.Tooltip(self.range_entry, tts["range"])
         # Check if we're having a valid range on the fly
@@ -516,14 +521,14 @@ class UI():
         l1.grid(row=row, column=col, padx=5, pady=5)
         col += 1
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
-        r1.bind('<Button-3>', self.show_menu)
+        r1.bind('<Button-3>', lambda e: self.show_menu(e, 'Trade'))
         th.Tooltip(r1, tts['standard_multiplier'])
         r1.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         th.Tooltip(r2, tts['overcharge_multiplier'])
-        r2.bind('<Button-3>', self.show_menu)
+        r2.bind('<Button-3>', lambda e: self.show_menu(e, 'Trade'))
         r2.grid(row=row, column=col, padx=5, pady=5)
 
         row += 1; col = 0
@@ -546,14 +551,13 @@ class UI():
 
 
     @catch_exceptions
-    def show_menu(self, e) -> str:
+    def show_menu(self, e, which:str='Neutron') -> str:
         # Create right click menu
-        shipmenu:dict = {}
-        for name in Context.router.shipnames():
-            shipmenu[name] = [self.menu_callback, 'ship']
+
+        shipmenu:dict = self._ship_dict()
 
         if shipmenu != {}:
-            menu:tk.Menu = tk.Menu(self.neutron_fr, tearoff=0)
+            menu:tk.Menu = tk.Menu(self.plot_frames[which], tearoff=0)
             for m, f in shipmenu.items():
                 menu.add_command(label=m, command=partial(*f, m))
             menu.post(e.x_root, e.y_root)
@@ -691,37 +695,39 @@ class UI():
 
         return route_fr
 
+    def _ship_dict(self) -> dict:
+        """ Return a dictionary of ship names and their corresponding callback functions """
+        shipmenu:dict = {}
+        for name in Context.router.shipnames():
+            shipmenu[name] = [self.menu_callback, 'ship']
+        return shipmenu
 
     @catch_exceptions
     def menu_callback(self, field:str = "src", param:str = "None") -> None:
         """ Function called when a custom menu item is selected """
         match field:
             case 'src':
-                self.source_ac.set_text(param, False)
-                self.gal_source_ac.set_text(param, False)
+                self._update_item("all", "source_ac", param)
             case 'dest':
-                self.dest_ac.set_text(param, False)
-                self.gal_dest_ac.set_text(param, False)
+                self._update_item("all", "dest_ac", param)
             case _:
-                param = self.ship.get() if param == "None" else param
-                ship_id:str = ""
-                for id, name in Context.router.shiplist.items():
-                    if name == param:
-                        ship_id = id
-
-                ship:Ship|None = Context.router.load_ship(ship_id)
+                param = self.shipvar.get() if param == "None" else param
+                ship:Ship|None = Context.router.load_ship(param)
                 if not ship: return
-                self.range_entry.set_text(ship.get_range(Context.router.cargo), False)
+
+                for type in self.plot_frames.keys():
+                    w = self.plot_frames[type].nametowidget("range_entry")
+                    if w: w.set_text(ship.get_range(Context.router.cargo), False)
+                    w = self.plot_frames[type].nametowidget("cargo_entry")
+                    if w: w.set_text(Context.router.cargo if ship.id == Context.router.ship_id else 0, False)
                 self.multiplier.set(ship.supercharge_multiplier)
-                cargo:int = Context.router.cargo if ship.id == Context.router.ship_id else 0
-                self.cargo_entry.set_text(cargo, False)
                 return
 
 
     @catch_exceptions
     def ship_selected(self, *args) -> None:
         """ Update the galaxy plotter when the ship dropdown changes """
-        ship_name:str = self.ship.get()
+        ship_name:str = self.shipvar.get()
         self.menu_callback('ship', ship_name)
 
 
@@ -737,30 +743,29 @@ class UI():
         """ Update the plotter items when the ship changes """
 
         # Neutron plotter
-        self.range_entry.set_text(str(ship.get_range(Context.router.cargo)), False)
+        self._update_item("Neutron", "range_entry", str(ship.get_range(Context.router.cargo)))
         self.multiplier.set(ship.supercharge_multiplier)
 
-        shipmenu:dict = {}
-        for name in Context.router.shipnames():
-            shipmenu[name] = [self.menu_callback, 'ship']
 
-        self.range_entry.set_menu(shipmenu)
+        for dest in self.plot_frames.values():
+            try:
+                if dest.nametowidget("range_entry") == None:
+                    continue
+                dest.nametowidget("range_entry").set_menu(self._ship_dict())
+            except Exception as e: # If the widget doesn't exist, just skip it
+                pass
 
-        # Galaxy plotter
-        self.ship.set(ship.name)
-
-        # Ship dropdown
+        # Galaxy plotter ship dropdown
+        self.shipvar.set(ship.name)
         self.shipdd.set_menu(Context.router.shipnames())
-
 
     def update_cargo(self, cargo:int) -> None:
         """ Update the cargo entry when the cargo changes """
 
-        if not Context.router.ship or self.ship.get() != Context.router.ship.name:
+        if not Context.router.ship or self.shipvar.get() != Context.router.ship.name:
             return
-
-        self.cargo_entry.set_text(str(cargo), False)
-        self.range_entry.set_text(str(Context.router.ship.get_range(cargo)), False)
+        self._update_item("all", "cargo_entry", str(cargo))
+        self._update_item("all", "range_entry", str(Context.router.ship.get_range(cargo)))
 
     @catch_exceptions
     def _export_route(self) -> None:
@@ -801,34 +806,34 @@ class UI():
     def neutron_plot(self) -> None:
         """ Perform a neutron plotter plot """
         self.hide_error()
-        self.source_ac.hide_list()
-        self.dest_ac.hide_list()
+        src_ac:th.Autocompleter = self.plot_frames['Neutron'].nametowidget("source_ac")
+        dest_ac:th.Autocompleter = self.plot_frames['Neutron'].nametowidget("dest_ac")
 
         params:dict = {}
 
-        frm:str = self.source_ac.get().strip()
+        frm:str = src_ac.get().strip()
         params["from"] = next((x for x in self.query_systems(frm) if x.casefold() == frm.casefold()), None)
         if params['from'] == None:
             self.show_frame('Neutron')
-            self.source_ac.set_text(frm, False)
-            self.source_ac.set_error_style()
+            src_ac.set_text(frm, False)
+            src_ac.set_error_style()
             return
 
-        to = self.dest_ac.get().strip()
+        to = dest_ac.get().strip()
         params["to"] = next((x for x in self.query_systems(to) if x.casefold() == to.casefold()), None)
         if params['to'] == None:
             self.show_frame('Neutron')
-            self.dest_ac.set_text(to, False)
-            self.dest_ac.set_error_style()
+            dest_ac.set_text(to, False)
+            dest_ac.set_error_style()
             return
 
         params['efficiency'] = int(self.efficiency_slider.get())
         params['supercharge_multiplier'] = self.multiplier.get()
-        params['range'] = self.range_entry.var.get()
+        params['range'] = self.plot_frames['Neutron'].nametowidget("range_entry").var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
             self.show_frame('Neutron')
-            self.range_entry.set_error_style()
+            self.plot_frames['Neutron'].nametowidget("range_entry").set_error_style()
             return
 
         Context.router.plot_route('Neutron', params)
@@ -839,10 +844,11 @@ class UI():
     def galaxy_plot(self) -> None:
         """ Perform a galaxy plotter plot """
         self.hide_error()
-        self.gal_source_ac.hide_list()
-        self.gal_dest_ac.hide_list()
+        gal_fr:th.Frame = self.plot_frames['Galaxy']
+        gal_fr.nametowidget("source_ac").hide_list()
+        gal_fr.nametowidget("dest_ac").hide_list()
 
-        ship_id:str = Context.router.shipid(self.ship.get())
+        ship_id:str = Context.router.shipid(self.shipvar.get())
         if ship_id == '':
             self.show_frame('Galaxy')
             self.show_error(errs['no_ship'])
@@ -852,16 +858,16 @@ class UI():
         if not ship: return
 
         params:dict = {
-            'cargo': int(self.cargo_entry.get().strip()) if re.match(r"^\d+$", self.cargo_entry.get().strip()) else 0,
+            'cargo': int(gal_fr.nametowidget("cargo_entry").get().strip()) if re.match(r"^\d+$", gal_fr.nametowidget("cargo_entry").get().strip()) else 0,
             #'max_time': int(self.time_limit.get()),
             'max_time': 60,
             'algorithm': self.algorithm.get(),
             'reserve_size': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
-            'is_supercharged': 1 if self.gallb.selection_includes(self.optionlist.index('is_supercharged')) else 0,
-            'use_supercharge': 1 if self.gallb.selection_includes(self.optionlist.index('use_supercharge')) else 0,
-            'use_injections': 1 if self.gallb.selection_includes(self.optionlist.index('use_injections')) else 0,
-            'exclude_secondary': 1 if self.gallb.selection_includes(self.optionlist.index('exclude_secondary')) else 0,
-            'refuel_every_scoopable': 1 if self.gallb.selection_includes(self.optionlist.index('refuel_every_scoopable')) else 0,
+            'is_supercharged': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('is_supercharged')) else 0,
+            'use_supercharge': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('use_supercharge')) else 0,
+            'use_injections': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('use_injections')) else 0,
+            'exclude_secondary': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('exclude_secondary')) else 0,
+            'refuel_every_scoopable': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('refuel_every_scoopable')) else 0,
             'fuel_power': ship.fuel_power,
             'fuel_multiplier': ship.fuel_multiplier,
             'optimal_mass': ship.optimal_mass,
@@ -874,20 +880,20 @@ class UI():
             'injection_multiplier': ship.injection_multiplier
             }
 
-        src = self.gal_source_ac.get().strip()
+        src = gal_fr.nametowidget("source_ac").get().strip()
         params["source"] = next((x for x in self.query_systems(src) if x.casefold() == src.casefold()), None)
         if params['source'] == None:
             self.show_frame('Galaxy')
-            self.gal_source_ac.set_text(src, False)
-            self.gal_source_ac.set_error_style()
+            gal_fr.nametowidget("source_ac").set_text(src, False)
+            gal_fr.nametowidget("source_ac").set_error_style()
             return
 
-        dest = self.gal_dest_ac.get().strip()
+        dest = gal_fr.nametowidget("dest_ac").get().strip()
         params['destination'] = next((x for x in self.query_systems(dest) if x.casefold() == dest.casefold()), None)
         if params['destination'] == None:
             self.show_frame('Galaxy')
-            self.gal_dest_ac.set_text(dest, False)
-            self.gal_dest_ac.set_error_style()
+            gal_fr.nametowidget("dest_ac").set_text(dest, False)
+            gal_fr.nametowidget("dest_ac").set_error_style()
             return
 
         Context.router.plot_route('Galaxy', params)
@@ -951,90 +957,6 @@ class UI():
 
         self.update_progress()
 
-        if self.parent == None or self.cooldown_popup == False: return
+        if self.parent == None or getattr(Context.prefs, 'cooldown_popup', False) == False: return
         message:str = NAME + "\n" + lbls['cooldown_complete']
         PopupNotice(message, 60000, self.parent)
-
-
-    @catch_exceptions
-    def prefs_frame(self, parent:tk.Frame) -> nb.Frame:
-        """ Return a TK Frame for adding to the EDMC settings dialog """
-
-        def bind_var(data_obj, attribute, tk_var):
-            # Update dataclass whenever the UI changes
-            def update_obj(*args) -> None:
-                setattr(data_obj, attribute, tk_var.get())
-
-            tk_var.trace_add("write", update_obj)
-            return tk_var
-
-        def select_folder(entry:tk.Entry, var:tk.StringVar):
-            # Open the folder selection dialog
-            fpath = filedialog.askdirectory(title="Select a Directory", initialdir=var.get())
-            # Check if the user selected a folder or cancelled
-            if not fpath:
-                return
-            var.set(fpath)
-            entry.delete(0, tk.END)
-            entry.insert(0, fpath)
-
-        self.plugin_frame:tk.Frame = parent
-        frame:nb.Frame = nb.Frame(parent)
-        # Make the second column fill available space
-        frame.columnconfigure(1, weight=1)
-
-        prefsfr:nb.Frame = nb.Frame(frame)
-        prefsfr.columnconfigure(3, weight=1)
-        prefsfr.rowconfigure(60, weight=1)
-        prefsfr.grid(sticky=tk.NW)
-
-        props = font.Font(name="TkDefaultFont", exists=True).actual()
-        props["weight"] = "bold"
-        bold:font.Font = font.Font(**props)
-
-        row:int = 0; col:int = 0
-        nb.Label(prefsfr, text=cnf["options"], justify=tk.LEFT, font=bold).grid(row=row, column=col, padx=10, pady=5, sticky=tk.NW)
-
-        vars:dict = {}; cbtns:list = []; row += 1; col = 0
-        # variable, label, variable type, object type
-        for k in PREFS:
-            match k.pref_type:
-                case 'bool':
-                    self.prefs[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", False))
-                    nb.Checkbutton(prefsfr, text=k.desc, variable=self.prefs[k.name]).grid(row=row,   column=col, padx=10, pady=0, sticky=tk.W)
-                case 'str':
-                    nb.Label(prefsfr, text=k.name).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
-                    col += 1
-                    tk.Entry(prefsfr, textvariable=vars[k.name], width=25, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-                case 'dir':
-                    dir = config.get(f"{Context.plugin_name}_{k.name}", str(Path(Context.plugin_dir) / ROUTE_DIR))
-                    self.prefs[k.name] = tk.StringVar(value=dir)
-                    nb.Label(prefsfr, text=k.desc).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
-                    col += 1
-                    entry:tk.Entry = tk.Entry(prefsfr, textvariable=self.prefs[k.name], width=75)
-                    entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
-                    entry.bind("<Button-1>", lambda e, en=entry, v=self.prefs[k.name]: select_folder(en, v))
-
-
-            col = 0;row += 1
-        col = 0
-        ttk.Separator(frame).grid(row=row, columnspan=3, pady=5 * 2, sticky=tk.EW)
-
-        Context.overlay.prefs_display(frame)
-        return frame
-
-
-    def save_prefs(self) -> None:
-        for k in PREFS:
-            var:tk.Variable|None = self.prefs.get(k.name)
-            config.set(f"{Context.plugin_name}_{k.name}", var.get() if var else getattr(self, k.name))
-            setattr(self, k.name, config.get(f"{Context.plugin_name}_{k.name}"))
-        Context.overlay.save_prefs()
-        return
-
-
-    def _load_prefs(self) -> None:
-        """ Read frame data from the EDMC config. """
-        for k in PREFS:
-            res = config.get(f"{Context.plugin_name}_{k.name}")
-            setattr(self, k.name, res)

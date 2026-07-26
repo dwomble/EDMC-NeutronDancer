@@ -422,18 +422,17 @@ class Router():
 
 
     @catch_exceptions
-    def load_ship(self, id:str) -> Ship|None:
+    def load_ship(self, which:str = "") -> Ship|None:
         """ Load a ship """
-        if id == "": return
-        if id == self.ship_id: return self.ship
+        if which == self.ship_id: return self.ship
+        if which in self.shiplist: which = self.shipid(which)
 
         dir:Path = Path(Context.plugin_dir) / DATA_DIR / SHIP_DIR
         dir.mkdir(parents=True, exist_ok=True)
-        file:Path = dir / f"{id}.json"
+        file:Path = dir / f"{which}.json"
         if file.exists():
             with open(file) as json_file:
                 return Ship(json.load(json_file))
-
 
     @catch_exceptions
     def _save_ship(self, ship:Ship) -> None:

@@ -16,6 +16,7 @@ from Router.csv import CSV
 from Router.ui import UI
 from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
+from Router.prefs import Prefs
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
@@ -48,6 +49,7 @@ def plugin_stop() -> None:
 
 
 def plugin_app(parent:tk.Widget) -> tk.Frame:
+    Context.prefs = Prefs()
     Context.csv = CSV()
     Context.router = Router()
     Context.ui = UI(parent)
@@ -105,8 +107,8 @@ def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
 
 
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
-    return Context.ui.prefs_frame(parent)
+    return Context.prefs.prefs_frame(parent)
 
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
-    Context.ui.save_prefs()
+    Context.prefs.save_prefs()

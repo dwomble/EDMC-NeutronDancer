@@ -121,7 +121,7 @@ class Route:
     def perc_jumps_rem(self, offset:int|None = None) -> float:
         """ Percentage of jumps remaining """
         if self.route == []: return 0
-        return (self.total_jumps() - self.jumps_remaining()) * 100 / self.total_jumps()
+        return (self.total_jumps() - self.jumps_remaining(offset)) * 100 / self.total_jumps()
 
 
     def total_dist(self) -> int:

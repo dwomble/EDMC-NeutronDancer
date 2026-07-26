@@ -18,7 +18,7 @@ class Ship:
         self.injection_multiplier:int = 2
 
         if entry.get('event', None) != 'Loadout':
-            Debug.logger.debug(f"Not an event")
+            Debug.logger.debug(f"Not an event {entry}")
             if entry.get('loadout', None) == None:
                 Debug.logger.debug(f"Not a save")
                 return
@@ -99,5 +99,5 @@ class Ship:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def _as_dict(self) -> dict:
+    def as_dict(self) -> dict:
         return self.loadout

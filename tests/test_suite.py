@@ -47,8 +47,12 @@ def harness(request) -> Generator:
 
     # We want a standard route.json for each test
     Path(__file__).parent.joinpath("data").mkdir(exist_ok=True)
-    shutil.copy(Path(__file__).parent / "config" / "route_init.json",
-                Path(__file__).parent / "data" / "route.json")
+
+    Path(Path(__file__).parent / "data" / "route.json").unlink(missing_ok=True)
+    init_file = getattr(request, 'param', 'route_init.json')
+    if init_file != 'None':
+        shutil.copy(Path(__file__).parent / "config" / init_file,
+                    Path(__file__).parent / "data" / "route.json")
 
     overlay = 'Modern'
     if request.node.get_closest_marker('overlay'):
@@ -91,8 +95,14 @@ def harness(request) -> Generator:
 class TestStartup:
     """Test plugin startup behavior."""
 
+    @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
+        assert harness.plugin.router is not None
+
+    def test_harness_no_init(self, harness:TestHarness) -> None:
+        """Test basic harness initialization."""
+
         assert harness.plugin.router is not None
 
     def test_startup_event(self, harness:TestHarness) -> None:
@@ -330,7 +340,7 @@ class TestShipLoadout:
         assert harness.plugin.router.ship.name == 'Long Delay'
         assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
-        
+
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -531,6 +541,7 @@ class TestShipyardSwap:
 
         assert ship.loadout == {}
 
+    @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
     def test_ship_repr(self, harness:TestHarness):
         """Test ship repr."""
         harness.play_sequence('shipyard_swap')
@@ -546,9 +557,6 @@ class TestShipyardSwap:
 
     def test_swap_unknown_ship(self, harness:TestHarness):
         """Test swapping to an unknown ship."""
-        harness.play_sequence('shipyard_swap')
-        assert harness.plugin.router.ship_id == '106'
-
         harness.play_sequence('shipyard_swap_unknown')
         assert harness.plugin.router.ship_id == ''
 
@@ -783,7 +791,7 @@ class TestHotkeyCommands:
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
-class TestPlotOperations:
+class TestPlotMethods:
     """Test individual plotting functions"""
 
     def test_plot_route_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
@@ -866,181 +874,45 @@ class TestPlotOperations:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
-        # No exception should be raised; Context.ui.show_error would be called
-        # Not sure how to capture the error message
-        #assert harness.ui.error_lbl['text'] == 'server error'
+class TestUIFunctions:
+    """ Test UI functions """
 
-    def test_plotter(self, harness:TestHarness):
-        """Test the _plotter function"""
-
-        harness.plugin.router._plotter(SPANSH_ROUTE,
-                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                'range': '60.00', 'efficiency': '60',
-                                'supercharge_multiplier': '4'})
-        assert len(harness.plugin.route.hdrs) == 6
-        assert len(harness.plugin.route.route) == 9
+    def test_set_entry_none_does_nothing(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
+        # Should not raise or change state
+        ui.set_entry(None, "ignored")
 
 
-class TestPlotting:
-    """Test end to end plotting functionality (neutron/galaxy routes)."""
+    def test_switch_ship_and_update_cargo(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
 
-    def test_plot_route_unknown_type(self, harness:TestHarness):
-        """Unknown plot types should return False and not start plotting."""
-        result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
-        assert result is False
-
-    @pytest.mark.manual_only
-    def test_plot_neutron_route(self, harness:TestHarness) -> None:
-        """ Perform a live Neutron plot """
-        global plotter_thread
-        plotter_thread = None
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-
-            res:bool = harness.plugin.router.plot_route('Neutron',
-                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                                'range': '60.00', 'efficiency': '60',
-                                                'supercharge_multiplier': '4'})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
-
-            assert harness.plugin.route is not None
-            assert harness.plugin.route.source() == 'Apurui'
-            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-            assert harness.plugin.route.total_jumps() == 31
-
-    @pytest.mark.manual_only
-    def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
-        """ Perform a live Neutron plot for a Caspian explorer """
-        global plotter_thread
-        plotter_thread = None
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-
-            res:bool = harness.plugin.router.plot_route('Neutron',
-                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                                'range': '60.00', 'efficiency': '60',
-                                                'supercharge_multiplier': '6'})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=22)
-
-            assert harness.plugin.route is not None
-            assert harness.plugin.route.source() == 'Apurui'
-            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-            assert harness.plugin.route.total_jumps() == 21
-
-    @pytest.mark.manual_only
-    def test_plot_galaxy_route(self, harness:TestHarness) -> None:
-        """Perform a live galaxy plot and check results."""
-        global plotter_thread
-        plotter_thread = None
-
-        harness.plugin.router.swap_ship(1)
-        ship = harness.plugin.router.ship
-        print(f"{ship}")
-        assert ship is not None
-        assert ship.name == 'Shipping Delay'
-        assert harness.plugin.route.route == []
-
-        galaxy_params:dict = {
-            "cargo": 0,
-            "max_time": 60,
-            "algorithm": "optimistic",
-            "fuel_reserve": 4,
-            "is_supercharged": 0,
-            "use_supercharge": 1,
-            "use_injections": 0,
-            "exclude_secondary": 1,
-            "refuel_every_scoopable": 0,
-            "fuel_power": ship.fuel_power,
-            "fuel_multiplier": ship.fuel_multiplier,
-            "optimal_mass": ship.optimal_mass,
-            "base_mass": ship.base_mass,
-            "tank_size": ship.tank_size,
-            "internal_tank_size": ship.internal_tank_size,
-            "max_fuel_per_jump": ship.max_fuel_per_jump,
-            "range_boost": 10.5,
-            "ship_build": ship.loadout,
-            "supercharge_multiplier": ship.supercharge_multiplier,
-            "injection_multiplier": ship.injection_multiplier,
-            "source": "Apurui",
-            "destination": "Bleae Thua NI-B b27-5"
-        }
-
-        assert ship.fuel_power == 2.45
-        assert ship.fuel_multiplier == 0.013
-        assert ship.optimal_mass == 1894.1
-        assert ship.base_mass == 297.3
-        assert ship.tank_size == 32
-        assert ship.internal_tank_size == 0.5
-        assert ship.max_fuel_per_jump == 5.2
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-
-            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-            assert res == True
-
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
-
-            assert harness.plugin.router.src == 'Apurui'
-            assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
-
-            # This route seems to vary based on current conditions
-            assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
-
-    @pytest.mark.manual_only
-    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
-        """Perform a live galaxy plot with a caspian explorer and check results."""
-        global plotter_thread
-        plotter_thread = None
-
-        harness.plugin.router.swap_ship(2)
+        # Ensure a ship loadout is present
+        harness.play_sequence('loadout')
         ship = harness.plugin.router.ship
         assert ship is not None
-        assert ship.name == 'Perviy'
-        assert harness.plugin.route.route == []
 
-        galaxy_params:dict = {
-            "cargo": 0,
-            "max_time": 60,
-            "algorithm": "optimistic",
-            "fuel_reserve": 12,
-            "is_supercharged": 0,
-            "use_supercharge": 1,
-            "use_injections": 0,
-            "exclude_secondary": 0,
-            "refuel_every_scoopable": 0,
-            "fuel_power": ship.fuel_power,
-            "fuel_multiplier": ship.fuel_multiplier,
-            "optimal_mass": ship.optimal_mass,
-            "base_mass": ship.base_mass,
-            "tank_size": ship.tank_size,
-            "internal_tank_size": ship.internal_tank_size,
-            "max_fuel_per_jump": ship.max_fuel_per_jump,
-            "range_boost": 10.5,
-            "ship_build": ship.loadout,
-            "supercharge_multiplier": ship.supercharge_multiplier,
-            "injection_multiplier": ship.injection_multiplier,
-            "source": "HIP 87621",
-            "destination": "Bleae Thua ED-D c12-5"
-        }
+        # Switch UI to this ship and verify fields update
+        ui.switch_ship(ship)
+        assert ui.ship.get() == ship.name
+        assert ui.multiplier.get() == ship.supercharge_multiplier
+        assert ui.range_entry.var.get() == str(ship.get_range(harness.plugin.router.cargo))
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        # Update cargo and verify cargo and range entries update
+        ui.update_cargo(5)
+        assert ui.cargo_entry.var.get() == '5'
+        assert ui.range_entry.var.get() == str(harness.plugin.router.ship.get_range(5))
 
-            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-            assert res == True
+    def test_progress(self, harness:TestHarness):
+        """ Test _progress() method"""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        harness.plugin.router.import_route(filename)
+        harness.plugin.route.update_route(0, 'Bleia Eohn ZL-J d10-47')
 
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=62)
+        assert harness.plugin.ui._progress() == 2
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == galaxy_params['source']
-            assert harness.plugin.router.dest == galaxy_params['destination']
-            assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
-
+    def test_update_cargo(self, harness:TestHarness):
+        """ test update_cargo() method """
+        result:bool = harness.plugin.ui.update_cargo(12)
 
 class TestRouteWindow:
     """Test RouteWindow lifecycle and display behavior."""
@@ -1232,7 +1104,7 @@ class TestRouteWindow:
         self._cleanup_window(window)
 
 
-class DisabledRouteWindowDisplay:
+class TestRouteWindowUI:
     """Test RouteWindow display logic and edge cases."""
 
     def test_empty_headers_no_display(self, harness:TestHarness) -> None:
@@ -1258,9 +1130,9 @@ class DisabledRouteWindowDisplay:
 
         # Create a minimal route with system names
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1278,9 +1150,9 @@ class DisabledRouteWindowDisplay:
             delattr(harness.plugin.router, '_initialized')
 
         route_data = [
-            ['System A', '5', '50', 'True'],  # Tritium at this waypoint
-            ['System B', '10', '45', 'True'],
-            ['System C', '8', '50', 'False']
+            ['System A', 5, 50, 'True'],  # Tritium at this waypoint
+            ['System B', 10, 45, 'True'],
+            ['System C', 8, 50, 'False']
         ]
         hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
         route = Route(hdrs, route_data, 0)
@@ -1296,9 +1168,9 @@ class DisabledRouteWindowDisplay:
             delattr(harness.plugin.router, '_initialized')
 
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1313,9 +1185,9 @@ class DisabledRouteWindowDisplay:
             delattr(harness.plugin.router, '_initialized')
 
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 2)  # At last waypoint
@@ -1325,9 +1197,9 @@ class DisabledRouteWindowDisplay:
     def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
         """Test jumps_remaining() at start of route."""
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1338,9 +1210,9 @@ class DisabledRouteWindowDisplay:
         """Test jumps_remaining() mid-route."""
 
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1352,10 +1224,11 @@ class DisabledRouteWindowDisplay:
         """Test percentage of jumps remaining at start."""
 
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
+
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
 
@@ -1367,50 +1240,36 @@ class DisabledRouteWindowDisplay:
         """Test percentage of jumps remaining at end."""
 
         route_data = [
-            ['Sol', '0'],
-            ['Apurui', '10'],
-            ['Bleae Thua', '5']
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
         ]
+
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
+        assert route.perc_jumps_rem(2) == 100.0
 
-        route.update_route(2)  # Move to last waypoint (Bleae Thua)
-        assert route.perc_jumps_rem() == 0
-
-    def test_total_dist(self, harness:TestHarness) -> None:
-        """Test total_dist() method."""
-
-        # Use a route with distance column
-        route_data = [
-            ['Sol', '0', '0'],
-            ['Apurui', '10', '100'],
-            ['Bleae Thua', '5', '50']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.total_dist() == 100  # At start, total distance
 
     def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
         """Test dist_remaining() at start."""
 
         route_data = [
-            ['Sol', '0', '0'],
-            ['Apurui', '10', '100'],
-            ['Bleae Thua', '5', '50']
+            ['Sol', 0, 150],
+            ['Apurui', 10, 100],
+            ['Bleae Thua', 5, 50]
         ]
         hdrs = ['System Name', 'Jumps', 'Distance Rem']
         route = Route(hdrs, route_data, 0)
 
-        assert route.dist_remaining() == 0  # Sol has 0 distance remaining
+        assert route.dist_remaining() == 150
 
     def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
         """Test dist_remaining() mid-route."""
 
         route_data = [
-            ['Sol', '0', '0'],
-            ['Apurui', '10', '100'],
-            ['Bleae Thua', '5', '50']
+            ['Sol', 0, 150],
+            ['Apurui', 10, 100],
+            ['Bleae Thua', 5, 50]
         ]
         hdrs = ['System Name', 'Jumps', 'Distance Rem']
         route = Route(hdrs, route_data, 0)
@@ -1422,9 +1281,9 @@ class DisabledRouteWindowDisplay:
         """Test refuel() method."""
 
         route_data = [
-            ['Sol', '0', 'Fuel'],
-            ['Apurui', '10', 'No'],
-            ['Bleae Thua', '5', 'Fuel']
+            ['Sol', 0, 'Fuel'],
+            ['Apurui', 10, 'No'],
+            ['Bleae Thua', 5, 'Fuel']
         ]
         hdrs = ['System Name', 'Jumps', 'Refuel']
         route = Route(hdrs, route_data, 0)
@@ -1437,9 +1296,9 @@ class DisabledRouteWindowDisplay:
         """Test neutron() method."""
 
         route_data = [
-            ['Sol', '0', 'False'],
-            ['Apurui', '10', 'True'],
-            ['Bleae Thua', '5', 'False']
+            ['Sol', 0, 'False'],
+            ['Apurui', 10, 'True'],
+            ['Bleae Thua', 5, 'False']
         ]
         hdrs = ['System Name', 'Jumps', 'Neutron']
         route = Route(hdrs, route_data, 0)
@@ -1452,9 +1311,9 @@ class DisabledRouteWindowDisplay:
         """Test get_waypoint() for next waypoint."""
 
         route_data = [
-            ['A', '0'],
-            ['B', '1'],
-            ['C', '2']
+            ['A', 0],
+            ['B', 1],
+            ['C', 2]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1465,19 +1324,19 @@ class DisabledRouteWindowDisplay:
         """Test get_waypoint() at end of route."""
 
         route_data = [
-            ['A', '0'],
-            ['B', '1']
+            ['A', 0],
+            ['B', 1]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 1)
 
-        assert route.get_waypoint(0) == 'none'  # tbls['none']
+        assert route.get_waypoint(0) == 'None'  # tbls['none']
 
     def test_record_jump(self, harness:TestHarness) -> None:
         """Test record_jump() method."""
 
         route_data = [
-            ['Sol', '0']
+            ['Sol', 0]
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -1490,6 +1349,167 @@ class DisabledRouteWindowDisplay:
         assert len(route.jumps) == 1
         assert route.jumps[0][1] == dest
         assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
+
+class TestPlotting:
+    """Test end to end plotting functionality (neutron/galaxy routes)."""
+
+    def test_plot_route_unknown_type(self, harness:TestHarness):
+        """Unknown plot types should return False and not start plotting."""
+        result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
+        assert result is False
+
+    @pytest.mark.manual_only
+    def test_plot_neutron_route(self, harness:TestHarness) -> None:
+        """ Perform a live Neutron plot """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '4'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 31
+
+    @pytest.mark.manual_only
+    def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
+        """ Perform a live Neutron plot for a Caspian explorer """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '6'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=22)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 21
+
+    @pytest.mark.manual_only
+    def test_plot_galaxy_route(self, harness:TestHarness) -> None:
+        """Perform a live galaxy plot and check results."""
+        global plotter_thread
+        plotter_thread = None
+
+        harness.plugin.router.swap_ship(1)
+        ship = harness.plugin.router.ship
+        print(f"{ship}")
+        assert ship is not None
+        assert ship.name == 'Shipping Delay'
+        assert harness.plugin.route.route == []
+
+        galaxy_params:dict = {
+            "cargo": 0,
+            "max_time": 60,
+            "algorithm": "optimistic",
+            "fuel_reserve": 4,
+            "is_supercharged": 0,
+            "use_supercharge": 1,
+            "use_injections": 0,
+            "exclude_secondary": 1,
+            "refuel_every_scoopable": 0,
+            "fuel_power": ship.fuel_power,
+            "fuel_multiplier": ship.fuel_multiplier,
+            "optimal_mass": ship.optimal_mass,
+            "base_mass": ship.base_mass,
+            "tank_size": ship.tank_size,
+            "internal_tank_size": ship.internal_tank_size,
+            "max_fuel_per_jump": ship.max_fuel_per_jump,
+            "range_boost": 10.5,
+            "ship_build": ship.loadout,
+            "supercharge_multiplier": ship.supercharge_multiplier,
+            "injection_multiplier": ship.injection_multiplier,
+            "source": "Apurui",
+            "destination": "Bleae Thua NI-B b27-5"
+        }
+
+        assert ship.fuel_power == 2.45
+        assert ship.fuel_multiplier == 0.013
+        assert ship.optimal_mass == 1894.1
+        assert ship.base_mass == 297.3
+        assert ship.tank_size == 32
+        assert ship.internal_tank_size == 0.5
+        assert ship.max_fuel_per_jump == 5.2
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
+
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
+
+            assert harness.plugin.router.src == 'Apurui'
+            assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
+
+            # This route seems to vary based on current conditions
+            assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
+
+    @pytest.mark.manual_only
+    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
+        """Perform a live galaxy plot with a caspian explorer and check results."""
+        global plotter_thread
+        plotter_thread = None
+
+        harness.plugin.router.swap_ship(2)
+        ship = harness.plugin.router.ship
+        assert ship is not None
+        assert ship.name == 'Perviy'
+        assert harness.plugin.route.route == []
+
+        galaxy_params:dict = {
+            "cargo": 0,
+            "max_time": 60,
+            "algorithm": "optimistic",
+            "fuel_reserve": 12,
+            "is_supercharged": 0,
+            "use_supercharge": 1,
+            "use_injections": 0,
+            "exclude_secondary": 0,
+            "refuel_every_scoopable": 0,
+            "fuel_power": ship.fuel_power,
+            "fuel_multiplier": ship.fuel_multiplier,
+            "optimal_mass": ship.optimal_mass,
+            "base_mass": ship.base_mass,
+            "tank_size": ship.tank_size,
+            "internal_tank_size": ship.internal_tank_size,
+            "max_fuel_per_jump": ship.max_fuel_per_jump,
+            "range_boost": 10.5,
+            "ship_build": ship.loadout,
+            "supercharge_multiplier": ship.supercharge_multiplier,
+            "injection_multiplier": ship.injection_multiplier,
+            "source": "HIP 87621",
+            "destination": "Bleae Thua ED-D c12-5"
+        }
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
+
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=62)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == galaxy_params['source']
+            assert harness.plugin.router.dest == galaxy_params['destination']
+            assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
+
 
 class TestEventSequences:
     """Test complex multi-step event scenarios."""

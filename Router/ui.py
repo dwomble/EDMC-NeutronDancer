@@ -137,8 +137,6 @@ class UI():
         if which in self.plot_frames: # Update corresponding fields in other plot frames
             self._update_item(which, "source_ac")
             self._update_item(which, "dest_ac")
-            self._update_item(which, "cargo_entry")
-            self._update_item(which, "fuel_reserve")
 
         match which:
             case 'Route':
@@ -494,11 +492,11 @@ class UI():
         self.source_ac.grid(row=row, column=col, columnspan=2)
         col += 2
 
-        self.range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER)
-        self.range_entry.grid(row=row, column=col)
-        th.Tooltip(self.range_entry, tts["range"])
+        range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry.grid(row=row, column=col)
+        th.Tooltip(range_entry, tts["range"])
         # Check if we're having a valid range on the fly
-        self.range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
+        range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
 
         row += 1; col = 0
         self.dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
@@ -513,8 +511,8 @@ class UI():
         self.efficiency_slider.set(params.get('efficiency', 60))
 
         row += 1; col = 0
-        self.multiplier = tk.IntVar() # Or StringVar() for string values
-        self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
+        #self.multiplier = tk.IntVar() # Or StringVar() for string values
+        #self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
 
         # Create radio buttons
         l1:th.Label = th.Label(plot_fr, text=lbls["supercharge_label"])
@@ -711,15 +709,13 @@ class UI():
             case 'dest':
                 self._update_item("all", "dest_ac", param)
             case _:
+
                 param = self.shipvar.get() if param == "None" else param
                 ship:Ship|None = Context.router.load_ship(param)
                 if not ship: return
 
-                for type in self.plot_frames.keys():
-                    w = self.plot_frames[type].nametowidget("range_entry")
-                    if w: w.set_text(ship.get_range(Context.router.cargo), False)
-                    w = self.plot_frames[type].nametowidget("cargo_entry")
-                    if w: w.set_text(Context.router.cargo if ship.id == Context.router.ship_id else 0, False)
+                self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
+                self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
                 self.multiplier.set(ship.supercharge_multiplier)
                 return
 
@@ -743,7 +739,7 @@ class UI():
         """ Update the plotter items when the ship changes """
 
         # Neutron plotter
-        self._update_item("Neutron", "range_entry", str(ship.get_range(Context.router.cargo)))
+        self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
         self.multiplier.set(ship.supercharge_multiplier)
 
 

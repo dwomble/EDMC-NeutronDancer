@@ -1,22 +1,13 @@
 # EDMC-NeutronDancer Changelog
 
-## V2.0.0 2026-??-??
-
-### New Features
-
-* Made the directory for importing and exporting routes configurable in the preferences
-
-### Changes
-
-* Refactored ship loadout storage to be more efficient
-
-## v1.10.0 2026-07-25
+## v1.10.0 2026-??-??
 
 ### New Features
 
 * Added customizable progress text to overlay
 * Added optional progress bar to the jump overlay
 * Refuel reminder is automatically removed once you've refueled
+* Added alert overlays for Refuel and Neutron boost
 
 ### Changes
 

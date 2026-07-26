@@ -425,7 +425,7 @@ class Router():
     def load_ship(self, which:str = "") -> Ship|None:
         """ Load a ship """
         if which == self.ship_id: return self.ship
-        if which in self.shiplist: which = self.shipid(which)
+        if which in self.shiplist.values(): which = self.shipid(which)
 
         dir:Path = Path(Context.plugin_dir) / DATA_DIR / SHIP_DIR
         dir.mkdir(parents=True, exist_ok=True)

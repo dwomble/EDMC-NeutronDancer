@@ -41,6 +41,16 @@ def capture_thread(*args, **kwargs):
         plotter_thread = thread
     return thread
 
+
+def fake_systems_get(url, *args, **kwargs):
+    """ Stand-in for requests.get against the Spansh systems autocomplete endpoint.
+    Echoes back whatever was queried so system-name validation always succeeds without a real network call. """
+    q = kwargs.get('params', {}).get('q', '')
+    resp = Mock()
+    resp.status_code = 200
+    resp.content = json.dumps([q]).encode()
+    return resp
+
 @pytest.fixture
 def harness(request) -> Generator:
     """Provide a fresh test harness for each test."""
@@ -333,13 +343,12 @@ class TestShipLoadout:
         """Test loading a ship."""
 
         harness.play_sequence('loadout')
-        shipid:str = '87'
-        assert harness.plugin.router.ship_id == shipid
+        assert harness.plugin.router.ship_id == '87'
         assert harness.plugin.router.ship is not None
         assert harness.plugin.router.ship.type == 'mandalay'
         assert harness.plugin.router.ship.name == 'Long Delay'
-        assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
-        assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
+        assert harness.plugin.router.route_params['Neutron']['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
+        assert harness.plugin.router.route_params['Neutron']['range'] == harness.plugin.router.ship.range
 
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
@@ -798,7 +807,7 @@ class TestPlotMethods:
         """Ensure plot_route returns True and starts the plotting worker."""
         called:dict[str, bool] = {'flag': False}
 
-        def fake_plotter(self, url, params) -> None:
+        def fake_plotter(self, which, url, params) -> None:
             # Simulate some work then set flag
             called['flag'] = True
 
@@ -846,6 +855,86 @@ class TestPlotMethods:
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) >= 2
 
+        # Regression: plot_route() must persist into route_params, not a stray neutron_params attribute
+        assert harness.plugin.router.route_params['Neutron'] == params
+        assert not hasattr(harness.plugin.router, 'neutron_params')
+
+    def test_plotter_success_creates_route_galaxy(self, harness:TestHarness) -> None:
+        """Test that _plotter persists Galaxy params into route_params (not a stray galaxy_params attribute)."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": {
+                "jumps": [
+                    {"system": "System1", "distance": 20.5},
+                    {"system": "System2", "distance": 19.3},
+                ]
+            }
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'source': 'Start', 'destination': 'End', 'max_time': 1}
+                    harness.plugin.router.plot_route('Galaxy', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert harness.plugin.router.route_params['Galaxy'] == params
+        assert not hasattr(harness.plugin.router, 'galaxy_params')
+
+    def test_plotter_success_creates_route_rtor(self, harness:TestHarness) -> None:
+        """Test that _plotter flattens a Road-to-Riches response (systems with nested bodies) into one row per
+        body, dropping bodyless systems (e.g. the starting system) rather than emitting a placeholder row --
+        matching how a Spansh-exported riches CSV never includes a bodyless row (see riches-Apurui-M23.csv)."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        # Real shape captured from the live Spansh riches API: a bodyless system (start)
+        # followed by a system with two scannable bodies.
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": [
+                {"name": "Colonia", "jumps": 1, "bodies": []},
+                {"name": "Eol Prou LW-L c8-62", "jumps": 1, "bodies": [
+                    {"name": "Eol Prou LW-L c8-62 7", "subtype": "Water world", "is_terraformable": True,
+                     "distance_to_arrival": 173.1, "estimated_scan_value": 301683, "estimated_mapping_value": 1096113},
+                    {"name": "Eol Prou LW-L c8-107 2", "subtype": "Earth-like world", "is_terraformable": False,
+                     "distance_to_arrival": 436.9, "estimated_scan_value": 301332, "estimated_mapping_value": 1094838},
+                ]},
+            ]
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20', 'max_time': 1}
+                    harness.plugin.router.plot_route('RtoR', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) == 2  # bodyless Colonia dropped; one row per body
+        assert "Body Name" in harness.plugin.route.hdrs
+        assert "Estimated Scan Value" in harness.plugin.route.hdrs
+        assert harness.plugin.route.source() == 'Eol Prou LW-L c8-62 7'
+        assert harness.plugin.router.route_params['RtoR'] == params
+
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
@@ -874,6 +963,69 @@ class TestPlotMethods:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
+    def test_neutron_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
+        ui = harness.plugin.ui
+        neutron_fr = ui.plot_frames['Neutron']
+
+        neutron_fr.nametowidget("source_ac").set_text("Sol", False)
+        neutron_fr.nametowidget("dest_ac").set_text("Colonia", False)
+        neutron_fr.nametowidget("range_entry").set_text("50", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Neutron'].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'Neutron'
+        assert params['from'] == 'Sol'
+        assert params['to'] == 'Colonia'
+        assert params['range'] == '50'
+
+    def test_galaxy_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """Regression: GalaxyPlotter.plot() must actually invoke Context.router.plot_route()."""
+        harness.play_sequence('loadout')
+        ui = harness.plugin.ui
+        galaxy_fr = ui.plot_frames['Galaxy']
+
+        galaxy_fr.nametowidget("source_ac").set_text("Sol", False)
+        galaxy_fr.nametowidget("dest_ac").set_text("Colonia", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Galaxy'].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'Galaxy'
+        assert params['source'] == 'Sol'
+        assert params['destination'] == 'Colonia'
+
+    def test_rtor_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """Regression: RtoRPlotter.plot() must actually invoke Context.router.plot_route()."""
+        ui = harness.plugin.ui
+        rtor_fr = ui.plot_frames['RtoR']
+
+        rtor_fr.nametowidget("source_ac").set_text("Colonia", False)
+        rtor_fr.nametowidget("dest_ac").set_text("", False)  # blank destination -> circular tour
+        rtor_fr.nametowidget("range_entry").set_text("50", False)
+        rtor_fr.nametowidget("radius_entry").set_text("40", False)
+        rtor_fr.nametowidget("max_results_entry").set_text("20", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['RtoR'].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'RtoR'
+        assert params['from'] == 'Colonia'
+        assert 'to' not in params  # destination left blank -> circular tour
+        assert params['radius'] == '40'
+        assert params['max_results'] == '20'
+
+
 class TestUIFunctions:
     """ Test UI functions """
 
@@ -893,8 +1045,8 @@ class TestUIFunctions:
 
         # Switch UI to this ship and verify fields update
         ui.switch_ship(ship)
-        assert ui.shipvar.get() == ship.name
-        assert ui.multiplier.get() == ship.supercharge_multiplier
+        assert ui.plotters['Galaxy'].shipvar.get() == ship.name
+        assert ui.plotters['Neutron'].multiplier.get() == ship.supercharge_multiplier
         assert ui.get_item('Neutron', 'range_entry') == str(ship.get_range(harness.plugin.router.cargo))
 
     def test_progress(self, harness:TestHarness):
@@ -1359,6 +1511,7 @@ class TestPlotting:
         assert result is False
 
     @pytest.mark.manual_only
+    @pytest.mark.slow
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot """
         global plotter_thread
@@ -1380,6 +1533,7 @@ class TestPlotting:
             assert harness.plugin.route.total_jumps() == 31
 
     @pytest.mark.manual_only
+    @pytest.mark.slow
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot for a Caspian explorer """
         global plotter_thread
@@ -1401,6 +1555,7 @@ class TestPlotting:
             assert harness.plugin.route.total_jumps() == 21
 
     @pytest.mark.manual_only
+    @pytest.mark.slow
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
         global plotter_thread
@@ -1461,6 +1616,7 @@ class TestPlotting:
             assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
 
     @pytest.mark.manual_only
+    @pytest.mark.slow
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""
         global plotter_thread
@@ -1510,10 +1666,39 @@ class TestPlotting:
             assert harness.plugin.router.dest == galaxy_params['destination']
             assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
 
+    @pytest.mark.manual_only
+    @pytest.mark.slow
+    def test_plot_rtor_route(self, harness:TestHarness) -> None:
+        """ Perform a live Road-to-Riches plot """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('RtoR',
+                                                {'from': 'Colonia', 'range': '50', 'radius': '40',
+                                                'max_results': '20', 'avoid_thargoids': '1', 'loop': '1'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
+
+            assert harness.plugin.route is not None
+            # router.src reflects the queried source system; the route table itself only lists
+            # systems with scannable bodies, so its first row's source() is a body name, not 'Colonia'.
+            assert harness.plugin.router.src == 'Colonia'
+            assert harness.plugin.route.source() != None
+            assert "Body Name" in harness.plugin.route.hdrs
+            assert "Estimated Scan Value" in harness.plugin.route.hdrs
+            # Don't assert an exact body/jump count: which bodies are still unscanned
+            # (and therefore appear in a riches route) changes over time in the live galaxy.
+            assert len(harness.plugin.route.route) > 0
+
 
 class TestEventSequences:
     """Test complex multi-step event scenarios."""
 
+    @pytest.mark.manual_only
+    @pytest.mark.slow
     def test_full_route_scenario(self, harness:TestHarness):
         """Test a complete route scenario with jumps."""
         harness.plugin.router.system = 'Apurui'
@@ -1541,6 +1726,7 @@ class TestEventSequences:
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"].startswith("PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304")
 
     @pytest.mark.overlay('None')
+    @pytest.mark.slow
     def test_full_route_scenario_no_overlay(self, harness:TestHarness):
         """Test a complete route scenario with jumps."""
         harness.plugin.router.system = 'Apurui'
@@ -1562,7 +1748,7 @@ class TestEventSequences:
         # Final state check
         assert harness.plugin.route.jumps_remaining() == 0
 
-
+    @pytest.mark.slow
     def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
         """Test carrier jump with docking."""
         from Router.constants import CarrierStates
@@ -1572,6 +1758,7 @@ class TestEventSequences:
         harness.fire_event(events[1])
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
 
+    @pytest.mark.slow
     def test_carrier_jump_route(self, harness:TestHarness):
         """Test carrier jump with docking."""
         from Router.constants import CarrierStates

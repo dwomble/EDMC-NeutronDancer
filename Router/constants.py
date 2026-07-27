@@ -26,6 +26,7 @@ GH_MODULES:str = "https://raw.githubusercontent.com/Brighter-Applications/coriol
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
+SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 
@@ -45,6 +46,9 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                    "distance_left": "Distance Rem", "distance_to_destination": "Distance Rem",
                     "fuel_in_tank": "Fuel Left", "fuel_used": "Fuel Used", "must_refuel": "Refuel",
                     "jumps": "Jumps", "neutron_star": "Neutron", "has_neutron": "Neutron", "is_scoopable": "Scoopable",
+                    "body_name": "Body Name", "subtype": "Body Subtype", "is_terraformable": "Is Terraformable",
+                    "distance_to_arrival": "Distance To Arrival", "estimated_scan_value": "Estimated Scan Value",
+                    "estimated_mapping_value": "Estimated Mapping Value",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
 
@@ -132,6 +136,8 @@ lbls:dict = {
     "galaxy_router": "Galaxy Plotter",
     "cargo": "Cargo",
     "fuel_reserve": "Fuel Reserve",
+    "radius": "Search Radius",
+    "max_results": "Maximum Systems",
     "is_supercharged": "Already Supercharged",
     "use_supercharge": "Use Supercharge",
     "use_injections": "Use FSD Injections",
@@ -178,6 +184,8 @@ tts:dict = {
     "calc_time": "How long to spend calculating route",
     "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
+    "radius": "Search radius in light years, right click for menu",
+    "max_results": "Maximum number of systems to include in the route",
     "progress": "Progress",
     "none": "None"
 }

@@ -12,10 +12,11 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, copy_to_clipboard
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RESULTS
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS
 from .context import Context
 from .ship import Ship
 from .route import Route
+from .plotters import PLOTTER_SPECS
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_location': '', 'route_params': {},
@@ -46,10 +47,7 @@ class Router():
 
         # Info about the last route plotted
         self.last_plot:str = "Neutron"
-        self.route_types = {'Galaxy' : 'Galaxy Plotter',
-                           'Neutron': 'Neutron Plotter',
-                           'RtoR': 'Road to Riches'}
-                           #'Trade': 'Trade Plotter'}
+        self.route_types = {name: spec.label for name, spec in PLOTTER_SPECS.items()}
         self.route_params:dict = {}
         for r in self.route_types.keys():
             self.route_params[r] = {}
@@ -101,8 +99,6 @@ class Router():
         ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
-        self.neutron_params['supercharge_multiplier'] = ship.supercharge_multiplier
-        self.neutron_params['range'] = ship.range
 
         self._save_ship(ship)
 
@@ -234,30 +230,43 @@ class Router():
     def plot_route(self, which:str, params:dict) -> bool:
         """ Initiate Spansh route plotting """
 
-        match which:
-            case 'Galaxy':
-                url = SPANSH_GALAXY_ROUTE
-                self.src = params['source']
-                self.dest = params['destination']
-                self.galaxy_params = params
-            case 'Neutron':
-                url:str = SPANSH_ROUTE
-                self.src = params['from']
-                self.dest = params['to']
-                self.neutron_params = params
-            case _:
-                Debug.logger.error(f"Unknown route type {which}")
-                return False
+        spec = PLOTTER_SPECS.get(which)
+        if spec is None:
+            Debug.logger.error(f"Unknown route type {which}")
+            return False
+
+        self.src = params[spec.src_key]
+        self.dest = params.get(spec.dest_key, '')
+        self.route_params[which] = params
 
         self.last_plot = which
         self._store_history()
 
-        Thread(target=self._plotter, args=(url, params), daemon=True,
+        Thread(target=self._plotter, args=(which, spec.url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
         return True
 
 
-    def _plotter(self, url:str, params:dict) -> None:
+    def _flatten_riches_result(self, systems:list) -> list:
+        """ Flatten Spansh's nested riches result (systems containing bodies) into one row per body.
+        Systems with no scannable bodies (e.g. the starting system) are omitted, matching the row shape
+        of a Spansh-exported riches CSV, which never includes a bodyless system. """
+        rows:list = []
+        for system in systems:
+            bodies:list = system.get('bodies', [])
+            for body in bodies:
+                rows.append({
+                    'system': system.get('name', ''), 'jumps': system.get('jumps', 0),
+                    'body_name': body.get('name', ''), 'subtype': body.get('subtype', ''),
+                    'is_terraformable': body.get('is_terraformable', False),
+                    'distance_to_arrival': body.get('distance_to_arrival', 0),
+                    'estimated_scan_value': body.get('estimated_scan_value', 0),
+                    'estimated_mapping_value': body.get('estimated_mapping_value', 0)
+                })
+        return rows
+
+
+    def _plotter(self, which:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
 
         self.cancel_plot = False
@@ -288,8 +297,11 @@ class Router():
                 self.plot_error(route_response)
                 return
 
-            result:dict = json.loads(route_response.content)["result"]
-            res:list = result.get('jumps', result.get('system_jumps', []))
+            raw_result = json.loads(route_response.content)["result"]
+            if which == 'RtoR':
+                res:list = self._flatten_riches_result(raw_result)
+            else:
+                res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 
             cols:list = []; hdrs:list = []; h:str
             for h in HEADERS:

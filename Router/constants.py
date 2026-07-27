@@ -137,6 +137,9 @@ lbls:dict = {
     "use_injections": "Use FSD Injections",
     "exclude_secondary": "Exclude Secondary Stars",
     "refuel_every_scoopable": "Refuel Every scoopable",
+    "use_mapping_value": "Use Mapping Value",
+    "avoid_thargoids": "Avoid Thargoids",
+    "loop": "Loop",
     "cooldown_complete": "Carrier cooldown completed",
     "plotting": "Plotting route from {s} to {d}",
     "progress": "Progress",
@@ -148,11 +151,13 @@ lbls:dict = {
     "carrier_cooldown": "Carrier Cooldown",
     "next_refuel": "Refuel in {r}",
     "refuel_now": "Refuel now!",
-    "overlays": "Overlays"
+    "overlays": "Overlays",
+    "router": "Router"
 }
 
 # Tooltips
 tts:dict = {
+    'route_type': "The router to plot",
     'neutron_plotter': "Spansh Neutron Plotter",
     'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
     'help': "Help and user guide",

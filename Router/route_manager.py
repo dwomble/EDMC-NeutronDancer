@@ -18,7 +18,7 @@ from .ship import Ship
 from .route import Route
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
-                  'carrier_id': '', 'carrier_location': '', 'neutron_params': {}, 'galaxy_params': {}, 'trade_params': {},
+                  'carrier_id': '', 'carrier_location': '', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': [], 'history': [],
                   'window_geometries' : {}}
 
@@ -46,9 +46,13 @@ class Router():
 
         # Info about the last route plotted
         self.last_plot:str = "Neutron"
-        self.galaxy_params:dict = {}
-        self.neutron_params:dict = {}
-        self.trade_params:dict = {}
+        self.route_types = {'Galaxy' : 'Galaxy Plotter',
+                           'Neutron': 'Neutron Plotter',
+                           'RtoR': 'Road to Riches'}
+                           #'Trade': 'Trade Plotter'}
+        self.route_params:dict = {}
+        for r in self.route_types.keys():
+            self.route_params[r] = {}
         self.cancel_plot:bool = False
 
         # Carrier
@@ -501,6 +505,12 @@ class Router():
         ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 
         # Migrate
+        Debug.logger.debug(f"Dict: {dict.keys()}")
+        if dict.get('neutron_params'):
+            self.route_params['Neutron'] = dict.get('neutron_params', {})
+            self.route_params['Galaxy'] = dict.get('galaxy_params', {})
+            self.save()
+
         if isinstance(self.shiplist, list) and ships != {}:
             Debug.logger.info(f"Migrating save data to new structure")
             self.shiplist = {}

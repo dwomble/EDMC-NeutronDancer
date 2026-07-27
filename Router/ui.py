@@ -57,7 +57,7 @@ class UI():
         self.hide_error()
 
         self.router:tk.StringVar = tk.StringVar()
-        self.router.set('Neutron')  # Set default value
+        self.router.set('Neutron Plotter')  # Set default value
 
         self.progbar:ttk.Progressbar # Overall progress bar
 
@@ -65,9 +65,14 @@ class UI():
         self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
         self.route_fr:th.Frame = self._create_route_fr(self.frame)
 
+        self.options:dict = {
+            'Galaxy': ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable'],
+            'RtoR': ['use_mapping_value', 'avoid_thargoids', 'loop']
+        }
         self.plot_frames:dict[str, th.Frame] = {}
         self.plot_frames['Neutron'] = self._create_neutron_fr(self.frame)
         self.plot_frames['Galaxy'] = self._create_galaxy_fr(self.frame)
+        self.plot_frames['RtoR'] = self._create_rtor_fr(self.frame)
         self.plot_frames['Trade'] = self._create_trade_fr(self.frame)
 
         self.sub_fr:th.Frame = self.title_fr
@@ -132,8 +137,8 @@ class UI():
         Context.router.cancel_plot = True
         self.sub_fr.grid_remove()
 
-        Context.router.neutron_params['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
-        Context.router.neutron_params['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
+        Context.router.route_params['Neutron']['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
+        Context.router.route_params['Neutron']['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
 
         # Figure out which frame is currently visible
         current:str|None = next((key for key, val in self.plot_frames.items() if val == self.sub_fr), None)
@@ -147,16 +152,12 @@ class UI():
                 self.sub_fr = self.route_fr
                 self.update_progress()
 
-            case 'Neutron':
-                self.sub_fr = self.plot_frames['Neutron']
-                self.router.set('Neutron')
-
-            case 'Galaxy':
-                self.sub_fr = self.plot_frames['Galaxy']
-                self.router.set('Galaxy')
+            case 'Default':
+                self.sub_fr = self.title_fr
 
             case _:
-                self.sub_fr = self.title_fr
+                self.sub_fr = self.plot_frames[which]
+                self.router.set(Context.router.route_types[which])
 
         self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
 
@@ -197,21 +198,27 @@ class UI():
 
     def _plot_switcher(self, fr:th.Frame, row:int, col:int) -> None:
         """ Switch between the two route plotters """
-        sfr:th.Frame = th.Frame(fr, width=self.frwidth)
-        r1:th.Radiobutton = th.Radiobutton(sfr, text=lbls["neutron_router"], variable=self.router, value='Neutron',
-                                            command=lambda: self.show_frame('Neutron'))
-        th.Tooltip(r1, tts['neutron_plotter'])
-        r1.grid(row=0, column=0, padx=5, pady=5)
+        routers:dict = Context.router.route_types
+        @catch_exceptions
+        def on_combo_change(e):
+            which:str = next((k for k, v in routers.items() if v == routedd.get()), '')
+            self.show_frame(which)
 
-        r2:th.Radiobutton = th.Radiobutton(sfr, text=lbls["galaxy_router"], variable=self.router, value='Galaxy',
-                                            command=lambda: self.show_frame('Galaxy'))
-        th.Tooltip(r2, tts['galaxy_plotter'])
-        r2.grid(row=0, column=1, padx=5, pady=5)
+        sfr:th.Frame = th.Frame(fr, width=self.frwidth)
+
+        th.Label(sfr, text=lbls['route'], justify=tk.LEFT).grid(row=0, column=0, padx=5, pady=5)
+
+        routedd:th.ComboBox = th.ComboBox(sfr, self.router, values=list(routers.values()), width=25)
+        routedd.bind("<<ComboboxSelected>>", on_combo_change)
+        th.Tooltip(routedd, tts["route_type"])
+        routedd.grid(row=0, column=1, padx=5, pady=5)
+
         # Use help.png image if available (prefer transparent PNG), fallback to text '!'
         # This has to be a tk.Button or EDMC's theme throws some kind of error about setting a foreground
         r3:th.Button = th.Button(sfr, image=self.help_img, cursor="hand2", command=lambda: self._show_help())
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
+
         sfr.grid(row=row, column=col, columnspan=3, sticky=tk.EW)
 
 
@@ -247,6 +254,46 @@ class UI():
         return
 
 
+    def _create_source(self, parent:th.Frame, row:int, col:int) -> None:
+        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
+        if Context.router.system != '':
+            srcmenu[Context.router.system] = [self.menu_callback, 'src']
+        for sys in Context.router.history:
+            if sys not in srcmenu:
+                srcmenu[sys] = [self.menu_callback, 'src']
+        source_ac = th.Autocompleter(parent, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems, name="source_ac")
+        th.Tooltip(source_ac, tts["source_system"])
+        if Context.router.src != '': self.set_entry(source_ac, Context.router.src)
+        source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+
+
+    def _create_dest(self, parent:th.Frame, row:int, col:int) -> None:
+        destmenu:dict = {}
+        for sys in Context.router.history:
+            if sys not in destmenu:
+                destmenu[sys] = [self.menu_callback, 'dest']
+        dest_ac = th.Autocompleter(parent, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems, name="dest_ac")
+        th.Tooltip(dest_ac, tts["dest_system"])
+        if Context.router.dest != '': self.set_entry(dest_ac, Context.router.dest)
+        dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+
+
+    def _create_options(self, parent:th.Frame, row:int, col:int, options:list, params:dict) -> None:
+        lb:th.Listbox = th.Listbox(parent, [lbls[v] for v in options], name="options")
+        th.Tooltip(lb, tts['galaxy_options'])
+
+        for i, item in enumerate(options):
+            if params.get(item, False) == True:
+                lb.selection_set(i)
+        lb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
+
+    def _create_range(self, parent:th.Frame, row:int, col:int, range:str = "32.0") -> None:
+        range_entry:th.Placeholder = th.Placeholder(parent, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry.grid(row=row, column=col)
+        th.Tooltip(range_entry, tts["range"])
+        # Check if we're having a valid range on the fly
+        range_entry.set_text(range, range == "32.00")
+
     def _create_galaxy_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the galaxy route plotting frame """
 
@@ -254,46 +301,20 @@ class UI():
         row:int = 2
         col:int = 0
 
-        params:dict = Context.router.galaxy_params
-
-        # Define the popup menu additions
-        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
-        destmenu:dict = {}
-
-        if Context.router.system != '':
-            srcmenu[Context.router.system] = [self.menu_callback, 'src']
-        for sys in Context.router.history:
-            if sys not in srcmenu:
-                srcmenu[sys] = [self.menu_callback, 'src']
-            if sys not in destmenu:
-                destmenu[sys] = [self.menu_callback, 'dest']
+        params:dict = Context.router.route_params.get('Galaxy', {})
 
         self._plot_switcher(plot_fr, row, col)
 
-        row +=1; col = 0
-
         # First row
-        source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems, name="source_ac")
-        th.Tooltip(source_ac, tts["source_system"])
-        if Context.router.src != '': self.set_entry(source_ac, Context.router.src)
-        source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        row +=1; col = 0
+        self._create_source(plot_fr, row, col)
         col += 2
 
-        self.gal_optionlist:list = ['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
-        self.gal_lb:th.Listbox = th.Listbox(plot_fr, [lbls[v] for v in self.gal_optionlist])
-        th.Tooltip(self.gal_lb, tts['galaxy_options'])
-
-        for i, item in enumerate(self.gal_optionlist):
-            if params.get(item, False) == True:
-                self.gal_lb.selection_set(i)
-        self.gal_lb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
+        self._create_options(plot_fr, row, col, self.options['Galaxy'], params)
 
         # Row two
         row += 1; col = 0
-        dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems, name="dest_ac")
-        th.Tooltip(dest_ac, tts["dest_system"])
-        if Context.router.dest != '': self.set_entry(dest_ac, Context.router.dest)
-        dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        self._create_dest(plot_fr, row, col)
 
         # Row three
         row += 1; col = 0
@@ -363,7 +384,6 @@ class UI():
 
         return plot_fr
 
-
     def _create_neutron_fr(self, parent:th.Frame) -> th.Frame:
         """ Create the neutron route plotting frame """
 
@@ -371,40 +391,17 @@ class UI():
         row:int = 2
         col:int = 0
 
-        params:dict = Context.router.neutron_params
-
-        # Define the popup menu additions
-        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
-        destmenu:dict = {}
-
-        if Context.router.system != '':
-            srcmenu[Context.router.system] = [self.menu_callback, 'src']
-        for sys in Context.router.history:
-            if sys not in srcmenu:
-                srcmenu[sys] = [self.menu_callback, 'src']
-            if sys not in destmenu:
-                destmenu[sys] = [self.menu_callback, 'dest']
-
+        params:dict = Context.router.route_params.get('Neutron', {})
         self._plot_switcher(plot_fr, row, col)
 
         row += 1; col = 0
-        source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems, name="source_ac")
-        th.Tooltip(source_ac, tts["source_system"])
-        if Context.router.src != '': self.set_entry(source_ac, Context.router.src)
-        source_ac.grid(row=row, column=col, columnspan=2)
+        self._create_source(plot_fr, row, col)
         col += 2
 
-        range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER, name="range_entry")
-        range_entry.grid(row=row, column=col)
-        th.Tooltip(range_entry, tts["range"])
-        # Check if we're having a valid range on the fly
-        range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
 
         row += 1; col = 0
-        dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems, name="dest_ac")
-        th.Tooltip(dest_ac, tts["dest_system"])
-        if Context.router.dest != '': self.set_entry(dest_ac, Context.router.dest)
-        dest_ac.grid(row=row, column=col, columnspan=2)
+        self._create_dest(plot_fr, row, col)
         col += 2
 
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
@@ -453,14 +450,29 @@ class UI():
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
         row:int = 2
         col:int = 0
-        # Source
-        # Dest
+
+        params:dict = Context.router.route_params.get('RtoR', {})
+
+        self._plot_switcher(plot_fr, row, col)
+        row +=1; col = 0
+
+        # row 1
+        self._create_source(plot_fr, row, col)
+        col += 2
+        self._create_options(plot_fr, row, col, self.options['RtoR'], params)
+        col += 1
+
+        # row 2
+        row += 1; col = 0
+        self._create_dest(plot_fr, row, col)
+
+        # row 3
+        row +=1; col = 0
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
+
         # Range
         # Radius
         # Max systems
-        # Use mapping value
-        # Avoid thargoids
-        # Looop
         # Max dist to arrival
         # Min scan value
         return plot_fr
@@ -473,65 +485,11 @@ class UI():
         row:int = 2
         col:int = 0
 
-        params:dict = Context.router.trade_params
-
-        # Define the popup menu additions
-        srcmenu:dict = {Context.router.system: [self.menu_callback, 'src']} if Context.router.system != '' else {}
-        destmenu:dict = {}
-
-        if Context.router.system != '':
-            srcmenu[Context.router.system] = [self.menu_callback, 'src']
-        for sys in Context.router.history:
-            if sys not in srcmenu:
-                srcmenu[sys] = [self.menu_callback, 'src']
-            if sys not in destmenu:
-                destmenu[sys] = [self.menu_callback, 'dest']
-
+        params:dict = Context.router.route_params.get('Trade', {})
         self._plot_switcher(plot_fr, row, col)
-
         row += 1; col = 0
-        self.source_ac = th.Autocompleter(plot_fr, lbls["source_system"], width=30, menu=srcmenu, func=self.query_systems)
-        th.Tooltip(self.source_ac, tts["source_system"])
-        if Context.router.src != '': self.set_entry(self.source_ac, Context.router.src)
-        self.source_ac.grid(row=row, column=col, columnspan=2)
+        self._create_source(plot_fr, row, col)
         col += 2
-
-        range_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['range'], width=11, menu=self._ship_dict(), justify=tk.CENTER, name="range_entry")
-        range_entry.grid(row=row, column=col)
-        th.Tooltip(range_entry, tts["range"])
-        # Check if we're having a valid range on the fly
-        range_entry.set_text(str(params.get('range', "32.00")), str(params.get('range', "32.00")) == "32.00")
-
-        row += 1; col = 0
-        self.dest_ac = th.Autocompleter(plot_fr, lbls["dest_system"], width=30, menu=destmenu, func=self.query_systems)
-        th.Tooltip(self.dest_ac, tts["dest_system"])
-        if Context.router.dest != '': self.set_entry(self.dest_ac, Context.router.dest)
-        self.dest_ac.grid(row=row, column=col, columnspan=2)
-        col += 2
-
-        self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
-        th.Tooltip(self.efficiency_slider, tts["efficiency"])
-        self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
-        self.efficiency_slider.set(params.get('efficiency', 60))
-
-        row += 1; col = 0
-        #self.multiplier = tk.IntVar() # Or StringVar() for string values
-        #self.multiplier.set(params.get('supercharge_multiplier', 4))  # Set default value
-
-        # Create radio buttons
-        l1:th.Label = th.Label(plot_fr, text=lbls["supercharge_label"])
-        l1.grid(row=row, column=col, padx=5, pady=5)
-        col += 1
-        r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
-        r1.bind('<Button-3>', lambda e: self.show_menu(e, 'Trade'))
-        th.Tooltip(r1, tts['standard_multiplier'])
-        r1.grid(row=row, column=col, padx=5, pady=5)
-
-        col += 1
-        r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
-        th.Tooltip(r2, tts['overcharge_multiplier'])
-        r2.bind('<Button-3>', lambda e: self.show_menu(e, 'Trade'))
-        r2.grid(row=row, column=col, padx=5, pady=5)
 
         row += 1; col = 0
         btn_frame:th.Frame = th.Frame(plot_fr)
@@ -786,8 +744,8 @@ class UI():
         # Reverse the route
         if Context.router.dest == Context.router.system:
             Debug.logger.debug(f"Reversing route as we're at the end")
-            self.dest_ac.set_text(Context.router.src, False)
-            self.source_ac.set_text(Context.router.dest, False)
+            self._update_item('all', 'source_ac', Context.router.dest)
+            self._update_item('all', 'dest_ac', Context.router.src)
 
         self.show_frame(Context.router.last_plot)
         Context.router.clear_route()
@@ -859,17 +817,18 @@ class UI():
         ship:Ship|None = Context.router.load_ship(ship_id)
         if not ship: return
 
+        options:th.Listbox = self.plot_frames['Galaxy'].nametowidget("options")
         params:dict = {
             'cargo': int(gal_fr.nametowidget("cargo_entry").get().strip()) if re.match(r"^\d+$", gal_fr.nametowidget("cargo_entry").get().strip()) else 0,
             #'max_time': int(self.time_limit.get()),
             'max_time': 60,
             'algorithm': self.algorithm.get(),
             'reserve_size': int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
-            'is_supercharged': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('is_supercharged')) else 0,
-            'use_supercharge': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('use_supercharge')) else 0,
-            'use_injections': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('use_injections')) else 0,
-            'exclude_secondary': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('exclude_secondary')) else 0,
-            'refuel_every_scoopable': 1 if self.gal_lb.selection_includes(self.gal_optionlist.index('refuel_every_scoopable')) else 0,
+            'is_supercharged': 1 if options.selection_includes(self.options['Galaxy'].index('is_supercharged')) else 0,
+            'use_supercharge': 1 if options.selection_includes(self.options['Galaxy'].index('use_supercharge')) else 0,
+            'use_injections': 1 if options.selection_includes(self.options['Galaxy'].index('use_injections')) else 0,
+            'exclude_secondary': 1 if options.selection_includes(self.options['Galaxy'].index('exclude_secondary')) else 0,
+            'refuel_every_scoopable': 1 if options.selection_includes(self.options['Galaxy'].index('refuel_every_scoopable')) else 0,
             'fuel_power': ship.fuel_power,
             'fuel_multiplier': ship.fuel_multiplier,
             'optimal_mass': ship.optimal_mass,

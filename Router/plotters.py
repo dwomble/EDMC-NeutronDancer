@@ -498,20 +498,17 @@ class TradePlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the trade route plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2
-        col:int = 0
+        row:int = 2; col:int = 0
 
         params:dict = Context.router.route_params.get('Trade', {})
         self._plot_switcher(plot_fr, row, col)
 
-        row += 1
-        col = 0
+        row += 1; col = 0
         self._create_source(plot_fr, row, col)
         col += 2
 
         # Buttons
-        row += 1
-        col = 0
+        row += 1; col = 0
         self._create_buttons(plot_fr, row, col)
 
         self.frame = plot_fr

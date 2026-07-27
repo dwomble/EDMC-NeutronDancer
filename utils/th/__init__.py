@@ -15,6 +15,13 @@ from utils.debug import Debug
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip", "Autocompleter", "Placeholder"]
 
+def _strip_name(kw:dict) -> dict:
+    """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half.
+    Tk silently aliases a second widget created with an already-used name onto the first instead
+    of erroring, so passing the same explicit name to both halves of a themed widget makes them
+    the same underlying widget -- duplicated inserts, and whichever half is configured last wins. """
+    return {k: v for k, v in kw.items() if k != 'name'}
+
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
     """ A base class for themed widgets that can switch between light and dark mode. """
@@ -30,16 +37,18 @@ class Base:
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
-        if self.alt is not None:
-            gridopts:dict = {}
+        if self.alt is None:
+            return self.obj.grid(*args, **kw)
 
-            if len(args) > 0 and isinstance(args[0], dict):
-                gridopts.update(args[0])
-            if len(kw) > 0:
-                gridopts.update(kw)
+        gridopts:dict = {}
 
-            if len(gridopts) > 0:
-                theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
+        if len(args) > 0 and isinstance(args[0], dict):
+            gridopts.update(args[0])
+        if len(kw) > 0:
+            gridopts.update(kw)
+
+        if len(gridopts) > 0:
+            theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
 
         return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
 
@@ -122,7 +131,7 @@ class Button(Base):
         # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
         btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
 
-        super().__init__(btn, tk.Button(master, **kw))
+        super().__init__(btn, tk.Button(master, **_strip_name(kw)))
 
     def grid(self, *args, **kw) -> Any:
         """ Override grid to handle themed buttons. """
@@ -140,7 +149,7 @@ class Button(Base):
 class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        tkrb:tk.Radiobutton = tk.Radiobutton(master, **kw)
+        tkrb:tk.Radiobutton = tk.Radiobutton(master, **_strip_name(kw))
         tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
         super().__init__(ttk.Radiobutton(master, **kw), tkrb)
 
@@ -185,7 +194,7 @@ class Listbox(Base):
         lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
 
-        lb2:tk.Listbox = tk.Listbox(master, height=rows, **kw)
+        lb2:tk.Listbox = tk.Listbox(master, height=rows, **_strip_name(kw))
         lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
         lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
 
@@ -198,12 +207,12 @@ class Listbox(Base):
 class Checkbutton(Base):
     """ A themed checkbutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        super().__init__(tk.Checkbutton(master, **kw), tk.Checkbutton(master, **kw))
+        super().__init__(tk.Checkbutton(master, **kw), tk.Checkbutton(master, **_strip_name(kw)))
 
 class Scale(Base):
     """ A themed scale that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tksc1:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
-        tksc2:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
+        tksc2:tk.Scale = tk.Scale(master, **_strip_name(kw), border=0, borderwidth=0, highlightthickness=0)
         tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
         super().__init__(tksc1, tksc2)

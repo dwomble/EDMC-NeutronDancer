@@ -28,8 +28,11 @@ SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
 SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
 SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
+SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
+SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations/field_values/name"  # station name typeahead; results include system_id64
+SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, used to resolve a station's system name
 
 # Directory we store our save data in
 DATA_DIR = 'data'
@@ -51,17 +54,26 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "distance_to_arrival": "Distance To Arrival", "estimated_scan_value": "Estimated Scan Value",
                     "estimated_mapping_value": "Estimated Mapping Value",
                     "species": "Species", "landmark_value": "Landmark Value",
+                    "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
+                    "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
 
 # Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
-                "Is Terraformable", "Species", "Landmark Value", "Distance To Arrival", "Estimated Scan Value",
+HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
+                "Body Name", "Body Subtype", "Is Terraformable", "Species", "Landmark Value", "Commodity", "Amount",
+                "Profit", "Total Profit", "Cumulative Profit", "Distance To Arrival", "Estimated Scan Value",
                 "Estimated Mapping Value", "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining",
                 "Fuel Left", "Fuel Used", "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
 
 # Formatting info for each header
 HEADER_TYPES:dict = {"System Name": ["str", ""],
+                    "Station Name": ["str", ""],
+                    "Commodity": ["str", ""],
+                    "Amount": ["int", "", " t"],
+                    "Profit": ["float", "", " Cr"],
+                    "Total Profit": ["float", "", " Cr"],
+                    "Cumulative Profit": ["float", "", " Cr"],
                     "Jumps": ["int", ""],
                     "Jumps Rem": ["int", ""],
                     "Waypoints": ["int", ""],
@@ -118,6 +130,7 @@ lbls:dict = {
     "help": "Help",
     "route": "Route",
     "plot_title": "I'm just burnin'…",
+    "plotter": "Neutron Dancer v{version}",
     "no_route": "No route planned",
     "jumps_remaining": "Remaining",
     "body_count": "Bodies to scan at",
@@ -143,6 +156,20 @@ lbls:dict = {
     "radius": "Search Radius",
     "max_results": "Maximum Systems",
     "min_landmark_value": "Minimum Landmark (Species) Value (M)",
+    "station": "Station",
+    "starting_capital": "Starting Capital",
+    "max_cargo": "Maximum Cargo Capacity",
+    "max_hops": "Maximum Hops",
+    "max_hop_distance": "Maximum Hop Distance",
+    "max_system_distance": "Maximum Distance To Arrival",
+    "max_price_age": "Maximum Market Age (days)",
+    "requires_large_pad": "Requires Large Pad",
+    "allow_prohibited": "Allow Prohibited",
+    "allow_planetary": "Allow Planetary",
+    "allow_player_owned": "Allow Player Owned",
+    "allow_restricted_access": "Allow Restricted Access",
+    "unique": "Unique",
+    "permit": "Permit",
     "is_supercharged": "Already Supercharged",
     "use_supercharge": "Use Supercharge",
     "use_injections": "Use FSD Injections",
@@ -191,7 +218,21 @@ tts:dict = {
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
     "radius": "Search radius in light years, right click for menu",
     "max_results": "Maximum number of systems to include in the route",
-    "min_landmark_value": "Minimum value of biological landmarks to look for, in millions of credits",
+    "min_landmark_value": "Minimum landmark (species) value to look for, in millions of credits",
+    "station": "Departure station -- start typing to search",
+    "starting_capital": "Credits available to spend on cargo",
+    "max_cargo": "Maximum cargo capacity in tonnes",
+    "max_hops": "Maximum number of trade hops in the route",
+    "max_hop_distance": "Maximum jump distance per hop, in light years",
+    "max_system_distance": "Maximum distance of a station from its arrival point, in light seconds",
+    "max_price_age": "Ignore market prices older than this many days. Leave blank for no limit",
+    "requires_large_pad": "Only include stations with a large landing pad",
+    "allow_prohibited": "Allow commodities prohibited by the destination's superpower",
+    "allow_planetary": "Allow planetary stations",
+    "allow_player_owned": "Allow player-owned fleet carriers as stops",
+    "allow_restricted_access": "Allow stations with restricted access (e.g. engineer bases)",
+    "unique": "Only visit each station once",
+    "permit": "Allow systems that require a permit",
     "progress": "Progress",
     "none": "None"
 }
@@ -226,6 +267,7 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
+    "no_station": "Station not found -- start typing to search",
     "format_error": "Error formatting progress display"
 }
 

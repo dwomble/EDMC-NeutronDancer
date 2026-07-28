@@ -19,7 +19,7 @@ import tkinter as tk
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE
 from .context import Context
 from .ship import Ship
 
@@ -432,14 +432,8 @@ class RichesPlotter(Plotter):
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
 
-        # Row 5: minimum landmark value -- Exobiology's real filtering criterion, since it has
-        # no body_types to filter by. Slider is 0-21 with units of millions of credits implied
-        # (matching Spansh's own "Minimum Landmark Value" control).
+        # Exobiology's real filtering criterion
         if spec.min_value_slider:
-            row += 1; col = 0
-            l1:th.Label = th.Label(plot_fr, text=lbls['min_landmark_value'])
-            l1.grid(row=row, column=col, padx=5, pady=5)
-
             col += 1
             min_value_slider:th.Scale = th.Scale(plot_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
             th.Tooltip(min_value_slider, tts["min_landmark_value"])
@@ -526,7 +520,9 @@ class RichesPlotter(Plotter):
 
 
 class TradePlotter(Plotter):
-    """Plotter for trade route planning."""
+    """Plotter for /api/trade/route. Unlike every other route type, this starts from a
+    specific station (not just a system) and has no destination or ship range -- it's a
+    closed loop of up to max_hops trade legs, each capped at max_hop_distance."""
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the trade route plotter frame."""
@@ -536,27 +532,132 @@ class TradePlotter(Plotter):
         params:dict = Context.router.route_params.get('Trade', {})
         self._plot_switcher(plot_fr, row, col)
 
+        # Row 1: source station -- a single field, like Spansh's own "Source Station" combobox,
+        # rather than picking a system first and a station within it second.
         row += 1; col = 0
-        self._create_source(plot_fr, row, col)
-        col += 2
+        station_ac = th.Autocompleter(plot_fr, lbls["station"], width=30, func=self.ui.query_station_names, name="station_ac")
+        th.Tooltip(station_ac, tts["station"])
+        if params.get('station'):
+            self.ui.set_entry(station_ac, params['station'])
+        station_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+
+        # Row 2: starting capital and cargo capacity
+        row += 1; col = 0
+        starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=11, justify=tk.CENTER, name="starting_capital_entry")
+        self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
+        th.Tooltip(starting_capital_entry, tts["starting_capital"])
+        starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        col += 1
+        max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=11, justify=tk.CENTER, name="max_cargo_entry")
+        self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
+        th.Tooltip(max_cargo_entry, tts["max_cargo"])
+        max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        # Row 3: max hops and max hop distance
+        row += 1; col = 0
+        max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=11, justify=tk.CENTER, name="max_hops_entry")
+        self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
+        th.Tooltip(max_hops_entry, tts["max_hops"])
+        max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        col += 1
+        max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=11, justify=tk.CENTER, name="max_hop_distance_entry")
+        self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
+        th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
+        max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        # Row 4: max distance to arrival and max market age
+        row += 1; col = 0
+        max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=11, justify=tk.CENTER, name="max_system_distance_entry")
+        self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
+        th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
+        max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        col += 1
+        max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=11, justify=tk.CENTER, name="max_price_age_entry")
+        if params.get('max_price_age_days'):
+            self.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
+        th.Tooltip(max_price_age_entry, tts["max_price_age"])
+        max_price_age_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        # Row 5: the 7 boolean flags
+        row += 1; col = 0
+        self._create_options(plot_fr, row, col, self.options, params)
 
         # Buttons
-        row += 1; col = 0
+        row += 3; col = 0
         self._create_buttons(plot_fr, row, col)
 
         self.frame = plot_fr
         return plot_fr
 
+    def _validate_station(self, inp:str, widget:th.Autocompleter) -> str | None:
+        """ Validate the typed text against Spansh's station search and return the exact
+        station name, mirroring Plotter._validate_system's pattern but for stations. """
+        validated = next((x for x in self.ui.query_station_names(inp) if x.casefold() == inp.casefold()), None)
+        if validated is None:
+            widget.set_text(inp, False)
+            widget.set_error_style()
+        return validated
+
     @catch_exceptions
     def plot(self) -> None:
         """Perform trade route plotting."""
-        # TODO: Implement trade plotting logic
+        if not self.frame:
+            return
+
         self.ui.hide_error()
-        Debug.logger.info("Trade plotter not yet implemented")
+
+        station_ac = self.frame.nametowidget("station_ac")
+        options = self.frame.nametowidget("options")
+
+        params:dict = {}
+
+        station:str = station_ac.get().strip()
+        params["station"] = self._validate_station(station, station_ac)
+        if params['station'] is None:
+            self.ui.show_frame('Trade')
+            return
+
+        system = self.ui.resolve_station_system(params['station'])
+        if system is None:
+            self.ui.show_error(errs['no_station'])
+            station_ac.set_error_style()
+            self.ui.show_frame('Trade')
+            return
+        params["system"] = system
+
+        for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
+                                        ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),
+                                        ("max_system_distance_entry", "max_system_distance")]:
+            entry = self.frame.nametowidget(entry_name)
+            value:str = entry.get().strip()
+            if not re.match(r"^\d+(\.\d+)?$", value):
+                Debug.logger.info(f"Invalid {param_name} entry {value}")
+                self.ui.show_frame('Trade')
+                entry.set_error_style()
+                return
+            params[param_name] = value
+
+        # Optional: same convention as Galaxy's fuel_res -- if it's blank or still showing
+        # placeholder text, the regex just won't match and we silently omit it (no error
+        # state, no aborting the plot), since "leave it unset" is a valid, common choice here.
+        max_price_age_entry = self.frame.nametowidget("max_price_age_entry")
+        max_price_age_days:str = max_price_age_entry.get().strip()
+        if re.match(r"^\d+(\.\d+)?$", max_price_age_days):
+            # Spansh wants "seconds since that time" rather than an age directly, and we only
+            # keep a day count in route_params (for re-populating the field), not a timestamp.
+            params['max_price_age'] = int(float(max_price_age_days) * 86400)
+            params['max_price_age_days'] = max_price_age_days
+
+        for opt in self.options:
+            params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
+
+        Context.router.plot_route('Trade', params)
+        self.ui._show_busy_gui(True)
 
 
-# Trade isn't included yet -- TradePlotter.plot() is still a stub, so it stays out of
-# route_types (unselectable) and unbuilt in ui.py until it's actually implemented.
 PLOTTER_SPECS:dict = {
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
@@ -585,5 +686,11 @@ PLOTTER_SPECS:dict = {
     'Exobiology': PlotterSpec(
         label='Expressway to Exomastery', plotter_class=RichesPlotter, url=SPANSH_EXOBIOLOGY_ROUTE,
         options=['avoid_thargoids', 'loop'], min_value=100000, min_value_slider=True
+    ),
+    'Trade': PlotterSpec(
+        label='Trade Planner', plotter_class=TradePlotter, url=SPANSH_TRADE_ROUTE,
+        src_key='system',
+        options=['requires_large_pad', 'allow_prohibited', 'allow_planetary', 'allow_player_owned',
+                 'allow_restricted_access', 'unique', 'permit']
     ),
 }

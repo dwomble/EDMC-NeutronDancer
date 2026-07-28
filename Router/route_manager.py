@@ -12,7 +12,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, copy_to_clipboard
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -278,6 +278,26 @@ class Router():
         return rows
 
 
+    def _flatten_trade_result(self, hops:list) -> list:
+        """ Flatten Spansh's trade route -- a flat list of hops, each carrying one or more
+        commodities at once (splitting cargo between them) -- into one row per commodity per
+        hop. Each row's system/station is the hop's *destination*, matching every other route
+        type's convention that a row represents the next place to travel to, not the
+        already-occupied starting position (which is never a row of its own here either). """
+        rows:list = []
+        for hop in hops:
+            dest:dict = hop.get('destination', {})
+            for commodity in hop.get('commodities', []):
+                rows.append({
+                    'system': dest.get('system', ''), 'station': dest.get('station', ''),
+                    'distance': hop.get('distance', 0),
+                    'commodity': commodity.get('name', ''), 'amount': commodity.get('amount', 0),
+                    'profit': commodity.get('profit', 0), 'total_profit': commodity.get('total_profit', 0),
+                    'cumulative_profit': hop.get('cumulative_profit', 0)
+                })
+        return rows
+
+
     def _plotter(self, which:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
 
@@ -314,6 +334,8 @@ class Router():
                 # Every "systems containing bodies" route (Road to Riches and its body_types-filtered
                 # variants, plus Exobiology) returns this same nested shape.
                 res:list = self._flatten_nested_bodies_result(raw_result)
+            elif url == SPANSH_TRADE_ROUTE:
+                res:list = self._flatten_trade_result(raw_result)
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 

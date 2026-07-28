@@ -1,11 +1,16 @@
 # Guide to Navl's Neutron Dancer [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
 
-There are two Neutron route plotting options.
+There are several route plotting options.
 
 1. Galaxy Plotter
 1. Neutron Plotter
+1. Road to Riches
+1. Expressway to Exomastery (Exobiology)
+1. Ammonia World Route
+1. Earth-like World Route
+1. Rocky/HMC World Route
 
-You can switch between them with the radio buttons.
+You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
 ## Galaxy Plotter
 
@@ -65,6 +70,31 @@ Next click **Calculate** to query Spansh and plot your route.
 - *Routing Efficiency* is the route directness. Increase this to reduce how far off the direct route the system will plot to get to a neutron star (An efficiency of 100 will not deviate from the direct route in order to plot from A to B and will most likely break down the journey into 20000 LY blocks).
 
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
+
+## Road to Riches, Exobiology, and World-type Routes
+
+**Road to Riches**, **Expressway to Exomastery** (Exobiology), **Ammonia World Route**, **Earth-like World Route**, and **Rocky/HMC World Route** all work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.
+
+Common options:
+
+- *Avoid Thargoids* Route around systems affected by a Thargoid war
+- *Loop* Prefer routes that loop back on themselves rather than a straight line
+
+They differ only in what they're actually looking for:
+
+- **Road to Riches** looks for any valuable body along the way. *Use Mapping Value* ranks bodies by their DSS (Detailed Surface Scanner) mapping value rather than their FSS (Full Spectrum Scanner) scan value — select this if you intend to map every body rather than just scan it.
+
+- **Expressway to Exomastery** looks for systems with valuable biological (exobiology) signals instead of body scan value. The *Minimum Landmark (Species) Value* slider filters out finds below that threshold, in millions of credits — raise it to skip low-value species and focus only on the most lucrative signals.
+
+- **Ammonia World Route**, **Earth-like World Route**, and **Rocky/HMC World Route** each filter for that specific body type only, so every stop is guaranteed to be one you're after.
+
+All of these avoid populated systems, so they don't work well close to the bubble — increase your search radius if a route can't be found.
+
+### Tips
+
+- Road To Riches — You should decide if you want to DSS (Detailed Surface Scanner which requires you to travel to the body in system and surface map) or simply FSS (Full Spectrum Scanner from the system jump in point). FSS is faster for each system but will pay substantially less credits.
+
+- World-type Routes - will prioritise high scan value so if you only find far away worlds you may wish to reduce your search radius.
 
 ## Importing Routes
 

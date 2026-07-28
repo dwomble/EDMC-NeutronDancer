@@ -1021,6 +1021,87 @@ class TestPlotMethods:
         assert row[harness.plugin.route.hdrs.index("Landmark Value")] == 32831400
         assert harness.plugin.router.route_params['Exobiology'] == params
 
+    def test_plotter_success_creates_route_trade(self, harness:TestHarness) -> None:
+        """Test that _plotter flattens a Trade response -- a FLAT list of hops (unlike the
+        riches family's nested systems/bodies shape), each of which may carry more than one
+        commodity at once. Each commodity-per-hop becomes its own row, keyed to the hop's
+        *destination* (not source), matching every other route type's "row = next place to
+        go" convention. Real shape captured from the live Spansh trade API."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": [
+                {
+                    "commodities": [
+                        {"amount": 200, "name": "Agronomic Treatment", "profit": 10617, "total_profit": 2123400,
+                         "source_commodity": {"buy_price": 2751, "sell_price": 2656, "demand": 1, "supply": 15577},
+                         "destination_commodity": {"buy_price": 0, "sell_price": 13368, "demand": 42, "supply": 0}},
+                    ],
+                    "cumulative_profit": 2123400,
+                    "distance": 12.66,
+                    "source": {"station": "Jameson Memorial", "system": "Shinrarta Dezhra", "system_id64": 3932277478106,
+                               "distance_to_arrival": 346, "market_id": 128666762},
+                    "destination": {"station": "Alvarado Beacon", "system": "Puppis Sector TO-R b4-4",
+                                     "system_id64": 9467852826033, "distance_to_arrival": 3, "market_id": 4243439363},
+                },
+                {
+                    "commodities": [
+                        {"amount": 186, "name": "Military Grade Fabrics", "profit": 12077, "total_profit": 2246322,
+                         "source_commodity": {}, "destination_commodity": {}},
+                        {"amount": 14, "name": "Tritium", "profit": 2603, "total_profit": 36442,
+                         "source_commodity": {}, "destination_commodity": {}},
+                    ],
+                    "cumulative_profit": 4406164,
+                    "distance": 33.13,
+                    "source": {"station": "Alvarado Beacon", "system": "Puppis Sector TO-R b4-4"},
+                    "destination": {"station": "Gaiman Port", "system": "Kamici"},
+                },
+            ]
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'system': 'Shinrarta Dezhra', 'station': 'Jameson Memorial',
+                              'starting_capital': '1000000', 'max_cargo': '200', 'max_hops': '5',
+                              'max_hop_distance': '50', 'max_system_distance': '10000000', 'max_time': 1}
+                    harness.plugin.router.plot_route('Trade', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) == 3  # 1 commodity in hop 1 + 2 commodities in hop 2
+        assert "Station Name" in harness.plugin.route.hdrs
+        assert "Commodity" in harness.plugin.route.hdrs
+        assert "Cumulative Profit" in harness.plugin.route.hdrs
+
+        # Row 0 is keyed to hop 0's DESTINATION, not its source -- the starting station never
+        # gets its own row, matching how every other route type's row 0 is the first waypoint
+        # *after* the start, not the start itself. route.source() reads the System Name column;
+        # the station itself is a separate column.
+        assert harness.plugin.route.source() == 'Puppis Sector TO-R b4-4'
+        row0 = harness.plugin.route.route[0]
+        assert row0[harness.plugin.route.hdrs.index("Station Name")] == 'Alvarado Beacon'
+        assert row0[harness.plugin.route.hdrs.index("Commodity")] == 'Agronomic Treatment'
+        assert row0[harness.plugin.route.hdrs.index("Cumulative Profit")] == 2123400
+
+        # Hop 1 carried two commodities -> two rows, same destination, different commodity
+        row1, row2 = harness.plugin.route.route[1], harness.plugin.route.route[2]
+        assert row1[harness.plugin.route.hdrs.index("Commodity")] == 'Military Grade Fabrics'
+        assert row2[harness.plugin.route.hdrs.index("Commodity")] == 'Tritium'
+        assert row1[harness.plugin.route.hdrs.index("System Name")] == 'Kamici'
+        assert row2[harness.plugin.route.hdrs.index("System Name")] == 'Kamici'
+
+        assert harness.plugin.router.route_params['Trade'] == params
+
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
@@ -1176,6 +1257,44 @@ class TestPlotMethods:
         assert float(slider.cget('to')) == 20
         assert int(slider.get()) == 0
 
+    def test_trade_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """Regression: TradePlotter.plot() must invoke plot_route with system/station (not
+        from/to like every other plotter) and the numeric/boolean fields, and must refuse to
+        submit when the typed station text doesn't resolve to a real station (single combined
+        field, matching Spansh's own UI -- there's no separate system field to fall back on)."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Trade']
+
+        fr.nametowidget("station_ac").set_text("Not A Real Station", False)
+        fr.nametowidget("starting_capital_entry").set_text("1000000", False)
+        fr.nametowidget("max_cargo_entry").set_text("200", False)
+        fr.nametowidget("max_hops_entry").set_text("5", False)
+        fr.nametowidget("max_hop_distance_entry").set_text("50", False)
+        fr.nametowidget("max_system_distance_entry").set_text("10000000", False)
+
+        with patch.object(ui, 'query_station_names', return_value=[]):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Trade'].plot()
+            mock_plot_route.assert_not_called()  # station text doesn't resolve
+
+        fr.nametowidget("station_ac").set_text("Jameson Memorial", False)
+        with patch.object(ui, 'query_station_names', return_value=["Jameson Memorial"]):
+            with patch.object(ui, 'resolve_station_system', return_value="Shinrarta Dezhra"):
+                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                    ui.plotters['Trade'].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'Trade'
+        assert params['system'] == 'Shinrarta Dezhra'
+        assert params['station'] == 'Jameson Memorial'
+        assert params['starting_capital'] == '1000000'
+        assert params['max_cargo'] == '200'
+        assert 'max_price_age' not in params  # left blank -> no limit sent
+        for flag in ['requires_large_pad', 'allow_prohibited', 'allow_planetary',
+                     'allow_player_owned', 'allow_restricted_access', 'unique', 'permit']:
+            assert params[flag] == 0  # none selected
+
 
 class TestUIFunctions:
     """ Test UI functions """
@@ -1184,6 +1303,52 @@ class TestUIFunctions:
         ui = harness.plugin.ui
         # Should not raise or change state
         ui.set_entry(None, "ignored")
+
+
+    def test_query_station_names_and_resolve_system(self, harness:TestHarness) -> None:
+        """query_station_names() hits Spansh's station name typeahead directly -- a single
+        field, matching Spansh's own "Source Station" combobox. resolve_station_system()
+        re-queries that same endpoint for an exact (case-insensitive) match, then fetches the
+        full system record to get its name, since the station search only ever returns a
+        system_id64, never a system name."""
+        ui = harness.plugin.ui
+
+        def fake_get(url, *args, **kwargs):
+            resp = Mock()
+            resp.status_code = 200
+            if 'stations/field_values/name' in url:
+                resp.content = json.dumps({
+                    "min_max": [{"name": "Jameson Memorial", "system_id64": 3932277478106}]
+                }).encode()
+            else:
+                resp.content = json.dumps({"record": {"name": "Shinrarta Dezhra"}}).encode()
+            return resp
+
+        with patch('requests.get', side_effect=fake_get):
+            assert ui.query_station_names('Jameson') == ['Jameson Memorial']
+            assert ui.resolve_station_system('Jameson Memorial') == 'Shinrarta Dezhra'
+            assert ui.resolve_station_system('No Such Station') is None  # no exact match
+
+
+    def test_combobox_bind_fires_on_dark_mode_selection(self, harness:TestHarness) -> None:
+        """Regression: th.ComboBox.bind("<<ComboboxSelected>>", ...) only ever bound the
+        light-mode ttk.Combobox half. Its dark-mode alt is a tk.OptionMenu, which has no
+        <<ComboboxSelected>> virtual event -- each menu entry just runs tk._setit() to update
+        the shared StringVar directly, so the bound callback silently never fired when the
+        theme was dark. bind() must route that one event through the StringVar's write trace
+        too, so a dark-mode selection still triggers it."""
+        var = tk.StringVar(harness.root, value="A")
+        combo = th.ComboBox(harness.root, var, values=["A", "B", "C"])
+
+        calls:list = []
+        combo.bind("<<ComboboxSelected>>", lambda e: calls.append(var.get()))
+
+        # Simulate a dark-mode OptionMenu click: each menu entry's command is exactly
+        # tk._setit(var, item), which just sets the variable -- so setting it directly
+        # is equivalent to a real click for this purpose.
+        var.set("B")
+
+        assert calls == ["B"]
 
 
     def test_switch_ship(self, harness:TestHarness) -> None:
@@ -1887,6 +2052,34 @@ class TestPlotting:
             assert harness.plugin.router.src == 'Colonia'
             assert "Species" in harness.plugin.route.hdrs
             assert "Landmark Value" in harness.plugin.route.hdrs
+            assert len(harness.plugin.route.route) > 0
+
+    @pytest.mark.slow
+    def test_plot_trade_route(self, harness:TestHarness) -> None:
+        """ Perform a live Trade Planner plot from a busy hub (Jameson Memorial), which needs
+        real time server-side to check commodity prices across many nearby stations. """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Trade',
+                                                {'system': 'Shinrarta Dezhra', 'station': 'Jameson Memorial',
+                                                'starting_capital': '1000000', 'max_cargo': '200', 'max_hops': '5',
+                                                'max_hop_distance': '50', 'max_system_distance': '10000000',
+                                                'requires_large_pad': '0', 'allow_prohibited': '0',
+                                                'allow_planetary': '0', 'allow_player_owned': '0',
+                                                'allow_restricted_access': '0', 'unique': '0', 'permit': '0',
+                                                'max_time': 60})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=70)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == 'Shinrarta Dezhra'
+            assert "Station Name" in harness.plugin.route.hdrs
+            assert "Commodity" in harness.plugin.route.hdrs
+            assert "Cumulative Profit" in harness.plugin.route.hdrs
             assert len(harness.plugin.route.route) > 0
 
 

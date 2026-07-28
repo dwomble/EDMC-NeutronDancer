@@ -181,6 +181,20 @@ class ComboBox(Base):
                 self.alt['menu'].add_command(label=item, command=tk._setit(self._variable, item))
             self._variable.set(menu[0])
 
+    def bind(self, sequence:str, func, **kw) -> None:
+        """ ttk.Combobox fires <<ComboboxSelected>> as a real virtual event on selection, but
+        tk.OptionMenu (the dark-mode alt) has no equivalent -- each menu entry just runs
+        tk._setit() to update the shared StringVar, so binding the same event on it never
+        fires. Route that one event through the StringVar's write trace instead, so picking
+        an item in dark mode still triggers the callback. """
+        self.obj.bind(sequence, func, **kw)
+        if self.alt is None:
+            return
+        if sequence == "<<ComboboxSelected>>":
+            self._variable.trace_add("write", lambda *_: func(None))
+        else:
+            self.alt.bind(sequence, func, **kw)
+
 class Listbox(Base):
     """ A themed listbox that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, items:list, **kw) -> None:

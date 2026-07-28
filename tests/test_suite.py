@@ -1335,20 +1335,23 @@ class TestUIFunctions:
         light-mode ttk.Combobox half. Its dark-mode alt is a tk.OptionMenu, which has no
         <<ComboboxSelected>> virtual event -- each menu entry just runs tk._setit() to update
         the shared StringVar directly, so the bound callback silently never fired when the
-        theme was dark. bind() must route that one event through the StringVar's write trace
-        too, so a dark-mode selection still triggers it."""
+        theme was dark. bind() must wire the callback into each menu entry's own command so a
+        real dark-mode click still triggers it -- but a plain var.set() from elsewhere (e.g.
+        ui.show_frame() syncing this same combobox after handling the selection) must NOT
+        retrigger it, or callback <-> show_frame() loops forever and hangs the UI (this was
+        tried first via a variable write-trace, which doesn't distinguish the two)."""
         var = tk.StringVar(harness.root, value="A")
         combo = th.ComboBox(harness.root, var, values=["A", "B", "C"])
 
         calls:list = []
         combo.bind("<<ComboboxSelected>>", lambda e: calls.append(var.get()))
 
-        # Simulate a dark-mode OptionMenu click: each menu entry's command is exactly
-        # tk._setit(var, item), which just sets the variable -- so setting it directly
-        # is equivalent to a real click for this purpose.
-        var.set("B")
-
+        combo.alt["menu"].invoke(1)  # simulate a real dark-mode click on "B"
         assert calls == ["B"]
+
+        calls.clear()
+        var.set("B")  # simulate show_frame() syncing the widget back to the same value
+        assert calls == []
 
 
     def test_switch_ship(self, harness:TestHarness) -> None:

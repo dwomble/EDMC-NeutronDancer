@@ -171,6 +171,21 @@ class ComboBox(Base):
 
         super().__init__(ttkcb, tkcb)
         object.__setattr__(self, '_variable', v)
+        object.__setattr__(self, '_select_func', None)
+
+    def _wire_alt_menu(self) -> None:
+        """ (Re-)apply the bound <<ComboboxSelected>> callback, if any, to every entry in the
+        alt's menu. """
+        func = self._select_func
+        if self.alt is None or func is None:
+            return
+        menu = self.alt["menu"]
+        last:int|None = menu.index("end")
+        if last is None:
+            return
+        for i in range(last + 1):
+            label = menu.entrycget(i, "label")
+            menu.entryconfigure(i, command=lambda label=label: (self._variable.set(label), func(None)))
 
     def set_menu(self, menu:list[str]) -> None:
         """ Set the menu for the themed combobox. """
@@ -180,18 +195,18 @@ class ComboBox(Base):
             for item in menu:
                 self.alt['menu'].add_command(label=item, command=tk._setit(self._variable, item))
             self._variable.set(menu[0])
+            self._wire_alt_menu()
 
     def bind(self, sequence:str, func, **kw) -> None:
         """ ttk.Combobox fires <<ComboboxSelected>> as a real virtual event on selection, but
-        tk.OptionMenu (the dark-mode alt) has no equivalent -- each menu entry just runs
-        tk._setit() to update the shared StringVar, so binding the same event on it never
-        fires. Route that one event through the StringVar's write trace instead, so picking
-        an item in dark mode still triggers the callback. """
+        tk.OptionMenu (the dark-mode alt) has no equivalent -- see _wire_alt_menu() for why
+        that means hooking each entry's command rather than the variable itself. """
         self.obj.bind(sequence, func, **kw)
         if self.alt is None:
             return
         if sequence == "<<ComboboxSelected>>":
-            self._variable.trace_add("write", lambda *_: func(None))
+            object.__setattr__(self, '_select_func', func)
+            self._wire_alt_menu()
         else:
             self.alt.bind(sequence, func, **kw)
 

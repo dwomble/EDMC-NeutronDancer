@@ -5,17 +5,13 @@ from pathlib import Path
 from dataclasses import dataclass
 import myNotebook as nb # type: ignore
 
-from theme import theme # type: ignore
 from config import config # type: ignore
 
 from utils.misc import singleton
 from utils.debug import Debug, catch_exceptions
 
 from .constants import ROUTE_DIR, cnf
-from .ship import Ship
-from .route import Route
 from .context import Context
-from .route_window import RouteWindow
 
 @dataclass
 class Pref:

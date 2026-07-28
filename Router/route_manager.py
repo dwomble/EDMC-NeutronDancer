@@ -12,7 +12,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, copy_to_clipboard
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -247,22 +247,34 @@ class Router():
         return True
 
 
-    def _flatten_riches_result(self, systems:list) -> list:
-        """ Flatten Spansh's nested riches result (systems containing bodies) into one row per body.
-        Systems with no scannable bodies (e.g. the starting system) are omitted, matching the row shape
-        of a Spansh-exported riches CSV, which never includes a bodyless system. """
+    def _flatten_nested_bodies_result(self, systems:list) -> list:
+        """ Flatten Spansh's nested "systems containing bodies" result (used by the whole riches
+        family -- Road to Riches, Ammonia/Earth-like/Rocky-metal, and Exobiology) into one row per
+        body. Systems with no scannable bodies (e.g. the starting system) are omitted, matching the
+        row shape of a Spansh-exported riches CSV, which never includes a bodyless system.
+
+        Exobiology bodies additionally carry a `landmarks` list (biological species found there) and
+        a `landmark_value` -- the figure that actually matters there, unlike `estimated_scan_value`
+        which stays near-zero. Those two columns are only added when a body has `landmarks` at all,
+        so plain riches-family rows (which never have that key) don't grow empty columns. """
         rows:list = []
         for system in systems:
             bodies:list = system.get('bodies', [])
             for body in bodies:
-                rows.append({
+                row:dict = {
                     'system': system.get('name', ''), 'jumps': system.get('jumps', 0),
                     'body_name': body.get('name', ''), 'subtype': body.get('subtype', ''),
                     'is_terraformable': body.get('is_terraformable', False),
                     'distance_to_arrival': body.get('distance_to_arrival', 0),
                     'estimated_scan_value': body.get('estimated_scan_value', 0),
                     'estimated_mapping_value': body.get('estimated_mapping_value', 0)
-                })
+                }
+                landmarks:list = body.get('landmarks', [])
+                if landmarks:
+                    top:dict = max(landmarks, key=lambda l: l.get('value', 0))
+                    row['species'] = top.get('subtype', '')
+                    row['landmark_value'] = body.get('landmark_value', 0)
+                rows.append(row)
         return rows
 
 
@@ -298,8 +310,10 @@ class Router():
                 return
 
             raw_result = json.loads(route_response.content)["result"]
-            if which == 'RtoR':
-                res:list = self._flatten_riches_result(raw_result)
+            if url in (SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE):
+                # Every "systems containing bodies" route (Road to Riches and its body_types-filtered
+                # variants, plus Exobiology) returns this same nested shape.
+                res:list = self._flatten_nested_bodies_result(raw_result)
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 

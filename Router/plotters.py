@@ -19,7 +19,7 @@ import tkinter as tk
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE
 from .context import Context
 from .ship import Ship
 
@@ -32,6 +32,11 @@ class PlotterSpec:
     src_key:str = 'from'
     dest_key:str = 'to'
     options:list = field(default_factory=list)
+    body_types:list|None = None  # riches-family body_types filter, e.g. ["Ammonia world"]
+    min_value:int|None = None    # min_value threshold: fixed always-sent value, or the slider's
+                                  # initial position (raw credits) when min_value_slider is True
+    min_value_slider:bool = False  # show an actual "Minimum Landmark Value" slider (Exobiology only --
+                                    # the other riches-family types fix min_value with no UI control)
 
 class Plotter(ABC):
     """Base class for all route plotters."""
@@ -384,16 +389,18 @@ class GalaxyPlotter(Plotter):
         self.ui._show_busy_gui(True)
 
 
-class RtoRPlotter(Plotter):
-    """Plotter for route-to-route calculations."""
+class RichesPlotter(Plotter):
+    """Plotter for the "systems containing bodies" route family: Road to Riches and its
+    body-type-filtered variants (Ammonia World, Earth-like World, Rocky/HMC World) on
+    /api/riches/route, plus Exobiology (Expressway to Exomastery) on /api/exobiology/route."""
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
-        """Create the route-to-route plotter frame."""
+        """Create the riches-family plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2
-        col:int = 0
+        row:int = 2; col:int = 0
 
-        params:dict = Context.router.route_params.get('RtoR', {})
+        params:dict = Context.router.route_params.get(self.route_type, {})
+        spec = PLOTTER_SPECS[self.route_type]
 
         self._plot_switcher(plot_fr, row, col)
 
@@ -425,6 +432,20 @@ class RtoRPlotter(Plotter):
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
 
+        # Row 5: minimum landmark value -- Exobiology's real filtering criterion, since it has
+        # no body_types to filter by. Slider is 0-21 with units of millions of credits implied
+        # (matching Spansh's own "Minimum Landmark Value" control).
+        if spec.min_value_slider:
+            row += 1; col = 0
+            l1:th.Label = th.Label(plot_fr, text=lbls['min_landmark_value'])
+            l1.grid(row=row, column=col, padx=5, pady=5)
+
+            col += 1
+            min_value_slider:th.Scale = th.Scale(plot_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
+            th.Tooltip(min_value_slider, tts["min_landmark_value"])
+            min_value_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
+            min_value_slider.set(int(params.get('min_value', spec.min_value or 0)) // 1_000_000)
+
         # Buttons
         row += 1; col = 0
         self._create_buttons(plot_fr, row, col)
@@ -434,7 +455,7 @@ class RtoRPlotter(Plotter):
 
     @catch_exceptions
     def plot(self) -> None:
-        """Perform route-to-route plotting."""
+        """Perform riches-family route plotting."""
         if not self.frame:
             return
 
@@ -449,7 +470,7 @@ class RtoRPlotter(Plotter):
         frm:str = src_ac.get().strip()
         params["from"] = self._validate_system(frm, src_ac)
         if params['from'] is None:
-            self.ui.show_frame('RtoR')
+            self.ui.show_frame(self.route_type)
             return
 
         # Leave destination blank for a circular tour starting and ending at the source
@@ -457,14 +478,14 @@ class RtoRPlotter(Plotter):
         if to != '':
             params["to"] = self._validate_system(to, dest_ac)
             if params['to'] is None:
-                self.ui.show_frame('RtoR')
+                self.ui.show_frame(self.route_type)
                 return
 
         range_entry = self.frame.nametowidget("range_entry")
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
-            self.ui.show_frame('RtoR')
+            self.ui.show_frame(self.route_type)
             range_entry.set_error_style()
             return
 
@@ -472,7 +493,7 @@ class RtoRPlotter(Plotter):
         params['radius'] = radius_entry.get().strip()
         if not re.match(r"^\d+(\.\d+)?$", params['radius']):
             Debug.logger.info(f"Invalid radius entry {params['radius']}")
-            self.ui.show_frame('RtoR')
+            self.ui.show_frame(self.route_type)
             radius_entry.set_error_style()
             return
 
@@ -480,15 +501,27 @@ class RtoRPlotter(Plotter):
         params['max_results'] = max_results_entry.get().strip()
         if not re.match(r"^\d+$", params['max_results']):
             Debug.logger.info(f"Invalid max results entry {params['max_results']}")
-            self.ui.show_frame('RtoR')
+            self.ui.show_frame(self.route_type)
             max_results_entry.set_error_style()
             return
 
-        params['use_mapping_value'] = 1 if options.selection_includes(self.options.index('use_mapping_value')) else 0
-        params['avoid_thargoids'] = 1 if options.selection_includes(self.options.index('avoid_thargoids')) else 0
-        params['loop'] = 1 if options.selection_includes(self.options.index('loop')) else 0
+        for opt in self.options:
+            params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
 
-        Context.router.plot_route('RtoR', params)
+        # Body-type-filtered variants (Ammonia/Earth-like/Rocky-metal) fix a body_types filter;
+        # Exobiology instead has a real "Minimum Landmark Value" slider (its filtering criterion,
+        # since there's no body type to filter by there); plain Road to Riches sends neither, so
+        # Spansh finds any valuable body.
+        spec = PLOTTER_SPECS[self.route_type]
+        if spec.body_types:
+            params['body_types'] = spec.body_types
+        if spec.min_value_slider:
+            min_value_slider = self.frame.nametowidget("min_value_entry")
+            params['min_value'] = int(min_value_slider.get()) * 1_000_000
+        elif spec.min_value is not None:
+            params['min_value'] = spec.min_value
+
+        Context.router.plot_route(self.route_type, params)
         self.ui._show_busy_gui(True)
 
 
@@ -525,16 +558,32 @@ class TradePlotter(Plotter):
 # Trade isn't included yet -- TradePlotter.plot() is still a stub, so it stays out of
 # route_types (unselectable) and unbuilt in ui.py until it's actually implemented.
 PLOTTER_SPECS:dict = {
-    'Neutron': PlotterSpec(
-        label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
-    ),
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
         src_key='source', dest_key='destination',
         options=['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
     ),
+    'Neutron': PlotterSpec(
+        label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
+    ),
     'RtoR': PlotterSpec(
-        label='Road to Riches', plotter_class=RtoRPlotter, url=SPANSH_RICHES_ROUTE,
+        label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
         options=['use_mapping_value', 'avoid_thargoids', 'loop']
+    ),
+    'EarthLike': PlotterSpec(
+        label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+        options=['avoid_thargoids', 'loop'], body_types=['Earth-like world'], min_value=1
+    ),
+    'Ammonia': PlotterSpec(
+        label='Ammonia World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+        options=['avoid_thargoids', 'loop'], body_types=['Ammonia world'], min_value=1
+    ),
+    'RockyMetal': PlotterSpec(
+        label='Rocky/HMC World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+        options=['avoid_thargoids', 'loop'], body_types=['Rocky body', 'High metal content world'], min_value=1
+    ),
+    'Exobiology': PlotterSpec(
+        label='Expressway to Exomastery', plotter_class=RichesPlotter, url=SPANSH_EXOBIOLOGY_ROUTE,
+        options=['avoid_thargoids', 'loop'], min_value=100000, min_value_slider=True
     ),
 }

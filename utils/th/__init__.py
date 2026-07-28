@@ -13,7 +13,7 @@ from .tooltip import Tooltip
 
 from utils.debug import Debug
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip", "Autocompleter", "Placeholder"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder"]
 
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half.
@@ -216,3 +216,12 @@ class Scale(Base):
         tksc2:tk.Scale = tk.Scale(master, **_strip_name(kw), border=0, borderwidth=0, highlightthickness=0)
         tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
         super().__init__(tksc1, tksc2)
+
+class Spinbox(Base):
+    """ A themed spinbox that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        sb1:tk.Spinbox = tk.Spinbox(master, **kw, border=0, borderwidth=0, highlightthickness=0)
+        sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=0, highlightthickness=0)
+        sb2.configure(background='black', buttonbackground='black', highlightbackground='black',
+                      foreground=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
+        super().__init__(sb1, sb2)

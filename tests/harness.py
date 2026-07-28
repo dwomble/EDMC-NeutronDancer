@@ -246,7 +246,7 @@ class TestHarness:
 
     def assert_no_unhandled_exceptions(self) -> None:
         """Fail the current test if any unhandled thread exceptions were captured."""
-        self._pump_ui(timeout_s=0.4)
+        self._pump_ui(timeout_s=0.25)
 
         scheduler_failures: list[str] = []
         if hasattr(self, '_tk_scheduler'):
@@ -372,7 +372,7 @@ class TestHarness:
                 raise
         self._pump_ui()
 
-    def play_sequence(self, name:str, delay:float = 0.5, state:dict = {}) -> None:
+    def play_sequence(self, name:str, delay:float = 0.2, state:dict = {}) -> None:
         """ Fire a sequence of events """
         for event in self.events.get(name, []):
             self.fire_event(event, state=state)

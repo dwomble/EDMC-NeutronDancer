@@ -935,6 +935,92 @@ class TestPlotMethods:
         assert harness.plugin.route.source() == 'Eol Prou LW-L c8-62 7'
         assert harness.plugin.router.route_params['RtoR'] == params
 
+    def test_plotter_success_creates_route_ammonia(self, harness:TestHarness) -> None:
+        """Regression: _plotter's riches-shape branch must trigger for body_types-filtered
+        variants too (Ammonia/Earth-like/Rocky-metal), not just literally 'RtoR' -- it used
+        to check `which == 'RtoR'`, so any other riches-family type fell into the flat
+        jumps/system_jumps branch and crashed calling .get() on a list."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": [
+                {"name": "Eol Prou OC-K c9-5", "jumps": 1, "bodies": [
+                    {"name": "Eol Prou OC-K c9-5 3", "subtype": "Ammonia world", "is_terraformable": False,
+                     "distance_to_arrival": 337.9, "estimated_scan_value": 302571, "estimated_mapping_value": 1099340},
+                ]},
+            ]
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20',
+                              'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 1}
+                    harness.plugin.router.plot_route('Ammonia', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) == 1
+        assert harness.plugin.route.source() == 'Eol Prou OC-K c9-5 3'
+        assert harness.plugin.router.route_params['Ammonia'] == params
+
+    def test_plotter_success_creates_route_exobiology(self, harness:TestHarness) -> None:
+        """Test that _plotter flattens an Exobiology response -- same nested systems/bodies
+        shape as riches, but each body also carries a `landmarks` list (biological species)
+        and `landmark_value`, which should surface as their own Species/Landmark Value
+        columns without polluting riches-family rows that never have that key."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": [
+                {"name": "Colonia", "jumps": 1, "bodies": []},
+                {"name": "Eol Prou PX-T d3-291", "jumps": 1, "bodies": [
+                    {"name": "Eol Prou PX-T d3-291 ABC 3 d", "subtype": "Rocky body",
+                     "distance_to_arrival": 2684.5, "estimated_scan_value": 500, "estimated_mapping_value": 2221,
+                     "landmark_value": 32831400, "landmarks": [
+                        {"count": 41, "subtype": "Frutexa Flammasis", "type": "Frutexa", "value": 10326000},
+                        {"count": 9, "subtype": "Concha Aureolas", "type": "Concha", "value": 7774700},
+                     ]},
+                ]},
+            ]
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'from': 'Colonia', 'range': '50', 'radius': '30', 'max_results': '10',
+                              'min_value': 100000, 'max_time': 1}
+                    harness.plugin.router.plot_route('Exobiology', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) == 1  # bodyless Colonia dropped
+        assert harness.plugin.route.source() == 'Eol Prou PX-T d3-291 ABC 3 d'
+        assert "Species" in harness.plugin.route.hdrs
+        assert "Landmark Value" in harness.plugin.route.hdrs
+        row = harness.plugin.route.route[0]
+        assert row[harness.plugin.route.hdrs.index("Species")] == 'Frutexa Flammasis'  # highest-value landmark
+        assert row[harness.plugin.route.hdrs.index("Landmark Value")] == 32831400
+        assert harness.plugin.router.route_params['Exobiology'] == params
+
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
@@ -1003,7 +1089,7 @@ class TestPlotMethods:
         assert params['destination'] == 'Colonia'
 
     def test_rtor_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: RtoRPlotter.plot() must actually invoke Context.router.plot_route()."""
+        """Regression: RichesPlotter.plot() must actually invoke Context.router.plot_route()."""
         ui = harness.plugin.ui
         rtor_fr = ui.plot_frames['RtoR']
 
@@ -1024,6 +1110,71 @@ class TestPlotMethods:
         assert 'to' not in params  # destination left blank -> circular tour
         assert params['radius'] == '40'
         assert params['max_results'] == '20'
+        assert 'body_types' not in params  # plain Road to Riches has no body filter
+
+    @pytest.mark.parametrize('route_type,expected_body_types', [
+        ('Ammonia', ['Ammonia world']),
+        ('EarthLike', ['Earth-like world']),
+        ('RockyMetal', ['Rocky body', 'High metal content world']),
+    ])
+    def test_riches_body_filter_plotter_plot_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
+        """Regression: each body-type-filtered riches plotter (Ammonia/Earth-like/Rocky-metal)
+        must invoke plot_route with its own fixed body_types filter and min_value=1."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames[route_type]
+
+        fr.nametowidget("source_ac").set_text("Colonia", False)
+        fr.nametowidget("dest_ac").set_text("", False)
+        fr.nametowidget("range_entry").set_text("50", False)
+        fr.nametowidget("radius_entry").set_text("40", False)
+        fr.nametowidget("max_results_entry").set_text("20", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters[route_type].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == route_type
+        assert params['from'] == 'Colonia'
+        assert params['body_types'] == expected_body_types
+        assert params['min_value'] == 1
+        assert 'use_mapping_value' not in params  # these pages don't expose that option
+
+    def test_exobiology_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """Regression: Exobiology has no body_types filter (unlike Ammonia/Earth-like/Rocky-metal)
+        -- its filtering criterion is a real "Minimum Landmark Value" slider (0-21, units of
+        millions of credits implied), which must be scaled by 1,000,000 before being sent."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Exobiology']
+
+        fr.nametowidget("source_ac").set_text("Colonia", False)
+        fr.nametowidget("dest_ac").set_text("", False)
+        fr.nametowidget("range_entry").set_text("50", False)
+        fr.nametowidget("radius_entry").set_text("30", False)
+        fr.nametowidget("max_results_entry").set_text("10", False)
+        fr.nametowidget("min_value_entry").set(5)  # 5 million credits
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Exobiology'].plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'Exobiology'
+        assert params['from'] == 'Colonia'
+        assert params['min_value'] == 5000000
+        assert 'body_types' not in params
+
+    def test_exobiology_min_value_slider_bounds(self, harness:TestHarness) -> None:
+        """The Minimum Landmark Value slider should be a 0-20 range (millions implied),
+        defaulting near 0 since Spansh's own default (100000 credits) rounds down to 0M."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Exobiology']
+        slider = fr.nametowidget("min_value_entry")
+        assert float(slider.cget('from')) == 0
+        assert float(slider.cget('to')) == 20
+        assert int(slider.get()) == 0
 
 
 class TestUIFunctions:
@@ -1510,7 +1661,6 @@ class TestPlotting:
         result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
         assert result is False
 
-    @pytest.mark.manual_only
     @pytest.mark.slow
     def test_plot_neutron_route(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot """
@@ -1532,7 +1682,6 @@ class TestPlotting:
             assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
             assert harness.plugin.route.total_jumps() == 31
 
-    @pytest.mark.manual_only
     @pytest.mark.slow
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
         """ Perform a live Neutron plot for a Caspian explorer """
@@ -1554,7 +1703,6 @@ class TestPlotting:
             assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
             assert harness.plugin.route.total_jumps() == 21
 
-    @pytest.mark.manual_only
     @pytest.mark.slow
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot and check results."""
@@ -1615,7 +1763,6 @@ class TestPlotting:
             # This route seems to vary based on current conditions
             assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
 
-    @pytest.mark.manual_only
     @pytest.mark.slow
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
         """Perform a live galaxy plot with a caspian explorer and check results."""
@@ -1666,7 +1813,6 @@ class TestPlotting:
             assert harness.plugin.router.dest == galaxy_params['destination']
             assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
 
-    @pytest.mark.manual_only
     @pytest.mark.slow
     def test_plot_rtor_route(self, harness:TestHarness) -> None:
         """ Perform a live Road-to-Riches plot """
@@ -1691,6 +1837,56 @@ class TestPlotting:
             assert "Estimated Scan Value" in harness.plugin.route.hdrs
             # Don't assert an exact body/jump count: which bodies are still unscanned
             # (and therefore appear in a riches route) changes over time in the live galaxy.
+            assert len(harness.plugin.route.route) > 0
+
+    @pytest.mark.slow
+    def test_plot_ammonia_route(self, harness:TestHarness) -> None:
+        """ Perform a live Ammonia World plot -- representative of the body-type-filtered
+        riches variants (Ammonia/Earth-like/Rocky-metal), which all share the same
+        /api/riches/route pipeline already exercised by test_plot_rtor_route above.
+        Ammonia worlds are rare, and completion time depends on Spansh's shared job
+        queue as much as search size, so this allows several minutes rather than the
+        ~20s default used for plain (unfiltered) riches routes. """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Ammonia',
+                                                {'from': 'Colonia', 'range': '50', 'radius': '150',
+                                                'max_results': '20', 'avoid_thargoids': '1', 'loop': '1',
+                                                'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 240})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=250)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == 'Colonia'
+            assert "Body Name" in harness.plugin.route.hdrs
+            assert len(harness.plugin.route.route) > 0
+
+    @pytest.mark.slow
+    def test_plot_exobiology_route(self, harness:TestHarness) -> None:
+        """ Perform a live Exobiology (Expressway to Exomastery) plot. Unlike the plain
+        body-value riches routes, this checks for Species/Landmark Value columns, since
+        that's the whole point of this route type. """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Exobiology',
+                                                {'from': 'Colonia', 'range': '50', 'radius': '30',
+                                                'max_results': '10', 'avoid_thargoids': '1', 'loop': '1',
+                                                'min_value': 100000, 'max_time': 60})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=70)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == 'Colonia'
+            assert "Species" in harness.plugin.route.hdrs
+            assert "Landmark Value" in harness.plugin.route.hdrs
             assert len(harness.plugin.route.route) > 0
 
 

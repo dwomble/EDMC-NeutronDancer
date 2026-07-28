@@ -27,6 +27,7 @@ SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
 SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
+SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 
@@ -49,14 +50,15 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "body_name": "Body Name", "subtype": "Body Subtype", "is_terraformable": "Is Terraformable",
                     "distance_to_arrival": "Distance To Arrival", "estimated_scan_value": "Estimated Scan Value",
                     "estimated_mapping_value": "Estimated Mapping Value",
+                    "species": "Species", "landmark_value": "Landmark Value",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
 
 # Headers that we accept
 HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
-                "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used",
-                "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
+                "Is Terraformable", "Species", "Landmark Value", "Distance To Arrival", "Estimated Scan Value",
+                "Estimated Mapping Value", "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining",
+                "Fuel Left", "Fuel Used", "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
 
 # Formatting info for each header
 HEADER_TYPES:dict = {"System Name": ["str", ""],
@@ -68,6 +70,8 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Body Name": ["str", ""],
                     "Body Subtype": ["str", ""],
                     "Is Terraformable": ["bool", ""],
+                    "Species": ["str", ""],
+                    "Landmark Value": ["float", "", " Cr"],
                     "Distance To Arrival": ["float", "", " ls"],
                     "Estimated Scan Value": ["float", "", " Cr"],
                     "Estimated Mapping Value": ["float", "", " Cr"],
@@ -138,6 +142,7 @@ lbls:dict = {
     "fuel_reserve": "Fuel Reserve",
     "radius": "Search Radius",
     "max_results": "Maximum Systems",
+    "min_landmark_value": "Minimum Landmark (Species) Value (M)",
     "is_supercharged": "Already Supercharged",
     "use_supercharge": "Use Supercharge",
     "use_injections": "Use FSD Injections",
@@ -186,6 +191,7 @@ tts:dict = {
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
     "radius": "Search radius in light years, right click for menu",
     "max_results": "Maximum number of systems to include in the route",
+    "min_landmark_value": "Minimum value of biological landmarks to look for, in millions of credits",
     "progress": "Progress",
     "none": "None"
 }

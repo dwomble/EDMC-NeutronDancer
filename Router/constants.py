@@ -267,7 +267,6 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
-    "no_station": "Station not found -- start typing to search",
     "format_error": "Error formatting progress display"
 }
 

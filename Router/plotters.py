@@ -613,11 +613,13 @@ class TradePlotter(Plotter):
 
         params:dict = {}
 
-        value:str = station_ac.get().strip()
-        system, station = value.split(' / ', 1) if " / " in value else ("", "")
+        station:str = station_ac.get().strip()
 
-        params["station"] = station
-        params['system'] = system
+        # query_station_names() already returns "System / Station" combined strings (matching
+        # Spansh's own single-field UI), so a validated match already carries both names --
+        # no need for a second Spansh roundtrip just to resolve the system name. Spansh's own
+        # /api/trade/route call will error out on a bad system/station combo regardless.
+        params["system"], _, params["station"] = station.partition(" / ")
 
         for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
                                         ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),

@@ -18,7 +18,7 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SYSTEM, ASSET_DIR, FONT, BOLD, lbls, btns, tts
+from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, ASSET_DIR, FONT, BOLD, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -582,28 +582,6 @@ class UI():
             return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:
             return [inp]
-
-
-    @catch_exceptions
-    def resolve_station_system(self, station_name:str) -> str | None:
-        """ Given an exact station name, return the name of the system it's in. Spansh's
-        station search only returns a system_id64 (not the name), so this makes a second
-        call to resolve it -- the same "system_id64 -> full system record" endpoint the
-        Trade Planner would otherwise use, just for name resolution instead of a station list. """
-        try:
-            results:requests.Response = requests.get(SPANSH_STATIONS_NAME, params={'q': station_name.strip()},
-                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
-            candidates:list = json.loads(results.content).get('min_max') or []
-            match = next((c for c in candidates if c.get('name', '').casefold() == station_name.strip().casefold()), None)
-            if match is None:
-                return None
-
-            sys_results:requests.Response = requests.get(f"{SPANSH_SYSTEM}/{match['system_id64']}",
-                                                          headers={'User-Agent': Context.plugin_useragent}, timeout=5)
-            record:dict = json.loads(sys_results.content).get('record', {})
-            return record.get('name')
-        except:
-            return None
 
 
     @catch_exceptions

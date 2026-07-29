@@ -14,14 +14,17 @@ class TooltipBase:
         self.tipwindow = None
         self.id = None
         self.x = self.y = 0
-        self._id1 = self.button.bind("<Enter>", self.enter)
-        self._id2 = self.button.bind("<Leave>", self.leave)
-        self._id3 = self.button.bind("<ButtonPress>", self.leave)
+        # add='+' so this layers on top of whatever the widget already binds for these
+        # sequences (e.g. Button's hover-highlight, Autocompleter's mouse_leave) instead of
+        # silently replacing it -- plain bind() overwrites any prior handler for the sequence.
+        self._id1 = self.button.bind("<Enter>", self.enter, add='+')
+        self._id2 = self.button.bind("<Leave>", self.leave, add='+')
+        self._id3 = self.button.bind("<ButtonPress>", self.leave, add='+')
         if hasattr(button, 'alt'):
             self.alt = button.alt
-            self._id4 = self.alt.bind("<Enter>", self.enter)
-            self._id5 = self.alt.bind("<Leave>", self.leave)
-            self._id6 = self.alt.bind("<ButtonPress>", self.leave)
+            self._id4 = self.alt.bind("<Enter>", self.enter, add='+')
+            self._id5 = self.alt.bind("<Leave>", self.leave, add='+')
+            self._id6 = self.alt.bind("<ButtonPress>", self.leave, add='+')
 
     def enter(self, event=None):
         self.schedule()

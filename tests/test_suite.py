@@ -1261,7 +1261,9 @@ class TestPlotMethods:
         """Regression: TradePlotter.plot() must invoke plot_route with system/station (not
         from/to like every other plotter) and the numeric/boolean fields, and must refuse to
         submit when the typed station text doesn't resolve to a real station (single combined
-        field, matching Spansh's own UI -- there's no separate system field to fall back on)."""
+        "System / Station" field, matching Spansh's own UI -- there's no separate system field
+        to fall back on, and no separate system-resolving roundtrip either, since a validated
+        match already carries both names -- see query_station_names())."""
         ui = harness.plugin.ui
         fr = ui.plot_frames['Trade']
 
@@ -1277,11 +1279,10 @@ class TestPlotMethods:
                 ui.plotters['Trade'].plot()
             mock_plot_route.assert_not_called()  # station text doesn't resolve
 
-        fr.nametowidget("station_ac").set_text("Jameson Memorial", False)
-        with patch.object(ui, 'query_station_names', return_value=["Jameson Memorial"]):
-            with patch.object(ui, 'resolve_station_system', return_value="Shinrarta Dezhra"):
-                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                    ui.plotters['Trade'].plot()
+        fr.nametowidget("station_ac").set_text("Shinrarta Dezhra / Jameson Memorial", False)
+        with patch.object(ui, 'query_station_names', return_value=["Shinrarta Dezhra / Jameson Memorial"]):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Trade'].plot()
 
         mock_plot_route.assert_called_once()
         which, params = mock_plot_route.call_args[0]
@@ -1305,29 +1306,25 @@ class TestUIFunctions:
         ui.set_entry(None, "ignored")
 
 
-    def test_query_station_names_and_resolve_system(self, harness:TestHarness) -> None:
+    def test_query_station_names(self, harness:TestHarness) -> None:
         """query_station_names() hits Spansh's station name typeahead directly -- a single
-        field, matching Spansh's own "Source Station" combobox. resolve_station_system()
-        re-queries that same endpoint for an exact (case-insensitive) match, then fetches the
-        full system record to get its name, since the station search only ever returns a
-        system_id64, never a system name."""
+        field, matching Spansh's own "Source Station" combobox -- and formats each result as
+        "System / Station" so the Trade Planner's single combined input field can validate a
+        typed/selected value and split it back into system+station locally, with no separate
+        system-resolving roundtrip (Spansh's own /api/trade/route call errors out on a bad
+        system/station combo anyway, so there's nothing worth pre-verifying here)."""
         ui = harness.plugin.ui
 
         def fake_get(url, *args, **kwargs):
             resp = Mock()
             resp.status_code = 200
-            if 'stations/field_values/name' in url:
-                resp.content = json.dumps({
-                    "min_max": [{"name": "Jameson Memorial", "system_id64": 3932277478106}]
-                }).encode()
-            else:
-                resp.content = json.dumps({"record": {"name": "Shinrarta Dezhra"}}).encode()
+            resp.content = json.dumps([
+                {"system": "Shinrarta Dezhra", "name": "Jameson Memorial"}
+            ]).encode()
             return resp
 
         with patch('requests.get', side_effect=fake_get):
-            assert ui.query_station_names('Jameson') == ['Jameson Memorial']
-            assert ui.resolve_station_system('Jameson Memorial') == 'Shinrarta Dezhra'
-            assert ui.resolve_station_system('No Such Station') is None  # no exact match
+            assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
 
 
     # def test_combobox_bind_fires_on_dark_mode_selection(self, harness:TestHarness) -> None:

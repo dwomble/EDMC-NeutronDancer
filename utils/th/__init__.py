@@ -9,18 +9,36 @@ from theme import theme # type: ignore
 from config import config # type: ignore
 
 from .autocompleter import Autocompleter
-from .placeholder import Placeholder
-#from .spinbox import Spinbox
+from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 def _strip_name(kw:dict) -> dict:
-    """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half.
-    Tk silently aliases a second widget created with an already-used name onto the first instead
-    of erroring, so passing the same explicit name to both halves of a themed widget makes them
-    the same underlying widget -- duplicated inserts, and whichever half is configured last wins. """
+    """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
+
+def _bind_hover(btn:tk.Button) -> None:
+    """ A plain tk.Button only applies its active* colors while the mouse is pressed, not on
+    mouseover, unlike a themed ttk.Button which highlights on hover natively. Button falls back
+    to tk.Button for images (ttk.Button can't have its foreground set once it has one) and
+    always uses tk.Button for the dark-mode alt, so both need this to match ttk.Button's hover
+    behaviour. Colors are re-read on every <Enter> (rather than captured once) so this stays
+    correct across theme/dark-mode switches. """
+    def on_enter(e:tk.Event[tk.Button]) -> None:
+        w:tk.Button = e.widget
+        setattr(w, '_th_normal', (w['background'], w['foreground']))
+        w.configure(background=w['activebackground'], foreground=w['activeforeground'])
+    def on_leave(e:tk.Event[tk.Button]) -> None:
+        w:tk.Button = e.widget
+        bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
+        w.configure(background=bg, foreground=fg)
+    btn.bind('<Enter>', on_enter)
+    btn.bind('<Leave>', on_leave)
+
+def resolve(widget:Any) -> Any:
+    """ Resolve the actual base object for a tk nametowidget() lookup. """
+    return getattr(widget, 'themed', widget)
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
@@ -30,10 +48,14 @@ class Base:
         object.__setattr__(self, 'obj', obj)
         object.__setattr__(self, 'alt', alt)
 
+        # Back-reference so th.resolve() can recover this wrapper from a nametowidget() lookup.
+        setattr(obj, 'themed', self)
+        if alt is not None:
+            setattr(alt, 'themed', self)
+
         theme.register(obj)
         if alt is not None:
             theme.register(alt)
-
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
@@ -60,7 +82,6 @@ class Base:
         if self.alt is not None:
             self.alt.configure(cnf, **kw)
         self.obj.configure(cnf, **kw)
-
 
     def _callable_attr(self, name:str, *args, **kw) -> Any:
         """Call a same-named method on both widgets, returning the primary result."""
@@ -101,6 +122,10 @@ class Base:
             return self.alt[key]
         raise KeyError(key)
 
+    def __setitem__(self, key, value) -> None:
+        """Support subscript assignment for themedItem, e.g. widget['fg'] = 'red'."""
+        self.configure(**{key: value})
+
 class TopLevel(tk.Toplevel):
     """ A themed toplevel window that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
@@ -130,8 +155,13 @@ class Button(Base):
     def __init__(self, master:tk.Widget, **kw) -> None:
         # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
         btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
+        if isinstance(btn, tk.Button):
+            _bind_hover(btn)
 
-        super().__init__(btn, tk.Button(master, **_strip_name(kw)))
+        alt:tk.Button = tk.Button(master, **_strip_name(kw))
+        _bind_hover(alt)
+
+        super().__init__(btn, alt)
 
     def grid(self, *args, **kw) -> Any:
         """ Override grid to handle themed buttons. """
@@ -246,9 +276,24 @@ class Scale(Base):
         tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
         super().__init__(tksc1, tksc2)
 
-class Spinbox(Base):
-    """ A themed spinbox that can switch between light and dark mode. """
-    def __init__(self, master:tk.Widget, **kw) -> None:
+class Spinbox(PlaceholderMixin, Base):
+    """ A themed spinbox that can switch between light and dark mode.
+
+        Unlike tk.Entry, a themed Spinbox is two separate tk.Spinbox widgets (light/dark),
+        so it takes PlaceholderMixin's placeholder/menu features via a shared textvariable
+        (see PlaceholderMixin.init_placeholder) rather than Placeholder's single-widget approach.
+        Takes the same parameters as a tk.Spinbox object plus the optional placeholder/menu/
+        placeholder_color/error_color kwargs described in PlaceholderMixin.
+
+        Once placeholder support is wired up, content changes must go through set_text() rather
+        than raw insert()/delete() -- those get mirrored onto both light/dark widgets, which
+        double-applies on top of the automatic sync from the shared textvariable.
+    """
+    def __init__(self, master:tk.Widget, placeholder:str = "", **kw) -> None:
+        menu:dict = kw.pop('menu', {})
+        placeholder_color:str = kw.pop('placeholder_color', "grey")
+        error_color:str = kw.pop('error_color', "red")
+
         rgb = master.winfo_rgb(master['background'])
         background:str = '#{:02x}{:02x}{:02x}'.format(rgb[0] // 256, rgb[1] // 256, rgb[2] // 256)
 
@@ -257,3 +302,5 @@ class Spinbox(Base):
         sb2.configure(background='black', buttonbackground='black', highlightbackground='black',
                       foreground=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)
+
+        self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)

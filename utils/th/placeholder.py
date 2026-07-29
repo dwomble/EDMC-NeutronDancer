@@ -1,48 +1,48 @@
 import tkinter as tk
 from functools import partial
+from typing import Any, TYPE_CHECKING
 from theme import theme  # type: ignore
 from config import config  # type: ignore
 from utils.debug import Debug, catch_exceptions
 
-class Placeholder(tk.Entry):
+class PlaceholderMixin:
     """
-        A reusable Entry widget with placeholder text and dropdown menu functionality.
-        Borrowed/stolen and modified from https://github.com/CMDR-Kiel42/EDMC_SpanshRouter
+        Adds placeholder text and a right-click cut/copy/paste menu to a themed widget.
+    """
+    if TYPE_CHECKING:
+        # Declared for the type checker only -- the actual attributes are set dynamically in
+        # init_placeholder() (via object.__setattr__, see the docstring above) and these methods
+        # come from whichever host class (tk.Entry, utils.th.Base) this mixin is combined with.
+        placeholder:str
+        placeholder_color:str
+        error_color:str
+        var:tk.StringVar
+        menu:tk.Menu
 
-        It takes the same parameters as a tk.Entry object plus:
-            :param placeholder: The placeholder text to show when the entry is empty
+        def bind(self, sequence:str, func, add:Any = None) -> str: ...
+        def configure(self, cnf:Any = None, **kw) -> None: ...
+        def __getitem__(self, key:str) -> Any: ...
+        def __setitem__(self, key:str, value:Any) -> None: ...
+
+    def init_placeholder(self, parent, placeholder:str, menu:dict|None = None,
+                          placeholder_color:str = "grey", error_color:str = "red") -> None:
+        """
+            :param placeholder: The placeholder text to show when the widget is empty
             :param menu: A dictionary of right click menu items in the form {'Menu Item': (function, arg1, arg2, ...)}
             :param placeholder_color: The color of the placeholder text (default: grey)
             :param error_color: The color of the text when in error state (default: red)
-    """
-    def __init__(self, parent, placeholder, **kw) -> None:
-        menu:dict = {}
-        if 'menu' in kw:
-            menu = kw['menu']
-            del kw['menu']
-        self.placeholder_color = "grey"
-        if kw.get('placeholder_color') != None:
-            self.placeholder_color = kw.get('placeholder_color')
-            del kw['placeholder_color']
-        self.error_color = "red"
-        if kw.get('error_color') != None:
-            self.error_color = kw.get('error_color')
-            del kw['error_color']
+        """
+        object.__setattr__(self, 'placeholder', placeholder)
+        object.__setattr__(self, 'placeholder_color', placeholder_color)
+        object.__setattr__(self, 'error_color', error_color)
 
-        if 'relief' not in kw:
-            kw['relief'] = tk.GROOVE
+        var:tk.StringVar = tk.StringVar()
+        object.__setattr__(self, 'var', var)
+        self['textvariable'] = var
 
-        if parent is not None:
-            tk.Entry.__init__(self, parent, **kw)
-            theme.register(self)
-
-        self.var = tk.StringVar()
-        self["textvariable"] = self.var
-
-        self.placeholder = placeholder
         # Create right click menu
-        self.menu:tk.Menu = tk.Menu(parent, tearoff=0)
-        self.set_menu(menu)
+        object.__setattr__(self, 'menu', tk.Menu(parent, tearoff=0))
+        self.set_menu(menu or {})
         self.bind('<Button-3>', partial(self.show_menu))
 
         self.bind("<FocusIn>", self.focus_in)
@@ -50,6 +50,15 @@ class Placeholder(tk.Entry):
         self.bind('<Control-KeyRelease-a>', self.select_all)
         self.bind('<Control-KeyRelease-c>', self.copy)
         self.put_placeholder()
+
+        # return the host object to which this mixin is attached
+        host = getattr(self, 'obj', None)
+        if host is not None:
+            host.var = self.var
+            host.placeholder = self.placeholder
+            for m in ('set_text', 'set_menu', 'put_placeholder', 'force_placeholder_color',
+                      'set_default_style', 'set_error_style'):
+                setattr(host, m, getattr(self, m))
 
     def set_menu(self, menu:dict = {}) -> None:
         self.menu.delete(0, "end")
@@ -70,12 +79,11 @@ class Placeholder(tk.Entry):
         self.menu.tk.call("tk_popup", self.menu, e.x_root, e.y_root)
 
     def put_placeholder(self) -> None:
-        if self.get() != self.placeholder:
+        if self.var.get() != self.placeholder:
             self.set_text(self.placeholder, True)
 
     def set_text(self, text, placeholder_style=True) -> None:
-        self.delete(0, tk.END)
-        self.insert(0, text)
+        self.var.set(text)
         if placeholder_style or text == self.placeholder:
             self['fg'] = self.placeholder_color
         else:
@@ -96,13 +104,13 @@ class Placeholder(tk.Entry):
     def focus_in(self, e, *args) -> None:
         if self['fg'] == "red" or self['fg'] == self.placeholder_color:
             self.set_default_style()
-            if self.get() == self.placeholder:
-                self.delete('0', 'end')
+            if self.var.get() == self.placeholder:
+                self.var.set('')
             return
         self.select_all(e)
 
     def focus_out(self, *args) -> None:
-        if not self.get():
+        if not self.var.get():
             self.put_placeholder()
 
     def select_all(self, event) -> None:
@@ -110,3 +118,26 @@ class Placeholder(tk.Entry):
 
     def copy(self, event) -> None:
         event.widget.event_generate('<<Copy>>')
+
+
+class Placeholder(PlaceholderMixin, tk.Entry):
+    """
+        A reusable Entry widget with placeholder text and dropdown menu functionality.
+        Borrowed/stolen and modified from https://github.com/CMDR-Kiel42/EDMC_SpanshRouter
+
+        It takes the same parameters as a tk.Entry object plus the placeholder/menu/
+        placeholder_color/error_color kwargs described in PlaceholderMixin.init_placeholder.
+    """
+    def __init__(self, parent, placeholder, **kw) -> None:
+        menu:dict = kw.pop('menu', {})
+        placeholder_color:str = kw.pop('placeholder_color', "grey")
+        error_color:str = kw.pop('error_color', "red")
+
+        if 'relief' not in kw:
+            kw['relief'] = tk.GROOVE
+
+        if parent is not None:
+            tk.Entry.__init__(self, parent, **kw)
+            theme.register(self)
+
+        self.init_placeholder(parent, placeholder, menu, placeholder_color, error_color)

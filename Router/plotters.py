@@ -106,15 +106,11 @@ class Plotter(ABC):
 
     def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
         """Create range entry widget."""
-        #range_entry:th.Placeholder = th.Placeholder(parent, lbls['range'], width=width, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
-        #range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=0, to=1500, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
-        range_entry:th.Spinbox = th.Spinbox(parent, from_=0, to=1500, width=width-2, justify=tk.CENTER, name="range_entry")
-        range_entry.delete(0, "end")
-        range_entry.insert(0, str(range_val))
+        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=0, to=1500, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry.set_text(str(range_val), False)
         range_entry.grid(row=row, column=col, padx=5, pady=5)
 
         th.Tooltip(range_entry, tts["range"])
-        #range_entry.set_text(range_val, range_val == "32.00")
 
     def _plot_switcher(self, fr:th.Frame, row:int, col:int) -> None:
         """Create the route plotter type switcher."""
@@ -247,7 +243,7 @@ class NeutronPlotter(Plotter):
 
         params['efficiency'] = int(self.efficiency_slider.get())
         params['supercharge_multiplier'] = self.multiplier.get()
-        range_entry = self.frame.nametowidget("range_entry")
+        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
         params['range'] = range_entry.var.get()
 
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
@@ -300,13 +296,8 @@ class GalaxyPlotter(Plotter):
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
+        cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
         self.ui.set_entry(cargo_entry, str(Context.router.cargo))
-
-        #cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
-        #if Context.router.cargo != 0:
-        #    cargo_entry.delete(0, "end")
-        #    cargo_entry.insert(0, str(Context.router.cargo))
         cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
 
@@ -484,7 +475,7 @@ class RichesPlotter(Plotter):
                 self.ui.show_frame(self.route_type)
                 return
 
-        range_entry = self.frame.nametowidget("range_entry")
+        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")

@@ -117,12 +117,10 @@ class UI():
             value = sobj.get()
         for dest in self.plot_frames.values():
             try:
-                obj = dest.nametowidget(type)
+                obj = th.resolve(dest.nametowidget(type))
                 if obj == None:
                     continue
-                if isinstance(obj, th.Placeholder):
-                    obj.set_text(value, False)
-                elif isinstance(obj, th.Spinbox):
+                if isinstance(obj, (th.Placeholder, th.Spinbox)):
                     obj.set_text(value, False)
                 else:
                     obj.set(value)
@@ -428,12 +426,10 @@ class UI():
         self.menu_callback('ship', ship_name)
 
 
-    def set_entry(self, which:th.Autocompleter|th.Placeholder|None, value:str) -> None:
-        """ Set an autocompleter or placeholder entry's text and style """
+    def set_entry(self, which:th.Autocompleter|th.Placeholder|th.Spinbox|None, value:str) -> None:
+        """ Set an autocompleter, placeholder or spinbox entry's text and style """
         if which == None: return
-        which.delete(0, tk.END)
-        which.insert(0, value)
-        which.set_default_style()
+        which.set_text(value, False)
 
 
     def switch_ship(self, ship:Ship) -> None:
@@ -453,9 +449,10 @@ class UI():
         # Update range entry menus in all plot frames
         for dest in self.plot_frames.values():
             try:
-                if dest.nametowidget("range_entry") == None:
+                range_entry = th.resolve(dest.nametowidget("range_entry"))
+                if range_entry == None:
                     continue
-                dest.nametowidget("range_entry").set_menu(self._ship_dict())
+                range_entry.set_menu(self._ship_dict())
             except Exception as e:
                 pass
 

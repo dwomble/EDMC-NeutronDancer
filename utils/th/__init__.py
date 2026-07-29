@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any
+from typing import Any, cast
 from functools import partial
 
 import tkinter as tk
@@ -25,12 +25,16 @@ def _bind_hover(btn:tk.Button) -> None:
     always uses tk.Button for the dark-mode alt, so both need this to match ttk.Button's hover
     behaviour. Colors are re-read on every <Enter> (rather than captured once) so this stays
     correct across theme/dark-mode switches. """
-    def on_enter(e:tk.Event[tk.Button]) -> None:
-        w:tk.Button = e.widget
+    def on_enter(e:tk.Event) -> None:
+        # tk.Event[tk.Button] would be a cleaner annotation, but it's a runtime subscript --
+        # tkinter.Event only gained __class_getitem__ in newer Python builds, so it raises
+        # "TypeError: type 'Event' is not subscriptable" on whatever older Python this plugin's
+        # EDMC install bundles. cast() is purely for the type checker, never evaluated at runtime.
+        w = cast(tk.Button, e.widget)
         setattr(w, '_th_normal', (w['background'], w['foreground']))
         w.configure(background=w['activebackground'], foreground=w['activeforeground'])
-    def on_leave(e:tk.Event[tk.Button]) -> None:
-        w:tk.Button = e.widget
+    def on_leave(e:tk.Event) -> None:
+        w = cast(tk.Button, e.widget)
         bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
         w.configure(background=bg, foreground=fg)
     btn.bind('<Enter>', on_enter)

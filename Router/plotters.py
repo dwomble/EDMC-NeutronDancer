@@ -106,7 +106,7 @@ class Plotter(ABC):
 
     def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
         """Create range entry widget."""
-        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=0, to=1500, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5, to=120, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
         range_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -296,7 +296,7 @@ class GalaxyPlotter(Plotter):
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
+        cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
         self.ui.set_entry(cargo_entry, str(Context.router.cargo))
         cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
@@ -546,19 +546,23 @@ class TradePlotter(Plotter):
 
         # Row 2: starting capital and cargo capacity
         row += 1; col = 0
-        starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
+        #starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
+        starting_capital_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['starting_capital'], from_=1000, to=10000000, increment=1000, width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
         self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
         th.Tooltip(starting_capital_entry, tts["starting_capital"])
         starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER, name="max_cargo_entry")
+        #max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER,
+        # name="max_cargo_entry")
+        max_cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3, justify=tk.CENTER, name="max_cargo_entry")
         self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
         th.Tooltip(max_cargo_entry, tts["max_cargo"])
         max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
+        #max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
+        max_hops_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hops'], from_=1, to=100, width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
         self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
         th.Tooltip(max_hops_entry, tts["max_hops"])
         max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -566,20 +570,23 @@ class TradePlotter(Plotter):
         # Row 3: max hops and max hop distance
 
         row += 1; col = 0
-        max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
+        #max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
+        max_hop_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hop_distance'], from_=5, to=120, width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
         self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
         th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
         max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         # Row 4: max distance to arrival and max market age
         col += 1
-        max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
+        #max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
+        max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
         self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
         th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
         max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
+        #max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
+        max_price_age_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_price_age'], from_=0, to=720, width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
         if params.get('max_price_age_days'):
             self.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
         th.Tooltip(max_price_age_entry, tts["max_price_age"])
@@ -592,14 +599,6 @@ class TradePlotter(Plotter):
         self.frame = plot_fr
         return plot_fr
 
-    def _validate_station(self, inp:str, widget:th.Autocompleter) -> str | None:
-        """ Validate the typed text against Spansh's station search and return the exact
-        station name, mirroring Plotter._validate_system's pattern but for stations. """
-        validated = next((x for x in self.ui.query_station_names(inp) if x.casefold() == inp.casefold()), None)
-        if validated is None:
-            widget.set_text(inp, False)
-            widget.set_error_style()
-        return validated
 
     @catch_exceptions
     def plot(self) -> None:
@@ -614,19 +613,11 @@ class TradePlotter(Plotter):
 
         params:dict = {}
 
-        station:str = station_ac.get().strip()
-        params["station"] = self._validate_station(station, station_ac)
-        if params['station'] is None:
-            self.ui.show_frame('Trade')
-            return
+        value:str = station_ac.get().strip()
+        system, station = value.split(' / ', 1) if " / " in value else ("", "")
 
-        system = self.ui.resolve_station_system(params['station'])
-        if system is None:
-            self.ui.show_error(errs['no_station'])
-            station_ac.set_error_style()
-            self.ui.show_frame('Trade')
-            return
-        params["system"] = system
+        params["station"] = station
+        params['system'] = system
 
         for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
                                         ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),

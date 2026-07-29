@@ -29,6 +29,7 @@ SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
 SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
 SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
+SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
@@ -163,6 +164,10 @@ lbls:dict = {
     "max_hop_distance": "Max Dist",
     "max_system_distance": "Max Arrival",
     "max_price_age": "Max Age",
+    "final_destination": "Final Destination",
+    "destination": "Destination",
+    "add_destination": "+ Add Destination",
+    "remove_destination": "-",
     "requires_large_pad": "Requires Large Pad",
     "allow_prohibited": "Allow Prohibited",
     "allow_planetary": "Allow Planetary",
@@ -226,6 +231,10 @@ tts:dict = {
     "max_hop_distance": "Maximum jump distance per hop, in light years",
     "max_system_distance": "Maximum distance of a station from its arrival point, in light seconds",
     "max_price_age": "Ignore market prices older than this many days. Leave blank for no limit",
+    "final_destination": "Optional system to end the route at, right click for menu -- leave blank for a one-way/looped route",
+    "destination": "Tourist stop system name, right click for menu",
+    "add_destination": "Add another destination system",
+    "remove_destination": "Remove this destination system",
     "requires_large_pad": "Only include stations with a large landing pad",
     "allow_prohibited": "Allow commodities prohibited by the destination's superpower",
     "allow_planetary": "Allow planetary stations",

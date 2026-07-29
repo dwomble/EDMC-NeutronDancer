@@ -19,7 +19,7 @@ import tkinter as tk
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE
 from .context import Context
 from .ship import Ship
 
@@ -651,6 +651,147 @@ class TradePlotter(Plotter):
         self.ui._show_busy_gui(True)
 
 
+class TouristPlotter(Plotter):
+    """Plotter for /api/tourist/route -- visits a variable-length list of specific systems
+    (e.g. tourist beacons) starting from a source, optionally ending at a final destination
+    (dest_ac, left blank for a one-way/looped route)."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the tourist route plotter frame."""
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        row:int = 2; col:int = 0
+
+        params:dict = Context.router.route_params.get('Tourist', {})
+        self._plot_switcher(plot_fr, row, col)
+
+        # Row 1: source and range
+        row += 1; col = 0
+        self._create_source(plot_fr, row, col)
+        col += 3
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+
+        # Row 2: optional final destination and options
+        row += 1; col = 0
+        self._create_dest(plot_fr, row, col)
+        col += 3
+        self._create_options(plot_fr, row, col, self.options, params)
+
+        # Row 3: dynamic list of tourist stop destinations
+        row += 1; col = 0
+        self.destinations_frame:th.Frame = th.Frame(plot_fr)
+        self.destination_rows:list[dict] = []
+        self._rebuild_destination_rows(params.get('destination', []))
+        self.destinations_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W, padx=5, pady=5)
+
+        # Buttons
+        row += 1; col = 0
+        self._create_buttons(plot_fr, row, col)
+
+        self.frame = plot_fr
+        return plot_fr
+
+    def _rebuild_destination_rows(self, values:list[str]) -> None:
+        """ Destroy and recreate every destination row from `values` (always at least one row,
+        even if empty). Rebuilding from scratch on every add/remove -- rather than shifting
+        indices in place -- keeps each row's remove button wired to the index that's correct
+        right now, instead of a lambda that captured a stale index from before an earlier
+        add/remove. """
+        for destrow in self.destination_rows:
+            # Autocompleter's typeahead popup is a tk.Toplevel parented to the window, not to
+            # its row frame, so destroying the row frame alone would leak it.
+            destrow['ac'].popup.destroy()
+            destrow['frame'].destroy()
+        self.destination_rows = []
+
+        if not values:
+            values = ['']
+
+        for i, value in enumerate(values):
+            row_fr:th.Frame = th.Frame(self.destinations_frame)
+
+            ac:th.Autocompleter = th.Autocompleter(row_fr, lbls['destination'], width=30, func=self.ui.query_systems)
+            th.Tooltip(ac, tts['destination'])
+            if value:
+                self.ui.set_entry(ac, value)
+            ac.grid(row=0, column=0, padx=5, pady=2)
+
+            remove_btn:th.Button = th.Button(row_fr, text=lbls['remove_destination'], command=lambda i=i: self._remove_destination_row(i))
+            th.Tooltip(remove_btn, tts['remove_destination'])
+            remove_btn.grid(row=0, column=1, padx=5, pady=2)
+
+            row_fr.grid(row=i, column=0, columnspan=4, sticky=tk.W)
+            self.destination_rows.append({'frame': row_fr, 'ac': ac})
+
+        add_btn:th.Button = th.Button(self.destinations_frame, text=lbls['add_destination'], command=self._add_destination_row)
+        th.Tooltip(add_btn, tts['add_destination'])
+        add_btn.grid(row=len(values), column=0, columnspan=2, padx=5, pady=(2, 5), sticky=tk.W)
+
+    def _row_value(self, ac:th.Autocompleter) -> str:
+        """ An untouched Autocompleter's tk.Entry literally contains its placeholder text (that's
+        how PlaceholderMixin displays it -- there's no separate "showing placeholder" state), so
+        a never-typed-in row's .get() returns e.g. "Destination", not "". Treat that as blank. """
+        text:str = ac.get().strip()
+        return '' if text == ac.placeholder else text
+
+    def _add_destination_row(self) -> None:
+        """ Add a blank destination row after whatever's currently entered. """
+        values:list = [self._row_value(destrow['ac']) for destrow in self.destination_rows] + ['']
+        self._rebuild_destination_rows(values)
+
+    def _remove_destination_row(self, index:int) -> None:
+        """ Remove the destination row at `index` (rebuilding just clears the last remaining
+        row's text instead of removing it, since _rebuild_destination_rows always keeps at
+        least one row). """
+        values:list = [self._row_value(destrow['ac']) for i, destrow in enumerate(self.destination_rows) if i != index]
+        self._rebuild_destination_rows(values)
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Perform tourist route plotting."""
+        if not self.frame:
+            return
+
+        self.ui.hide_error()
+
+        src_ac = self.frame.nametowidget("source_ac")
+        dest_ac = self.frame.nametowidget("dest_ac")
+        options = self.frame.nametowidget("options")
+
+        params:dict = {}
+
+        frm:str = src_ac.get().strip()
+        params["source"] = self._validate_system(frm, src_ac)
+        if params['source'] is None:
+            self.ui.show_frame('Tourist')
+            return
+
+        # Leave blank for a one-way/looped route ending back at the source
+        to:str = self._row_value(dest_ac)
+        if to != '':
+            params["final_destination"] = self._validate_system(to, dest_ac)
+            if params['final_destination'] is None:
+                self.ui.show_frame('Tourist')
+                return
+
+        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
+        params['range'] = range_entry.var.get()
+        if not re.match(r"^\d+(\.\d+)?$", params['range']):
+            Debug.logger.info(f"Invalid range entry {params['range']}")
+            self.ui.show_frame('Tourist')
+            range_entry.set_error_style()
+            return
+
+        # No pre-verification roundtrip for each destination system -- Spansh's own
+        # /api/tourist/route call will error out on a bad system name regardless.
+        params['destination'] = [v for destrow in self.destination_rows if (v := self._row_value(destrow['ac'])) != '']
+
+        for opt in self.options:
+            params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
+
+        Context.router.plot_route('Tourist', params)
+        self.ui._show_busy_gui(True)
+
+
 PLOTTER_SPECS:dict = {
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
@@ -685,5 +826,9 @@ PLOTTER_SPECS:dict = {
     'RockyMetal': PlotterSpec(
         label='Rocky/HMC World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
         options=['avoid_thargoids', 'loop'], body_types=['Rocky body', 'High metal content world'], min_value=1
+    ),
+    'Tourist': PlotterSpec(
+        label='Tourist Route', plotter_class=TouristPlotter, url=SPANSH_TOURIST_ROUTE,
+        src_key='source', dest_key='final_destination', options=['loop']
     )
 }

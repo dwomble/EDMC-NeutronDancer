@@ -1290,6 +1290,77 @@ class TestPlotMethods:
                      'allow_player_owned', 'allow_restricted_access', 'unique', 'permit']:
             assert params[flag] == 0  # none selected
 
+    def test_tourist_add_remove_destination_rows(self, harness:TestHarness) -> None:
+        """Adding/removing destination rows should track the right systems and always keep at
+        least one row -- removing the only remaining row just clears its text instead of
+        vanishing it."""
+        ui = harness.plugin.ui
+        plotter = ui.plotters['Tourist']
+
+        assert len(plotter.destination_rows) == 1
+
+        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
+        plotter._add_destination_row()
+        assert len(plotter.destination_rows) == 2
+        assert plotter.destination_rows[0]['ac'].get() == "Deciat"
+
+        plotter.destination_rows[1]['ac'].set_text("Colonia", False)
+        plotter._remove_destination_row(0)
+        assert len(plotter.destination_rows) == 1
+        assert plotter.destination_rows[0]['ac'].get() == "Colonia"
+
+        plotter._remove_destination_row(0)
+        assert len(plotter.destination_rows) == 1
+        remaining_ac = plotter.destination_rows[0]['ac']
+        assert remaining_ac.get() == remaining_ac.placeholder  # cleared back to its placeholder
+
+    def test_tourist_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """TouristPlotter.plot() must send source/destination(list)/range/loop, and must omit
+        final_destination entirely (rather than sending literal "None") when left blank."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Tourist']
+        plotter = ui.plotters['Tourist']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+        fr.nametowidget("dest_ac").set_text("", False)
+        fr.nametowidget("range_entry").set_text("50", False)
+
+        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
+        plotter._add_destination_row()
+        plotter.destination_rows[1]['ac'].set_text("Colonia", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'Tourist'
+        assert params['source'] == 'Sol'
+        assert 'final_destination' not in params
+        assert params['destination'] == ['Deciat', 'Colonia']
+        assert params['range'] == '50'
+        assert params['loop'] == 0
+
+    def test_tourist_plotter_final_destination_set(self, harness:TestHarness) -> None:
+        """A non-blank final destination should be validated and included."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Tourist']
+        plotter = ui.plotters['Tourist']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+        fr.nametowidget("dest_ac").set_text("Colonia", False)
+        fr.nametowidget("range_entry").set_text("50", False)
+        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
+
+        mock_plot_route.assert_called_once()
+        _, params = mock_plot_route.call_args[0]
+        assert params['final_destination'] == 'Colonia'
+
 
 class TestUIFunctions:
     """ Test UI functions """
@@ -2073,6 +2144,27 @@ class TestPlotting:
             assert "Station Name" in harness.plugin.route.hdrs
             assert "Commodity" in harness.plugin.route.hdrs
             assert "Cumulative Profit" in harness.plugin.route.hdrs
+            assert len(harness.plugin.route.route) > 0
+
+    @pytest.mark.slow
+    def test_plot_tourist_route(self, harness:TestHarness) -> None:
+        """ Perform a live Tourist Route plot between a handful of systems close to Sol,
+        so the real route computation stays fast. """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Tourist',
+                                                {'source': 'Sol', 'destination': ['Alpha Centauri', "Barnard's Star"],
+                                                'range': '50', 'loop': '0', 'max_time': 60})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=70)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == 'Sol'
+            assert "System Name" in harness.plugin.route.hdrs
             assert len(harness.plugin.route.route) > 0
 
 

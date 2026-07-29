@@ -19,29 +19,11 @@ def _strip_name(kw:dict) -> dict:
     return {k: v for k, v in kw.items() if k != 'name'}
 
 def _bind_hover(btn:tk.Button) -> None:
-    """ A plain tk.Button only applies its active* colors while the mouse is pressed, not on
-    mouseover, unlike a themed ttk.Button which highlights on hover natively. Button falls back
-    to tk.Button for images (ttk.Button can't have its foreground set once it has one) and
-    always uses tk.Button for the dark-mode alt, so both need this to match ttk.Button's hover
-    behaviour.
-
-    Combines a background/foreground color swap (works on macOS/Linux, where tk.Button honors
-    explicit color overrides -- verified empirically) with a relief toggle, because on Windows
-    tk.Button is drawn by the native visual-styles theme engine by default, which ignores
-    -background/-foreground overrides for the button face entirely. relief is the one state
-    Windows' native theme still honors, since raised/sunken bevels are literally how it renders
-    idle vs. pressed -- so it's the part that actually shows something there. Colors are re-read
-    on every <Enter> (rather than captured once) so this stays correct across theme switches;
-    the normal relief is captured once since nothing else in this codebase changes a button's
-    relief after construction. """
+    """ Bind hover to implement hover for themed buttons."""
     normal_relief = btn.cget('relief')
     hover_relief = tk.SUNKEN if normal_relief == tk.RAISED else tk.RAISED
 
     def on_enter(e:tk.Event) -> None:
-        # tk.Event[tk.Button] would be a cleaner annotation, but it's a runtime subscript --
-        # tkinter.Event only gained __class_getitem__ in newer Python builds, so it raises
-        # "TypeError: type 'Event' is not subscriptable" on whatever older Python this plugin's
-        # EDMC install bundles. cast() is purely for the type checker, never evaluated at runtime.
         w = cast(tk.Button, e.widget)
         setattr(w, '_th_normal', (w['background'], w['foreground']))
         w.configure(background=w['activebackground'], foreground=w['activeforeground'], relief=hover_relief)

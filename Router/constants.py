@@ -166,7 +166,7 @@ lbls:dict = {
     "max_price_age": "Max Age",
     "final_destination": "Final Destination",
     "destination": "Destination",
-    "add_destination": "+ Add Destination",
+    "add_destination": "+",
     "remove_destination": "-",
     "requires_large_pad": "Requires Large Pad",
     "allow_prohibited": "Allow Prohibited",

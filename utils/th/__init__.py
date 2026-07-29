@@ -18,19 +18,19 @@ def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
 
-def _bind_hover(btn:tk.Button) -> None:
+def _bind_hover(btn:ttk.Button) -> None:
     """ Bind hover to implement hover for themed buttons."""
-    normal_relief = btn.cget('relief')
-    hover_relief = tk.SUNKEN if normal_relief == tk.RAISED else tk.RAISED
+    #normal_relief = btn.cget('relief')
+    #hover_relief = tk.SUNKEN if normal_relief == tk.RAISED else tk.RAISED
 
     def on_enter(e:tk.Event) -> None:
-        w = cast(tk.Button, e.widget)
-        setattr(w, '_th_normal', (w['background'], w['foreground']))
-        w.configure(background=w['activebackground'], foreground=w['activeforeground'], relief=hover_relief)
+        w = cast(ttk.Button, e.widget)
+        #setattr(w, '_th_normal', (w['background'], w['foreground']))
+        #w.configure(background=w['activebackground'], foreground=w['activeforeground'], relief=hover_relief)
     def on_leave(e:tk.Event) -> None:
-        w = cast(tk.Button, e.widget)
-        bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
-        w.configure(background=bg, foreground=fg, relief=normal_relief)
+        w = cast(ttk.Button, e.widget)
+        #bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
+        #w.configure(background=bg, foreground=fg, relief=normal_relief)
     btn.bind('<Enter>', on_enter)
     btn.bind('<Leave>', on_leave)
 
@@ -152,12 +152,12 @@ class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
-        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
-        if isinstance(btn, tk.Button):
-            _bind_hover(btn)
+        btn:ttk.Button|tk.Button = ttk.Button(master, **kw)
+        #if 'image' in kw:
+        #    _bind_hover(btn)
 
         alt:tk.Button = tk.Button(master, **_strip_name(kw))
-        _bind_hover(alt)
+        #_bind_hover(alt)
 
         super().__init__(btn, alt)
 

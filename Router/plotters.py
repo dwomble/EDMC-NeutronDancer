@@ -296,7 +296,7 @@ class GalaxyPlotter(Plotter):
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
+        cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2, justify=tk.CENTER, name="cargo_entry")
         self.ui.set_entry(cargo_entry, str(Context.router.cargo))
         cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
@@ -310,7 +310,8 @@ class GalaxyPlotter(Plotter):
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=WIDTH3, justify=tk.CENTER)
+        #self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=WIDTH3, justify=tk.CENTER)
+        self.fuel_res:th.Spinbox = th.Spinbox(plot_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
         if params.get('reserve_size', 0) != 0:
             self.ui.set_entry(self.fuel_res, str(params.get('reserve_size', 0)))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
@@ -421,13 +422,15 @@ class RichesPlotter(Plotter):
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
 
         col += 1
-        radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
+        #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
+        radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER, name="radius_entry")
         self.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
         radius_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
+        #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
+        max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER, name="max_results_entry")
         self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -547,7 +550,7 @@ class TradePlotter(Plotter):
         # Row 2: starting capital and cargo capacity
         row += 1; col = 0
         #starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
-        starting_capital_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['starting_capital'], from_=1000, to=10000000, increment=1000, width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
+        starting_capital_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['starting_capital'], from_=1000, to=10000000, increment=1000, width=WIDTH3-2, justify=tk.CENTER, name="starting_capital_entry")
         self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
         th.Tooltip(starting_capital_entry, tts["starting_capital"])
         starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -555,14 +558,14 @@ class TradePlotter(Plotter):
         col += 1
         #max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER,
         # name="max_cargo_entry")
-        max_cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3, justify=tk.CENTER, name="max_cargo_entry")
+        max_cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2, justify=tk.CENTER, name="max_cargo_entry")
         self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
         th.Tooltip(max_cargo_entry, tts["max_cargo"])
         max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
-        max_hops_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hops'], from_=1, to=100, width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
+        max_hops_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hops'], from_=1, to=100, width=WIDTH3-2, justify=tk.CENTER, name="max_hops_entry")
         self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
         th.Tooltip(max_hops_entry, tts["max_hops"])
         max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -571,7 +574,7 @@ class TradePlotter(Plotter):
 
         row += 1; col = 0
         #max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
-        max_hop_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hop_distance'], from_=5, to=120, width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
+        max_hop_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hop_distance'], from_=5, to=120, width=WIDTH3-2, justify=tk.CENTER, name="max_hop_distance_entry")
         self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
         th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
         max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -579,14 +582,14 @@ class TradePlotter(Plotter):
         # Row 4: max distance to arrival and max market age
         col += 1
         #max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
-        max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
+        max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3-2, justify=tk.CENTER, name="max_system_distance_entry")
         self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
         th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
         max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
-        max_price_age_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_price_age'], from_=0, to=720, width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
+        max_price_age_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_price_age'], from_=0, to=720, width=WIDTH3-2, justify=tk.CENTER, name="max_price_age_entry")
         if params.get('max_price_age_days'):
             self.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
         th.Tooltip(max_price_age_entry, tts["max_price_age"])
@@ -715,14 +718,14 @@ class TouristPlotter(Plotter):
                 self.ui.set_entry(ac, value)
             ac.grid(row=0, column=0, padx=5, pady=2)
 
-            remove_btn:th.Button = th.Button(row_fr, text=lbls['remove_destination'], command=lambda i=i: self._remove_destination_row(i))
+            remove_btn:th.Button = th.Button(row_fr, text=lbls['remove_destination'], width=1, command=lambda i=i: self._remove_destination_row(i))
             th.Tooltip(remove_btn, tts['remove_destination'])
             remove_btn.grid(row=0, column=1, padx=5, pady=2)
 
             row_fr.grid(row=i, column=0, columnspan=4, sticky=tk.W)
             self.destination_rows.append({'frame': row_fr, 'ac': ac})
 
-        add_btn:th.Button = th.Button(self.destinations_frame, text=lbls['add_destination'], command=self._add_destination_row)
+        add_btn:th.Button = th.Button(self.destinations_frame, text=lbls['add_destination'], width=1, command=self._add_destination_row)
         th.Tooltip(add_btn, tts['add_destination'])
         add_btn.grid(row=len(values), column=0, columnspan=2, padx=5, pady=(2, 5), sticky=tk.W)
 

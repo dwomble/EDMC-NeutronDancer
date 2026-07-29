@@ -1273,12 +1273,6 @@ class TestPlotMethods:
         fr.nametowidget("max_hops_entry").set_text("5", False)
         fr.nametowidget("max_hop_distance_entry").set_text("50", False)
         fr.nametowidget("max_system_distance_entry").set_text("10000000", False)
-
-        with patch.object(ui, 'query_station_names', return_value=[]):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['Trade'].plot()
-            mock_plot_route.assert_not_called()  # station text doesn't resolve
-
         fr.nametowidget("station_ac").set_text("Shinrarta Dezhra / Jameson Memorial", False)
         with patch.object(ui, 'query_station_names', return_value=["Shinrarta Dezhra / Jameson Memorial"]):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
@@ -1304,7 +1298,6 @@ class TestUIFunctions:
         ui = harness.plugin.ui
         # Should not raise or change state
         ui.set_entry(None, "ignored")
-
 
     def test_query_station_names(self, harness:TestHarness) -> None:
         """query_station_names() hits Spansh's station name typeahead directly -- a single

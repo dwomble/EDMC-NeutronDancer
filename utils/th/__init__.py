@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Any
+from functools import partial
 
 import tkinter as tk
 from tkinter import ttk
@@ -9,9 +10,8 @@ from config import config # type: ignore
 
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder
+#from .spinbox import Spinbox
 from .tooltip import Tooltip
-
-from utils.debug import Debug
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder"]
 
@@ -62,7 +62,7 @@ class Base:
         self.obj.configure(cnf, **kw)
 
 
-    def callable_attr(self, name:str, *args, **kw) -> Any:
+    def _callable_attr(self, name:str, *args, **kw) -> Any:
         """Call a same-named method on both widgets, returning the primary result."""
         method = getattr(self.obj, name)
         result = method(*args, **kw)
@@ -82,7 +82,7 @@ class Base:
         if attr is None:
             raise AttributeError(name)
         if callable(attr):
-            return lambda *args, **kw: self.callable_attr(name, *args, **kw)
+            return lambda *args, **kw: self._callable_attr(name, *args, **kw)
 
         return attr
 
@@ -249,8 +249,11 @@ class Scale(Base):
 class Spinbox(Base):
     """ A themed spinbox that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        sb1:tk.Spinbox = tk.Spinbox(master, **kw, border=0, borderwidth=0, highlightthickness=0)
-        sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=0, highlightthickness=0)
+        rgb = master.winfo_rgb(master['background'])
+        background:str = '#{:02x}{:02x}{:02x}'.format(rgb[0] // 256, rgb[1] // 256, rgb[2] // 256)
+
+        sb1:tk.Spinbox = tk.Spinbox(master, **kw, border=0, borderwidth=1, highlightthickness=0, background=background)
+        sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
         sb2.configure(background='black', buttonbackground='black', highlightbackground='black',
                       foreground=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)

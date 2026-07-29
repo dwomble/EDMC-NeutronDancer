@@ -74,12 +74,12 @@ class Placeholder(tk.Entry):
             self.set_text(self.placeholder, True)
 
     def set_text(self, text, placeholder_style=True) -> None:
-        if placeholder_style:
+        self.delete(0, tk.END)
+        self.insert(0, text)
+        if placeholder_style or text == self.placeholder:
             self['fg'] = self.placeholder_color
         else:
             self.set_default_style()
-        self.delete(0, tk.END)
-        self.insert(0, text)
 
     def force_placeholder_color(self) -> None:
         self['fg'] = self.placeholder_color

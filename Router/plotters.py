@@ -23,6 +23,7 @@ from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE,
 from .context import Context
 from .ship import Ship
 
+WIDTH3:int = 9
 @dataclass
 class PlotterSpec:
     """ Everything that describes one route-plotting type. """
@@ -78,7 +79,7 @@ class Plotter(ABC):
         th.Tooltip(source_ac, tts["source_system"])
         if Context.router.src != '':
             self.ui.set_entry(source_ac, Context.router.src)
-        source_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        source_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
 
     def _create_dest(self, parent:th.Frame, row:int, col:int) -> None:
         """Create destination system autocompleter widget."""
@@ -91,7 +92,7 @@ class Plotter(ABC):
         th.Tooltip(dest_ac, tts["dest_system"])
         if Context.router.dest != '':
             self.ui.set_entry(dest_ac, Context.router.dest)
-        dest_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        dest_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
 
     def _create_options(self, parent:th.Frame, row:int, col:int, options:list, params:dict) -> None:
         """Create options listbox widget."""
@@ -101,14 +102,19 @@ class Plotter(ABC):
         for i, item in enumerate(options):
             if params.get(item, False) == True:
                 lb.selection_set(i)
-        lb.grid(row=row, column=col, rowspan=3, padx=5, pady=5)
+        lb.grid(row=row, column=col, rowspan=int(len(options) / 2)+1, padx=5, pady=5)
 
-    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0") -> None:
+    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
         """Create range entry widget."""
-        range_entry:th.Placeholder = th.Placeholder(parent, lbls['range'], width=11, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
-        range_entry.grid(row=row, column=col)
+        #range_entry:th.Placeholder = th.Placeholder(parent, lbls['range'], width=width, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        #range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=0, to=1500, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry:th.Spinbox = th.Spinbox(parent, from_=0, to=1500, width=width-2, justify=tk.CENTER, name="range_entry")
+        range_entry.delete(0, "end")
+        range_entry.insert(0, str(range_val))
+        range_entry.grid(row=row, column=col, padx=5, pady=5)
+
         th.Tooltip(range_entry, tts["range"])
-        range_entry.set_text(range_val, range_val == "32.00")
+        #range_entry.set_text(range_val, range_val == "32.00")
 
     def _plot_switcher(self, fr:th.Frame, row:int, col:int) -> None:
         """Create the route plotter type switcher."""
@@ -132,7 +138,7 @@ class Plotter(ABC):
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
-        sfr.grid(row=row, column=col, columnspan=3, sticky=tk.EW)
+        sfr.grid(row=row, column=col, columnspan=4, sticky=tk.EW)
 
     def _validate_system(self, inp:str, widget:th.Autocompleter) -> str | None:
         """ Validate and return the exact system name. """
@@ -145,20 +151,19 @@ class Plotter(ABC):
     def _create_buttons(self, parent:th.Frame, row:int, col:int) -> None:
         """Create standard plotting buttons (import, calculate, cancel)."""
         btn_frame:th.Frame = th.Frame(parent)
-        btn_frame.grid(row=row, column=col, columnspan=3, sticky=tk.EW, pady=(5, 0))
+        btn_frame.grid(row=row, column=col, columnspan=4, sticky=tk.EW, pady=(5, 0))
 
-        r = 0
-        col = 0
+        row = 0; col = 0
         self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.ui.import_route())
-        self.import_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
         self.plot_route_btn:th.Button = th.Button(btn_frame, text=btns["calculate_route"], command=self.plot)
-        self.plot_route_btn.grid(row=r, column=col, padx=5, sticky=tk.W)
+        self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
         self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.ui.show_frame('Default'))
-        self.cancel_plot.grid(row=r, column=col, padx=5, sticky=tk.W)
+        self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
 
 
 class NeutronPlotter(Plotter):
@@ -175,13 +180,13 @@ class NeutronPlotter(Plotter):
         # Source and range
         row += 1; col = 0
         self._create_source(plot_fr, row, col)
-        col += 2
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
+        col += 3
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
         # Destination and efficiency
         row += 1; col = 0
         self._create_dest(plot_fr, row, col)
-        col += 2
+        col += 3
 
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         th.Tooltip(self.efficiency_slider, tts["efficiency"])
@@ -200,9 +205,9 @@ class NeutronPlotter(Plotter):
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
         th.Tooltip(r1, tts['standard_multiplier'])
-        r1.grid(row=row, column=col, padx=5, pady=5)
+        r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
 
-        col += 1
+        col += 2
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         th.Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
@@ -270,7 +275,7 @@ class GalaxyPlotter(Plotter):
         # First row: source and options
         row += 1; col = 0
         self._create_source(plot_fr, row, col)
-        col += 2
+        col += 3
 
         self._create_options(plot_fr, row, col, self.options, params)
 
@@ -290,13 +295,18 @@ class GalaxyPlotter(Plotter):
 
         self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipvar.trace_add("write", self.ui.ship_selected)
-        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=10)
+        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=WIDTH3)
         th.Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=11, justify=tk.CENTER, name="cargo_entry")
+        cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['cargo'], width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
         self.ui.set_entry(cargo_entry, str(Context.router.cargo))
+
+        #cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, width=WIDTH3, justify=tk.CENTER, name="cargo_entry")
+        #if Context.router.cargo != 0:
+        #    cargo_entry.delete(0, "end")
+        #    cargo_entry.insert(0, str(Context.router.cargo))
         cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
 
@@ -304,12 +314,12 @@ class GalaxyPlotter(Plotter):
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
-        algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=10)
+        algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=WIDTH3)
         th.Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=11, justify=tk.CENTER)
+        self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=WIDTH3, justify=tk.CENTER)
         if params.get('reserve_size', 0) != 0:
             self.ui.set_entry(self.fuel_res, str(params.get('reserve_size', 0)))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
@@ -408,7 +418,7 @@ class RichesPlotter(Plotter):
 
         # Row 1: source and options
         self._create_source(plot_fr, row, col)
-        col += 2
+        col += 3
         self._create_options(plot_fr, row, col, self.options, params)
 
         # Row 2: destination
@@ -420,14 +430,13 @@ class RichesPlotter(Plotter):
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
 
         col += 1
-        radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=11, justify=tk.CENTER, name="radius_entry")
+        radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
         self.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
         radius_entry.grid(row=row, column=col, padx=5, pady=5)
 
-        # Row 4: maximum systems
-        row += 1; col = 0
-        max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=11, justify=tk.CENTER, name="max_results_entry")
+        col += 1
+        max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
         self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -539,54 +548,54 @@ class TradePlotter(Plotter):
         th.Tooltip(station_ac, tts["station"])
         if params.get('station'):
             self.ui.set_entry(station_ac, params['station'])
-        station_ac.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        station_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
+
+        col += 3
+        self._create_options(plot_fr, row, col, self.options, params)
 
         # Row 2: starting capital and cargo capacity
         row += 1; col = 0
-        starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=11, justify=tk.CENTER, name="starting_capital_entry")
+        starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
         self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
         th.Tooltip(starting_capital_entry, tts["starting_capital"])
         starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=11, justify=tk.CENTER, name="max_cargo_entry")
+        max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER, name="max_cargo_entry")
         self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
         th.Tooltip(max_cargo_entry, tts["max_cargo"])
         max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
 
-        # Row 3: max hops and max hop distance
-        row += 1; col = 0
-        max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=11, justify=tk.CENTER, name="max_hops_entry")
+        col += 1
+        max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
         self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
         th.Tooltip(max_hops_entry, tts["max_hops"])
         max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
 
-        col += 1
-        max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=11, justify=tk.CENTER, name="max_hop_distance_entry")
+        # Row 3: max hops and max hop distance
+
+        row += 1; col = 0
+        max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
         self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
         th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
         max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         # Row 4: max distance to arrival and max market age
-        row += 1; col = 0
-        max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=11, justify=tk.CENTER, name="max_system_distance_entry")
+        col += 1
+        max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
         self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
         th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
         max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
-        max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=11, justify=tk.CENTER, name="max_price_age_entry")
+        max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
         if params.get('max_price_age_days'):
             self.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
         th.Tooltip(max_price_age_entry, tts["max_price_age"])
         max_price_age_entry.grid(row=row, column=col, padx=5, pady=5)
 
-        # Row 5: the 7 boolean flags
-        row += 1; col = 0
-        self._create_options(plot_fr, row, col, self.options, params)
-
         # Buttons
-        row += 3; col = 0
+        row += 4; col = 0
         self._create_buttons(plot_fr, row, col)
 
         self.frame = plot_fr
@@ -671,6 +680,16 @@ PLOTTER_SPECS:dict = {
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
         options=['use_mapping_value', 'avoid_thargoids', 'loop']
     ),
+    'Exobiology': PlotterSpec(
+        label='Expressway to Exomastery', plotter_class=RichesPlotter, url=SPANSH_EXOBIOLOGY_ROUTE,
+        options=['avoid_thargoids', 'loop'], min_value=100000, min_value_slider=True
+    ),
+    'Trade': PlotterSpec(
+        label='Trade Planner', plotter_class=TradePlotter, url=SPANSH_TRADE_ROUTE,
+        src_key='system',
+        options=['requires_large_pad', 'allow_prohibited', 'allow_planetary', 'allow_player_owned',
+                 'allow_restricted_access', 'unique', 'permit']
+    ),
     'EarthLike': PlotterSpec(
         label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
         options=['avoid_thargoids', 'loop'], body_types=['Earth-like world'], min_value=1
@@ -682,15 +701,5 @@ PLOTTER_SPECS:dict = {
     'RockyMetal': PlotterSpec(
         label='Rocky/HMC World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
         options=['avoid_thargoids', 'loop'], body_types=['Rocky body', 'High metal content world'], min_value=1
-    ),
-    'Exobiology': PlotterSpec(
-        label='Expressway to Exomastery', plotter_class=RichesPlotter, url=SPANSH_EXOBIOLOGY_ROUTE,
-        options=['avoid_thargoids', 'loop'], min_value=100000, min_value_slider=True
-    ),
-    'Trade': PlotterSpec(
-        label='Trade Planner', plotter_class=TradePlotter, url=SPANSH_TRADE_ROUTE,
-        src_key='system',
-        options=['requires_large_pad', 'allow_prohibited', 'allow_planetary', 'allow_player_owned',
-                 'allow_restricted_access', 'unique', 'permit']
-    ),
+    )
 }

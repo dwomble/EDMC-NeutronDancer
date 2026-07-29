@@ -31,7 +31,7 @@ SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
-SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations/field_values/name"  # station name typeahead; results include system_id64
+SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
 SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, used to resolve a station's system name
 
 # Directory we store our save data in
@@ -154,15 +154,15 @@ lbls:dict = {
     "cargo": "Cargo",
     "fuel_reserve": "Fuel Reserve",
     "radius": "Search Radius",
-    "max_results": "Maximum Systems",
-    "min_landmark_value": "Minimum Landmark (Species) Value (M)",
+    "max_results": "Max Systems",
+    "min_landmark_value": "Min Value",
     "station": "Station",
     "starting_capital": "Starting Capital",
-    "max_cargo": "Maximum Cargo Capacity",
-    "max_hops": "Maximum Hops",
-    "max_hop_distance": "Maximum Hop Distance",
-    "max_system_distance": "Maximum Distance To Arrival",
-    "max_price_age": "Maximum Market Age (days)",
+    "max_cargo": "Max Cargo",
+    "max_hops": "Max Hops",
+    "max_hop_distance": "Max Dist",
+    "max_system_distance": "Max Arrival",
+    "max_price_age": "Max Age",
     "requires_large_pad": "Requires Large Pad",
     "allow_prohibited": "Allow Prohibited",
     "allow_planetary": "Allow Planetary",

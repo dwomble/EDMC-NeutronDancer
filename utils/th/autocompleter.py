@@ -1,6 +1,7 @@
 import queue
 import threading
 import tkinter as tk
+from tkinter import font as tkfont
 
 from theme import theme # type: ignore
 from config import config # type: ignore
@@ -144,20 +145,23 @@ class Autocompleter(Placeholder):
         if widget != "listbox":
             self.lb.activate(index)
 
-
-    def show_results(self, results) -> None:
+    @catch_exceptions
+    def show_results(self, results:list[str]) -> None:
         if results:
+            width:int = self.lb["width"]
             self.lb.delete(0, tk.END)
             for w in results:
                 self.lb.insert(tk.END, w)
+                width = max(width, len(w.rstrip()))
 
-            self.show_list(len(results))
+            self.show_list(len(results), width)
         else:
             if self.lb_up:
                 self.hide_list()
 
-    def show_list(self, height) -> None:
+    def show_list(self, height, width) -> None:
         self.lb["height"] = height
+        self.lb["width"] = width
         if not self.lb_up and self.parent.focus_get() is self:
             self.popup.configure(bg=theme.current['background'])
             self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], highlightbackground=theme.current['activebackground'], highlightcolor=theme.current['activeforeground'])

@@ -46,7 +46,7 @@ class Router():
         self.history:list = []
 
         # Info about the last route plotted
-        self.last_plot:str = "Neutron"
+        self.last_plot:str = "Galaxy"
         self.route_types = {name: spec.label for name, spec in PLOTTER_SPECS.items()}
         self.route_params:dict = {}
         for r in self.route_types.keys():

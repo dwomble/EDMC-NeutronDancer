@@ -59,7 +59,7 @@ class UI():
         self.hide_error()
 
         self.router:tk.StringVar = tk.StringVar()
-        self.router.set('Neutron Plotter')  # Set default value
+        self.router.set('Galaxy Plotter')  # Set default value
 
         self.progbar:ttk.Progressbar # Overall progress bar
 
@@ -117,14 +117,17 @@ class UI():
             value = sobj.get()
         for dest in self.plot_frames.values():
             try:
-                if dest.nametowidget(type) == None:
+                obj = dest.nametowidget(type)
+                if obj == None:
                     continue
-                if isinstance(dest.nametowidget(type), th.Placeholder):
-                    dest.nametowidget(type).set_text(value, False)
+                if isinstance(obj, th.Placeholder):
+                    obj.set_text(value, False)
+                elif isinstance(obj, th.Spinbox):
+                    obj.set_text(value, False)
                 else:
-                    dest.nametowidget(type).set(value)
-                #Debug.logger.debug(f"Updated {dest} {type} to {value}")
+                    obj.set(value)
             except Exception as e: # If the widget doesn't exist, just skip it
+                Debug.logger.debug(f"_update_item exception: {e}")
                 pass
 
     def get_item(self, which:str, type:str) -> str:
@@ -579,7 +582,7 @@ class UI():
         try:
             results:requests.Response = requests.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
                                                       headers={'User-Agent': Context.plugin_useragent}, timeout=3)
-            return [s['name'] for s in json.loads(results.content).get('min_max') or []]
+            return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:
             return [inp]
 

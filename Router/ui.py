@@ -15,7 +15,7 @@ from config import config # type: ignore
 
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
+from utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
@@ -298,15 +298,22 @@ class UI():
         nstr:str = route.get_waypoint(1) if route.dist_to_next() == 0 else f"{route.get_waypoint(1)} ({dn} ly)"
         self.waypoint_next_tt = th.Tooltip(self.waypoint_next_btn, nstr)
 
-        wp:str = route.next_stop()
+        primary:str = route.next_stop()
+        detail:str = route.next_stop_detail()
+        wp:str = f"{primary} · {detail}" if detail else primary
         self._update_progbar()
 
         if route.jumps_remaining() > 0:
-            copy_to_clipboard(self.parent, wp)
+            # Clipboard always gets just the primary name -- that's what pastes into the
+            # galaxy map, not the station/genus detail appended for display below.
+            copy_to_clipboard(self.parent, primary)
             # Show progress through route
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '-' if route.offset < 0 else '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])
-            wp += f" ({hfplus(jumps)}/{hfplus(tjumps)})"
+            suffix:str = f" ({hfplus(jumps)}/{hfplus(tjumps)})"
+            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
+        else:
+            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')), loc='middle')
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
@@ -317,6 +324,47 @@ class UI():
             image = self.fuel_img
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
+        self.waypoint_btn_tt = th.Tooltip(self.waypoint_btn, self._waypoint_tooltip(route))
+
+
+    def _waypoint_tooltip(self, route:Route) -> str:
+        """ Full next-waypoint detail for the waypoint button's tooltip -- the button itself
+        only has room for a short system/body + station/genus summary. """
+        lines:list = [route.next_stop_value('System Name') or route.next_stop()]
+
+        station = route.next_stop_value('Station Name')
+        if station:
+            lines.append(f"{lbls['station']}: {station}")
+
+            commodity = route.next_stop_value('Commodity')
+            amount:str = hfplus(tuple([route.next_stop_value('Amount'), 'float', '', ' t']))
+            if commodity:
+                lines.append(f"{commodity}{' x' + amount if amount else ''}")
+
+            profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'float', '', ' Cr']))
+            total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'float', '', ' Cr']))
+            if profit:
+                lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
+        else:
+            subtype:str = str(route.next_stop_value('Body Subtype') or '')
+            dist:str = hfplus(tuple([route.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
+            detail:str = " · ".join(p for p in [subtype, dist] if p)
+            if detail:
+                lines.append(detail)
+
+            scan:str = hfplus(tuple([route.next_stop_value('Estimated Scan Value'), 'float', '', ' Cr']))
+            mapping:str = hfplus(tuple([route.next_stop_value('Estimated Mapping Value'), 'float', '', ' Cr']))
+            values:str = " · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v)
+            if values:
+                lines.append(values)
+
+            species = route.next_stop_value('Species')
+            if species:
+                landmark:str = hfplus(tuple([route.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
+                lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
+
+        lines.append(tts['copy_to_clipboard'])
+        return "\n".join(lines)
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

@@ -56,6 +56,29 @@ class Route:
         return self.route[self.offset+1][self.sc]
 
 
+    def next_stop_value(self, header:str) -> object|None:
+        """ Return the next waypoint's value for `header`, or None if this route has no
+        such column (e.g. "Species" on a Trade route, "Station Name" on a Neutron route). """
+        if self.route == [] or self.offset >= len(self.route)-1: return None
+        ind:int|None = self.colind(header)
+        if ind is None: return None
+        return self.route[self.offset+1][ind]
+
+
+    def next_stop_detail(self) -> str:
+        """ Short secondary detail for the next waypoint, to sit alongside next_stop() in the
+        waypoint button -- station name for Trade routes, genus for Exobiology routes (just
+        the first word of the species name, e.g. "Bacterium" not "Bacterium Nypoxia"), blank
+        for every other route type. """
+        station = self.next_stop_value('Station Name')
+        if station: return str(station)
+
+        species = self.next_stop_value('Species')
+        if species: return str(species).split(' ', 1)[0]
+
+        return ''
+
+
     def jumps_to_refuel(self) -> int|None:
         """ Returns how many jumps until the next fuel stop. Returns None if no fuel stops. """
         if self.route == [] or self.offset >= len(self.route): return None

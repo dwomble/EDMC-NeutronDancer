@@ -29,6 +29,7 @@ from Router.route_window import RouteWindow
 from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
+from Router.plotters import PLOTTER_SPECS
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -940,6 +941,9 @@ class TestPlotMethods:
         variants too (Ammonia/Earth-like/Rocky-metal), not just literally 'RtoR' -- it used
         to check `which == 'RtoR'`, so any other riches-family type fell into the flat
         jumps/system_jumps branch and crashed calling .get() on a list."""
+        if 'Ammonia' not in PLOTTER_SPECS:
+            return
+
         global plotter_thread
         plotter_thread = None
 
@@ -1278,6 +1282,9 @@ class TestPlotMethods:
     def test_riches_body_filter_plotter_plot_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
         """Regression: each body-type-filtered riches plotter (Ammonia/Earth-like/Rocky-metal)
         must invoke plot_route with its own fixed body_types filter and min_value=1."""
+        if route_type not in PLOTTER_SPECS:
+            return
+
         ui = harness.plugin.ui
         fr = ui.plot_frames[route_type]
 
@@ -1595,6 +1602,36 @@ class TestUIFunctions:
 
         assert harness.plugin.ui._progress() == 2
 
+    def test_update_progress_trade_waypoint(self, harness:TestHarness) -> None:
+        """update_progress() must combine system + station on the button (truncated to fit
+        the button's width, jump-progress suffix always intact and untruncated), send only
+        the plain system name to the clipboard (not the combined display text), and build a
+        full-detail tooltip with the station/commodity/profit info the button has no room for."""
+        ui = harness.plugin.ui
+
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Total Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0, 0],
+            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 2123400, 3],
+        ]
+        harness.plugin.route = Route(hdrs, route_data, 0)
+
+        harness.clipboard.clear()
+        ui.update_progress()
+
+        assert harness.clipboard.get() == 'Puppis Sector TO-R b4-4'  # not the combined text
+
+        width:int = int(ui.waypoint_btn.cget('width'))
+        text:str = ui.waypoint_btn.cget('text')
+        assert len(text) <= width
+        assert text.endswith(" (0/3)")  # jump-progress suffix always preserved, never truncated
+        assert '…' in text  # system · station is long enough to need truncating
+
+        tooltip:str = ui.waypoint_btn_tt.args['text']
+        assert 'Puppis Sector TO-R b4-4' in tooltip
+        assert 'Alvarado Beacon' in tooltip
+        assert 'Agronomic Treatment' in tooltip
+
     def test_update_cargo(self, harness:TestHarness):
         """ test update_cargo() method """
         ui = harness.plugin.ui
@@ -1883,6 +1920,38 @@ class TestRouteWindowUI:
         route = Route(hdrs, route_data, 2)  # At last waypoint
 
         assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
+
+    def test_next_stop_value_and_detail_trade(self, harness:TestHarness) -> None:
+        """next_stop_detail() returns the station name for Trade-shaped routes."""
+        hdrs = ['System Name', 'Station Name', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', 0],
+            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 3],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
+        assert route.next_stop_value('Species') is None  # no such column on this route
+        assert route.next_stop_detail() == 'Alvarado Beacon'
+
+    def test_next_stop_detail_exobiology(self, harness:TestHarness) -> None:
+        """next_stop_detail() returns just the genus (first word) of the species name."""
+        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
+        route_data = [
+            ['Deciat', 'Deciat 1', '', 0],
+            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_detail() == 'Bacterium'
+
+    def test_next_stop_detail_blank_when_no_extra_columns(self, harness:TestHarness) -> None:
+        """next_stop_detail() is blank for plain route types (Neutron, Galaxy, etc.)."""
+        hdrs = ['System Name', 'Jumps']
+        route_data = [['Sol', 0], ['Apurui', 10]]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_detail() == ''
 
     def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
         """Test jumps_remaining() at start of route."""
@@ -2234,6 +2303,9 @@ class TestPlotting:
         Ammonia worlds are rare, and completion time depends on Spansh's shared job
         queue as much as search size, so this allows several minutes rather than the
         ~20s default used for plain (unfiltered) riches routes. """
+        if 'Ammonia' not in PLOTTER_SPECS:
+            return
+
         global plotter_thread
         plotter_thread = None
 

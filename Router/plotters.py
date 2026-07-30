@@ -19,7 +19,7 @@ import tkinter as tk
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE
 from .context import Context
 from .ship import Ship
 
@@ -50,6 +50,13 @@ class Plotter(ABC):
         self.route_type = route_type
         self.options:list = PLOTTER_SPECS[route_type].options
 
+        # Declared for subclasses that use the shared hop-list widget; each sets these in its
+        # own create_frame() before calling _rebuild_hop_rows() (see _create_hop_row etc.)
+        self.hop_label:str = ''
+        self.hop_tooltip:str = ''
+        self.hops_frame:th.Frame
+        self.hop_rows:list[dict] = []
+
     @abstractmethod
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """ Create and return the plotter's UI frame. """
@@ -66,20 +73,48 @@ class Plotter(ABC):
 
     # Shared UI creation methods
 
-    def _create_source(self, parent:th.Frame, row:int, col:int) -> None:
+    def _create_system_entry(self, parent:th.Frame, row:int, col:int, label:str, tooltip:str, *,
+                              name:str = '', menu:dict|None = None, initial:str = '',
+                              add_cmd=None, remove_cmd=None, pady:int = 5, add_col:int|None = None) -> th.Autocompleter:
+        """ One system-entry row: an autocompleter, optionally named (source/dest) or menued
+        (right-click history), optionally with -/+ buttons after it (add_col overrides the
+        add button's column, for rows sharing space with another field, e.g. Tourist's range). """
+        kw:dict = {'width': 30, 'func': self.ui.query_systems}
+        if menu:
+            kw['menu'] = menu
+        if name:
+            kw['name'] = name
+
+        ac:th.Autocompleter = th.Autocompleter(parent, label, **kw)
+        th.Tooltip(ac, tooltip)
+        if initial:
+            self.ui.set_entry(ac, initial)
+        ac.grid(row=row, column=col, columnspan=3, padx=5, pady=pady)
+
+        if remove_cmd is not None:
+            remove_btn:th.Button = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
+            th.Tooltip(remove_btn, tts['remove_hop'])
+            remove_btn.grid(row=row, column=col+3, padx=2, pady=2)
+
+        if add_cmd is not None:
+            add_btn:th.Button = th.Button(parent, text=lbls['add_hop'], width=2, command=add_cmd)
+            th.Tooltip(add_btn, tts['add_hop'])
+            add_btn.grid(row=row, column=add_col if add_col is not None else col+4, padx=2, pady=2)
+
+        return ac
+
+    def _create_source(self, parent:th.Frame, row:int, col:int, add_cmd=None, add_col:int|None = None) -> None:
         """Create source system autocompleter widget."""
-        srcmenu:dict = {Context.router.system: [self.ui.menu_callback, 'src']} if Context.router.system != '' else {}
+        srcmenu:dict = {}
         if Context.router.system != '':
             srcmenu[Context.router.system] = [self.ui.menu_callback, 'src']
         for sys in Context.router.history:
             if sys not in srcmenu:
                 srcmenu[sys] = [self.ui.menu_callback, 'src']
 
-        source_ac = th.Autocompleter(parent, lbls["source_system"], width=30, menu=srcmenu, func=self.ui.query_systems, name="source_ac")
-        th.Tooltip(source_ac, tts["source_system"])
-        if Context.router.src != '':
-            self.ui.set_entry(source_ac, Context.router.src)
-        source_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
+        self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
+                                   name="source_ac", menu=srcmenu, initial=Context.router.src,
+                                   add_cmd=add_cmd, add_col=add_col)
 
     def _create_dest(self, parent:th.Frame, row:int, col:int) -> None:
         """Create destination system autocompleter widget."""
@@ -88,11 +123,8 @@ class Plotter(ABC):
             if sys not in destmenu:
                 destmenu[sys] = [self.ui.menu_callback, 'dest']
 
-        dest_ac = th.Autocompleter(parent, lbls["dest_system"], width=30, menu=destmenu, func=self.ui.query_systems, name="dest_ac")
-        th.Tooltip(dest_ac, tts["dest_system"])
-        if Context.router.dest != '':
-            self.ui.set_entry(dest_ac, Context.router.dest)
-        dest_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
+        self._create_system_entry(parent, row, col, lbls["dest_system"], tts["dest_system"],
+                                   name="dest_ac", menu=destmenu, initial=Context.router.dest)
 
     def _create_options(self, parent:th.Frame, row:int, col:int, options:list, params:dict) -> None:
         """Create options listbox widget."""
@@ -111,6 +143,44 @@ class Plotter(ABC):
         range_entry.grid(row=row, column=col, padx=5, pady=5)
 
         th.Tooltip(range_entry, tts["range"])
+
+    # Shared hop-list widget: a caller-placed "+" beside the source field starts the list
+    # (_add_hop_row(-1)); each row then gets its own "-"/"+" to remove itself or insert below.
+
+    def _row_value(self, ac:th.Autocompleter) -> str:
+        """ An empty Autocompleter's .get() returns its placeholder text, not "". Treat that as blank. """
+        text:str = ac.get().strip()
+        return '' if text == ac.placeholder else text
+
+    def _create_hop_row(self, parent:th.Frame, row:int, index:int, value:str) -> dict:
+        """ One hop row: entry spans cols 0-2 (matching the source field above), -/+ in cols 3/4. """
+        row_fr:th.Frame = th.Frame(parent)
+        ac:th.Autocompleter = self._create_system_entry(row_fr, 0, 0, self.hop_label, self.hop_tooltip,
+                                                          initial=value, pady=2,
+                                                          remove_cmd=lambda: self._remove_hop_row(index),
+                                                          add_cmd=lambda: self._add_hop_row(index))
+        row_fr.grid(row=row, column=0, sticky=tk.W)
+        return {'frame': row_fr, 'ac': ac}
+
+    def _rebuild_hop_rows(self, values:list[str]) -> None:
+        """ Destroy and recreate every hop row from `values` (empty is valid -- no forced
+        minimum). Rebuilt from scratch so each row's -/+ closes over the right index. """
+        for hop in self.hop_rows:
+            hop['ac'].popup.destroy()  # the typeahead popup is a Toplevel, not a row child
+            hop['frame'].destroy()
+        self.hop_rows = [self._create_hop_row(self.hops_frame, i, i, value) for i, value in enumerate(values)]
+
+    def _add_hop_row(self, index:int) -> None:
+        """ Insert a blank hop row immediately after `index` (-1 to insert as the very first
+        hop, via the source field's own + button). """
+        values:list = [self._row_value(hop['ac']) for hop in self.hop_rows]
+        values.insert(index + 1, '')
+        self._rebuild_hop_rows(values)
+
+    def _remove_hop_row(self, index:int) -> None:
+        """ Remove the hop row at `index`. """
+        values:list = [self._row_value(hop['ac']) for i, hop in enumerate(self.hop_rows) if i != index]
+        self._rebuild_hop_rows(values)
 
     def _plot_switcher(self, fr:th.Frame, row:int, col:int) -> None:
         """Create the route plotter type switcher."""
@@ -173,17 +243,27 @@ class NeutronPlotter(Plotter):
         params:dict = Context.router.route_params.get('Neutron', {})
         self._plot_switcher(plot_fr, row, col)
 
-        # Source and range
+        # source_ac must stay a direct child of plot_fr -- ui._update_item()'s cross-plotter
+        # sync looks it up that way. The "+" beside it starts the via-point hop list.
         row += 1; col = 0
-        self._create_source(plot_fr, row, col)
-        col += 3
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1))
 
-        # Destination and efficiency
+        # Its own frame occupies one fixed row-slot, so rows below don't shift as hops are added.
+        row += 1; col = 0
+        self.hop_label = lbls['via_system']; self.hop_tooltip = tts['via_system']
+        self.hops_frame = th.Frame(plot_fr)
+        self.hop_rows:list[dict] = []
+        self._rebuild_hop_rows(params.get('via', []))
+        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+
+        # Destination and range
         row += 1; col = 0
         self._create_dest(plot_fr, row, col)
         col += 3
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
+        # Efficiency
+        row += 1; col = 0
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         th.Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
@@ -251,6 +331,9 @@ class NeutronPlotter(Plotter):
             self.ui.show_frame('Neutron')
             range_entry.set_error_style()
             return
+
+        # No pre-validation per via system -- Spansh errors on a bad name regardless.
+        params['via'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
         Context.router.plot_route('Neutron', params)
         self.ui._show_busy_gui(True)
@@ -667,9 +750,9 @@ class TouristPlotter(Plotter):
         params:dict = Context.router.route_params.get('Tourist', {})
         self._plot_switcher(plot_fr, row, col)
 
-        # Row 1: source and range
+        # Row 1: source, range, and the + that starts the stop list
         row += 1; col = 0
-        self._create_source(plot_fr, row, col)
+        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1), add_col=4)
         col += 3
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
@@ -679,12 +762,13 @@ class TouristPlotter(Plotter):
         col += 3
         self._create_options(plot_fr, row, col, self.options, params)
 
-        # Row 3: dynamic list of tourist stop destinations
+        # Row 3: the stop list, in its own fixed row-slot
         row += 1; col = 0
-        self.destinations_frame:th.Frame = th.Frame(plot_fr)
-        self.destination_rows:list[dict] = []
-        self._rebuild_destination_rows(params.get('destination', []))
-        self.destinations_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W, padx=5, pady=5)
+        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
+        self.hops_frame = th.Frame(plot_fr)
+        self.hop_rows:list[dict] = []
+        self._rebuild_hop_rows(params.get('destination', []))
+        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
         # Buttons
         row += 1; col = 0
@@ -784,14 +868,133 @@ class TouristPlotter(Plotter):
             range_entry.set_error_style()
             return
 
-        # No pre-verification roundtrip for each destination system -- Spansh's own
-        # /api/tourist/route call will error out on a bad system name regardless.
-        params['destination'] = [v for destrow in self.destination_rows if (v := self._row_value(destrow['ac'])) != '']
+        # No pre-validation per destination -- Spansh errors on a bad name regardless.
+        params['destination'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
         for opt in self.options:
             params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
 
         Context.router.plot_route('Tourist', params)
+        self.ui._show_busy_gui(True)
+
+
+FLEET_CARRIER_STATS:dict = {'fleet': {'capacity': 25000, 'mass': 25000}, 'squadron': {'capacity': 60000, 'mass': 15000}}
+
+class FleetCarrierPlotter(Plotter):
+    """Plotter for /api/fleetcarrier/route -- an ordered list of systems to visit and refuel
+    at. Unlike every other route type, Spansh needs each system's id64 here, not its name, so
+    plot() resolves each validated name via ui.resolve_system_id64() before submitting. Starting
+    fuel is always auto-calculated by Spansh; there's no manual fuel-loaded/tritium input."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the fleet carrier plotter frame."""
+        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        row:int = 2; col:int = 0
+
+        params:dict = Context.router.route_params.get('FleetCarrier', {})
+        self._plot_switcher(plot_fr, row, col)
+
+        # Row 1: source and the + that starts the destination list
+        row += 1; col = 0
+        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1))
+
+        # Row 2: destination list, in its own fixed row-slot
+        row += 1; col = 0
+        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
+        self.hops_frame = th.Frame(plot_fr)
+        self.hop_rows:list[dict] = []
+        self._rebuild_hop_rows(params.get('destination_names', []))
+        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+
+        # Row 3: carrier type
+        row += 1; col = 0
+        self.carrier_type:tk.StringVar = tk.StringVar()
+        self.carrier_type.set(params.get('carrier_type', 'fleet'))
+
+        l1:th.Label = th.Label(plot_fr, text=lbls["carrier_type"])
+        l1.grid(row=row, column=col, padx=5, pady=5)
+
+        col += 1
+        r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["fleet_carrier"], variable=self.carrier_type, value='fleet')
+        th.Tooltip(r1, tts['carrier_type'])
+        r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+
+        col += 2
+        r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
+        th.Tooltip(r2, tts['carrier_type'])
+        r2.grid(row=row, column=col, padx=5, pady=5)
+
+        # Row 4: capacity used
+        row += 1; col = 0
+        capacity_used_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['capacity_used'], from_=0, to=100000, increment=10, width=WIDTH3, justify=tk.CENTER, name="capacity_used_entry")
+        self.ui.set_entry(capacity_used_entry, str(params.get('capacity_used', 0)))
+        th.Tooltip(capacity_used_entry, tts["capacity_used"])
+        capacity_used_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        # Buttons
+        row += 1; col = 0
+        self._create_buttons(plot_fr, row, col)
+
+        self.frame = plot_fr
+        return plot_fr
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Perform fleet carrier route plotting."""
+        if not self.frame:
+            return
+
+        self.ui.hide_error()
+
+        src_ac = self.frame.nametowidget("source_ac")
+
+        params:dict = {}
+
+        frm:str = src_ac.get().strip()
+        source_name = self._validate_system(frm, src_ac)
+        if source_name is None:
+            self.ui.show_frame('FleetCarrier')
+            return
+
+        source_id64 = self.ui.resolve_system_id64(source_name)
+        if source_id64 is None:
+            self.ui.show_error(errs['no_system_id'])
+            self.ui.show_frame('FleetCarrier')
+            return
+
+        # No pre-validation per destination name -- Spansh errors on a bad one regardless.
+        dest_names:list = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
+        dest_id64s:list = []
+        for name in dest_names:
+            id64 = self.ui.resolve_system_id64(name)
+            if id64 is None:
+                self.ui.show_error(errs['no_system_id'])
+                self.ui.show_frame('FleetCarrier')
+                return
+            dest_id64s.append(id64)
+
+        capacity_used_entry = self.frame.nametowidget("capacity_used_entry")
+        capacity_used:str = capacity_used_entry.get().strip()
+        if not re.match(r"^\d+(\.\d+)?$", capacity_used):
+            Debug.logger.info(f"Invalid capacity_used entry {capacity_used}")
+            self.ui.show_frame('FleetCarrier')
+            capacity_used_entry.set_error_style()
+            return
+
+        carrier_type:str = self.carrier_type.get()
+        stats:dict = FLEET_CARRIER_STATS[carrier_type]
+
+        params['source_name'] = source_name
+        params['source'] = source_id64
+        params['destination_names'] = dest_names
+        params['destinations'] = dest_id64s
+        params['carrier_type'] = carrier_type
+        params['capacity'] = stats['capacity']
+        params['mass'] = stats['mass']
+        params['capacity_used'] = capacity_used
+        params['calculate_starting_fuel'] = 1
+
+        Context.router.plot_route('FleetCarrier', params)
         self.ui._show_busy_gui(True)
 
 
@@ -833,5 +1036,9 @@ PLOTTER_SPECS:dict = {
     'Tourist': PlotterSpec(
         label='Tourist Route', plotter_class=TouristPlotter, url=SPANSH_TOURIST_ROUTE,
         src_key='source', dest_key='final_destination', options=['loop']
+    ),
+    'FleetCarrier': PlotterSpec(
+        label='Fleet Carrier Route', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
+        src_key='source_name'
     )
 }

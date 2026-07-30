@@ -18,7 +18,7 @@ from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, PopupNotice, copy_to_clipboard
 from utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, ASSET_DIR, FONT, BOLD, lbls, btns, tts
+from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -569,6 +569,21 @@ class UI():
         except:
             return [inp]
         return json.loads(results.content)
+
+
+    @catch_exceptions
+    def resolve_system_id64(self, name:str) -> int | None:
+        """ Fleet Carrier's API needs a system's id64, not its name -- query_systems()'s plain
+        typeahead doesn't carry one, so this re-queries the richer search endpoint for an
+        exact match. """
+        try:
+            results:requests.Response = requests.get(SPANSH_SEARCH_SYSTEMS, params={'q': name.strip()},
+                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+            candidates:list = json.loads(results.content).get('results', [])
+            match = next((c for c in candidates if c.get('name', '').casefold() == name.strip().casefold()), None)
+            return match['id64'] if match else None
+        except:
+            return None
 
 
     @catch_exceptions

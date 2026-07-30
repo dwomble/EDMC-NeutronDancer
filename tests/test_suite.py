@@ -1102,6 +1102,61 @@ class TestPlotMethods:
 
         assert harness.plugin.router.route_params['Trade'] == params
 
+    def test_plotter_success_creates_route_fleetcarrier(self, harness:TestHarness) -> None:
+        """Test that _plotter flattens a Fleet Carrier response -- each requested stop appears
+        twice (ending one leg, starting the next), so only distance_to_destination == 0 rows
+        should survive. Real shape captured from the live Spansh fleet carrier API."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": {"jumps": [
+                {"distance": 0, "distance_to_destination": 131.427, "fuel_in_tank": 42, "fuel_used": 0,
+                 "has_icy_ring": False, "id64": 10477373803, "is_desired_destination": 1,
+                 "is_system_pristine": False, "must_restock": 1, "name": "Sol", "restock_amount": 42,
+                 "tritium_in_market": 0},
+                {"distance": 131.427, "distance_to_destination": 0, "fuel_in_tank": 21, "fuel_used": 21,
+                 "has_icy_ring": True, "id64": 6681123623626, "is_desired_destination": 1,
+                 "is_system_pristine": False, "must_restock": 0, "name": "Deciat", "restock_amount": 0,
+                 "tritium_in_market": 0},
+                {"distance": 0, "distance_to_destination": 129.796, "fuel_in_tank": 21, "fuel_used": 0,
+                 "has_icy_ring": False, "id64": 6681123623626, "is_desired_destination": 1,
+                 "is_system_pristine": False, "must_restock": 0, "name": "Deciat", "restock_amount": 0,
+                 "tritium_in_market": 0},
+                {"distance": 129.796, "distance_to_destination": 0, "fuel_in_tank": 0, "fuel_used": 21,
+                 "has_icy_ring": False, "id64": 1178708478315, "is_desired_destination": 1,
+                 "is_system_pristine": False, "must_restock": 0, "name": "Alpha Centauri", "restock_amount": 0,
+                 "tritium_in_market": 0},
+            ]}
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'source_name': 'Sol', 'source': 10477373803,
+                              'destination_names': ['Deciat', 'Alpha Centauri'],
+                              'destinations': [6681123623626, 1178708478315],
+                              'carrier_type': 'fleet', 'capacity': 25000, 'mass': 25000,
+                              'capacity_used': '0', 'calculate_starting_fuel': 1, 'max_time': 1}
+                    harness.plugin.router.plot_route('FleetCarrier', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        assert len(harness.plugin.route.route) == 2  # one row per stop, not per jump entry
+        row0, row1 = harness.plugin.route.route[0], harness.plugin.route.route[1]
+        assert row0[harness.plugin.route.hdrs.index("System Name")] == 'Deciat'
+        assert row1[harness.plugin.route.hdrs.index("System Name")] == 'Alpha Centauri'
+        assert "Icy Ring" in harness.plugin.route.hdrs
+        assert "Restock Tritium" in harness.plugin.route.hdrs
+
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
@@ -1149,6 +1204,28 @@ class TestPlotMethods:
         assert params['from'] == 'Sol'
         assert params['to'] == 'Colonia'
         assert params['range'] == '50'
+        assert params['via'] == []
+
+    def test_neutron_plotter_via_hops(self, harness:TestHarness) -> None:
+        """Regression: the + beside source must add via-point hops, sent as an ordered list."""
+        ui = harness.plugin.ui
+        plotter = ui.plotters['Neutron']
+        neutron_fr = ui.plot_frames['Neutron']
+
+        neutron_fr.nametowidget("source_ac").set_text("Sol", False)
+        neutron_fr.nametowidget("dest_ac").set_text("Colonia", False)
+        neutron_fr.nametowidget("range_entry").set_text("50", False)
+
+        assert len(plotter.hop_rows) == 0
+        plotter._add_hop_row(-1)
+        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
+
+        _, params = mock_plot_route.call_args[0]
+        assert params['via'] == ['Deciat']
 
     def test_galaxy_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: GalaxyPlotter.plot() must actually invoke Context.router.plot_route()."""
@@ -1290,29 +1367,29 @@ class TestPlotMethods:
                      'allow_player_owned', 'allow_restricted_access', 'unique', 'permit']:
             assert params[flag] == 0  # none selected
 
-    def test_tourist_add_remove_destination_rows(self, harness:TestHarness) -> None:
-        """Adding/removing destination rows should track the right systems and always keep at
-        least one row -- removing the only remaining row just clears its text instead of
-        vanishing it."""
+    def test_tourist_add_remove_hop_rows(self, harness:TestHarness) -> None:
+        """Adding/removing stop rows should track the right systems. Unlike the old
+        destination-list design, an empty hop list is valid -- no forced minimum row."""
         ui = harness.plugin.ui
         plotter = ui.plotters['Tourist']
 
-        assert len(plotter.destination_rows) == 1
+        assert len(plotter.hop_rows) == 0
 
-        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
-        plotter._add_destination_row()
-        assert len(plotter.destination_rows) == 2
-        assert plotter.destination_rows[0]['ac'].get() == "Deciat"
+        plotter._add_hop_row(-1)
+        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
+        assert len(plotter.hop_rows) == 1
 
-        plotter.destination_rows[1]['ac'].set_text("Colonia", False)
-        plotter._remove_destination_row(0)
-        assert len(plotter.destination_rows) == 1
-        assert plotter.destination_rows[0]['ac'].get() == "Colonia"
+        plotter._add_hop_row(0)
+        plotter.hop_rows[1]['ac'].set_text("Colonia", False)
+        assert len(plotter.hop_rows) == 2
+        assert plotter.hop_rows[0]['ac'].get() == "Deciat"
 
-        plotter._remove_destination_row(0)
-        assert len(plotter.destination_rows) == 1
-        remaining_ac = plotter.destination_rows[0]['ac']
-        assert remaining_ac.get() == remaining_ac.placeholder  # cleared back to its placeholder
+        plotter._remove_hop_row(0)
+        assert len(plotter.hop_rows) == 1
+        assert plotter.hop_rows[0]['ac'].get() == "Colonia"
+
+        plotter._remove_hop_row(0)
+        assert len(plotter.hop_rows) == 0
 
     def test_tourist_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
         """TouristPlotter.plot() must send source/destination(list)/range/loop, and must omit
@@ -1325,9 +1402,10 @@ class TestPlotMethods:
         fr.nametowidget("dest_ac").set_text("", False)
         fr.nametowidget("range_entry").set_text("50", False)
 
-        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
-        plotter._add_destination_row()
-        plotter.destination_rows[1]['ac'].set_text("Colonia", False)
+        plotter._add_hop_row(-1)
+        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
+        plotter._add_hop_row(0)
+        plotter.hop_rows[1]['ac'].set_text("Colonia", False)
 
         with patch('requests.get', side_effect=fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
@@ -1351,7 +1429,8 @@ class TestPlotMethods:
         fr.nametowidget("source_ac").set_text("Sol", False)
         fr.nametowidget("dest_ac").set_text("Colonia", False)
         fr.nametowidget("range_entry").set_text("50", False)
-        plotter.destination_rows[0]['ac'].set_text("Deciat", False)
+        plotter._add_hop_row(-1)
+        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
 
         with patch('requests.get', side_effect=fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
@@ -1360,6 +1439,53 @@ class TestPlotMethods:
         mock_plot_route.assert_called_once()
         _, params = mock_plot_route.call_args[0]
         assert params['final_destination'] == 'Colonia'
+
+    def test_fleetcarrier_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+        """FleetCarrierPlotter.plot() must resolve each system to an id64 (Spansh's API needs
+        ids here, unlike every other route type) and send capacity/mass by carrier type."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['FleetCarrier']
+        plotter = ui.plotters['FleetCarrier']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+        plotter._add_hop_row(-1)
+        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
+        fr.nametowidget("capacity_used_entry").set_text("500", False)
+        plotter.carrier_type.set('fleet')
+
+        id_map = {'Sol': 10477373803, 'Deciat': 6681123623626}
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(ui, 'resolve_system_id64', side_effect=lambda name: id_map[name]):
+                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                    plotter.plot()
+
+        mock_plot_route.assert_called_once()
+        which, params = mock_plot_route.call_args[0]
+        assert which == 'FleetCarrier'
+        assert params['source_name'] == 'Sol'
+        assert params['source'] == 10477373803
+        assert params['destination_names'] == ['Deciat']
+        assert params['destinations'] == [6681123623626]
+        assert params['capacity'] == 25000
+        assert params['mass'] == 25000
+        assert params['capacity_used'] == '500'
+        assert params['calculate_starting_fuel'] == 1
+
+    def test_fleetcarrier_plotter_unresolved_system_shows_error(self, harness:TestHarness) -> None:
+        """If a validated system name can't be resolved to an id64, plot() must bail with an
+        error rather than sending a broken request."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['FleetCarrier']
+        plotter = ui.plotters['FleetCarrier']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(ui, 'resolve_system_id64', return_value=None):
+                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                    plotter.plot()
+
+        mock_plot_route.assert_not_called()
 
 
 class TestUIFunctions:
@@ -1389,6 +1515,21 @@ class TestUIFunctions:
 
         with patch('requests.get', side_effect=fake_get):
             assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
+
+    def test_resolve_system_id64(self, harness:TestHarness) -> None:
+        """resolve_system_id64() is needed only by Fleet Carrier -- every other route type
+        sends plain system names, but Spansh's fleetcarrier API needs an id64."""
+        ui = harness.plugin.ui
+
+        def fake_get(url, *args, **kwargs):
+            resp = Mock()
+            resp.status_code = 200
+            resp.content = json.dumps({"results": [{"id64": 10477373803, "name": "Sol"}]}).encode()
+            return resp
+
+        with patch('requests.get', side_effect=fake_get):
+            assert ui.resolve_system_id64('Sol') == 10477373803
+            assert ui.resolve_system_id64('Not Sol') is None  # no exact match
 
 
     # def test_combobox_bind_fires_on_dark_mode_selection(self, harness:TestHarness) -> None:

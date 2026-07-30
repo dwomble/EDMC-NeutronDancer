@@ -5,6 +5,8 @@
 ### New Features
 
 * Added support for directly plotting Road to Riches, Exobiology (Expressway to Exomastery), Ammonia World, Earth-like World, and Rocky/High Metal Content World routes
+* Added a Fleet Carrier route plotter
+* Added via-point hops to the Neutron plotter, and migrated the Tourist plotter's stop list to the same +/- row UI
 
 ### Changes
 

@@ -30,10 +30,12 @@ SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
 SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
 SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
+SPANSH_FLEETCARRIER_ROUTE:str = f"{SPANSH_API}/fleetcarrier/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
 SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, used to resolve a station's system name
+SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 
 # Directory we store our save data in
 DATA_DIR = 'data'
@@ -57,6 +59,7 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "species": "Species", "landmark_value": "Landmark Value",
                     "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
                     "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
+                    "has_icy_ring": "Icy Ring", "is_system_pristine": "Pristine", "must_restock": "Restock Tritium",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
 
@@ -168,6 +171,13 @@ lbls:dict = {
     "destination": "Destination",
     "add_destination": "+",
     "remove_destination": "-",
+    "via_system": "Via System",
+    "add_hop": "+",
+    "remove_hop": "-",
+    "carrier_type": "Carrier Type",
+    "fleet_carrier": "Fleet Carrier",
+    "squadron_carrier": "Squadron Carrier",
+    "capacity_used": "Cargo/Module Space Used",
     "requires_large_pad": "Requires Large Pad",
     "allow_prohibited": "Allow Prohibited",
     "allow_planetary": "Allow Planetary",
@@ -232,9 +242,12 @@ tts:dict = {
     "max_system_distance": "Maximum distance of a station from its arrival point, in light seconds",
     "max_price_age": "Ignore market prices older than this many days. Leave blank for no limit",
     "final_destination": "Optional system to end the route at, right click for menu -- leave blank for a one-way/looped route",
-    "destination": "Tourist stop system name, right click for menu",
-    "add_destination": "Add another destination system",
-    "remove_destination": "Remove this destination system",
+    "destination": "Stop system name, right click for menu",
+    "via_system": "Intermediate system to route through",
+    "add_hop": "Add another stop after this one",
+    "remove_hop": "Remove this stop",
+    "carrier_type": "Fleet carriers have more cargo/module space but less jump range than squadron carriers",
+    "capacity_used": "Cargo and installed module space already in use, in tonnes",
     "requires_large_pad": "Only include stations with a large landing pad",
     "allow_prohibited": "Allow commodities prohibited by the destination's superpower",
     "allow_planetary": "Allow planetary stations",
@@ -276,6 +289,7 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
+    "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display"
 }
 

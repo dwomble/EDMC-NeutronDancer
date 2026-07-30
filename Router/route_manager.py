@@ -12,7 +12,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, copy_to_clipboard
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -298,6 +298,13 @@ class Router():
         return rows
 
 
+    def _flatten_fleetcarrier_result(self, jumps:list) -> list:
+        """ Each requested stop appears twice in Spansh's jumps list -- once ending the leg
+        that reached it, once starting the next -- so filter to distance_to_destination == 0
+        (arrivals only) for one row per stop, with the starting system never included. """
+        return [j for j in jumps if j.get('distance_to_destination') == 0]
+
+
     def _plotter(self, which:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
 
@@ -336,6 +343,8 @@ class Router():
                 res:list = self._flatten_nested_bodies_result(raw_result)
             elif url == SPANSH_TRADE_ROUTE:
                 res:list = self._flatten_trade_result(raw_result)
+            elif url == SPANSH_FLEETCARRIER_ROUTE:
+                res:list = self._flatten_fleetcarrier_result(raw_result.get('jumps', []))
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 

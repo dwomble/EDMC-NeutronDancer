@@ -9,6 +9,9 @@ There are several route plotting options.
 1. Ammonia World Route
 1. Earth-like World Route
 1. Rocky/HMC World Route
+1. Trade Planner
+1. Tourist Route
+1. Fleet Carrier Route
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
@@ -71,6 +74,8 @@ Next click **Calculate** to query Spansh and plot your route.
 
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
+- Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
+
 ## Road to Riches, Exobiology, and World-type Routes
 
 **Road to Riches**, **Expressway to Exomastery** (Exobiology), **Ammonia World Route**, **Earth-like World Route**, and **Rocky/HMC World Route** all work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.
@@ -122,7 +127,9 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 ## Fleet Carrier Routes
 
-Neutron Dancer doesn't (yet) directly plot fleet carrier routes but it can import and monitor them. When it does it functions just like for a Neutron route. It will also notify you when the jump cooldown is finished.
+The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrier. Enter a source system, add stops with the **+** beside it (each stop gets its own **-**/**+**), pick your carrier type, and enter how much cargo/module space is already in use. Starting fuel is calculated automatically.
+
+Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
 
 ## Overlays
 

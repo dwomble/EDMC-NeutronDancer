@@ -984,24 +984,24 @@ PLOTTER_SPECS:dict = {
         options=['requires_large_pad', 'allow_prohibited', 'allow_planetary', 'allow_player_owned',
                  'allow_restricted_access', 'unique', 'permit']
     ),
-    'EarthLike': PlotterSpec(
-        label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
-        options=['avoid_thargoids', 'loop'], body_types=['Earth-like world'], min_value=1
-    ),
-    'Ammonia': PlotterSpec(
-        label='Ammonia World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
-        options=['avoid_thargoids', 'loop'], body_types=['Ammonia world'], min_value=1
-    ),
-    'RockyMetal': PlotterSpec(
-        label='Rocky/HMC World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
-        options=['avoid_thargoids', 'loop'], body_types=['Rocky body', 'High metal content world'], min_value=1
-    ),
     'Tourist': PlotterSpec(
         label='Tourist Route', plotter_class=TouristPlotter, url=SPANSH_TOURIST_ROUTE,
         src_key='source', dest_key='final_destination'
     ),
     'FleetCarrier': PlotterSpec(
-        label='Fleet Carrier Route', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
+        label='Fleet Carrier Router', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
         src_key='source_name'
-    )
+    ),
+    # 'EarthLike': PlotterSpec(
+    #     label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+    #     options=['avoid_thargoids', 'loop'], body_types=['Earth-like world'], min_value=1
+    # ),
+    # 'Ammonia': PlotterSpec(
+    #     label='Ammonia World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+    #     options=['avoid_thargoids', 'loop'], body_types=['Ammonia world'], min_value=1
+    # ),
+    # 'RockyMetal': PlotterSpec(
+    #     label='Rocky/HMC World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
+    #     options=['avoid_thargoids', 'loop'], body_types=['Rocky body', 'High metal content world'], min_value=1
+    # )
 }

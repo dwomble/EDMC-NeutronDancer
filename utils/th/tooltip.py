@@ -85,6 +85,10 @@ class Tooltip(TooltipBase):
 
     def __init__(self, button, text:str='', **kwargs):
         TooltipBase.__init__(self, button)
+        self.set_text(text, **kwargs)
+
+    def set_text(self, text:str='', **kwargs) -> None:
+        """ Update the tooltip's content without re-binding to the widget. """
         self.args = kwargs
         if text != '':
             self.args['text'] = text

@@ -281,7 +281,7 @@ class UI():
             if tt != "": tt += "\n"
             tt += tts['speed'].format(j=hfplus(jr), d=hfplus(dr))
 
-        th.Tooltip(self.progbar, tt)
+        self.progtt.set_text(tt)
 
         self.progbar.configure(length=self.frwidth-3, value=self._progress())
 
@@ -292,11 +292,11 @@ class UI():
             return
         route:Route = Context.route
         self.waypoint_prev_btn.config(state=tk.DISABLED if route.offset <= -1 else tk.NORMAL)
-        self.waypoint_prev_tt = th.Tooltip(self.waypoint_prev_btn, route.get_waypoint(-1))
+        self.waypoint_prev_tt.set_text(route.get_waypoint(-1))
         self.waypoint_next_btn.config(state=tk.DISABLED if route.offset >= len(route.route) -1 else tk.NORMAL)
         dn:str = hfplus(tuple([Context.route.dist_to_next(), 'float', '0']))
         nstr:str = route.get_waypoint(1) if route.dist_to_next() == 0 else f"{route.get_waypoint(1)} ({dn} ly)"
-        self.waypoint_next_tt = th.Tooltip(self.waypoint_next_btn, nstr)
+        self.waypoint_next_tt.set_text(nstr)
 
         primary:str = route.next_stop()
         detail:str = route.next_stop_detail()
@@ -311,9 +311,9 @@ class UI():
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '-' if route.offset < 0 else '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])
             suffix:str = f" ({hfplus(jumps)}/{hfplus(tjumps)})"
-            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
+            wp = str_truncate(wp, length=32, loc='middle') + suffix
         else:
-            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')), loc='middle')
+            wp = str_truncate(wp, length=32, loc='middle')
 
         # Set an icon if appropriate
         image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
@@ -324,47 +324,55 @@ class UI():
             image = self.fuel_img
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
-        self.waypoint_btn_tt = th.Tooltip(self.waypoint_btn, self._waypoint_tooltip(route))
+        self.waypoint_btn_tt.set_text(self._waypoint_tooltip(route))
 
 
     def _waypoint_tooltip(self, route:Route) -> str:
         """ Full next-waypoint detail for the waypoint button's tooltip -- the button itself
         only has room for a short system/body + station/genus summary. """
-        lines:list = [route.next_stop_value('System Name') or route.next_stop()]
+        lines:list = [] #[route.next_stop_value('System Name') or route.next_stop()]
 
-        station = route.next_stop_value('Station Name')
+        station:str|None = route.next_stop_value('Station Name')
         if station:
             lines.append(f"{lbls['station']}: {station}")
 
-            commodity = route.next_stop_value('Commodity')
+        commodity:str|None = route.next_stop_value('Commodity')
+        if commodity:
             amount:str = hfplus(tuple([route.next_stop_value('Amount'), 'float', '', ' t']))
-            if commodity:
-                lines.append(f"{commodity}{' x' + amount if amount else ''}")
+            lines.append(f"{commodity}{' x' + amount if amount else ''}")
 
-            profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'float', '', ' Cr']))
-            total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'float', '', ' Cr']))
-            if profit:
-                lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
-        else:
-            subtype:str = str(route.next_stop_value('Body Subtype') or '')
+        profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'float', '', ' Cr']))
+        total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'float', '', ' Cr']))
+        if profit:
+            lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
+
+        subtype:str|None = route.next_stop_value('Body Subtype')
+        if subtype:
             dist:str = hfplus(tuple([route.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
             detail:str = " · ".join(p for p in [subtype, dist] if p)
             if detail:
                 lines.append(detail)
 
-            scan:str = hfplus(tuple([route.next_stop_value('Estimated Scan Value'), 'float', '', ' Cr']))
-            mapping:str = hfplus(tuple([route.next_stop_value('Estimated Mapping Value'), 'float', '', ' Cr']))
+        scanval:str|None = route.next_stop_value('Estimated Scan Value')
+        mapval:str|None = route.next_stop_value('Estimated Mapping Value')
+
+        if scanval or mapval:
+            scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
+            mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
             values:str = " · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v)
             if values:
                 lines.append(values)
 
-            species = route.next_stop_value('Species')
-            if species:
-                landmark:str = hfplus(tuple([route.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
-                lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
+        species:str|None = route.next_stop_value('Species')
+        if species:
+            landmark:str = hfplus(tuple([route.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
+            lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
 
-        lines.append(tts['copy_to_clipboard'])
-        return "\n".join(lines)
+        if lines == []:
+            return tts['copy_to_clipboard']
+
+        lines.append("\n" + tts['copy_to_clipboard'])
+        return ", ".join(lines)
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

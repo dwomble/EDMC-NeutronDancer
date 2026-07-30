@@ -56,7 +56,7 @@ class Route:
         return self.route[self.offset+1][self.sc]
 
 
-    def next_stop_value(self, header:str) -> object|None:
+    def next_stop_value(self, header:str) -> str|None:
         """ Return the next waypoint's value for `header`, or None if this route has no
         such column (e.g. "Species" on a Trade route, "Station Name" on a Neutron route). """
         if self.route == [] or self.offset >= len(self.route)-1: return None

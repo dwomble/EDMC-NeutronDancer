@@ -194,7 +194,7 @@ class ComboBox(Base):
             values = kw['values'][1:]
 
         tkcb:tk.OptionMenu = tk.OptionMenu(master, v, value, *values)
-        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0)
+        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=1, highlightthickness=0)
         tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
 
         super().__init__(ttkcb, tkcb)
@@ -298,7 +298,7 @@ class Spinbox(PlaceholderMixin, Base):
         sb1:tk.Spinbox = tk.Spinbox(master, **kw, border=0, borderwidth=1, highlightthickness=0, background=background)
         sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
         sb2.configure(background='black', buttonbackground='black', highlightbackground='black',
-                      foreground=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
+                      fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)
 
         self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)

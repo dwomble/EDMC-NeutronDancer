@@ -158,7 +158,7 @@ lbls:dict = {
     "max_results": "Max Systems",
     "min_landmark_value": "Min Value",
     "station": "Station",
-    "starting_capital": "Starting Capital",
+    "starting_capital": "Start Cap",
     "max_cargo": "Max Cargo",
     "max_hops": "Max Hops",
     "max_hop_distance": "Max Dist",

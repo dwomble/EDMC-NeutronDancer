@@ -65,7 +65,8 @@ class PlaceholderMixin:
         self.menu.add_command(label="Cut")
         self.menu.add_command(label="Copy")
         self.menu.add_command(label="Paste")
-        self.menu.add_separator()
+        if len(menu):
+            self.menu.add_separator()
         for m, f in menu.items():
             self.menu.add_command(label=m, command=partial(*f, m))
 

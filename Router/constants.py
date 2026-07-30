@@ -43,6 +43,8 @@ SHIP_DIR = 'ships'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
 
+FLEET_CARRIER_STATS:dict = {'fleet': {'capacity': 25000, 'mass': 25000}, 'squadron': {'capacity': 60000, 'mass': 15000}}
+
 # Font info
 FONT:tuple = ("Helvetica", 9, "normal")
 BOLD:tuple = ("Helvetica", 9, "bold")

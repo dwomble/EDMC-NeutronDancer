@@ -14,6 +14,9 @@ from .tooltip import Tooltip
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
+DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
+index:int = 0
+
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
@@ -133,7 +136,14 @@ class TopLevel(tk.Toplevel):
 class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
+        global index
         tk.Frame.__init__(self, master, **kw)
+        if DEBUG_FRAMES:
+            colors = ["lightcoral", "lightgreen", "lightblue", "lightyellow", "plum"]
+            self.configure(background=colors[index])
+            index += 1
+            if index >= len(colors): index = 0
+
         theme.update(self)
 
     def nametowidget(self, name:str) -> Any:
@@ -169,7 +179,7 @@ class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
-        btn:ttk.Button|tk.Button = ttk.Button(master, **kw)
+        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
         #if 'image' in kw:
         #    _bind_hover(btn)
 
@@ -292,18 +302,7 @@ class Scale(Base):
         super().__init__(tksc1, tksc2)
 
 class Spinbox(PlaceholderMixin, Base):
-    """ A themed spinbox that can switch between light and dark mode.
-
-        Unlike tk.Entry, a themed Spinbox is two separate tk.Spinbox widgets (light/dark),
-        so it takes PlaceholderMixin's placeholder/menu features via a shared textvariable
-        (see PlaceholderMixin.init_placeholder) rather than Placeholder's single-widget approach.
-        Takes the same parameters as a tk.Spinbox object plus the optional placeholder/menu/
-        placeholder_color/error_color kwargs described in PlaceholderMixin.
-
-        Once placeholder support is wired up, content changes must go through set_text() rather
-        than raw insert()/delete() -- those get mirrored onto both light/dark widgets, which
-        double-applies on top of the automatic sync from the shared textvariable.
-    """
+    """ A themed spinbox that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, placeholder:str = "", **kw) -> None:
         menu:dict = kw.pop('menu', {})
         placeholder_color:str = kw.pop('placeholder_color', "grey")

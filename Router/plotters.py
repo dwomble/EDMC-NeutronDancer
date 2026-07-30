@@ -19,7 +19,7 @@ import tkinter as tk
 import utils.th as th
 from utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, FLEET_CARRIER_STATS
 from .context import Context
 from .ship import Ship
 
@@ -90,15 +90,22 @@ class Plotter(ABC):
             self.ui.set_entry(ac, initial)
         ac.grid(row=row, column=col, columnspan=3, padx=5, pady=pady)
 
-        if remove_cmd is not None:
-            remove_btn:th.Button = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
-            th.Tooltip(remove_btn, tts['remove_hop'])
-            remove_btn.grid(row=row, column=col+3, padx=2, pady=2)
-
+        spwidth:int = 0
         if add_cmd is not None:
             add_btn:th.Button = th.Button(parent, text=lbls['add_hop'], width=2, command=add_cmd)
             th.Tooltip(add_btn, tts['add_hop'])
-            add_btn.grid(row=row, column=col+4, padx=2, pady=2)
+            add_btn.grid(row=row, column=col+3, padx=2, pady=2, sticky=tk.W)
+            spwidth = add_btn.winfo_reqwidth()
+
+        rb:th.Button|th.Frame
+        if remove_cmd is not None:
+            rb = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
+            th.Tooltip(rb, tts['remove_hop'])
+        else:
+            rb = th.Frame(parent, width=spwidth, height=1, bg='yellow')
+            rb.grid_propagate(False)
+
+        rb.grid(row=row, column=col+4, padx=2, pady=2)
 
         return ac
 
@@ -138,7 +145,7 @@ class Plotter(ABC):
         """Create range entry widget."""
         range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
-        range_entry.grid(row=row, column=col, padx=5, pady=5)
+        range_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
 
         th.Tooltip(range_entry, tts["range"])
 
@@ -166,6 +173,14 @@ class Plotter(ABC):
         for hop in self.hop_rows:
             hop['ac'].popup.destroy()  # the typeahead popup is a Toplevel, not a row child
             hop['frame'].destroy()
+
+        # Tk's grid geometry manager only recomputes hops_frame's requested size while it still
+        # has at least one slave -- dropping the last row leaves the container's reqheight stuck
+        # at its old (non-empty) size even though grid_bbox correctly reports zero slaves. Forcing
+        # an explicit size here resets that stale value; grid_propagate (on by default) then
+        # immediately overrides it again once/if new rows are gridded below.
+        self.hops_frame.configure(width=1, height=1)
+
         self.hop_rows = [self._create_hop_row(self.hops_frame, i, i, value) for i, value in enumerate(values)]
 
     def _add_hop_row(self, index:int) -> None:
@@ -202,7 +217,7 @@ class Plotter(ABC):
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
-        sfr.grid(row=row, column=col, columnspan=4, sticky=tk.EW)
+        sfr.grid(row=row, column=col, columnspan=5, sticky=tk.EW)
 
     def _validate_system(self, inp:str, widget:th.Autocompleter) -> str | None:
         """ Validate and return the exact system name. """
@@ -215,7 +230,7 @@ class Plotter(ABC):
     def _create_buttons(self, parent:th.Frame, row:int, col:int) -> None:
         """Create standard plotting buttons (import, calculate, cancel)."""
         btn_frame:th.Frame = th.Frame(parent)
-        btn_frame.grid(row=row, column=col, columnspan=4, sticky=tk.EW, pady=(5, 0))
+        btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
 
         row = 0; col = 0
         self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.ui.import_route())
@@ -236,7 +251,7 @@ class NeutronPlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the neutron plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Neutron', {})
         self._plot_switcher(plot_fr, row, col)
@@ -255,17 +270,17 @@ class NeutronPlotter(Plotter):
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self._create_dest(route_fr, 2, 0)
-        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+        route_fr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         # Range and efficiency
-        row += 1; col = 0
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        col2_fr:th.Frame = th.Frame(plot_fr)
+        self._create_range(col2_fr, 0, 0, str(params.get('range', "32.0")), 13)
 
-        col += 1
-        self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
+        self.efficiency_slider:th.Scale = th.Scale(col2_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         th.Tooltip(self.efficiency_slider, tts["efficiency"])
-        self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
+        self.efficiency_slider.grid(row=1, column=0, padx=5, pady=5, sticky=tk.NW)
         self.efficiency_slider.set(params.get('efficiency', 60))
+        col2_fr.grid(row=row, column=3, sticky=tk.NW)
 
         # Supercharge multiplier
         row += 1; col = 0
@@ -279,18 +294,18 @@ class NeutronPlotter(Plotter):
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
         r1.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
         th.Tooltip(r1, tts['standard_multiplier'])
-        r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        r1.grid(row=row, column=col, padx=5, pady=5)
 
-        col += 2
+        col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         th.Tooltip(r2, tts['overcharge_multiplier'])
         r2.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
-        r2.grid(row=row, column=col, padx=5, pady=5)
+        r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0
         self._create_buttons(plot_fr, row, col)
-
+        #debug_grid(plot_fr)
         self.frame = plot_fr
         return plot_fr
 
@@ -343,7 +358,7 @@ class GalaxyPlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the galaxy plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Galaxy', {})
 
@@ -480,7 +495,7 @@ class RichesPlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the riches-family plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get(self.route_type, {})
         spec = PLOTTER_SPECS[self.route_type]
@@ -491,8 +506,16 @@ class RichesPlotter(Plotter):
 
         # Row 1: source and options
         self._create_source(plot_fr, row, col)
-        col += 3
+
+        col = 4
         self._create_options(plot_fr, row, col, self.options, params)
+
+        # Exobiology's real filtering criterion
+        if spec.min_value_slider:
+            min_value_slider:th.Scale = th.Scale(plot_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
+            th.Tooltip(min_value_slider, tts["min_landmark_value"])
+            min_value_slider.grid(row=row+1, column=col, padx=5, pady=5, sticky=tk.EW)
+            min_value_slider.set(int(params.get('min_value', spec.min_value or 0)) // 1_000_000)
 
         # Row 2: destination
         row += 1; col = 0
@@ -500,7 +523,7 @@ class RichesPlotter(Plotter):
 
         # Row 3: range and radius
         row += 1; col = 0
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")))
+        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
         col += 1
         #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
@@ -515,14 +538,6 @@ class RichesPlotter(Plotter):
         self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
-
-        # Exobiology's real filtering criterion
-        if spec.min_value_slider:
-            col += 1
-            min_value_slider:th.Scale = th.Scale(plot_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
-            th.Tooltip(min_value_slider, tts["min_landmark_value"])
-            min_value_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
-            min_value_slider.set(int(params.get('min_value', spec.min_value or 0)) // 1_000_000)
 
         # Buttons
         row += 1; col = 0
@@ -611,7 +626,7 @@ class TradePlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the trade route plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Trade', {})
         self._plot_switcher(plot_fr, row, col)
@@ -743,7 +758,7 @@ class TouristPlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the tourist route plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Tourist', {})
         self._plot_switcher(plot_fr, row, col)
@@ -762,18 +777,18 @@ class TouristPlotter(Plotter):
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self._create_dest(route_fr, 2, 0)
-        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+        route_fr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
         # Range and loop -- Tourist only ever has this one option, so a checkbox beats a
         # single-item options listbox.
-        row += 1; col = 0
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        col2_fr:th.Frame = th.Frame(plot_fr)
+        self._create_range(col2_fr, 0, 0, str(params.get('range', "32.0")), 13)
 
-        col += 1
         self.loop_var:tk.IntVar = tk.IntVar(value=1 if params.get('loop', False) else 0)
-        loop_cb:th.Checkbutton = th.Checkbutton(plot_fr, text=lbls['loop'], variable=self.loop_var)
+        loop_cb:th.Checkbutton = th.Checkbutton(col2_fr, text=lbls['loop'], variable=self.loop_var)
         th.Tooltip(loop_cb, tts['loop'])
-        loop_cb.grid(row=row, column=col, padx=5, pady=5)
+        loop_cb.grid(row=1, column=0, padx=5, pady=5)
+        col2_fr.grid(row=row, column=3, sticky=tk.NW)
 
         # Buttons
         row += 1; col = 0
@@ -825,9 +840,6 @@ class TouristPlotter(Plotter):
         Context.router.plot_route('Tourist', params)
         self.ui._show_busy_gui(True)
 
-
-FLEET_CARRIER_STATS:dict = {'fleet': {'capacity': 25000, 'mass': 25000}, 'squadron': {'capacity': 60000, 'mass': 15000}}
-
 class FleetCarrierPlotter(Plotter):
     """Plotter for /api/fleetcarrier/route -- an ordered list of systems to visit and refuel
     at. Unlike every other route type, Spansh needs each system's id64 here, not its name, so
@@ -837,7 +849,7 @@ class FleetCarrierPlotter(Plotter):
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the fleet carrier plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
-        row:int = 2; col:int = 0
+        row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('FleetCarrier', {})
         self._plot_switcher(plot_fr, row, col)
@@ -854,13 +866,19 @@ class FleetCarrierPlotter(Plotter):
         self._rebuild_hop_rows(params.get('destination_names', []))
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
-        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+        route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
-        # Row 3: carrier type
-        row += 1; col = 0
+        # Row 3
+        col = 4
+        capacity_used_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['capacity_used'], from_=0, to=100000, increment=10, width=WIDTH3, justify=tk.CENTER, name="capacity_used_entry")
+        self.ui.set_entry(capacity_used_entry, str(params.get('capacity_used', 0)))
+        th.Tooltip(capacity_used_entry, tts["capacity_used"])
+        capacity_used_entry.grid(row=row, column=col, padx=5, pady=5)
+
         self.carrier_type:tk.StringVar = tk.StringVar()
         self.carrier_type.set(params.get('carrier_type', 'fleet'))
 
+        row += 1; col = 0
         l1:th.Label = th.Label(plot_fr, text=lbls["carrier_type"])
         l1.grid(row=row, column=col, padx=5, pady=5)
 
@@ -869,17 +887,10 @@ class FleetCarrierPlotter(Plotter):
         th.Tooltip(r1, tts['carrier_type'])
         r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
 
-        col += 2
+        col = 4
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
         th.Tooltip(r2, tts['carrier_type'])
         r2.grid(row=row, column=col, padx=5, pady=5)
-
-        # Row 4: capacity used
-        row += 1; col = 0
-        capacity_used_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['capacity_used'], from_=0, to=100000, increment=10, width=WIDTH3, justify=tk.CENTER, name="capacity_used_entry")
-        self.ui.set_entry(capacity_used_entry, str(params.get('capacity_used', 0)))
-        th.Tooltip(capacity_used_entry, tts["capacity_used"])
-        capacity_used_entry.grid(row=row, column=col, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0

@@ -194,7 +194,7 @@ lbls:dict = {
     "avoid_thargoids": "Avoid Thargoids",
     "loop": "Loop",
     "cooldown_complete": "Carrier cooldown completed",
-    "plotting": "Plotting route from {s} to {d}",
+    "plotting": "Plotting route, please wait ...",
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": " jumps/hr",

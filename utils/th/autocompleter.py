@@ -52,8 +52,10 @@ class Autocompleter(Placeholder):
 
         self.last_hovered = None
         self.lb.bind("<Motion>", self.mouse_move)
+        self.lb.bind("<Leave>", self.mouse_leave)
         self.bind("<Leave>", self.mouse_leave)
 
+        self.last_value:str|None = None
         self.update_me()
 
     def mouse_move(self, event):
@@ -99,6 +101,11 @@ class Autocompleter(Placeholder):
 
     def changed(self, name=None, index=None, mode=None) -> None:
         value:str = self.var.get()
+        # A StringVar write trace fires even on a no-op .set(), e.g. from tab-switch sync.
+        if value == self.last_value:
+            return
+        self.last_value = value
+
         if value.__len__() < 3 and self.lb_up or self.has_selected:
             self.hide_list()
             self.has_selected = False
@@ -113,6 +120,7 @@ class Autocompleter(Placeholder):
         self.var.trace_remove("write", self.traceid)
 
         self.var.set(self.lb.get(index))
+        self.last_value = self.var.get()
         self.hide_list()
         self.icursor(tk.END)
         self.traceid = self.var.trace_add('write', self.changed)

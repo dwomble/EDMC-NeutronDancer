@@ -102,7 +102,7 @@ class Plotter(ABC):
             rb = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
             th.Tooltip(rb, tts['remove_hop'])
         else:
-            rb = th.Frame(parent, width=spwidth, height=1, bg='yellow')
+            rb = th.Frame(parent, width=spwidth, height=1)
             rb.grid_propagate(False)
 
         rb.grid(row=row, column=col+4, padx=2, pady=2)
@@ -507,15 +507,17 @@ class RichesPlotter(Plotter):
         # Row 1: source and options
         self._create_source(plot_fr, row, col)
 
-        col = 4
-        self._create_options(plot_fr, row, col, self.options, params)
+        col2_fr:th.Frame = th.Frame(plot_fr)
+        self._create_options(col2_fr, 0, 0, self.options, params)
 
         # Exobiology's real filtering criterion
         if spec.min_value_slider:
-            min_value_slider:th.Scale = th.Scale(plot_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
+            r = int(len(self.options) / 2)+2
+            min_value_slider:th.Scale = th.Scale(col2_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
             th.Tooltip(min_value_slider, tts["min_landmark_value"])
-            min_value_slider.grid(row=row+1, column=col, padx=5, pady=5, sticky=tk.EW)
+            min_value_slider.grid(row=r, column=0, padx=5, pady=5, sticky=tk.EW)
             min_value_slider.set(int(params.get('min_value', spec.min_value or 0)) // 1_000_000)
+        col2_fr.grid(row=row, column=4, rowspan=3, sticky=tk.N)
 
         # Row 2: destination
         row += 1; col = 0
@@ -636,8 +638,8 @@ class TradePlotter(Plotter):
         row += 1; col = 0
         station_ac = th.Autocompleter(plot_fr, lbls["station"], width=30, func=self.ui.query_station_names, name="station_ac")
         th.Tooltip(station_ac, tts["station"])
-        if params.get('station'):
-            self.ui.set_entry(station_ac, params['station'])
+        if params.get('system') and params.get('station'):
+            self.ui.set_entry(station_ac, params["system"] +" / " + params['station'])
         station_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
 
         col += 3
@@ -710,7 +712,7 @@ class TradePlotter(Plotter):
         station_ac = self.frame.nametowidget("station_ac")
         options = self.frame.nametowidget("options")
 
-        params:dict = {}
+        params:dict = {'max_time': 60}
 
         station:str = station_ac.get().strip()
 
@@ -887,10 +889,10 @@ class FleetCarrierPlotter(Plotter):
         th.Tooltip(r1, tts['carrier_type'])
         r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
 
-        col = 4
+        col = 2
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
         th.Tooltip(r2, tts['carrier_type'])
-        r2.grid(row=row, column=col, padx=5, pady=5)
+        r2.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0

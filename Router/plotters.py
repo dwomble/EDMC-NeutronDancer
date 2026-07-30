@@ -75,10 +75,9 @@ class Plotter(ABC):
 
     def _create_system_entry(self, parent:th.Frame, row:int, col:int, label:str, tooltip:str, *,
                               name:str = '', menu:dict|None = None, initial:str = '',
-                              add_cmd=None, remove_cmd=None, pady:int = 5, add_col:int|None = None) -> th.Autocompleter:
+                              add_cmd=None, remove_cmd=None, pady:int = 5) -> th.Autocompleter:
         """ One system-entry row: an autocompleter, optionally named (source/dest) or menued
-        (right-click history), optionally with -/+ buttons after it (add_col overrides the
-        add button's column, for rows sharing space with another field, e.g. Tourist's range). """
+        (right-click history), optionally with -/+ buttons in the two columns after it. """
         kw:dict = {'width': 30, 'func': self.ui.query_systems}
         if menu:
             kw['menu'] = menu
@@ -99,11 +98,11 @@ class Plotter(ABC):
         if add_cmd is not None:
             add_btn:th.Button = th.Button(parent, text=lbls['add_hop'], width=2, command=add_cmd)
             th.Tooltip(add_btn, tts['add_hop'])
-            add_btn.grid(row=row, column=add_col if add_col is not None else col+4, padx=2, pady=2)
+            add_btn.grid(row=row, column=col+4, padx=2, pady=2)
 
         return ac
 
-    def _create_source(self, parent:th.Frame, row:int, col:int, add_cmd=None, add_col:int|None = None) -> None:
+    def _create_source(self, parent:th.Frame, row:int, col:int, add_cmd=None) -> None:
         """Create source system autocompleter widget."""
         srcmenu:dict = {}
         if Context.router.system != '':
@@ -113,8 +112,7 @@ class Plotter(ABC):
                 srcmenu[sys] = [self.ui.menu_callback, 'src']
 
         self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
-                                   name="source_ac", menu=srcmenu, initial=Context.router.src,
-                                   add_cmd=add_cmd, add_col=add_col)
+                                   name="source_ac", menu=srcmenu, initial=Context.router.src, add_cmd=add_cmd)
 
     def _create_dest(self, parent:th.Frame, row:int, col:int) -> None:
         """Create destination system autocompleter widget."""
@@ -243,27 +241,27 @@ class NeutronPlotter(Plotter):
         params:dict = Context.router.route_params.get('Neutron', {})
         self._plot_switcher(plot_fr, row, col)
 
-        # source_ac must stay a direct child of plot_fr -- ui._update_item()'s cross-plotter
-        # sync looks it up that way. The "+" beside it starts the via-point hop list.
+        # Source, via-point hops, and destination all live in their own frame -- their column
+        # layout stays self-contained instead of fighting range/efficiency/supercharge for
+        # columns on shared rows.
         row += 1; col = 0
-        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1))
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
 
-        # Its own frame occupies one fixed row-slot, so rows below don't shift as hops are added.
-        row += 1; col = 0
         self.hop_label = lbls['via_system']; self.hop_tooltip = tts['via_system']
-        self.hops_frame = th.Frame(plot_fr)
-        self.hop_rows:list[dict] = []
+        self.hops_frame = th.Frame(route_fr)
+        self.hop_rows = []
         self._rebuild_hop_rows(params.get('via', []))
-        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+        self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
-        # Destination and range
+        self._create_dest(route_fr, 2, 0)
+        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+
+        # Range and efficiency
         row += 1; col = 0
-        self._create_dest(plot_fr, row, col)
-        col += 3
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
-        # Efficiency
-        row += 1; col = 0
+        col += 1
         self.efficiency_slider:th.Scale = th.Scale(plot_fr, from_=0, to=100, resolution=5, orient=tk.HORIZONTAL)
         th.Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
@@ -750,25 +748,32 @@ class TouristPlotter(Plotter):
         params:dict = Context.router.route_params.get('Tourist', {})
         self._plot_switcher(plot_fr, row, col)
 
-        # Row 1: source, range, and the + that starts the stop list
+        # Source, stop list, and optional final destination all live in their own frame --
+        # their column layout stays self-contained instead of fighting range/options for
+        # columns on shared rows.
         row += 1; col = 0
-        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1), add_col=4)
-        col += 3
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
+
+        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
+        self.hops_frame = th.Frame(route_fr)
+        self.hop_rows = []
+        self._rebuild_hop_rows(params.get('destination', []))
+        self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
+
+        self._create_dest(route_fr, 2, 0)
+        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+
+        # Range and loop -- Tourist only ever has this one option, so a checkbox beats a
+        # single-item options listbox.
+        row += 1; col = 0
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
-        # Row 2: optional final destination and options
-        row += 1; col = 0
-        self._create_dest(plot_fr, row, col)
-        col += 3
-        self._create_options(plot_fr, row, col, self.options, params)
-
-        # Row 3: the stop list, in its own fixed row-slot
-        row += 1; col = 0
-        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
-        self.hops_frame = th.Frame(plot_fr)
-        self.hop_rows:list[dict] = []
-        self._rebuild_hop_rows(params.get('destination', []))
-        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+        col += 1
+        self.loop_var:tk.IntVar = tk.IntVar(value=1 if params.get('loop', False) else 0)
+        loop_cb:th.Checkbutton = th.Checkbutton(plot_fr, text=lbls['loop'], variable=self.loop_var)
+        th.Tooltip(loop_cb, tts['loop'])
+        loop_cb.grid(row=row, column=col, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0
@@ -776,61 +781,6 @@ class TouristPlotter(Plotter):
 
         self.frame = plot_fr
         return plot_fr
-
-    def _rebuild_destination_rows(self, values:list[str]) -> None:
-        """ Destroy and recreate every destination row from `values` (always at least one row,
-        even if empty). Rebuilding from scratch on every add/remove -- rather than shifting
-        indices in place -- keeps each row's remove button wired to the index that's correct
-        right now, instead of a lambda that captured a stale index from before an earlier
-        add/remove. """
-        for destrow in self.destination_rows:
-            # Autocompleter's typeahead popup is a tk.Toplevel parented to the window, not to
-            # its row frame, so destroying the row frame alone would leak it.
-            destrow['ac'].popup.destroy()
-            destrow['frame'].destroy()
-        self.destination_rows = []
-
-        if not values:
-            values = ['']
-
-        for i, value in enumerate(values):
-            row_fr:th.Frame = th.Frame(self.destinations_frame)
-
-            ac:th.Autocompleter = th.Autocompleter(row_fr, lbls['destination'], width=30, func=self.ui.query_systems)
-            th.Tooltip(ac, tts['destination'])
-            if value:
-                self.ui.set_entry(ac, value)
-            ac.grid(row=0, column=0, padx=5, pady=2)
-
-            remove_btn:th.Button = th.Button(row_fr, text=lbls['remove_destination'], width=1, command=lambda i=i: self._remove_destination_row(i))
-            th.Tooltip(remove_btn, tts['remove_destination'])
-            remove_btn.grid(row=0, column=1, padx=5, pady=2)
-
-            row_fr.grid(row=i, column=0, columnspan=4, sticky=tk.W)
-            self.destination_rows.append({'frame': row_fr, 'ac': ac})
-
-        add_btn:th.Button = th.Button(self.destinations_frame, text=lbls['add_destination'], width=1, command=self._add_destination_row)
-        th.Tooltip(add_btn, tts['add_destination'])
-        add_btn.grid(row=len(values), column=0, columnspan=2, padx=5, pady=(2, 5), sticky=tk.W)
-
-    def _row_value(self, ac:th.Autocompleter) -> str:
-        """ An untouched Autocompleter's tk.Entry literally contains its placeholder text (that's
-        how PlaceholderMixin displays it -- there's no separate "showing placeholder" state), so
-        a never-typed-in row's .get() returns e.g. "Destination", not "". Treat that as blank. """
-        text:str = ac.get().strip()
-        return '' if text == ac.placeholder else text
-
-    def _add_destination_row(self) -> None:
-        """ Add a blank destination row after whatever's currently entered. """
-        values:list = [self._row_value(destrow['ac']) for destrow in self.destination_rows] + ['']
-        self._rebuild_destination_rows(values)
-
-    def _remove_destination_row(self, index:int) -> None:
-        """ Remove the destination row at `index` (rebuilding just clears the last remaining
-        row's text instead of removing it, since _rebuild_destination_rows always keeps at
-        least one row). """
-        values:list = [self._row_value(destrow['ac']) for i, destrow in enumerate(self.destination_rows) if i != index]
-        self._rebuild_destination_rows(values)
 
     @catch_exceptions
     def plot(self) -> None:
@@ -842,7 +792,6 @@ class TouristPlotter(Plotter):
 
         src_ac = self.frame.nametowidget("source_ac")
         dest_ac = self.frame.nametowidget("dest_ac")
-        options = self.frame.nametowidget("options")
 
         params:dict = {}
 
@@ -871,8 +820,7 @@ class TouristPlotter(Plotter):
         # No pre-validation per destination -- Spansh errors on a bad name regardless.
         params['destination'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
-        for opt in self.options:
-            params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
+        params['loop'] = self.loop_var.get()
 
         Context.router.plot_route('Tourist', params)
         self.ui._show_busy_gui(True)
@@ -894,17 +842,19 @@ class FleetCarrierPlotter(Plotter):
         params:dict = Context.router.route_params.get('FleetCarrier', {})
         self._plot_switcher(plot_fr, row, col)
 
-        # Row 1: source and the + that starts the destination list
+        # Source and the destination list live in their own frame -- their column layout
+        # stays self-contained instead of fighting the carrier-type/capacity rows for columns.
         row += 1; col = 0
-        self._create_source(plot_fr, row, col, add_cmd=lambda: self._add_hop_row(-1))
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
 
-        # Row 2: destination list, in its own fixed row-slot
-        row += 1; col = 0
         self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
-        self.hops_frame = th.Frame(plot_fr)
-        self.hop_rows:list[dict] = []
+        self.hops_frame = th.Frame(route_fr)
+        self.hop_rows = []
         self._rebuild_hop_rows(params.get('destination_names', []))
-        self.hops_frame.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+        self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
+
+        route_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
 
         # Row 3: carrier type
         row += 1; col = 0
@@ -1035,7 +985,7 @@ PLOTTER_SPECS:dict = {
     ),
     'Tourist': PlotterSpec(
         label='Tourist Route', plotter_class=TouristPlotter, url=SPANSH_TOURIST_ROUTE,
-        src_key='source', dest_key='final_destination', options=['loop']
+        src_key='source', dest_key='final_destination'
     ),
     'FleetCarrier': PlotterSpec(
         label='Fleet Carrier Route', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,

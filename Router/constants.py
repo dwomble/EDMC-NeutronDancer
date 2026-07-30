@@ -169,8 +169,6 @@ lbls:dict = {
     "max_price_age": "Max Age",
     "final_destination": "Final Destination",
     "destination": "Destination",
-    "add_destination": "+",
-    "remove_destination": "-",
     "via_system": "Via System",
     "add_hop": "+",
     "remove_hop": "-",
@@ -255,6 +253,7 @@ tts:dict = {
     "allow_restricted_access": "Allow stations with restricted access (e.g. engineer bases)",
     "unique": "Only visit each station once",
     "permit": "Allow systems that require a permit",
+    "loop": "Prefer a route that loops back on itself rather than a straight line",
     "progress": "Progress",
     "none": "None"
 }

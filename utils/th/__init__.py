@@ -136,6 +136,23 @@ class Frame(tk.Frame):
         tk.Frame.__init__(self, master, **kw)
         theme.update(self)
 
+    def nametowidget(self, name:str) -> Any:
+        """ tk's nametowidget() only finds direct children on a bare name, but our layout
+        nests some widgets a level deeper (e.g. a hop row's own frame) -- fall back to a
+        recursive descendant search instead of requiring callers to spell out the full path. """
+        try:
+            return super().nametowidget(name)
+        except KeyError:
+            for child in self.winfo_children():
+                find = getattr(child, 'nametowidget', None)
+                if find is None:
+                    continue
+                try:
+                    return find(name)
+                except (KeyError, AttributeError):
+                    continue
+            raise KeyError(name)
+
 class LabelFrame(tk.LabelFrame):
     """ A themed label frame that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:

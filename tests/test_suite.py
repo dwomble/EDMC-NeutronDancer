@@ -1420,6 +1420,23 @@ class TestPlotMethods:
         assert params['range'] == '50'
         assert params['loop'] == 0
 
+    def test_tourist_plotter_loop_checkbox(self, harness:TestHarness) -> None:
+        """Tourist only ever has the one "loop" option, so it's a plain checkbox rather than
+        the multi-select options listbox every other plotter uses."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Tourist']
+        plotter = ui.plotters['Tourist']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+        plotter.loop_var.set(1)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
+
+        _, params = mock_plot_route.call_args[0]
+        assert params['loop'] == 1
+
     def test_tourist_plotter_final_destination_set(self, harness:TestHarness) -> None:
         """A non-blank final destination should be validated and included."""
         ui = harness.plugin.ui

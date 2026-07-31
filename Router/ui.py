@@ -125,7 +125,7 @@ class UI():
                 else:
                     obj.set(value)
             except Exception as e: # If the widget doesn't exist, just skip it
-                Debug.logger.debug(f"_update_item exception: {e}")
+                #Debug.logger.debug(f"_update_item exception: {e}")
                 pass
 
     def get_item(self, which:str, type:str) -> str:
@@ -330,7 +330,7 @@ class UI():
     def _waypoint_tooltip(self, route:Route) -> str:
         """ Full next-waypoint detail for the waypoint button's tooltip -- the button itself
         only has room for a short system/body + station/genus summary. """
-        lines:list = [] #[route.next_stop_value('System Name') or route.next_stop()]
+        lines:list = []
 
         station:str|None = route.next_stop_value('Station Name')
         if station:
@@ -353,13 +353,14 @@ class UI():
             if detail:
                 lines.append(detail)
 
+        # RtoR
         scanval:str|None = route.next_stop_value('Estimated Scan Value')
         mapval:str|None = route.next_stop_value('Estimated Mapping Value')
 
         if scanval or mapval:
             scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
-            values:str = " · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v)
+            values:str = "\n" + " · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v)
             if values:
                 lines.append(values)
 
@@ -371,8 +372,8 @@ class UI():
         if lines == []:
             return tts['copy_to_clipboard']
 
-        lines.append("\n" + tts['copy_to_clipboard'])
-        return ", ".join(lines)
+        lines.insert(0, route.next_stop())
+        return ", ".join(lines) + "\n" + tts['copy_to_clipboard']
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

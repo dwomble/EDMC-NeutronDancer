@@ -113,6 +113,7 @@ class Overlay():
 
             # Refuel jumps {rj}
             # Distance (or jumps) to next refuel {rd}
+            # Refuel message {rs}
 
             # Star type next stop {st}
 
@@ -130,11 +131,13 @@ class Overlay():
         rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
         rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
 
+        rs:str = lbls["next_refuel"].format(rd=rd) if rd != '-' else ""
+
         # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
         st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
         try:
-            message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, st=st)})
+            message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)})
         except Exception as e:
             Debug.logger.warning(f"Error formatting progress display: {e}")
             message.append({'size': "normal", 'text': errs["format_error"]})

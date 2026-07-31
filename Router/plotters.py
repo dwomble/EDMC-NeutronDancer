@@ -322,18 +322,20 @@ class NeutronPlotter(Plotter):
 
         params:dict = {}
 
-        frm:str = src_ac.get().strip()
-        params["from"] = self._validate_system(frm, src_ac)
-        if params['from'] is None:
-            self.ui.show_frame('Neutron')
-            return
+        # frm:str = src_ac.get().strip()
+        # params["from"] = self._validate_system(frm, src_ac)
+        # if params['from'] is None:
+        #     self.ui.show_frame('Neutron')
+        #     return
 
-        to:str = dest_ac.get().strip()
-        params["to"] = self._validate_system(to, dest_ac)
-        if params['to'] is None:
-            self.ui.show_frame('Neutron')
-            return
+        # to:str = dest_ac.get().strip()
+        # params["to"] = self._validate_system(to, dest_ac)
+        # if params['to'] is None:
+        #     self.ui.show_frame('Neutron')
+        #     return
 
+        params['from'] = src_ac.get().strip()
+        params['to'] = dest_ac.get().strip()
         params['efficiency'] = int(self.efficiency_slider.get())
         params['supercharge_multiplier'] = self.multiplier.get()
         range_entry = th.resolve(self.frame.nametowidget("range_entry"))
@@ -471,18 +473,20 @@ class GalaxyPlotter(Plotter):
             'injection_multiplier': ship.injection_multiplier
         }
 
-        src:str = gal_fr.nametowidget("source_ac").get().strip()
-        params["source"] = self._validate_system(src, gal_fr.nametowidget("source_ac"))
-        if params['source'] is None:
-            self.ui.show_frame('Galaxy')
-            return
+        # src:str = gal_fr.nametowidget("source_ac").get().strip()
+        # params["source"] = self._validate_system(src, gal_fr.nametowidget("source_ac"))
+        # if params['source'] is None:
+        #     self.ui.show_frame('Galaxy')
+        #     return
 
-        dest:str = gal_fr.nametowidget("dest_ac").get().strip()
-        params['destination'] = self._validate_system(dest, gal_fr.nametowidget("dest_ac"))
-        if params['destination'] is None:
-            self.ui.show_frame('Galaxy')
-            return
+        # dest:str = gal_fr.nametowidget("dest_ac").get().strip()
+        # params['destination'] = self._validate_system(dest, gal_fr.nametowidget("dest_ac"))
+        # if params['destination'] is None:
+        #     self.ui.show_frame('Galaxy')
+        #     return
 
+        params['source'] = src_ac.get().strip()
+        params['destination'] = dest_ac.get().strip()
         Context.router.plot_route('Galaxy', params)
         self.ui._show_busy_gui(True)
 
@@ -529,14 +533,16 @@ class RichesPlotter(Plotter):
 
         col += 1
         #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
-        radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER, name="radius_entry")
+        radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER,
+                                             name="radius_entry")
         self.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
         radius_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
-        max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER, name="max_results_entry")
+        max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER,
+                                                  name="max_results_entry")
         self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
@@ -562,20 +568,23 @@ class RichesPlotter(Plotter):
 
         params:dict = {}
 
-        frm:str = src_ac.get().strip()
-        params["from"] = self._validate_system(frm, src_ac)
-        if params['from'] is None:
-            self.ui.show_frame(self.route_type)
-            return
+        #frm:str = src_ac.get().strip()
+        #params["from"] = self._validate_system(frm, src_ac)
+        #if params['from'] is None:
+        #    self.ui.show_frame(self.route_type)
+        #    self.ui.show_error(errs['no_system_id'])
+        #    return
 
         # Leave destination blank for a circular tour starting and ending at the source
-        to:str = dest_ac.get().strip()
-        if to != '':
-            params["to"] = self._validate_system(to, dest_ac)
-            if params['to'] is None:
-                self.ui.show_frame(self.route_type)
-                return
+        #to:str = dest_ac.get().strip()
+        #if to != '':
+        #    params["to"] = self._validate_system(to, dest_ac)
+        #    if params['to'] is None:
+        #        self.ui.show_frame(self.route_type)
+        #        return
 
+        params['from'] = src_ac.get().strip()
+        params['to'] = dest_ac.get().strip()
         range_entry = th.resolve(self.frame.nametowidget("range_entry"))
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
@@ -812,19 +821,22 @@ class TouristPlotter(Plotter):
 
         params:dict = {}
 
-        frm:str = src_ac.get().strip()
-        params["source"] = self._validate_system(frm, src_ac)
-        if params['source'] is None:
-            self.ui.show_frame('Tourist')
-            return
+        # frm:str = src_ac.get().strip()
+        # params["source"] = self._validate_system(frm, src_ac)
+        # if params['source'] is None:
+        #     self.ui.show_frame('Tourist')
+        #     return
 
-        # Leave blank for a one-way/looped route ending back at the source
-        to:str = self._row_value(dest_ac)
-        if to != '':
-            params["final_destination"] = self._validate_system(to, dest_ac)
-            if params['final_destination'] is None:
-                self.ui.show_frame('Tourist')
-                return
+        # # Leave blank for a one-way/looped route ending back at the source
+        # to:str = self._row_value(dest_ac)
+        # if to != '':
+        #     params["final_destination"] = self._validate_system(to, dest_ac)
+        #     if params['final_destination'] is None:
+        #         self.ui.show_frame('Tourist')
+        #         return
+
+        params['source'] = src_ac.get().strip()
+        params['final_destination'] = dest_ac.get().strip()
 
         range_entry = th.resolve(self.frame.nametowidget("range_entry"))
         params['range'] = range_entry.var.get()

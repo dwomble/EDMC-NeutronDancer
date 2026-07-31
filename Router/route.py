@@ -57,8 +57,7 @@ class Route:
 
 
     def next_stop_value(self, header:str) -> str|None:
-        """ Return the next waypoint's value for `header`, or None if this route has no
-        such column (e.g. "Species" on a Trade route, "Station Name" on a Neutron route). """
+        """ Return the next waypoint's value for a given header """
         if self.route == [] or self.offset >= len(self.route)-1: return None
         ind:int|None = self.colind(header)
         if ind is None: return None
@@ -66,10 +65,7 @@ class Route:
 
 
     def next_stop_detail(self) -> str:
-        """ Short secondary detail for the next waypoint, to sit alongside next_stop() in the
-        waypoint button -- station name for Trade routes, genus for Exobiology routes (just
-        the first word of the species name, e.g. "Bacterium" not "Bacterium Nypoxia"), blank
-        for every other route type. """
+        """ Return a short secondary detail for the next waypoint(station, genus, etc.) """
         station = self.next_stop_value('Station Name')
         if station: return str(station)
 

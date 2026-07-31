@@ -338,7 +338,7 @@ class NeutronPlotter(Plotter):
         params['to'] = dest_ac.get().strip()
         params['efficiency'] = int(self.efficiency_slider.get())
         params['supercharge_multiplier'] = self.multiplier.get()
-        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
+        range_entry = self.frame.nametowidget("range_entry")
         params['range'] = range_entry.var.get()
 
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
@@ -568,24 +568,13 @@ class RichesPlotter(Plotter):
 
         params:dict = {}
 
-        #frm:str = src_ac.get().strip()
-        #params["from"] = self._validate_system(frm, src_ac)
-        #if params['from'] is None:
-        #    self.ui.show_frame(self.route_type)
-        #    self.ui.show_error(errs['no_system_id'])
-        #    return
-
-        # Leave destination blank for a circular tour starting and ending at the source
-        #to:str = dest_ac.get().strip()
-        #if to != '':
-        #    params["to"] = self._validate_system(to, dest_ac)
-        #    if params['to'] is None:
-        #        self.ui.show_frame(self.route_type)
-        #        return
-
         params['from'] = src_ac.get().strip()
-        params['to'] = dest_ac.get().strip()
-        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
+
+        # Leave destination out entirely for a circular tour starting and ending at the source
+        to:str = self._row_value(dest_ac)
+        if to != '':
+            params['to'] = to
+        range_entry = self.frame.nametowidget("range_entry")
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
@@ -821,24 +810,14 @@ class TouristPlotter(Plotter):
 
         params:dict = {}
 
-        # frm:str = src_ac.get().strip()
-        # params["source"] = self._validate_system(frm, src_ac)
-        # if params['source'] is None:
-        #     self.ui.show_frame('Tourist')
-        #     return
-
-        # # Leave blank for a one-way/looped route ending back at the source
-        # to:str = self._row_value(dest_ac)
-        # if to != '':
-        #     params["final_destination"] = self._validate_system(to, dest_ac)
-        #     if params['final_destination'] is None:
-        #         self.ui.show_frame('Tourist')
-        #         return
-
         params['source'] = src_ac.get().strip()
-        params['final_destination'] = dest_ac.get().strip()
 
-        range_entry = th.resolve(self.frame.nametowidget("range_entry"))
+        # Leave final_destination out entirely for a one-way/looped route ending at the source
+        to:str = self._row_value(dest_ac)
+        if to != '':
+            params['final_destination'] = to
+
+        range_entry = self.frame.nametowidget("range_entry")
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")

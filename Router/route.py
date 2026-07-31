@@ -1,5 +1,6 @@
 from time import time
 from utils.debug import Debug
+from utils.misc import hfplus
 from .constants import HEADER_MAP, tts, lbls, TRUE
 
 class Route:
@@ -64,6 +65,13 @@ class Route:
         return self.route[self.offset+1][ind]
 
 
+    def cumulative_value(self, header:str) -> float:
+        """ Sum a numeric column across all waypoints through the next stop """
+        ind:int|None = self.colind(header)
+        if ind is None or self.route == []: return 0
+        return sum(r[ind] for r in self.route[:self.offset+2] if isinstance(r[ind], (int, float)))
+
+
     def next_stop_detail(self) -> str:
         """ Return a short secondary detail for the next waypoint(station, genus, etc.) """
         station = self.next_stop_value('Station Name')
@@ -73,6 +81,63 @@ class Route:
         if species: return str(species).split(' ', 1)[0]
 
         return ''
+
+
+    def next_stop_detail_lines(self) -> list[str]:
+        """ Extra per-route-type detail for the next waypoint, one entry per line """
+        lines:list = []
+
+        station = self.next_stop_value('Station Name')
+        if station:
+            lines.append(str(station))
+
+            commodity = self.next_stop_value('Commodity')
+            amount:str = hfplus(tuple([self.next_stop_value('Amount'), 'int', '', 't']))
+            if commodity:
+                lines.append(f"{amount + ' ' if amount else ''}{commodity}")
+
+            profit:str = hfplus(tuple([self.next_stop_value('Profit'), 'int', '', ' Cr/t']))
+            if profit:
+                lines.append(f"{profit} profit")
+
+            # Spansh's Cumulative Profit is already a running total, not a per-row figure to sum.
+            cum_profit:str = hfplus(tuple([self.next_stop_value('Cumulative Profit'), 'float', '', ' Cr']))
+            if cum_profit:
+                lines.append(f"{cum_profit} total")
+
+        subtype = self.next_stop_value('Body Subtype')
+        if subtype:
+            dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
+            lines.append(" · ".join(p for p in [subtype, dist] if p))
+
+        scanval = self.next_stop_value('Estimated Scan Value')
+        mapval = self.next_stop_value('Estimated Mapping Value')
+        if scanval or mapval:
+            scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
+            mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
+            lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
+
+            cum_scan:str = hfplus(tuple([self.cumulative_value('Estimated Scan Value'), 'float', '', ' Cr']))
+            if cum_scan:
+                lines.append(f"{cum_scan} total")
+
+        species = self.next_stop_value('Species')
+        if species:
+            landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
+            lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
+
+            cum_landmark:str = hfplus(tuple([self.cumulative_value('Landmark Value'), 'float', '', ' Cr']))
+            if cum_landmark:
+                lines.append(f"{cum_landmark} total")
+
+        return lines
+
+
+    def tracks_refuel_or_neutron(self) -> bool:
+        """ Whether this route has Refuel/Restock/Neutron columns -- column presence,
+        not route-type name, so CSV imports are handled correctly too. """
+        return (self.colind('Refuel') is not None or self.colind('Restock') is not None
+                or self.colind('Neutron') is not None or self.colind('Neutron Star') is not None)
 
 
     def jumps_to_refuel(self) -> int|None:

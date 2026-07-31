@@ -53,6 +53,7 @@ class UI():
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
         self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
+        self.blank_img:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
 
         self.error_lbl:th.Label = th.Label(self.frame, text="", foreground='red', justify=tk.CENTER)
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
@@ -117,7 +118,7 @@ class UI():
             value = sobj.get()
         for dest in self.plot_frames.values():
             try:
-                obj = th.resolve(dest.nametowidget(type))
+                obj = dest.nametowidget(type)
                 if obj == None:
                     continue
                 if isinstance(obj, (th.Placeholder, th.Spinbox)):
@@ -311,12 +312,14 @@ class UI():
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '-' if route.offset < 0 else '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])
             suffix:str = f" ({hfplus(jumps)}/{hfplus(tjumps)})"
-            wp = str_truncate(wp, length=32, loc='middle') + suffix
+            # Reserve room for the suffix so it's never truncated away -- truncating the
+            # whole 32 chars first, then appending, would overflow the button's width.
+            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
         else:
-            wp = str_truncate(wp, length=32, loc='middle')
+            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')), loc='middle')
 
         # Set an icon if appropriate
-        image:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
+        image:tk.PhotoImage = self.blank_img
         if route.is_neutron() == True:
             image = self.neutron_img
 
@@ -328,53 +331,13 @@ class UI():
 
 
     def _waypoint_tooltip(self, route:Route) -> str:
-        """ Full next-waypoint detail for the waypoint button's tooltip -- the button itself
-        only has room for a short system/body + station/genus summary. """
-        lines:list = []
-
-        station:str|None = route.next_stop_value('Station Name')
-        if station:
-            lines.append(f"{station}")
-
-        commodity:str|None = route.next_stop_value('Commodity')
-        if commodity:
-            amount:str = hfplus(tuple([route.next_stop_value('Amount'), 'int', '', 't']))
-            lines.append(f"\n{amount + ' ' if amount else ''}{commodity}")
-
-        profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'int', '', ' Cr/t']))
-        #total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'int', '', ' Cr']))
-        if profit:
-            #lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
-            lines.append(f"{profit} profit")
-
-        subtype:str|None = route.next_stop_value('Body Subtype')
-        if subtype:
-            dist:str = hfplus(tuple([route.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
-            detail:str = " · ".join(p for p in [subtype, dist] if p)
-            if detail:
-                lines.append(detail)
-
-        # RtoR
-        scanval:str|None = route.next_stop_value('Estimated Scan Value')
-        mapval:str|None = route.next_stop_value('Estimated Mapping Value')
-
-        if scanval or mapval:
-            scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
-            mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
-            values:str = "\n" + " · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v)
-            if values:
-                lines.append(values)
-
-        species:str|None = route.next_stop_value('Species')
-        if species:
-            landmark:str = hfplus(tuple([route.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
-            lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
-
+        """ Full next-waypoint detail for the waypoint button's tooltip """
+        lines:list = route.next_stop_detail_lines()
         if lines == []:
             return tts['copy_to_clipboard']
 
         lines.insert(0, route.next_stop())
-        return " ".join(lines) + "\n" + tts['copy_to_clipboard']
+        return "\n".join(lines) + "\n" + tts['copy_to_clipboard']
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:
@@ -507,7 +470,7 @@ class UI():
         # Update range entry menus in all plot frames
         for dest in self.plot_frames.values():
             try:
-                range_entry = th.resolve(dest.nametowidget("range_entry"))
+                range_entry = dest.nametowidget("range_entry")
                 if range_entry == None:
                     continue
                 range_entry.set_menu(self._ship_dict())

@@ -16,7 +16,7 @@ from config import config # type: ignore
 import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus
+from utils.misc import singleton, hfplus, str_truncate
 from .context import Context
 from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf, errs
 
@@ -87,9 +87,13 @@ class Overlay():
             self.clear_frame('Alert')
             return
 
-        wp:str = Context.route.next_stop()
+        primary:str = Context.route.next_stop()
+        detail:str = Context.route.next_stop_detail()
+        wp:str = f"{primary} · {detail}" if detail else primary
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
+        # 40 is a guessed overlay width -- adjust if it looks off in-game.
+        wp = str_truncate(wp, length=40, loc='middle')
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
@@ -99,48 +103,54 @@ class Overlay():
         if self.progress_bar:
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
-        # The following variables are available for the progress display:
-            # Jumps completed {jc}
-            # Jumps remaining {jr}
-            # Jumps total {jt}
+        if Context.route.tracks_refuel_or_neutron():
+            # The following variables are available for the progress display:
+                # Jumps completed {jc}
+                # Jumps remaining {jr}
+                # Jumps total {jt}
 
-            # Distance to next checkpoint. {dc}
-            # Distance remaining {dr}
-            # Distance total {dt}
+                # Distance to next checkpoint. {dc}
+                # Distance remaining {dr}
+                # Distance total {dt}
 
-            # Distance per hour {dh}
-            # Jumps per hour {jh}
+                # Distance per hour {dh}
+                # Jumps per hour {jh}
 
-            # Refuel jumps {rj}
-            # Distance (or jumps) to next refuel {rd}
-            # Refuel message {rs}
+                # Refuel jumps {rj}
+                # Distance (or jumps) to next refuel {rd}
+                # Refuel message {rs}
 
-            # Star type next stop {st}
+                # Star type next stop {st}
 
-        jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
-        jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
-        jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
+            jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
+            jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
+            jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
 
-        dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
-        dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
-        dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
+            dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
+            dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
+            dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
 
-        dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
-        jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
+            dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
+            jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
 
-        rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
-        rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
+            rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
+            rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
 
-        rs:str = lbls["next_refuel"].format(rd=rd) if rd != '-' else ""
+            rs:str = lbls["next_refuel"].format(rd=rd) if rd != '-' else ""
 
-        # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
-        st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
+            # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
+            st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
-        try:
-            message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)})
-        except Exception as e:
-            Debug.logger.warning(f"Error formatting progress display: {e}")
-            message.append({'size': "normal", 'text': errs["format_error"]})
+            try:
+                message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)})
+            except Exception as e:
+                Debug.logger.warning(f"Error formatting progress display: {e}")
+                message.append({'size': "normal", 'text': errs["format_error"]})
+        else:
+            # No refuel/neutron columns -- show detail lines instead of the template.
+            detail_lines:list = Context.route.next_stop_detail_lines()
+            if detail_lines:
+                message.append({'size': "normal", 'text': "\n".join(detail_lines)})
 
         self.update_frame('Default', message, ttl=120)
 

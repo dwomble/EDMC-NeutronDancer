@@ -4,6 +4,7 @@ from functools import partial
 
 import tkinter as tk
 from tkinter import ttk
+import tkinter.font as tkfont
 
 from theme import theme # type: ignore
 from config import config # type: ignore
@@ -84,6 +85,10 @@ class Base:
             self.alt.configure(cnf, **kw)
         self.obj.configure(cnf, **kw)
 
+    def config(self, cnf=None, **kw) -> None:
+        """ config/configure are synonyms """
+        return self.configure(cnf, **kw)
+
     def _callable_attr(self, name:str, *args, **kw) -> Any:
         """Call a same-named method on both widgets, returning the primary result."""
         method = getattr(self.obj, name)
@@ -147,21 +152,21 @@ class Frame(tk.Frame):
         theme.update(self)
 
     def nametowidget(self, name:str) -> Any:
-        """ tk's nametowidget() only finds direct children on a bare name, but our layout
-        nests some widgets a level deeper (e.g. a hop row's own frame) -- fall back to a
-        recursive descendant search instead of requiring callers to spell out the full path. """
+        """ A recursive descendant search for nametowidget(), resolved to the themed wrapper. """
         try:
-            return super().nametowidget(name)
+            return resolve(super().nametowidget(name))
         except KeyError:
-            for child in self.winfo_children():
-                find = getattr(child, 'nametowidget', None)
-                if find is None:
-                    continue
-                try:
-                    return find(name)
-                except (KeyError, AttributeError):
-                    continue
-            raise KeyError(name)
+            pass
+
+        for child in self.winfo_children():
+            find = getattr(child, 'nametowidget', None)
+            if find is None:
+                continue
+            try:
+                return resolve(find(name))
+            except (KeyError, AttributeError):
+                continue
+        raise KeyError(name)
 
 class LabelFrame(tk.LabelFrame):
     """ A themed label frame that can switch between light and dark mode. """
@@ -178,8 +183,8 @@ class Label(tk.Label):
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
-        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
+        # EDMC's theme has a bug if the cursor is set on a ttk.Button with an image so we use a tk.Button
+        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'cursor' in kw else ttk.Button(master, **kw)
         #if 'image' in kw:
         #    _bind_hover(btn)
 
@@ -187,6 +192,26 @@ class Button(Base):
         #_bind_hover(alt)
 
         super().__init__(btn, alt)
+
+        # ttk.Button width is characters. tk.Button width is pixels.
+        w = kw.get('width')
+        object.__setattr__(self, '_char_width', int(w) if w is not None else None)
+
+    def configure(self, cnf=None, **kw) -> None:
+        """ Override configure to also counteract tk.Button's width-unit switch on image attach. """
+        if 'cursor' in kw and isinstance(self.obj, ttk.Button):
+            # obj was built ttk.Button adding a cursor now would break EDMC's theme code.
+            raise ValueError("th.Button: pass cursor= at creation, not via a later configure()")
+
+        super().configure(cnf, **kw)
+
+        if self._char_width is None or 'image' not in kw:
+            return
+
+        for w in (self.obj, self.alt):
+            if isinstance(w, tk.Button):
+                px:int = tkfont.Font(font=w.cget('font')).measure('0' * self._char_width)
+                w.configure(width=px)
 
     def grid(self, *args, **kw) -> Any:
         """ Override grid to handle themed buttons. """
@@ -205,7 +230,8 @@ class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tkrb:tk.Radiobutton = tk.Radiobutton(master, **_strip_name(kw))
-        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
+        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black',
+                        selectcolor='black', border=0, borderwidth=0)
         super().__init__(ttk.Radiobutton(master, **kw), tkrb)
 
 class ComboBox(Base):
@@ -221,7 +247,8 @@ class ComboBox(Base):
             values = kw['values'][1:]
 
         tkcb:tk.OptionMenu = tk.OptionMenu(master, v, value, *values)
-        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=1, highlightthickness=0)
+        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0,
+                        borderwidth=1, highlightthickness=0)
         tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
 
         super().__init__(ttkcb, tkcb)
@@ -229,8 +256,7 @@ class ComboBox(Base):
         object.__setattr__(self, '_select_func', None)
 
     def _wire_alt_menu(self) -> None:
-        """ (Re-)apply the bound <<ComboboxSelected>> callback, if any, to every entry in the
-        alt's menu. """
+        """ (Re-)apply the bound <<ComboboxSelected>> callback, if any, to every entry in the alt's menu. """
         func = self._select_func
         if self.alt is None or func is None:
             return
@@ -253,9 +279,7 @@ class ComboBox(Base):
             self._wire_alt_menu()
 
     def bind(self, sequence:str, func, **kw) -> None:
-        """ ttk.Combobox fires <<ComboboxSelected>> as a real virtual event on selection, but
-        tk.OptionMenu (the dark-mode alt) has no equivalent -- see _wire_alt_menu() for why
-        that means hooking each entry's command rather than the variable itself. """
+        """ workaround tk.OptionMenu not having a <<ComboboxSelected>> like ttk.Combobox """
         self.obj.bind(sequence, func, **kw)
         if self.alt is None:
             return

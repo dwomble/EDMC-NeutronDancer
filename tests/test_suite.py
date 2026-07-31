@@ -678,6 +678,32 @@ class TestOverlay:
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
+    def test_update_jump_overlay_trade_shows_detail_not_template(self, harness:TestHarness, monkeypatch) -> None:
+        """For a route with no Refuel/Neutron columns (Trade here), the overlay must show the
+        route's own detail section (station/commodity/profit) instead of the customizable
+        progress_display template -- and the "Next:" line should include the station."""
+        # Short names so the "Next:" line's truncation (tested separately) doesn't interfere.
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Sol', 'Abraham Lincoln', '', 0, 0, 0],
+            ['Deciat', 'Farside', 'Gold', 200, 10617, 3],
+        ]
+        harness.plugin.route = Route(hdrs, route_data, 0)
+        assert harness.plugin.route.tracks_refuel_or_neutron() == False
+
+        overlay = harness.plugin.overlay
+        overlay.progress_display = "PD jc={jc}"  # would be shown if this were misclassified
+
+        overlay.update_jump_overlay()
+
+        next_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
+        assert 'Farside' in next_line
+
+        detail_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
+        assert 'Farside' in detail_line
+        assert 'Gold' in detail_line
+        assert 'PD jc=' not in detail_line  # customizable template must not be used here
+
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure update_jump_overlay handles invalid progress_display format."""
 
@@ -1274,6 +1300,26 @@ class TestPlotMethods:
         assert params['max_results'] == '20'
         assert 'body_types' not in params  # plain Road to Riches has no body filter
 
+    def test_rtor_plotter_plot_untouched_dest_is_blank(self, harness:TestHarness) -> None:
+        """A dest_ac showing its placeholder text (not "") must still be treated as blank --
+        plot() must omit 'to' rather than sending the placeholder string as a destination."""
+        ui = harness.plugin.ui
+        rtor_fr = ui.plot_frames['RtoR']
+
+        rtor_fr.nametowidget("source_ac").set_text("Colonia", False)
+        rtor_fr.nametowidget("range_entry").set_text("50", False)
+        rtor_fr.nametowidget("radius_entry").set_text("40", False)
+        rtor_fr.nametowidget("max_results_entry").set_text("20", False)
+        rtor_fr.nametowidget("dest_ac").put_placeholder()  # force the placeholder-shown state
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['RtoR'].plot()
+
+        mock_plot_route.assert_called_once()
+        _, params = mock_plot_route.call_args[0]
+        assert 'to' not in params
+
     @pytest.mark.parametrize('route_type,expected_body_types', [
         ('Ammonia', ['Ammonia world']),
         ('EarthLike', ['Earth-like world']),
@@ -1632,6 +1678,59 @@ class TestUIFunctions:
         assert 'Alvarado Beacon' in tooltip
         assert 'Agronomic Treatment' in tooltip
 
+    def test_waypoint_btn_alt_width_survives_image(self, harness:TestHarness) -> None:
+        """th.Button's dark-mode 'alt' half must stay sized for its character width even after
+        update_progress() attaches the neutron/fuel icon -- plain tk.Button reinterprets 'width'
+        as screen units the instant an image is set, which would otherwise collapse it."""
+        ui = harness.plugin.ui
+        hdrs = ['System Name', 'Jumps']
+        route_data = [['Sol', 0], ['Apurui', 10]]
+        harness.plugin.route = Route(hdrs, route_data, 0)
+
+        ui.update_progress()
+        ui.waypoint_btn.alt.update_idletasks()
+        assert ui.waypoint_btn.alt.winfo_reqwidth() > 150
+
+    def test_button_obj_type_keys_off_cursor_not_image(self, harness:TestHarness) -> None:
+        """th.Button must only fall back to a plain tk.Button (instead of ttk.Button) for its
+        'obj' half when a custom cursor is set -- that's the one EDMC theme code path that
+        assigns 'foreground' without checking the widget supports it. Image alone is safe."""
+        image_only = th.Button(harness.root, image=harness.plugin.ui.help_img)
+        assert isinstance(image_only.obj, ttk.Button)
+
+        image_and_cursor = th.Button(harness.root, image=harness.plugin.ui.help_img, cursor="hand2")
+        assert isinstance(image_and_cursor.obj, tk.Button) and not isinstance(image_and_cursor.obj, ttk.Button)
+
+    def test_button_configure_cursor_onto_ttk_obj_raises(self, harness:TestHarness) -> None:
+        """Adding a cursor via configure() to a Button whose obj is already ttk.Button must fail
+        loudly at the call site, not silently crash EDMC's theme code later at theme-switch time."""
+        btn = th.Button(harness.root, text="x")
+        with pytest.raises(ValueError):
+            btn.configure(cursor="hand2")
+
+    def test_waypoint_btn_obj_stays_ttk_with_image(self, harness:TestHarness) -> None:
+        """waypoint_btn never sets a cursor, so its 'obj' half stays a ttk.Button even after
+        update_progress() attaches an image -- ttk widgets don't expose foreground/background
+        as direct options at all, so EDMC's theme code can't crash trying to set one."""
+        ui = harness.plugin.ui
+        hdrs = ['System Name', 'Jumps']
+        harness.plugin.route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)
+        ui.update_progress()
+
+        assert isinstance(ui.waypoint_btn.obj, ttk.Button)
+
+    def test_themed_button_config_alias_reaches_alt(self, harness:TestHarness) -> None:
+        """.config() must behave like .configure() -- reaching both the obj and alt halves --
+        not fall through __getattr__ straight to the raw obj widget."""
+        ui = harness.plugin.ui
+        ui.waypoint_next_btn.config(state=tk.DISABLED)
+        assert str(ui.waypoint_next_btn.obj.cget('state')) == tk.DISABLED
+        assert str(ui.waypoint_next_btn.alt.cget('state')) == tk.DISABLED
+
+        ui.waypoint_next_btn.config(state=tk.NORMAL)
+        assert str(ui.waypoint_next_btn.obj.cget('state')) == tk.NORMAL
+        assert str(ui.waypoint_next_btn.alt.cget('state')) == tk.NORMAL
+
     def test_update_cargo(self, harness:TestHarness):
         """ test update_cargo() method """
         ui = harness.plugin.ui
@@ -1952,6 +2051,92 @@ class TestRouteWindowUI:
         route = Route(hdrs, route_data, 0)
 
         assert route.next_stop_detail() == ''
+
+    def test_next_stop_detail_lines_trade(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() -- station/commodity/profit for a Trade-shaped route."""
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
+            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 3],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        lines = route.next_stop_detail_lines()
+        assert lines[0] == 'Alvarado Beacon'
+        assert any('Agronomic Treatment' in l for l in lines)
+        assert any('profit' in l for l in lines)
+
+    def test_next_stop_detail_lines_riches(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() -- body subtype/distance/scan value for a riches-shaped route."""
+        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        route_data = [
+            ['Colonia', 'Colonia 1', '', 0, 0, 0],
+            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        lines = route.next_stop_detail_lines()
+        assert any('High metal content world' in l for l in lines)
+        assert any('Scan' in l for l in lines)
+
+    def test_cumulative_value(self, harness:TestHarness) -> None:
+        """cumulative_value() sums a numeric column through the next stop, not past it."""
+        hdrs = ['System Name', 'Estimated Scan Value', 'Jumps']
+        route_data = [['Sol', 0, 0], ['Deciat', 42300, 1], ['Colonia', 10000, 2]]
+        route = Route(hdrs, route_data, 1)  # next stop is Colonia (offset+1 == 2)
+
+        assert route.cumulative_value('Estimated Scan Value') == 52300
+
+    def test_next_stop_detail_lines_trade_shows_cumulative_profit(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() -- cumulative profit uses Spansh's own running total column,
+        not a sum of per-hop Profit (which would double-count)."""
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Cumulative Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0, 0],
+            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 5000, 2],
+            ['Deciat', 'Farside', 'Silver', 200, 10617, 15617, 3],
+        ]
+        route = Route(hdrs, route_data, 1)  # next stop is Deciat
+
+        lines = route.next_stop_detail_lines()
+        assert any('total' in l for l in lines)
+        assert not any('20,617' in l or '20617' in l for l in lines)  # not a naive sum of Profit
+
+    def test_next_stop_detail_lines_riches_shows_cumulative_scan(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() -- riches-family scan value gets a running total across
+        waypoints already passed, summed from the route data (no Spansh-provided total exists)."""
+        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        route_data = [
+            ['Colonia', 'Colonia 1', '', 0, 0, 0],
+            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
+            ['Colonia', 'Colonia 3 a', 'Icy body', 100.0, 5000, 1],
+        ]
+        route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
+
+        assert route.cumulative_value('Estimated Scan Value') == 47300
+        lines = route.next_stop_detail_lines()
+        assert any('total' in l for l in lines)
+
+    def test_next_stop_detail_lines_blank_when_no_extra_columns(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() is empty for plain route types (Neutron, Tourist, etc.)."""
+        hdrs = ['System Name', 'Jumps']
+        route_data = [['Sol', 0], ['Apurui', 10]]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_detail_lines() == []
+
+    def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
+        """tracks_refuel_or_neutron() is column-presence based, not route-type based -- true
+        for Neutron/Galaxy-shaped routes (and refuel-aware CSV imports), false for Trade/
+        riches-family/Tourist/FleetCarrier routes that never carry these columns."""
+        neutron_route = Route(['System Name', 'Jumps', 'Refuel'], [['Sol', 0, 'No'], ['Apurui', 10, 'Yes']], 0)
+        assert neutron_route.tracks_refuel_or_neutron() == True
+
+        galaxy_route = Route(['System Name', 'Jumps', 'Neutron'], [['Sol', 0, 'False'], ['Apurui', 10, 'True']], 0)
+        assert galaxy_route.tracks_refuel_or_neutron() == True
+
+        trade_route = Route(['System Name', 'Station Name', 'Jumps'], [['Sol', 'A', 0], ['Apurui', 'B', 10]], 0)
+        assert trade_route.tracks_refuel_or_neutron() == False
 
     def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
         """Test jumps_remaining() at start of route."""

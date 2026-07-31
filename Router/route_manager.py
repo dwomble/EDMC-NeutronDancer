@@ -316,7 +316,7 @@ class Router():
                                                       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
             if results.status_code != 202:
-                self.plot_error(results)
+                self.plot_error(which, params, results)
                 return
 
             tries = 0
@@ -333,7 +333,7 @@ class Router():
                 sleep(1)
 
             if not route_response or route_response.status_code != 200 or self.cancel_plot:
-                self.plot_error(route_response)
+                self.plot_error(which, params, route_response)
                 return
 
             raw_result = json.loads(route_response.content)["result"]
@@ -379,16 +379,16 @@ class Router():
             self.save()
 
         except Exception as e:
-            Debug.logger.error("Failed to plot route, exception info:", exc_info=e)
-            Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
+            Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
+            Context.ui.show_frame(which) # Return to the plot gui
             Context.ui.show_error(errs["plot_error"])
 
 
     @catch_exceptions
-    def plot_error(self, response:Response) -> None:
+    def plot_error(self, which:str, params:dict, response:Response) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        Debug.logger.info(f"Result: {response} {json.loads(response.content)}")
+        Debug.logger.info(f"Plot error: {which}, {params}\n{response} {json.loads(response.content)}")
         err:str = errs["no_response"]
         #if response:
         #    Debug.logger.info(f"Server response: {response.json()}")

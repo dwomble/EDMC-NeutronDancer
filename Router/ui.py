@@ -314,9 +314,10 @@ class UI():
             suffix:str = f" ({hfplus(jumps)}/{hfplus(tjumps)})"
             # Reserve room for the suffix so it's never truncated away -- truncating the
             # whole 32 chars first, then appending, would overflow the button's width.
-            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
+            #wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
+            wp = str_truncate(wp, length=40 - len(suffix)) + suffix
         else:
-            wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')), loc='middle')
+            wp = str_truncate(wp, length=40)
 
         # Set an icon if appropriate
         image:tk.PhotoImage = self.blank_img
@@ -333,11 +334,9 @@ class UI():
     def _waypoint_tooltip(self, route:Route) -> str:
         """ Full next-waypoint detail for the waypoint button's tooltip """
         lines:list = route.next_stop_detail_lines()
-        if lines == []:
-            return tts['copy_to_clipboard']
+        lines.append(tts['copy_to_clipboard'])
 
-        lines.insert(0, route.next_stop())
-        return "\n".join(lines) + "\n" + tts['copy_to_clipboard']
+        return "\n".join(lines)
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

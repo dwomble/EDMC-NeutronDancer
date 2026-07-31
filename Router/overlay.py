@@ -93,7 +93,7 @@ class Overlay():
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
         # 40 is a guessed overlay width -- adjust if it looks off in-game.
-        wp = str_truncate(wp, length=40, loc='middle')
+        wp = str_truncate(wp, length=40, loc='right')
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 

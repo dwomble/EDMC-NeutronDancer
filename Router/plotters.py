@@ -121,14 +121,15 @@ class Plotter(ABC):
         self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
                                    name="source_ac", menu=srcmenu, initial=Context.router.src, add_cmd=add_cmd)
 
-    def _create_dest(self, parent:th.Frame, row:int, col:int) -> None:
+    def _create_dest(self, parent:th.Frame, row:int, col:int, placeholder:str = '') -> None:
         """Create destination system autocompleter widget."""
         destmenu:dict = {}
         for sys in Context.router.history:
             if sys not in destmenu:
                 destmenu[sys] = [self.ui.menu_callback, 'dest']
 
-        self._create_system_entry(parent, row, col, lbls["dest_system"], tts["dest_system"],
+        if placeholder == '': placeholder = lbls["dest_system"]
+        self._create_system_entry(parent, row, col, placeholder, tts["dest_system"],
                                    name="dest_ac", menu=destmenu, initial=Context.router.dest)
 
     def _create_options(self, parent:th.Frame, row:int, col:int, options:list, params:dict) -> None:
@@ -759,43 +760,47 @@ class TouristPlotter(Plotter):
         """Create the tourist route plotter frame."""
         plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
         row:int = 0; col:int = 0
+        try:
+            params:dict = Context.router.route_params.get('Tourist', {})
+            self._plot_switcher(plot_fr, row, col)
 
-        params:dict = Context.router.route_params.get('Tourist', {})
-        self._plot_switcher(plot_fr, row, col)
+            # Source, stop list, and optional final destination all live in their own frame --
+            # their column layout stays self-contained instead of fighting range/options for
+            # columns on shared rows.
+            row += 1; col = 0
+            route_fr:th.Frame = th.Frame(plot_fr)
+            self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
 
-        # Source, stop list, and optional final destination all live in their own frame --
-        # their column layout stays self-contained instead of fighting range/options for
-        # columns on shared rows.
-        row += 1; col = 0
-        route_fr:th.Frame = th.Frame(plot_fr)
-        self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
+            self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
+            self.hops_frame = th.Frame(route_fr)
+            self.hop_rows = []
+            self._rebuild_hop_rows(params.get('destination', []))
+            self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
-        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
-        self.hops_frame = th.Frame(route_fr)
-        self.hop_rows = []
-        self._rebuild_hop_rows(params.get('destination', []))
-        self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
+            self._create_dest(route_fr, 2, 0, lbls['final_dest'])
+            route_fr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
 
-        self._create_dest(route_fr, 2, 0)
-        route_fr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+            # Range and loop -- Tourist only ever has this one option, so a checkbox beats a
+            # single-item options listbox.
+            col2_fr:th.Frame = th.Frame(plot_fr)
+            self._create_range(col2_fr, 0, 0, str(params.get('range', "32.0")), 13)
 
-        # Range and loop -- Tourist only ever has this one option, so a checkbox beats a
-        # single-item options listbox.
-        col2_fr:th.Frame = th.Frame(plot_fr)
-        self._create_range(col2_fr, 0, 0, str(params.get('range', "32.0")), 13)
+            # self.loop_var:tk.IntVar = tk.IntVar(value=1 if params.get('loop', False) else 0)
+            # loop_cb:th.Checkbutton = th.Checkbutton(col2_fr, text=lbls['loop'], variable=self.loop_var)
+            # th.Tooltip(loop_cb, tts['loop'])
+            # loop_cb.grid(row=1, column=0, padx=5, pady=5)
+            col2_fr.grid(row=row, column=3, sticky=tk.NW)
 
-        self.loop_var:tk.IntVar = tk.IntVar(value=1 if params.get('loop', False) else 0)
-        loop_cb:th.Checkbutton = th.Checkbutton(col2_fr, text=lbls['loop'], variable=self.loop_var)
-        th.Tooltip(loop_cb, tts['loop'])
-        loop_cb.grid(row=1, column=0, padx=5, pady=5)
-        col2_fr.grid(row=row, column=3, sticky=tk.NW)
+            # Buttons
+            row += 1; col = 0
+            self._create_buttons(plot_fr, row, col)
 
-        # Buttons
-        row += 1; col = 0
-        self._create_buttons(plot_fr, row, col)
+            self.frame = plot_fr
+        except Exception as e:
+            Debug.logger.debug(f"Exception {e}")
 
-        self.frame = plot_fr
         return plot_fr
+
 
     @catch_exceptions
     def plot(self) -> None:
@@ -827,8 +832,10 @@ class TouristPlotter(Plotter):
 
         # No pre-validation per destination -- Spansh errors on a bad name regardless.
         params['destination'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
+        if params['destination'] == []:
+            params['destination'] = params['final_destination']
 
-        params['loop'] = self.loop_var.get()
+        #params['loop'] = self.loop_var.get()
 
         Context.router.plot_route('Tourist', params)
         self.ui._show_busy_gui(True)

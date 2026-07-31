@@ -334,17 +334,18 @@ class UI():
 
         station:str|None = route.next_stop_value('Station Name')
         if station:
-            lines.append(f"{lbls['station']}: {station}")
+            lines.append(f"{station}")
 
         commodity:str|None = route.next_stop_value('Commodity')
         if commodity:
-            amount:str = hfplus(tuple([route.next_stop_value('Amount'), 'float', '', ' t']))
-            lines.append(f"{commodity}{' x' + amount if amount else ''}")
+            amount:str = hfplus(tuple([route.next_stop_value('Amount'), 'int', '', 't']))
+            lines.append(f"\n{amount + ' ' if amount else ''}{commodity}")
 
-        profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'float', '', ' Cr']))
-        total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'float', '', ' Cr']))
+        profit:str = hfplus(tuple([route.next_stop_value('Profit'), 'int', '', ' Cr/t']))
+        #total:str = hfplus(tuple([route.next_stop_value('Total Profit'), 'int', '', ' Cr']))
         if profit:
-            lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
+            #lines.append(f"Profit: {profit}/t{f' (total {total})' if total else ''}")
+            lines.append(f"{profit} profit")
 
         subtype:str|None = route.next_stop_value('Body Subtype')
         if subtype:
@@ -373,7 +374,7 @@ class UI():
             return tts['copy_to_clipboard']
 
         lines.insert(0, route.next_stop())
-        return ", ".join(lines) + "\n" + tts['copy_to_clipboard']
+        return " ".join(lines) + "\n" + tts['copy_to_clipboard']
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

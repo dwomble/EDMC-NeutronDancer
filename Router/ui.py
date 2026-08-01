@@ -300,7 +300,7 @@ class UI():
         self.waypoint_next_tt.set_text(nstr)
 
         primary:str = route.next_stop()
-        detail:str = route.next_stop_detail()
+        detail:str = route.next_stop_station()
         wp:str = f"{primary} · {detail}" if detail else primary
         self._update_progbar()
 
@@ -328,7 +328,7 @@ class UI():
 
     def _waypoint_tooltip(self, route:Route) -> str:
         """ Full next-waypoint detail for the waypoint button's tooltip """
-        lines:list = route.next_stop_detail_lines()
+        lines:list = route.next_stop_details()
         lines.append(tts['copy_to_clipboard'])
 
         return "\n".join(lines)

@@ -11,6 +11,9 @@ from .constants import FONT, BOLD, NAME, HEADER_TYPES, lbls
 from .route import Route
 from .context import Context
 
+
+LEFT_ALIGN:list = ['System Name', 'System', 'Station Name', 'Station Type', 'Station Class', 'Station Faction', 'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity' 'Species']
+
 @singleton
 class RouteWindow:
     """
@@ -60,6 +63,53 @@ class RouteWindow:
         self.window.destroy()
         return
 
+    def _jump_summary(self, parent:tk.Frame, route:Route) -> None:
+        """ Display a summary of the next jump """
+        txt:str = lbls['jumps'] if route.jc != None else lbls['waypoints']
+        ttl:ttk.Label = ttk.Label(parent, text=txt.title(), font=BOLD)
+        ttl.pack(side=tk.LEFT, padx=5)
+
+        jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
+        tjumps:tuple = tuple([route.total_jumps(), 'int'])
+        jstr:str = f"{hfplus(jumps)} / {hfplus(tjumps)}"
+        lbl:ttk.Label = ttk.Label(parent, text=jstr, font=FONT)
+        lbl.pack(side=tk.LEFT, padx=5)
+
+    def _speed_summary(self, parent:tk.Frame, route:Route) -> None:
+        """ Display a summary of the speed """
+        ttl:ttk.Label = ttk.Label(parent, text=f"{lbls['speed'].title()}", font=BOLD)
+        ttl.pack(side=tk.LEFT, padx=5)
+
+        jph:tuple = tuple([route.jumps_per_hour(), 'int', '-', lbls['jumps_per_hour']])
+        dph:tuple = tuple([route.dist_per_hour(), 'float', '-', lbls['dist_per_hour']])
+        dstr:str = f"{hfplus(jph)} / {hfplus(dph)}"
+        lbl:ttk.Label = ttk.Label(parent, text=dstr, font=FONT)
+        lbl.pack(side=tk.LEFT, padx=5)
+
+    def _distance_summary(self, parent:tk.Frame, route:Route) -> None:
+        """ Display a summary of the distance """
+        ttl:ttk.Label = ttk.Label(parent, text=f"{lbls['distance'].title()}", font=BOLD)
+        ttl.pack(side=tk.LEFT, padx=5)
+
+        dist:tuple = tuple([route.total_dist() - route.dist_remaining(), 'float', '0', ''])
+        dstr:str = f"{hfplus(dist)} / {hfplus(route.total_dist())} ly"
+        lbl:ttk.Label = ttk.Label(parent, text=dstr, font=FONT)
+        lbl.pack(side=tk.LEFT, padx=5)
+
+    def _value_summary(self, parent:tk.Frame, route:Route) -> None:
+        """ Display a summary of the value """
+        rv = route.route_value()
+        if rv is None: return
+
+        label, header = rv
+        ttl:ttk.Label = ttk.Label(parent, text=label.title(), font=BOLD)
+        ttl.pack(side=tk.LEFT, padx=5)
+
+        so_far:tuple = tuple([route.sum_value(header, through=route.offset+1), 'float', '0', ' Cr'])
+        total:tuple = tuple([route.sum_value(header, through=len(route.route)), 'float', '0', ' Cr'])
+        vstr:str = f"{hfplus(so_far)} / {hfplus(total)}"
+        lbl:ttk.Label = ttk.Label(parent, text=vstr, font=FONT)
+        lbl.pack(side=tk.LEFT, padx=5)
 
     def _summary(self, parent:tk.Frame, route:Route, scale:float) -> None:
         """ Display a summary of the route """
@@ -76,36 +126,21 @@ class RouteWindow:
 
         # Jumps
         if route.total_jumps() > 0:
-            txt:str = lbls['jumps'] if route.jc != None else lbls['waypoints']
-            ttl:ttk.Label = ttk.Label(frm, text=txt.title(), font=BOLD)
-            ttl.pack(side=tk.LEFT, padx=5)
-
-            jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '0'])
-            tjumps:tuple = tuple([route.total_jumps(), 'int'])
-            jstr:str = f"{hfplus(jumps)} / {hfplus(tjumps)}"
-            lbl:ttk.Label = ttk.Label(frm, text=jstr, font=FONT)
-            lbl.pack(side=tk.LEFT, padx=5)
+            self._jump_summary(frm, route)
 
         # Distance
         if route.total_dist() > 0:
-            ttl = ttk.Label(frm, text=f"{lbls['distance'].title()}", font=BOLD)
-            ttl.pack(side=tk.LEFT, padx=5)
+            self._distance_summary(frm, route)
 
-            dist:tuple = tuple([route.total_dist() - route.dist_remaining(), 'float', '0', ''])
-            dstr:str = f"{hfplus(dist)} / {hfplus(route.total_dist())} ly"
-            lbl = ttk.Label(frm, text=dstr, font=FONT)
-            lbl.pack(side=tk.LEFT, padx=5)
+        # Value (Trade profit, Road to Riches/Exobiology scan/mapping/landmark value) --
+        # blank for route types with no earned-value column (Neutron/Galaxy/Tourist/FleetCarrier)
+        rv = route.route_value()
+        if rv is not None:
+            self._value_summary(frm, route)
 
         # Speed
         if route.jumps_per_hour() > -1:
-            ttl = ttk.Label(frm, text=f"{lbls['speed'].title()}", font=BOLD)
-            ttl.pack(side=tk.LEFT, padx=5)
-
-            jph:tuple = tuple([route.jumps_per_hour(), 'int', '-', lbls['jumps_per_hour']])
-            dph:tuple = tuple([route.dist_per_hour(), 'float', '-', lbls['dist_per_hour']])
-            dstr:str = f"{hfplus(jph)} / {hfplus(dph)}"
-            lbl = ttk.Label(frm, text=dstr, font=FONT)
-            lbl.pack(side=tk.LEFT, padx=5)
+            self._speed_summary(frm, route)
 
     @catch_exceptions
     def _table(self, parent:tk.Frame, route:Route, scale:float) -> int:
@@ -134,8 +169,8 @@ class RouteWindow:
             widths = [max(widths[i], len(str(w))+1) for i, w in enumerate(r)]
 
         for i, hdr in enumerate(route.hdrs):
-            tree.heading(hdr, text=hdr, anchor=tk.W if i == 0 else tk.E)
-            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*scale), anchor=tk.W if i == 0 else tk.E)
+            tree.heading(hdr, text=hdr, anchor=tk.W if hdr in LEFT_ALIGN else tk.E)
+            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*scale), anchor=tk.W if hdr in LEFT_ALIGN else tk.E)
 
         for i, row in enumerate(route.route):
             tmp:list[tuple] = [ tuple([val] + HEADER_TYPES.get(route.hdrs[col], ["-", ""])) for col, val in enumerate(row)]

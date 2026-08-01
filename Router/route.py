@@ -76,23 +76,43 @@ class Route:
         return self.route[self.offset+1][ind]
 
 
-    def sum_value(self, header:str) -> float:
-        """ Sum a numeric column across all waypoints through the next stop """
+    def sum_value(self, header:str, through:int|None = None) -> float:
+        """ Sum a numeric column across route[:through] (default: through the next stop) """
         ind:int|None = self.colind(header)
         if ind is None or self.route == []: return 0
-        return sum(r[ind] for r in self.route[:self.offset+2] if isinstance(r[ind], (int, float)))
+        if through is None: through = self.offset+2
+        return sum(r[ind] for r in self.route[:through] if isinstance(r[ind], (int, float)))
 
 
-    def next_stop_detail(self) -> str:
-        """ Return a short secondary detail for the next waypoint(station, genus, etc.) """
+    def route_value(self) -> tuple[str, str] | None:
+        """ (label, header) of this route's earned-value column, or None for route types that
+        don't track one (Neutron/Galaxy/Tourist/FleetCarrier). """
+        if self.colind('Commodity') is not None:
+            return (lbls['profit'], 'Profit')
+
+        if self.colind('Species') is not None:
+            return (lbls['landmark_value'], 'Landmark Value')
+
+        if self.colind('Estimated Scan Value') is not None:
+            from .context import Context
+            params:dict = Context.router.route_params.get(Context.router.last_plot, {})
+            if params.get('use_mapping_value', False):
+                return (lbls['mapping_value'], 'Estimated Mapping Value')
+            return (lbls['scan_value'], 'Estimated Scan Value')
+
+        return None
+
+
+    def next_stop_station(self) -> str:
+        """ Return the station of the next waypoint """
         station = self.next_stop_value('Station Name')
         if station: return str(station)
 
         return ''
 
 
-    def next_stop_detail_lines(self) -> list[str]:
-        """ Extra per-route-type detail for the next waypoint, one entry per line """
+    def next_stop_details(self) -> list[str]:
+        """ Extra per-route-type details for the next waypoint """
         lines:list = []
 
         commodity = self.next_stop_value('Commodity')

@@ -88,7 +88,7 @@ class Overlay():
             return
 
         primary:str = Context.route.next_stop()
-        detail:str = Context.route.next_stop_detail()
+        detail:str = Context.route.next_stop_station()
         wp:str = f"{primary} · {detail}" if detail else primary
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
@@ -148,7 +148,7 @@ class Overlay():
                 message.append({'size': "normal", 'text': errs["format_error"]})
         else:
             # No refuel/neutron columns -- show detail lines instead of the template.
-            detail_lines:list = Context.route.next_stop_detail_lines()
+            detail_lines:list = Context.route.next_stop_details()
             if detail_lines:
                 message.append({'size': "normal", 'text': "\n".join(detail_lines)})
 

@@ -150,184 +150,456 @@ class TestStateManagement:
         """Call save"""
         harness.plugin.router.save()
 
+
+class TestRouteMethods:
+    """ Test the route object's methods"""
+    def test_route_with_tritium_column(self, harness:TestHarness) -> None:
+        """Test fleet carrier route with tritium column."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['System A', 5, 50, 'True'],  # Tritium at this waypoint
+            ['System B', 10, 45, 'True'],
+            ['System C', 8, 50, 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.fleetcarrier == True
+        assert route.refuel() == False  # Depends on refuel column
+
+    def test_next_stop_current_waypoint(self, harness:TestHarness) -> None:
+        """Test next_stop() at current waypoint."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop() == 'Apurui'  # Next after current (Sol)
+
+    def test_next_stop_complete_route(self, harness:TestHarness) -> None:
+        """Test next_stop() when route is complete."""
+        from Router.route import Route
+
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
+
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 2)  # At last waypoint
+
+        assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
+
+    def test_next_stop_trade(self, harness:TestHarness) -> None:
+        """next_stop_detail() returns the station name for Trade-shaped routes."""
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', 'Steel', 100, 5134, 0],
+            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 3],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
+        assert route.next_stop_value('Species') is None  # no such column on this route
+        assert route.next_stop_station() == 'Alvarado Beacon'
+        lines = route.next_stop_details()
+        assert any('Agronomic Treatment' in l for l in lines)
+        assert any('Cr/t' in l for l in lines)
+        assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
+
+    def test_next_stop_riches(self, harness:TestHarness) -> None:
+        """ subtype/distance/scan value for a riches-shaped route."""
+        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        route_data = [
+            ['Colonia', 'Colonia 1', '', 0, 0, 0],
+            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        lines = route.next_stop_details()
+
+        assert any('High metal content world' in l for l in lines)
+        assert any('Scan' in l for l in lines)
+
+    def test_next_stop_exobiology(self, harness:TestHarness) -> None:
+        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
+        route_data = [
+            ['Deciat', 'Deciat 1', '', 0],
+            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_station() == ''
+        assert route.next_stop() == 'Deciat 4 a'
+
+    def test_next_stop_station_blank(self, harness:TestHarness) -> None:
+        """Bblank for plain route types (Neutron, Galaxy, etc.)."""
+        hdrs = ['System Name', 'Jumps']
+        route_data = [['Sol', 0], ['Apurui', 10]]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_station() == ''
+
+
+    def test_cumulative_value(self, harness:TestHarness) -> None:
+        """cumulative_value() sums a numeric column through the next stop, not past it."""
+        hdrs = ['System Name', 'Estimated Scan Value', 'Jumps']
+        route_data = [['Sol', 0, 0], ['Deciat', 42300, 1], ['Colonia', 10000, 2]]
+        route = Route(hdrs, route_data, 1)  # next stop is Colonia (offset+1 == 2)
+
+        assert route.sum_value('Estimated Scan Value') == 52300
+
+    def test_sum_value_and_route_value(self, harness:TestHarness) -> None:
+        """sum_value(through=...) sums an arbitrary prefix (route-window "so far"/"total" use
+        this); route_value() picks Profit/Landmark Value/Scan or Mapping Value by column
+        presence, or None for route types with no earned-value column."""
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
+            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
+            ['Deciat', 'Farside', 'Silver', 200, 10617, 3],
+        ]
+        route = Route(hdrs, route_data, 0)  # offset 0 -> completed just row 0
+
+        assert route.sum_value('Profit', through=route.offset+1) == 0
+        assert route.sum_value('Profit', through=len(route.route)) == 15617
+        assert route.route_value() == (lbls['profit'], 'Profit')
+
+        plain_route = Route(['System Name', 'Jumps'], [['Sol', 0], ['Apurui', 10]], 0)
+        assert plain_route.route_value() is None
+
+    def test_trade_cumulative_profit(self, harness:TestHarness) -> None:
+        """a running-total line sums Profit across every waypoint through the next stop."""
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
+            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
+            ['Deciat', 'Farside', 'Silver', 200, 10617, 3],
+        ]
+        route = Route(hdrs, route_data, 1)  # next stop is Deciat
+
+        assert route.sum_value('Profit') == 15617
+        lines = route.next_stop_details()
+        assert any('Silver' in l for l in lines)
+        assert any('15.6K Cr' in l for l in lines)
+
+    def test_riches_cumulative_scan(self, harness:TestHarness) -> None:
+        """riches scan value gets a running total across waypoints already passed"""
+        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        route_data = [
+            ['Colonia', 'Colonia 1', '', 0, 0, 0],
+            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
+            ['Colonia', 'Colonia 3 a', 'Icy body', 100.0, 5000, 1],
+        ]
+        route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
+
+        assert route.sum_value('Estimated Scan Value') == 47300
+        lines = route.next_stop_details()
+        assert any('47.3K Cr' in l for l in lines)
+
+    def test_details_blank_no_extra_columns(self, harness:TestHarness) -> None:
+        """next_stop_detail_lines() is empty for plain route types (Neutron, Tourist, etc.)."""
+        hdrs = ['System Name', 'Jumps']
+        route_data = [['Sol', 0], ['Apurui', 10]]
+        route = Route(hdrs, route_data, 0)
+
+        assert route.next_stop_details() == []
+
+    def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
+        """Test checks refuel or neutron for appropriate route types."""
+        neutron_route = Route(['System Name', 'Jumps', 'Refuel'], [['Sol', 0, 'No'], ['Apurui', 10, 'Yes']], 0)
+        assert neutron_route.tracks_refuel_or_neutron() == True
+
+        galaxy_route = Route(['System Name', 'Jumps', 'Neutron'], [['Sol', 0, 'False'], ['Apurui', 10, 'True']], 0)
+        assert galaxy_route.tracks_refuel_or_neutron() == True
+
+        trade_route = Route(['System Name', 'Station Name', 'Jumps'], [['Sol', 'A', 0], ['Apurui', 'B', 10]], 0)
+        assert trade_route.tracks_refuel_or_neutron() == False
+
+    def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.jumps_remaining() == 15  # 10 + 5
+
+    def test_jumps_remaining_incomplete(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        route.update_route(1)  # Move to Apurui
+        assert route.jumps_remaining() == 5  # Only Bleae Thua remains
+
+    def test_perc_jumps_rem_at_start(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        total = route.total_jumps()
+        remaining = route.jumps_remaining()
+        assert route.perc_jumps_rem() == (total - remaining) * 100 / total
+
+    def test_perc_jumps_rem_complete(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0],
+            ['Apurui', 10],
+            ['Bleae Thua', 5]
+        ]
+
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+        assert route.perc_jumps_rem(2) == 100.0
+
+
+    def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0, 150],
+            ['Apurui', 10, 100],
+            ['Bleae Thua', 5, 50]
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.dist_remaining() == 150
+
+    def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0, 150],
+            ['Apurui', 10, 100],
+            ['Bleae Thua', 5, 50]
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
+
+        route.update_route(1)  # Move to Apurui
+        assert route.dist_remaining() == 100  # Distance to Bleae Thua
+
+    def test_refuel_check(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0, 'Fuel'],
+            ['Apurui', 10, 'No'],
+            ['Bleae Thua', 5, 'Fuel']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Refuel']
+        route = Route(hdrs, route_data, 0)
+
+        # Check next waypoint for refuel
+        route.update_route(1)  # Now at Apurui
+        assert route.refuel() == False  # Apurui doesn't refuel
+
+    def test_neutron_check(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0, 'False'],
+            ['Apurui', 10, 'True'],
+            ['Bleae Thua', 5, 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Neutron']
+        route = Route(hdrs, route_data, 0)
+
+        # Check if next waypoint needs neutron
+        route.update_route(1)  # Now at Apurui
+        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
+
+    def test_get_waypoint_next(self, harness:TestHarness) -> None:
+        route_data = [
+            ['A', 0],
+            ['B', 1],
+            ['C', 2]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        assert route.get_waypoint(0) == 'B'
+
+    def test_get_waypoint_end(self, harness:TestHarness) -> None:
+        route_data = [
+            ['A', 0],
+            ['B', 1]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 1)
+
+        assert route.get_waypoint(0) == 'None'  # tbls['none']
+
+    def test_record_jump(self, harness:TestHarness) -> None:
+        route_data = [
+            ['Sol', 0]
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
+
+        # Record a jump
+        dest = 'Jupiter'
+        dist = 2.5
+        route.record_jump(dest, dist)
+
+        assert len(route.jumps) == 1
+        assert route.jumps[0][1] == dest
+        assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
+
+
 class TestRouteNavigation:
-    """Test route navigation methods."""
+    """Test moving along a route via real navigation events (FSDJump, !nd chat commands)
+    rather than calling Route.update_route() directly."""
+
+    def _import(self, harness:TestHarness, filename:str) -> None:
+        assert harness.plugin.router.import_route(str(Path(__file__).parent / "config" / filename)) == True
+
+    def _jump(self, harness:TestHarness, system:str) -> None:
+        harness.fire_event({"event": "FSDJump", "StarSystem": system})
+
+    def _chat(self, harness:TestHarness, command:str) -> None:
+        harness.fire_event({"event": "SendText", "Message": f"!nd {command}"})
 
     def test_not_on_route(self, harness:TestHarness) -> None:
-        """Test not on route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
+        """Jumping to a system not on the route leaves offset at -1."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
 
-        harness.plugin.router.system = 'Apurui'
+        self._jump(harness, 'Apurui')
 
-        dest:str = harness.plugin.route.next_stop()
-        assert dest == 'Bleae Thua NI-B b27-5'
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_on_route(self, harness:TestHarness) -> None:
-        """Test on route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        """Jumping to a system on the route sets offset to that row."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
 
-        dest:str = harness.plugin.route.next_stop()
-        assert dest == 'Bleae Thua RX-L d7-28'
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
+
+        assert harness.plugin.route.offset == 0
+        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
 
     def test_start_of_route(self, harness:TestHarness) -> None:
-        """Test start of route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
+        """!nd previous at the start of the route doesn't move further back."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
 
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        self._chat(harness, 'previous')
 
-        # First stop shouldn't move further back
-        offset:int = harness.plugin.route.update_route(-1)
-        assert offset == -1
-        dest:str = harness.plugin.route.next_stop()
-        assert dest == 'Bleae Thua NI-B b27-5'
+        assert harness.plugin.route.offset == -1
+        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
 
     def test_end_of_route(self, harness:TestHarness) -> None:
-        """Test start of route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
+        """!nd next at the end of the route doesn't move further along."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Smojue DR-N d6-34')
+        assert harness.plugin.route.offset == 9
 
-        offset:int = harness.plugin.route.update_route(0, 'Smojue DR-N d6-34')
-        assert offset == 9
+        self._chat(harness, 'next')
+        assert harness.plugin.route.next_stop() == 'End of the road!'
 
-        # Last stop
-        offset:int = harness.plugin.route.update_route(1)
-        dest:str = harness.plugin.route.next_stop()
-        assert dest == 'End of the road!'
-
-        # Last stop shouldn't move further along
-        offset:int = harness.plugin.route.update_route(1)
-        dest:str = harness.plugin.route.next_stop()
-        assert dest == 'End of the road!'
+        self._chat(harness, 'next')
+        assert harness.plugin.route.next_stop() == 'End of the road!'
 
     def test_route_neutron(self, harness:TestHarness) -> None:
-        """Test route with neutron column."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        """is_neutron() reflects whichever waypoint !nd next has advanced to."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.is_neutron() == False  # Next waypoint is not a neutron
 
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert harness.plugin.route.is_neutron() == True  # Next waypoint is a neutron
 
     def test_jumps_to_wp(self, harness:TestHarness) -> None:
-        """Test jumps to next waypoint."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        """jumps_to_wp() reflects whichever waypoint !nd next has advanced to."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.jumps_to_wp() == 12
 
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert harness.plugin.route.jumps_to_wp() == 3
 
     def test_total_jumps_neutron(self, harness:TestHarness) -> None:
-        """Test total jumps for neutron route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        """total_jumps() for a route with a Jumps column."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.total_jumps() == 66
 
     def test_total_jumps_galaxy(self, harness:TestHarness) -> None:
-        """Test total jumps for galaxy route."""
-        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        """total_jumps() for a route with no Jumps column (one row == one jump)."""
+        self._import(harness, "galaxy-Bleae-Voqooe.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.total_jumps() == 74
 
     def test_jumps_remaining_neutron(self, harness:TestHarness) -> None:
-        """Test jumps remaining for neutron route (one with a jumps column)."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
+        """jumps_remaining() before the route starts and after !nd next advances it."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
         assert harness.plugin.route.offset == -1
         assert harness.plugin.route.jumps_remaining() == 66
 
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.jumps_remaining() == 66
 
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert harness.plugin.route.jumps_remaining() == 54
 
     def test_jumps_remaining_galaxy(self, harness:TestHarness) -> None:
-        """Test jumps remaining for galaxy route (one without a jumps column)."""
-        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        # Not yet on the route
+        """jumps_remaining() jumping straight to a system partway along the route."""
+        self._import(harness, "galaxy-Bleae-Voqooe.csv")
         assert harness.plugin.route.offset == -1
         assert harness.plugin.route.jumps_remaining() == 74
 
-        # Start of route
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
         assert harness.plugin.route.jumps_remaining() == 74
 
-        # Partway along
-        offset:int = harness.plugin.route.update_route(0, 'Gria Drye JT-O d7-172')
-        assert offset == 22
+        self._jump(harness, 'Gria Drye JT-O d7-172')
+        assert harness.plugin.route.offset == 22
         assert harness.plugin.route.jumps_remaining() == 52
 
-
     def test_perc_jumps_remaining(self, harness:TestHarness) -> None:
-        """Test percentage of jumps remaining for neutron route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        """perc_jumps_rem() after !nd next advances one waypoint."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert int(harness.plugin.route.perc_jumps_rem()) == 18
 
     def test_dist_remaining(self, harness:TestHarness) -> None:
-        """Test distance remaining for neutron route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        """dist_remaining() after !nd next advances one waypoint."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert int(harness.plugin.route.dist_remaining()) == 16273
 
     def test_total_dist(self, harness:TestHarness) -> None:
-        """Test total distance for neutron route."""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        res:bool = harness.plugin.router.import_route(filename)
-        assert res == True
-
-        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
-        assert offset == 0
-        offset:int = harness.plugin.route.update_route(1)
-        assert offset == 1
+        """total_dist() after !nd next advances one waypoint."""
+        self._import(harness, "neutron-Bleae-Smojue.csv")
+        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        self._chat(harness, 'next')
+        assert harness.plugin.route.offset == 1
         assert int(harness.plugin.route.total_dist()) == 16458
 
 
@@ -678,7 +950,7 @@ class TestOverlay:
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
-    def test_update_jump_overlay_trade_shows_detail_not_template(self, harness:TestHarness, monkeypatch) -> None:
+    def test_overlay_trade_detail_not_template(self, harness:TestHarness, monkeypatch) -> None:
         """For a route with no Refuel/Neutron columns (Trade here), the overlay must show the
         route's own detail section (station/commodity/profit) instead of the customizable
         progress_display template -- and the "Next:" line should include the station."""
@@ -1630,10 +1902,11 @@ class TestUIFunctions:
         assert harness.plugin.ui._progress() == 2
 
     def test_update_progress_trade_waypoint(self, harness:TestHarness) -> None:
-        """update_progress() must combine system + station on the button (truncated to fit
-        the button's width, jump-progress suffix always intact and untruncated), send only
-        the plain system name to the clipboard (not the combined display text), and build a
-        full-detail tooltip with the station/commodity/profit info the button has no room for."""
+        """update_progress() must combine system + station on the button (truncated to fit,
+        jump-progress suffix always intact and untruncated), and build a tooltip with the
+        commodity/profit detail the button has no room for -- system/station aren't repeated
+        in the tooltip since they're already visible on the button face. Clicking the button
+        (not update_progress() itself) copies the plain system name to the clipboard."""
         ui = harness.plugin.ui
 
         hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Total Profit', 'Jumps']
@@ -1643,74 +1916,21 @@ class TestUIFunctions:
         ]
         harness.plugin.route = Route(hdrs, route_data, 0)
 
-        harness.clipboard.clear()
         ui.update_progress()
 
-        assert harness.clipboard.get() == 'Puppis Sector TO-R b4-4'  # not the combined text
-
-        width:int = int(ui.waypoint_btn.cget('width'))
         text:str = ui.waypoint_btn.cget('text')
-        assert len(text) <= width
+        assert len(text) <= 40
         assert text.endswith(" (0/3)")  # jump-progress suffix always preserved, never truncated
         assert '…' in text  # system · station is long enough to need truncating
+        assert text.startswith('Puppis Sector TO-R b4-4')
 
         tooltip:str = ui.waypoint_btn_tt.args['text']
-        assert 'Puppis Sector TO-R b4-4' in tooltip
-        assert 'Alvarado Beacon' in tooltip
         assert 'Agronomic Treatment' in tooltip
+        assert 'Cr/t' in tooltip
 
-    def test_waypoint_btn_alt_width_survives_image(self, harness:TestHarness) -> None:
-        """th.Button's dark-mode 'alt' half must stay sized for its character width even after
-        update_progress() attaches the neutron/fuel icon -- plain tk.Button reinterprets 'width'
-        as screen units the instant an image is set, which would otherwise collapse it."""
-        ui = harness.plugin.ui
-        hdrs = ['System Name', 'Jumps']
-        route_data = [['Sol', 0], ['Apurui', 10]]
-        harness.plugin.route = Route(hdrs, route_data, 0)
-
-        ui.update_progress()
-        ui.waypoint_btn.alt.update_idletasks()
-        assert ui.waypoint_btn.alt.winfo_reqwidth() > 150
-
-    def test_button_obj_type_keys_off_cursor_not_image(self, harness:TestHarness) -> None:
-        """th.Button must only fall back to a plain tk.Button (instead of ttk.Button) for its
-        'obj' half when a custom cursor is set -- that's the one EDMC theme code path that
-        assigns 'foreground' without checking the widget supports it. Image alone is safe."""
-        image_only = th.Button(harness.root, image=harness.plugin.ui.help_img)
-        assert isinstance(image_only.obj, ttk.Button)
-
-        image_and_cursor = th.Button(harness.root, image=harness.plugin.ui.help_img, cursor="hand2")
-        assert isinstance(image_and_cursor.obj, tk.Button) and not isinstance(image_and_cursor.obj, ttk.Button)
-
-    def test_button_configure_cursor_onto_ttk_obj_raises(self, harness:TestHarness) -> None:
-        """Adding a cursor via configure() to a Button whose obj is already ttk.Button must fail
-        loudly at the call site, not silently crash EDMC's theme code later at theme-switch time."""
-        btn = th.Button(harness.root, text="x")
-        with pytest.raises(ValueError):
-            btn.configure(cursor="hand2")
-
-    def test_waypoint_btn_obj_stays_ttk_with_image(self, harness:TestHarness) -> None:
-        """waypoint_btn never sets a cursor, so its 'obj' half stays a ttk.Button even after
-        update_progress() attaches an image -- ttk widgets don't expose foreground/background
-        as direct options at all, so EDMC's theme code can't crash trying to set one."""
-        ui = harness.plugin.ui
-        hdrs = ['System Name', 'Jumps']
-        harness.plugin.route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)
-        ui.update_progress()
-
-        assert isinstance(ui.waypoint_btn.obj, ttk.Button)
-
-    def test_themed_button_config_alias_reaches_alt(self, harness:TestHarness) -> None:
-        """.config() must behave like .configure() -- reaching both the obj and alt halves --
-        not fall through __getattr__ straight to the raw obj widget."""
-        ui = harness.plugin.ui
-        ui.waypoint_next_btn.config(state=tk.DISABLED)
-        assert str(ui.waypoint_next_btn.obj.cget('state')) == tk.DISABLED
-        assert str(ui.waypoint_next_btn.alt.cget('state')) == tk.DISABLED
-
-        ui.waypoint_next_btn.config(state=tk.NORMAL)
-        assert str(ui.waypoint_next_btn.obj.cget('state')) == tk.NORMAL
-        assert str(ui.waypoint_next_btn.alt.cget('state')) == tk.NORMAL
+        harness.clipboard.clear()
+        ui.waypoint_btn.invoke()
+        assert harness.clipboard.get() == 'Puppis Sector TO-R b4-4'  # not the combined display text
 
     def test_update_cargo(self, harness:TestHarness):
         """ test update_cargo() method """
@@ -1720,6 +1940,7 @@ class TestUIFunctions:
         # Update cargo and verify cargo and range entries update
         assert ui.get_item('Galaxy', 'cargo_entry') == '12'
         assert ui.get_item('Neutron', 'range_entry') == str(harness.plugin.router.ship.get_range(12))
+
 
 class TestRouteWindow:
     """Test RouteWindow lifecycle and display behavior."""
@@ -1846,6 +2067,31 @@ class TestRouteWindow:
 
         self._cleanup_window(window)
 
+    def test_value_section_trade(self, harness:TestHarness) -> None:
+        """show() adds a Profit block for Trade routes -- absent for Neutron/Galaxy/Tourist/
+        FleetCarrier routes, which have no earned-value column."""
+        window:RouteWindow = harness.plugin.ui.window_route
+        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
+        route_data = [
+            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
+            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        window.show(route)
+        if window.window: window.window.iconify()
+        assert window.window is not None
+        window.window.update_idletasks()
+
+        container = window.window.winfo_children()[0]
+        summary_frame = container.winfo_children()[0]
+        label_texts:list[str] = [w.cget("text") for w in summary_frame.winfo_children() if isinstance(w, ttk.Label)]
+
+        assert lbls['profit'].title() in label_texts
+        assert any('Cr' in text for text in label_texts)
+
+        self._cleanup_window(window)
+
     def test_show_renders_table_columns_rows_and_selection(self, harness: TestHarness) -> None:
         """show() should render table headings/rows and select the current route offset row."""
         window: RouteWindow = harness.plugin.ui.window_route
@@ -1949,331 +2195,6 @@ class TestRouteWindowUI:
         assert route.source() == 'Sol'
         assert route.destination() == 'Bleae Thua'
 
-    def test_route_with_tritium_column(self, harness:TestHarness) -> None:
-        """Test fleet carrier route with tritium column."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['System A', 5, 50, 'True'],  # Tritium at this waypoint
-            ['System B', 10, 45, 'True'],
-            ['System C', 8, 50, 'False']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.fleetcarrier == True
-        assert route.refuel() == False  # Depends on refuel column
-
-    def test_next_stop_current_waypoint(self, harness:TestHarness) -> None:
-        """Test next_stop() at current waypoint."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop() == 'Apurui'  # Next after current (Sol)
-
-    def test_next_stop_complete_route(self, harness:TestHarness) -> None:
-        """Test next_stop() when route is complete."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 2)  # At last waypoint
-
-        assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
-
-    def test_next_stop_value_and_detail_trade(self, harness:TestHarness) -> None:
-        """next_stop_detail() returns the station name for Trade-shaped routes."""
-        hdrs = ['System Name', 'Station Name', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', 0],
-            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 3],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
-        assert route.next_stop_value('Species') is None  # no such column on this route
-        assert route.next_stop_detail() == 'Alvarado Beacon'
-
-    def test_next_stop_detail_exobiology(self, harness:TestHarness) -> None:
-        """next_stop_detail() returns just the genus (first word) of the species name."""
-        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
-        route_data = [
-            ['Deciat', 'Deciat 1', '', 0],
-            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_detail() == 'Bacterium'
-
-    def test_next_stop_detail_blank_when_no_extra_columns(self, harness:TestHarness) -> None:
-        """next_stop_detail() is blank for plain route types (Neutron, Galaxy, etc.)."""
-        hdrs = ['System Name', 'Jumps']
-        route_data = [['Sol', 0], ['Apurui', 10]]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_detail() == ''
-
-    def test_next_stop_detail_lines_trade(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() -- station/commodity/profit for a Trade-shaped route."""
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
-            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 3],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        lines = route.next_stop_detail_lines()
-        assert lines[0] == 'Alvarado Beacon'
-        assert any('Agronomic Treatment' in l for l in lines)
-        assert any('profit' in l for l in lines)
-
-    def test_next_stop_detail_lines_riches(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() -- body subtype/distance/scan value for a riches-shaped route."""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
-        route_data = [
-            ['Colonia', 'Colonia 1', '', 0, 0, 0],
-            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        lines = route.next_stop_detail_lines()
-        assert any('High metal content world' in l for l in lines)
-        assert any('Scan' in l for l in lines)
-
-    def test_cumulative_value(self, harness:TestHarness) -> None:
-        """cumulative_value() sums a numeric column through the next stop, not past it."""
-        hdrs = ['System Name', 'Estimated Scan Value', 'Jumps']
-        route_data = [['Sol', 0, 0], ['Deciat', 42300, 1], ['Colonia', 10000, 2]]
-        route = Route(hdrs, route_data, 1)  # next stop is Colonia (offset+1 == 2)
-
-        assert route.sum_value('Estimated Scan Value') == 52300
-
-    def test_next_stop_detail_lines_trade_shows_cumulative_profit(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() -- cumulative profit uses Spansh's own running total column,
-        not a sum of per-hop Profit (which would double-count)."""
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Cumulative Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0, 0],
-            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 5000, 2],
-            ['Deciat', 'Farside', 'Silver', 200, 10617, 15617, 3],
-        ]
-        route = Route(hdrs, route_data, 1)  # next stop is Deciat
-
-        lines = route.next_stop_detail_lines()
-        assert any('total' in l for l in lines)
-        assert not any('20,617' in l or '20617' in l for l in lines)  # not a naive sum of Profit
-
-    def test_next_stop_detail_lines_riches_shows_cumulative_scan(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() -- riches-family scan value gets a running total across
-        waypoints already passed, summed from the route data (no Spansh-provided total exists)."""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
-        route_data = [
-            ['Colonia', 'Colonia 1', '', 0, 0, 0],
-            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
-            ['Colonia', 'Colonia 3 a', 'Icy body', 100.0, 5000, 1],
-        ]
-        route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
-
-        assert route.sum_value('Estimated Scan Value') == 47300
-        lines = route.next_stop_detail_lines()
-        assert any('total' in l for l in lines)
-
-    def test_next_stop_detail_lines_blank_when_no_extra_columns(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() is empty for plain route types (Neutron, Tourist, etc.)."""
-        hdrs = ['System Name', 'Jumps']
-        route_data = [['Sol', 0], ['Apurui', 10]]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_detail_lines() == []
-
-    def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
-        """tracks_refuel_or_neutron() is column-presence based, not route-type based -- true
-        for Neutron/Galaxy-shaped routes (and refuel-aware CSV imports), false for Trade/
-        riches-family/Tourist/FleetCarrier routes that never carry these columns."""
-        neutron_route = Route(['System Name', 'Jumps', 'Refuel'], [['Sol', 0, 'No'], ['Apurui', 10, 'Yes']], 0)
-        assert neutron_route.tracks_refuel_or_neutron() == True
-
-        galaxy_route = Route(['System Name', 'Jumps', 'Neutron'], [['Sol', 0, 'False'], ['Apurui', 10, 'True']], 0)
-        assert galaxy_route.tracks_refuel_or_neutron() == True
-
-        trade_route = Route(['System Name', 'Station Name', 'Jumps'], [['Sol', 'A', 0], ['Apurui', 'B', 10]], 0)
-        assert trade_route.tracks_refuel_or_neutron() == False
-
-    def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
-        """Test jumps_remaining() at start of route."""
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.jumps_remaining() == 15  # 10 + 5
-
-    def test_jumps_remaining_incomplete(self, harness:TestHarness) -> None:
-        """Test jumps_remaining() mid-route."""
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        route.update_route(1)  # Move to Apurui
-        assert route.jumps_remaining() == 5  # Only Bleae Thua remains
-
-    def test_perc_jumps_rem_at_start(self, harness:TestHarness) -> None:
-        """Test percentage of jumps remaining at start."""
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        total = route.total_jumps()
-        remaining = route.jumps_remaining()
-        assert route.perc_jumps_rem() == (total - remaining) * 100 / total
-
-    def test_perc_jumps_rem_complete(self, harness:TestHarness) -> None:
-        """Test percentage of jumps remaining at end."""
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-        assert route.perc_jumps_rem(2) == 100.0
-
-
-    def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
-        """Test dist_remaining() at start."""
-
-        route_data = [
-            ['Sol', 0, 150],
-            ['Apurui', 10, 100],
-            ['Bleae Thua', 5, 50]
-        ]
-        hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.dist_remaining() == 150
-
-    def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
-        """Test dist_remaining() mid-route."""
-
-        route_data = [
-            ['Sol', 0, 150],
-            ['Apurui', 10, 100],
-            ['Bleae Thua', 5, 50]
-        ]
-        hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0)
-
-        route.update_route(1)  # Move to Apurui
-        assert route.dist_remaining() == 100  # Distance to Bleae Thua
-
-    def test_refuel_check(self, harness:TestHarness) -> None:
-        """Test refuel() method."""
-
-        route_data = [
-            ['Sol', 0, 'Fuel'],
-            ['Apurui', 10, 'No'],
-            ['Bleae Thua', 5, 'Fuel']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Refuel']
-        route = Route(hdrs, route_data, 0)
-
-        # Check next waypoint for refuel
-        route.update_route(1)  # Now at Apurui
-        assert route.refuel() == False  # Apurui doesn't refuel
-
-    def test_neutron_check(self, harness:TestHarness) -> None:
-        """Test neutron() method."""
-
-        route_data = [
-            ['Sol', 0, 'False'],
-            ['Apurui', 10, 'True'],
-            ['Bleae Thua', 5, 'False']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Neutron']
-        route = Route(hdrs, route_data, 0)
-
-        # Check if next waypoint needs neutron
-        route.update_route(1)  # Now at Apurui
-        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
-
-    def test_get_waypoint_next(self, harness:TestHarness) -> None:
-        """Test get_waypoint() for next waypoint."""
-
-        route_data = [
-            ['A', 0],
-            ['B', 1],
-            ['C', 2]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.get_waypoint(0) == 'B'
-
-    def test_get_waypoint_end(self, harness:TestHarness) -> None:
-        """Test get_waypoint() at end of route."""
-
-        route_data = [
-            ['A', 0],
-            ['B', 1]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 1)
-
-        assert route.get_waypoint(0) == 'None'  # tbls['none']
-
-    def test_record_jump(self, harness:TestHarness) -> None:
-        """Test record_jump() method."""
-
-        route_data = [
-            ['Sol', 0]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        # Record a jump
-        dest = 'Jupiter'
-        dist = 2.5
-        route.record_jump(dest, dist)
-
-        assert len(route.jumps) == 1
-        assert route.jumps[0][1] == dest
-        assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
 
 class TestPlotting:
     """Test end to end plotting functionality (neutron/galaxy routes)."""

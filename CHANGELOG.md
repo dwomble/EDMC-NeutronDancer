@@ -10,13 +10,14 @@
   * Trade Routes
   * Tourist Routes
   * Fleet Carrier Routes
-* Added via-point hops to the Neutron plotter, and migrated the Tourist plotter's stop list to the same +/- row UI
+* Added "Via" hops to the Neutron plotter, and migrated the Tourist plotter's stop list to the same +/- row UI
+* Next stop button, tooltip, and overlay support route-specific metrics
 
 ### Changes
 
 * Refactored the plot UI and plot initiation to support more route types
 
-## v1.10.0 2026-??-??
+## v1.10.0 2026-07-25
 
 ### New Features
 

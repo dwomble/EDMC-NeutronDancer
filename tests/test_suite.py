@@ -2085,7 +2085,7 @@ class TestRouteWindowUI:
         route_data = [['Sol', 0, 0], ['Deciat', 42300, 1], ['Colonia', 10000, 2]]
         route = Route(hdrs, route_data, 1)  # next stop is Colonia (offset+1 == 2)
 
-        assert route.cumulative_value('Estimated Scan Value') == 52300
+        assert route.sum_value('Estimated Scan Value') == 52300
 
     def test_next_stop_detail_lines_trade_shows_cumulative_profit(self, harness:TestHarness) -> None:
         """next_stop_detail_lines() -- cumulative profit uses Spansh's own running total column,
@@ -2113,7 +2113,7 @@ class TestRouteWindowUI:
         ]
         route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
 
-        assert route.cumulative_value('Estimated Scan Value') == 47300
+        assert route.sum_value('Estimated Scan Value') == 47300
         lines = route.next_stop_detail_lines()
         assert any('total' in l for l in lines)
 

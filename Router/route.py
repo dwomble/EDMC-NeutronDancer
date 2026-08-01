@@ -56,7 +56,7 @@ class Route:
         """ Return systen name of next waypoint """
         if self.route == []: return ''
         if self.offset >= len(self.route)-1: return lbls['route_complete']
-        return self.route[self.offset+1][self.nc]
+        return self.route[self.offset+1][self.sc]
 
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
@@ -73,7 +73,7 @@ class Route:
         return self.route[self.offset+1][ind]
 
 
-    def cumulative_value(self, header:str) -> float:
+    def sum_value(self, header:str) -> float:
         """ Sum a numeric column across all waypoints through the next stop """
         ind:int|None = self.colind(header)
         if ind is None or self.route == []: return 0
@@ -84,9 +84,6 @@ class Route:
         """ Return a short secondary detail for the next waypoint(station, genus, etc.) """
         station = self.next_stop_value('Station Name')
         if station: return str(station)
-
-        species = self.next_stop_value('Species')
-        if species: return str(species).split(' ', 1)[0]
 
         return ''
 
@@ -101,11 +98,8 @@ class Route:
             profit:str = hfplus(tuple([self.next_stop_value('Profit'), 'int', '', ' Cr/t']))
             lines.append(f"{amount + ' ' if amount else ''}{commodity} · {profit}")
 
-        # Spansh's Cumulative Profit is already a running total, not a per-row figure to sum.
-
-        cum_profit:str = hfplus(tuple([self.next_stop_value('Cumulative Profit'), 'float', '', ' Cr']))
-        if cum_profit:
-            perhour:str = hfplus(tuple([self.profit_per_hour(), 'float', 'N/A', ' Cr/hr']))
+            cum_profit:str = hfplus(tuple([self.sum_value('Profit'), 'float', '', ' Cr']))
+            perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', 'N/A', ' Cr/hr']))
             lines.append(f"{cum_profit} · ({perhour})")
 
 
@@ -114,25 +108,26 @@ class Route:
             dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
             lines.append(" · ".join(p for p in [subtype, dist] if p))
 
+        species = self.next_stop_value('Species')
+        if species:
+            landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
+            lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
+
+            cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
+            perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', 'N/A', ' Cr/hr']))
+            lines.append(f"{cum_landmark} · ({perhour})")
+
         scanval = self.next_stop_value('Estimated Scan Value')
         mapval = self.next_stop_value('Estimated Mapping Value')
-        if scanval or mapval:
+        if not species and (scanval or mapval):
             scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
             lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
 
-            cum_scan:str = hfplus(tuple([self.cumulative_value('Estimated Scan Value'), 'float', '', ' Cr']))
+            cum_scan:str = hfplus(tuple([self.sum_value('Estimated Scan Value'), 'float', '', ' Cr']))
             if cum_scan:
-                lines.append(f"{cum_scan} total")
-
-        species = self.next_stop_value('Species')
-        if species:
-            landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
-            lines.append(f"Species: {species}{f' · {landmark}' if landmark else ''}")
-
-            cum_landmark:str = hfplus(tuple([self.cumulative_value('Landmark Value'), 'float', '', ' Cr']))
-            if cum_landmark:
-                lines.append(f"{cum_landmark} total")
+                perhour:str = hfplus(tuple([self.credits_per_hour('Estimated Scan Value'), 'float', 'N/A', ' Cr/hr']))
+                lines.append(f"{cum_scan} · ({perhour})")
 
         return lines
 
@@ -249,12 +244,14 @@ class Route:
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
         return sum([j[2] for j in self.jumps]) / td if td > 0 else 0
 
-    def profit_per_hour(self) -> float:
+    def credits_per_hour(self, header:str) -> float:
         """ Credits per hour on this route """
         if self.jumps == []: return 0
-        i:int|None = self.colind('Profit')
+        i:int|None = self.colind(header)
+        if i is None or self.route == []: return 0
+
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
-        return sum([j[i] for j in self.jumps]) / td if td > 0 else 0
+        return self.sum_value(header) / td if td > 0 else 0
 
     def dist_remaining(self, offset:int|None = None) -> int:
         """ Distance remaining if we know it """

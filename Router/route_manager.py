@@ -8,9 +8,8 @@ from datetime import UTC, datetime, timedelta
 from threading import Thread
 
 from config import config # type: ignore
-import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, copy_to_clipboard
+from utils.misc import singleton
 
 from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE
 from .context import Context
@@ -115,13 +114,6 @@ class Router():
                 Debug.logger.exception(f"Error switching ship in UI: {e}")
         else:
             Debug.logger.debug("No UI available to switch ship; skipping UI update.")
-
-
-    def dashboard_entry(self, cmdr, is_beta, entry) -> None:
-        """ Copy next waypoint to clipboard on galaxy map entry """
-        if not Context.ui.parent or not Context.route.jumps_remaining() or entry.get("GuiFocus") != edmc_data.GuiFocusGalaxyMap:
-            return
-        copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
 
 
     def jumped(self, system:str, entry:dict) -> None:
@@ -373,7 +365,6 @@ class Router():
             Context.route.offset = 0
             Context.route.update_route(0, self.system)
 
-            copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.ui.show_frame('Route')
             Context.overlay.update_jump_overlay()
             self.save()
@@ -424,7 +415,6 @@ class Router():
             self.dest = Context.route.destination()
 
             Context.route.update_route(0, self.system)
-            copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
             Context.overlay.update_jump_overlay()
             Context.overlay.show_frame('Default')
 

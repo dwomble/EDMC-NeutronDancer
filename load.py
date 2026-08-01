@@ -4,6 +4,7 @@ from semantic_version import Version #type: ignore
 import tkinter as tk
 
 import myNotebook as nb  #type: ignore
+import edmc_data # type: ignore
 
 from Router.constants import GH_PROJECT, NAME, TITLE, errs, CarrierStates
 from utils.debug import Debug, catch_exceptions
@@ -87,7 +88,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                     case "next":
                         Context.router.update_route(1)
                     case _:
-                        copy_to_clipboard(Context.ui.parent, Context.route.next_stop())
+                        copy_to_clipboard(Context.ui.parent, Context.route.next_system())
         case 'Refueling': # Read fuel from Status.json
             Context.router.fuel_event(state)
         case 'Shutdown':
@@ -100,8 +101,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
 
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
-    if Context.router:
-        Context.router.dashboard_entry(cmdr, is_beta, entry)
+    if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
+        copy_to_clipboard(Context.ui.parent, Context.route.next_system())
+
     if Context.overlay:
         Context.overlay.dashboard_entry(cmdr, is_beta, entry)
 

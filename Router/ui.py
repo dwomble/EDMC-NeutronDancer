@@ -305,15 +305,10 @@ class UI():
         self._update_progbar()
 
         if route.jumps_remaining() > 0:
-            # Clipboard always gets just the primary name -- that's what pastes into the
-            # galaxy map, not the station/genus detail appended for display below.
-            copy_to_clipboard(self.parent, primary)
             # Show progress through route
             jumps:tuple = tuple([route.total_jumps() - route.jumps_remaining(), 'int', '-' if route.offset < 0 else '0'])
             tjumps:tuple = tuple([route.total_jumps(), 'int'])
             suffix:str = f" ({hfplus(jumps)}/{hfplus(tjumps)})"
-            # Reserve room for the suffix so it's never truncated away -- truncating the
-            # whole 32 chars first, then appending, would overflow the button's width.
             #wp = str_truncate(wp, length=int(self.waypoint_btn.cget('width')) - len(suffix), loc='middle') + suffix
             wp = str_truncate(wp, length=40 - len(suffix)) + suffix
         else:
@@ -370,7 +365,7 @@ class UI():
 
         col += 1
         self.waypoint_btn:th.Button = th.Button(fr1, text=Context.route.next_stop(), width=32,
-                                              command=lambda: copy_to_clipboard(self.parent, Context.route.next_stop()))
+                                              command=lambda: copy_to_clipboard(self.parent, Context.route.next_system()))
         self.waypoint_btn_tt:th.Tooltip = th.Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)
 

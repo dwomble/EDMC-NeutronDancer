@@ -214,7 +214,8 @@ class Plotter(ABC):
         th.Tooltip(routedd, tts["route_type"])
         routedd.grid(row=0, column=1, padx=5, pady=5)
 
-        r3:th.Button = th.Button(sfr, image=self.ui.help_img, cursor="hand2", command=lambda: self.ui._show_help())
+        #r3:th.Button = th.Button(sfr, image=self.ui.help_img, cursor="hand2", command=lambda: self.ui._show_help())
+        r3:th.Button = th.Button(sfr, image=self.ui.help_img, command=lambda: self.ui._show_help())
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
@@ -833,8 +834,7 @@ class TouristPlotter(Plotter):
         # No pre-validation per destination -- Spansh errors on a bad name regardless.
         params['destination'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
         if params['destination'] == []:
-            params['destination'] = params['final_destination']
-
+            params['destination'] = params.get('final_destination', '')
         #params['loop'] = self.loop_var.get()
 
         Context.router.plot_route('Tourist', params)

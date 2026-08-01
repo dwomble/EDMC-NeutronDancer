@@ -2,6 +2,9 @@ from time import time
 from utils.debug import Debug
 from utils.misc import hfplus
 from .constants import HEADER_MAP, tts, lbls, TRUE
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .context import Context
 
 class Route:
     """
@@ -124,9 +127,16 @@ class Route:
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
             lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
 
-            cum_scan:str = hfplus(tuple([self.sum_value('Estimated Scan Value'), 'float', '', ' Cr']))
+
+            type:str = 'Scan'
+            from .context import Context
+            if Context.router.last_plot in Context.router.route_params and \
+                Context.router.route_params[Context.router.last_plot].get('use_mapping_value', False):
+                type = 'Mapping'
+
+            cum_scan = hfplus(tuple([self.sum_value(f'Estimated {type} Value'), 'float', '', ' Cr']))
             if cum_scan:
-                perhour:str = hfplus(tuple([self.credits_per_hour('Estimated Scan Value'), 'float', 'N/A', ' Cr/hr']))
+                perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', 'N/A', ' Cr/hr']))
                 lines.append(f"{cum_scan} · ({perhour})")
 
         return lines

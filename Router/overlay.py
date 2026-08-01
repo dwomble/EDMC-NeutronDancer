@@ -180,7 +180,6 @@ class Overlay():
 
     def display_alert(self, message:str = '') -> None:
         """ Display an alert message """
-        Debug.logger.debug(f"Showing alert {message}")
         self.show_frame('Alert')
         self.update_frame('Alert', [{'size': 'large', 'text' : message}], ttl=5)
 
@@ -244,7 +243,6 @@ class Overlay():
         for m in self.msgs[frame].values():
             tmp:dict = deepcopy(m)
             if tmp.get('msgid'):
-                Debug.logger.debug(f"Show frame: sending {tmp}")
                 overlay.send_message(**tmp)
             if tmp.get('shapeid'):
                 overlay.send_shape(**tmp)
@@ -315,7 +313,6 @@ class Overlay():
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
                 if fr.visible == True and fr.enabled == True:
-                    Debug.logger.debug(f"Show frame: sending {args}")
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
                 y += 25 if args['size'] == 'large' else 20

@@ -310,6 +310,15 @@ class Listbox(Base):
             lb1.insert(tk.END, items[i])
             lb2.insert(tk.END, items[i])
 
+        def sync(source:tk.Listbox, target:tk.Listbox) -> None:
+            """ Mirror a user-driven selection change on the visible widget onto its hidden twin. """
+            target.selection_clear(0, tk.END)
+            for i in source.curselection():
+                target.selection_set(i)
+
+        lb1.bind('<<ListboxSelect>>', lambda e: sync(lb1, lb2))
+        lb2.bind('<<ListboxSelect>>', lambda e: sync(lb2, lb1))
+
         super().__init__(lb1, lb2)
 
 class Checkbutton(Base):

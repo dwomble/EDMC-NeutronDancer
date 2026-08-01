@@ -19,6 +19,7 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 
+@catch_exceptions
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
 
@@ -37,18 +38,19 @@ def plugin_start3(plugin_dir: str) -> str:
 
     return NAME
 
-
+@catch_exceptions
 def plugin_start(plugin_dir: str) -> None:
     """EDMC calls this function when running in Python 2 mode."""
     raise EnvironmentError(errs["required_version"])
 
 
+@catch_exceptions
 def plugin_stop() -> None:
     Context.router.save()
     if Context.updater.install_update:
         Context.updater.install()
 
-
+@catch_exceptions
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()
     Context.csv = CSV()
@@ -62,7 +64,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     parent.after(1000, Context.overlay.update_jump_overlay)
     return Context.ui.frame
 
-
+@catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     if Context.router == None: return
 
@@ -74,7 +76,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.route.jumps = []
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
-        case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled':
+        case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':
             Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.set_ship(entry)
@@ -96,10 +98,13 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.save()
 
     Context.router.system = system
-    Context.router.cargo = sum(state.get('Cargo', {}).values())
-    Context.ui.update_cargo(Context.router.cargo)
+    cargo:int = sum(state.get('Cargo', {}).values())
+    if cargo != Context.router.cargo:
+        Context.router.cargo = cargo
+        Context.ui.update_cargo(cargo)
 
 
+@catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
     if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
         copy_to_clipboard(Context.ui.parent, Context.route.next_system())
@@ -107,10 +112,10 @@ def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
     if Context.overlay:
         Context.overlay.dashboard_entry(cmdr, is_beta, entry)
 
-
+@catch_exceptions
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
     return Context.prefs.prefs_frame(parent)
 
-
+@catch_exceptions
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
     Context.prefs.save_prefs()

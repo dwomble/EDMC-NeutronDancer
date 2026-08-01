@@ -171,6 +171,11 @@ class Router():
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.overlay.display_carrier('Cooldown', 300)
 
+            case 'CarrierStats' if self.carrier_id == entry.get('CarrierID', ''):
+                if 'FleetCarrier' not in self.route_params: self.route_params['FleetCarrier'] = {}
+                usage:dict = entry.get('SpaceUsage', {})
+                self.route_params['FleetCarrier']['capacity_used'] = usage.get('Crew', 0) + usage.get('Cargo', 0) + \
+                                                                    usage.get('ShipPacks', 0) + usage.get('ModulePacks', 0)
 
     @catch_exceptions
     def fuel_event(self, state:dict) -> None:

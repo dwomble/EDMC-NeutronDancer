@@ -121,14 +121,23 @@ class TestHarness:
             self._original_threading_excepthook = threading.excepthook
         threading.excepthook = self._capture_thread_exception
 
-        # Create Tk root for headless mode
-        try:
-            if not hasattr(self, '_initialized'):
-                self.root:tk.Tk = tk.Tk()
-                self.parent:tk.Frame = tk.Frame(self.root)
-                self.root.withdraw()
-        except Exception as e:
-            logging.error(f"Failed to create Tk root: {e}")
+        # Create Tk root for headless mode. Retry a couple of times since rapid, repeated
+        # Tk() creation can transiently fail to locate tk.tcl (seen with MSIX-packaged Pythons).
+        if not hasattr(self, '_initialized'):
+            last_exc:Exception|None = None
+            for attempt in range(3):
+                try:
+                    self.root:tk.Tk = tk.Tk()
+                    self.parent:tk.Frame = tk.Frame(self.root)
+                    self.root.withdraw()
+                    last_exc = None
+                    break
+                except Exception as e:
+                    last_exc = e
+                    logging.warning(f"Failed to create Tk root (attempt {attempt + 1}/3): {e}")
+                    sleep(0.2)
+            if last_exc is not None:
+                raise RuntimeError("Failed to create Tk root after 3 attempts") from last_exc
 
         if hasattr(self, 'root') and not hasattr(self, '_tk_scheduler'):
             self._tk_scheduler = HarnessTkScheduler(self.root)

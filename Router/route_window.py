@@ -12,7 +12,9 @@ from .route import Route
 from .context import Context
 
 
-LEFT_ALIGN:list = ['System Name', 'System', 'Station Name', 'Station Type', 'Station Class', 'Station Faction', 'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity' 'Species']
+LEFT_ALIGN:list = ['System Name', 'System', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
+                   'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity',
+                   'Species']
 
 @singleton
 class RouteWindow:
@@ -164,13 +166,14 @@ class RouteWindow:
         tree.configure(yscrollcommand=sb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        widths:list = [len(w)+2 for w in route.hdrs]
+        # Calculate column widths based on header and data lengths, with some padding
+        widths:list = [len(w)+4 for w in route.hdrs]
         for r in route.route:
-            widths = [max(widths[i], len(str(w))+1) for i, w in enumerate(r)]
+            widths = [max(widths[i], len(str(w))+2) for i, w in enumerate(r)]
 
         for i, hdr in enumerate(route.hdrs):
             tree.heading(hdr, text=hdr, anchor=tk.W if hdr in LEFT_ALIGN else tk.E)
-            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*8*scale), anchor=tk.W if hdr in LEFT_ALIGN else tk.E)
+            tree.column(hdr, stretch=tk.NO, width=int(widths[i]*6.5*scale), anchor=tk.W if hdr in LEFT_ALIGN else tk.E)
 
         for i, row in enumerate(route.route):
             tmp:list[tuple] = [ tuple([val] + HEADER_TYPES.get(route.hdrs[col], ["-", ""])) for col, val in enumerate(row)]

@@ -47,6 +47,7 @@ class UI():
 
         self.frame:th.Frame = th.Frame(parent, borderwidth=2)
         self.frame.grid(sticky=tk.NSEW)
+        self.frame.grid_columnconfigure(0, minsize=self.frwidth)
 
         self.update:th.Label
 
@@ -194,13 +195,14 @@ class UI():
 
         self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
         busy_fr:th.Frame = th.Frame(parent)
+        busy_fr.grid_columnconfigure(0, weight=1)
         self.route_lbl:th.Label = th.Label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest),
                                                   justify=tk.CENTER, font=BOLD)
-        self.route_lbl.grid(row=0, column=0, pady=5, sticky=tk.EW)
+        self.route_lbl.grid(row=0, column=0, pady=5)
         self.busyimg:th.Label = th.Label(busy_fr, image=self.frames[0], justify=tk.CENTER)
-        self.busyimg.grid(row=1, column=0, pady=10, sticky=tk.EW)
+        self.busyimg.grid(row=1, column=0, pady=10)
         cancel:th.Button = th.Button(busy_fr, text=btns["cancel"], command=lambda: self.show_frame(Context.router.last_plot))
-        cancel.grid(row=2, column=0, pady=5, sticky=tk.EW)
+        cancel.grid(row=2, column=0, pady=5)
         return busy_fr
 
 

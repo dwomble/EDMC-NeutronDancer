@@ -142,6 +142,7 @@ class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         global index
+
         tk.Frame.__init__(self, master, **kw)
         if DEBUG_FRAMES:
             colors = ["lightcoral", "lightgreen", "lightblue", "lightyellow", "plum"]

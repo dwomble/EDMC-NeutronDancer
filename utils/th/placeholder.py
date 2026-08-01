@@ -86,24 +86,24 @@ class PlaceholderMixin:
     def set_text(self, text, placeholder_style=True) -> None:
         self.var.set(text)
         if placeholder_style or text == self.placeholder:
-            self['fg'] = self.placeholder_color
+            self['foreground'] = self.placeholder_color
         else:
             self.set_default_style()
 
     def force_placeholder_color(self) -> None:
-        self['fg'] = self.placeholder_color
+        self['foreground'] = self.placeholder_color
 
     def set_default_style(self) -> None:
-        self['fg'] = config.get_str('dark_text') if config.get_int('theme') > 0 else "black"
+        self['foreground'] = config.get_str('dark_text') if config.get_int('theme') > 0 else "black"
 
     def set_error_style(self, error=True) -> None:
         if error:
-            self['fg'] = self.error_color
+            self['foreground'] = self.error_color
         else:
             self.set_default_style()
 
     def focus_in(self, e, *args) -> None:
-        if self['fg'] == "red" or self['fg'] == self.placeholder_color:
+        if self['foreground'] == "red" or self['foreground'] == self.placeholder_color:
             self.set_default_style()
             if self.var.get() == self.placeholder:
                 self.var.set('')

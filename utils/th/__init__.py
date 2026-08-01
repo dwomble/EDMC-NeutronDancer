@@ -303,8 +303,8 @@ class Listbox(Base):
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
 
         lb2:tk.Listbox = tk.Listbox(master, height=rows, **_strip_name(kw))
-        lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
-        lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
+        lb2.configure(borderwidth=1, border=1, activestyle=tk.NONE, highlightthickness=0, relief=tk.GROOVE,
+                      selectbackground='gray25', highlightbackground='black', background='black')
 
         for i in range(len(items)):
             lb1.insert(tk.END, items[i])
@@ -344,9 +344,9 @@ class Spinbox(PlaceholderMixin, Base):
         rgb = master.winfo_rgb(master['background'])
         background:str = '#{:02x}{:02x}{:02x}'.format(rgb[0] // 256, rgb[1] // 256, rgb[2] // 256)
 
-        sb1:tk.Spinbox = tk.Spinbox(master, **kw, border=0, borderwidth=1, highlightthickness=0, background=background)
+        sb1:ttk.Spinbox = ttk.Spinbox(master, **kw, background=background, foreground='black')
         sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
-        sb2.configure(background='black', buttonbackground='black', highlightbackground='black',
+        sb2.configure(background='black', foreground=config.get_str('dark_text'), highlightbackground='black',
                       fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)
 

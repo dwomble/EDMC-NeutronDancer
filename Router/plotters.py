@@ -24,6 +24,7 @@ from .context import Context
 from .ship import Ship
 
 WIDTH3:int = 9
+WIDTH2:int = 14
 @dataclass
 class PlotterSpec:
     """ Everything that describes one route-plotting type. """
@@ -272,7 +273,7 @@ class NeutronPlotter(Plotter):
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self._create_dest(route_fr, 2, 0)
-        route_fr.grid(row=row, column=col, columnspan=3, sticky=tk.W)
+        route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
         # Range and efficiency
         col2_fr:th.Frame = th.Frame(plot_fr)
@@ -282,7 +283,7 @@ class NeutronPlotter(Plotter):
         th.Tooltip(self.efficiency_slider, tts["efficiency"])
         self.efficiency_slider.grid(row=1, column=0, padx=5, pady=5, sticky=tk.NW)
         self.efficiency_slider.set(params.get('efficiency', 60))
-        col2_fr.grid(row=row, column=3, sticky=tk.NW)
+        col2_fr.grid(row=row, column=4, sticky=tk.NW)
 
         # Supercharge multiplier
         row += 1; col = 0
@@ -391,7 +392,7 @@ class GalaxyPlotter(Plotter):
 
         self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipvar.trace_add("write", self.ui.ship_selected)
-        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=WIDTH3)
+        self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=WIDTH2)
         th.Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
@@ -405,7 +406,7 @@ class GalaxyPlotter(Plotter):
         row += 1; col = 0
         algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
         self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
-        algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=WIDTH3)
+        algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=WIDTH2)
         th.Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
 
@@ -860,12 +861,13 @@ class FleetCarrierPlotter(Plotter):
         route_fr:th.Frame = th.Frame(plot_fr)
         self._create_source(route_fr, 0, 0, add_cmd=lambda: self._add_hop_row(-1))
 
-        self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
+        self.hop_label = lbls['via_system']; self.hop_tooltip = tts['via_system']
         self.hops_frame = th.Frame(route_fr)
         self.hop_rows = []
         self._rebuild_hop_rows(params.get('destination_names', []))
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
+        self._create_dest(route_fr, 2, 0)
         route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
         # Row 3
@@ -873,7 +875,7 @@ class FleetCarrierPlotter(Plotter):
         capacity_used_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['capacity_used'], from_=0, to=100000, increment=10, width=WIDTH3, justify=tk.CENTER, name="capacity_used_entry")
         self.ui.set_entry(capacity_used_entry, str(params.get('capacity_used', 0)))
         th.Tooltip(capacity_used_entry, tts["capacity_used"])
-        capacity_used_entry.grid(row=row, column=col, padx=5, pady=5)
+        capacity_used_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
 
         self.carrier_type:tk.StringVar = tk.StringVar()
         self.carrier_type.set(params.get('carrier_type', 'fleet'))
@@ -885,12 +887,12 @@ class FleetCarrierPlotter(Plotter):
         col += 1
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["fleet_carrier"], variable=self.carrier_type, value='fleet')
         th.Tooltip(r1, tts['carrier_type'])
-        r1.grid(row=row, column=col, columnspan=2, padx=5, pady=5)
+        r1.grid(row=row, column=col, padx=5, pady=5)
 
-        col = 2
+        col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
         th.Tooltip(r2, tts['carrier_type'])
-        r2.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
+        r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0

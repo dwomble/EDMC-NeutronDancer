@@ -102,8 +102,8 @@ class Route:
             lines.append(f"{amount + ' ' if amount else ''}{commodity} · {profit}")
 
             cum_profit:str = hfplus(tuple([self.sum_value('Profit'), 'float', '', ' Cr']))
-            perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', 'N/A', ' Cr/hr']))
-            lines.append(f"{cum_profit} · ({perhour})")
+            perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', '', ' Cr/hr']))
+            lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
 
 
         subtype = self.next_stop_value('Body Subtype')
@@ -117,8 +117,8 @@ class Route:
             lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
 
             cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
-            perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', 'N/A', ' Cr/hr']))
-            lines.append(f"{cum_landmark} · ({perhour})")
+            perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', '', ' Cr/hr']))
+            lines.append(f"{cum_landmark} · ({perhour})" if perhour != '' else f"{cum_landmark}")
 
         scanval = self.next_stop_value('Estimated Scan Value')
         mapval = self.next_stop_value('Estimated Mapping Value')
@@ -126,7 +126,6 @@ class Route:
             scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
             lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
-
 
             type:str = 'Scan'
             from .context import Context
@@ -136,8 +135,8 @@ class Route:
 
             cum_scan = hfplus(tuple([self.sum_value(f'Estimated {type} Value'), 'float', '', ' Cr']))
             if cum_scan:
-                perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', 'N/A', ' Cr/hr']))
-                lines.append(f"{cum_scan} · ({perhour})")
+                perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', '', ' Cr/hr']))
+                lines.append(f"{cum_scan} · {perhour}" if perhour != '' else f"{cum_scan}")
 
         return lines
 

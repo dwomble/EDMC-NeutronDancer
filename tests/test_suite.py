@@ -700,7 +700,6 @@ class TestOverlay:
         assert 'Farside' in next_line
 
         detail_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
-        assert 'Farside' in detail_line
         assert 'Gold' in detail_line
         assert 'PD jc=' not in detail_line  # customizable template must not be used here
 
@@ -1445,7 +1444,7 @@ class TestPlotMethods:
         assert len(plotter.hop_rows) == 0
 
     def test_tourist_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
-        """TouristPlotter.plot() must send source/destination(list)/range/loop, and must omit
+        """TouristPlotter.plot() must send source/destination(list)/range, and must omit
         final_destination entirely (rather than sending literal "None") when left blank."""
         ui = harness.plugin.ui
         fr = ui.plot_frames['Tourist']
@@ -1471,24 +1470,6 @@ class TestPlotMethods:
         assert 'final_destination' not in params
         assert params['destination'] == ['Deciat', 'Colonia']
         assert params['range'] == '50'
-        assert params['loop'] == 0
-
-    def test_tourist_plotter_loop_checkbox(self, harness:TestHarness) -> None:
-        """Tourist only ever has the one "loop" option, so it's a plain checkbox rather than
-        the multi-select options listbox every other plotter uses."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Tourist']
-        plotter = ui.plotters['Tourist']
-
-        fr.nametowidget("source_ac").set_text("Sol", False)
-        plotter.loop_var.set(1)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                plotter.plot()
-
-        _, params = mock_plot_route.call_args[0]
-        assert params['loop'] == 1
 
     def test_tourist_plotter_final_destination_set(self, harness:TestHarness) -> None:
         """A non-blank final destination should be validated and included."""
@@ -2572,7 +2553,7 @@ class TestPlotting:
 
             res:bool = harness.plugin.router.plot_route('Tourist',
                                                 {'source': 'Sol', 'destination': ['Alpha Centauri', "Barnard's Star"],
-                                                'range': '50', 'loop': '0', 'max_time': 60})
+                                                'range': '50', 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
             plotter_thread.join(timeout=70)

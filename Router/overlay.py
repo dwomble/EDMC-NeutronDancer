@@ -77,8 +77,9 @@ class Overlay():
             return
 
     @catch_exceptions
-    def update_jump_overlay(self) -> None:
+    def update_overlays(self) -> None:
         """ Update overlay after a waypoint """
+        Debug.logger.debug(f"Updating overlays")
         if not self._get_overlay(): return
 
         if Context.route.route == []:
@@ -100,6 +101,12 @@ class Overlay():
         # Galaxy map frame just shows next jump
         self.update_frame('Galaxy Map', message, ttl=120)
 
+        if Context.route.fleetcarrier:
+            self.update_carrier_overlay('Idle', 120, destination=primary)
+            Debug.logger.debug(f"Fleet carrier route")
+            return
+
+        Debug.logger.debug(f"Regular route")
         if self.progress_bar:
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
@@ -162,7 +169,7 @@ class Overlay():
             self.clear_frame("Alert")
 
 
-    def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
+    def update_carrier_overlay(self, type:str, end:datetime|int = 120, destination:str = '') -> None:
         """ Display carrier arrival info """
         cstr:str = ''
 
@@ -174,6 +181,10 @@ class Overlay():
                 cstr = 'Squadron ' + ovr['jump'].format(d=destination, t='{t}')
             case 'Cooldown':
                 cstr = ovr['cooldown']
+            case 'Idle':
+                self.clear_frame('Carrier')
+                self.update_frame('Carrier', ovr['idle'].format(d=destination), ttl=end if isinstance(end, int) else 120)
+                return
 
         self.display_countdown('Carrier', cstr, end)
 
@@ -486,7 +497,7 @@ class Overlay():
         self.progress_display = self.pv.get().replace('\\n', '\n')
         config.set(f"{Context.plugin_name}_progress_display", self.progress_display)
 
-        self.update_jump_overlay()
+        self.update_overlays()
         self.redraw_frames()
 
         Debug.logger.info(f"Saved frames to EDMC config")

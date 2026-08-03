@@ -137,7 +137,7 @@ class Router():
         if Context.route.update_route(0, entry.get('StarSystem', system)) > 0:
             Debug.logger.debug(f"Updating route {system} {Context.route.get_waypoint()}")
             Context.ui.update_progress()
-            Context.overlay.update_jump_overlay()
+            Context.overlay.update_overlays()
 
 
     def update_route(self, i:int) -> None:
@@ -145,7 +145,7 @@ class Router():
         Debug.logger.debug(f"Update route {i} {Context.route.get_waypoint()}")
         Context.route.update_route(i)
         Context.ui.update_progress()
-        Context.overlay.update_jump_overlay()
+        Context.overlay.update_overlays()
 
 
     @catch_exceptions
@@ -160,13 +160,13 @@ class Router():
                 self.carrier_dest:str = entry.get('SystemName', '')
                 end:datetime = datetime.fromisoformat(entry.get("DepartureTime", ''))
 
-                Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
+                Context.overlay.update_carrier_overlay(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
                 Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
-                Context.overlay.display_carrier('Cooldown', 60)
+                Context.overlay.update_carrier_overlay('Cooldown', 60)
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
@@ -176,7 +176,7 @@ class Router():
                     Context.ui.update_progress()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-                Context.overlay.display_carrier('Cooldown', 300)
+                Context.overlay.update_carrier_overlay('Cooldown', 300)
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
             case 'CarrierStats' if self.carrier_id == entry.get('CarrierID', ''):
@@ -199,7 +199,7 @@ class Router():
         # Update the UI as we may need to hide the refuel notification
         if Context.route.jumps_remaining() > 0:
             Context.ui.update_progress()
-            Context.overlay.update_jump_overlay()
+            Context.overlay.update_overlays()
 
 
     def jump_complete(self) -> None:
@@ -212,7 +212,7 @@ class Router():
             Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
         Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-        Context.overlay.display_carrier('Cooldown', 300)
+        Context.overlay.update_carrier_overlay('Cooldown', 300)
 
 
     def cooldown_complete(self) -> None:
@@ -364,7 +364,7 @@ class Router():
                 Context.route.update_route(0, self.system)
 
             Context.ui.show_frame('Route')
-            Context.overlay.update_jump_overlay()
+            Context.overlay.update_overlays()
             self.save()
 
         except Exception as e:
@@ -395,7 +395,7 @@ class Router():
         """ Clear the current route """
         Context.route = Route([], [], -1)
         if Context.overlay:
-            Context.overlay.update_jump_overlay()
+            Context.overlay.update_overlays()
         self.save()
 
     @catch_exceptions
@@ -413,7 +413,7 @@ class Router():
             self.dest = Context.route.destination()
 
             Context.route.update_route(0, self.system)
-            Context.overlay.update_jump_overlay()
+            Context.overlay.update_overlays()
             Context.overlay.show_frame('Default')
 
             return True

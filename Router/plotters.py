@@ -115,6 +115,8 @@ class Plotter(ABC):
         srcmenu:dict = {}
         if Context.router.system != '':
             srcmenu[Context.router.system] = [self.ui.menu_callback, 'src']
+        if Context.router.carrier_location != '':
+            srcmenu[Context.router.carrier_location] = [self.ui.menu_callback, 'src']
         for sys in Context.router.history:
             if sys not in srcmenu:
                 srcmenu[sys] = [self.ui.menu_callback, 'src']
@@ -125,6 +127,8 @@ class Plotter(ABC):
     def _create_dest(self, parent:th.Frame, row:int, col:int, placeholder:str = '') -> None:
         """Create destination system autocompleter widget."""
         destmenu:dict = {}
+        if Context.router.carrier_location != '':
+            destmenu[Context.router.carrier_location] = [self.ui.menu_callback, 'dest']
         for sys in Context.router.history:
             if sys not in destmenu:
                 destmenu[sys] = [self.ui.menu_callback, 'dest']
@@ -861,7 +865,7 @@ class FleetCarrierPlotter(Plotter):
         self.hop_label = lbls['via_system']; self.hop_tooltip = tts['via_system']
         self.hops_frame = th.Frame(route_fr)
         self.hop_rows = []
-        self._rebuild_hop_rows(params.get('destination_names', []))
+        self._rebuild_hop_rows(params.get('destination_names', ['dummy'])[:-1])
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self._create_dest(route_fr, 2, 0)
@@ -875,22 +879,22 @@ class FleetCarrierPlotter(Plotter):
         th.Tooltip(capacity_used_entry, tts["capacity_used"])
         capacity_used_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
 
-        self.carrier_type:tk.StringVar = tk.StringVar()
-        self.carrier_type.set(params.get('carrier_type', 'fleet'))
+        # self.carrier_type:tk.StringVar = tk.StringVar()
+        # self.carrier_type.set(params.get('carrier_type', 'fleet'))
 
-        row += 1; col = 0
-        l1:th.Label = th.Label(plot_fr, text=lbls["carrier_type"])
-        l1.grid(row=row, column=col, padx=5, pady=5)
+        # row += 1; col = 0
+        # l1:th.Label = th.Label(plot_fr, text=lbls["carrier_type"])
+        # l1.grid(row=row, column=col, padx=5, pady=5)
 
-        col += 1
-        r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["fleet_carrier"], variable=self.carrier_type, value='fleet')
-        th.Tooltip(r1, tts['carrier_type'])
-        r1.grid(row=row, column=col, padx=5, pady=5)
+        # col += 1
+        # r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["fleet_carrier"], variable=self.carrier_type, value='fleet')
+        # th.Tooltip(r1, tts['carrier_type'])
+        # r1.grid(row=row, column=col, padx=5, pady=5)
 
-        col += 1
-        r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
-        th.Tooltip(r2, tts['carrier_type'])
-        r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
+        # col += 1
+        # r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["squadron_carrier"], variable=self.carrier_type, value='squadron')
+        # th.Tooltip(r2, tts['carrier_type'])
+        # r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
 
         # Buttons
         row += 1; col = 0
@@ -908,31 +912,18 @@ class FleetCarrierPlotter(Plotter):
         self.ui.hide_error()
 
         src_ac = self.frame.nametowidget("source_ac")
+        dest_ac = self.frame.nametowidget("dest_ac")
 
         params:dict = {}
 
-        frm:str = src_ac.get().strip()
-        source_name = self._validate_system(frm, src_ac)
-        if source_name is None:
-            self.ui.show_frame('FleetCarrier')
-            return
-
-        source_id64 = self.ui.resolve_system_id64(source_name)
-        if source_id64 is None:
-            self.ui.show_error(errs['no_system_id'])
-            self.ui.show_frame('FleetCarrier')
-            return
+        source_name:str = src_ac.get().strip()
+        dest_name:list|str = dest_ac.get().strip()
 
         # No pre-validation per destination name -- Spansh errors on a bad one regardless.
         dest_names:list = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
-        dest_id64s:list = []
-        for name in dest_names:
-            id64 = self.ui.resolve_system_id64(name)
-            if id64 is None:
-                self.ui.show_error(errs['no_system_id'])
-                self.ui.show_frame('FleetCarrier')
-                return
-            dest_id64s.append(id64)
+
+        if dest_names != []:
+            dest_name = [dest_name] + dest_names
 
         capacity_used_entry = self.frame.nametowidget("capacity_used_entry")
         capacity_used:str = capacity_used_entry.get().strip()
@@ -942,18 +933,16 @@ class FleetCarrierPlotter(Plotter):
             capacity_used_entry.set_error_style()
             return
 
-        carrier_type:str = self.carrier_type.get()
+        #carrier_type:str = self.carrier_type.get()
+        carrier_type:str = 'fleet'  # TODO: add squadron carrier support
         stats:dict = FLEET_CARRIER_STATS[carrier_type]
 
-        params['source_name'] = source_name
-        params['source'] = source_id64
-        params['destination_names'] = dest_names
-        params['destinations'] = dest_id64s
-        params['carrier_type'] = carrier_type
+        params['source'] = source_name
+        params['destinations'] = dest_name
         params['capacity'] = stats['capacity']
         params['mass'] = stats['mass']
-        params['capacity_used'] = capacity_used
-        params['calculate_starting_fuel'] = 1
+        params['capacity_used'] = int(capacity_used)
+        params['calculate_starting_fuel'] = "1"
 
         Context.router.plot_route('FleetCarrier', params)
         self.ui._show_busy_gui(True)
@@ -988,7 +977,7 @@ PLOTTER_SPECS:dict = {
     ),
     'FleetCarrier': PlotterSpec(
         label='Fleet Carrier Router', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
-        src_key='source_name'
+        src_key='source', dest_key='destination'
     ),
     # 'EarthLike': PlotterSpec(
     #     label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

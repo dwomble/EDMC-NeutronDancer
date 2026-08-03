@@ -62,8 +62,15 @@ class Router():
 
         self._load()
 
-        if Context.route.route != []:
+        if Context.route.route == []:
+            return
+
+        if not Context.route.fleetcarrier:
             Context.route.update_route(0, self.system)
+            return
+
+        if Context.route.fleetcarrier and self.carrier_location != '':
+            Context.route.update_route(0, self.carrier_location)
 
     def shipnames(self) -> list:
         """ Return a list of shipnames """
@@ -170,7 +177,8 @@ class Router():
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.overlay.display_carrier('Cooldown', 300)
-
+            case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
+                self.carrier_location = entry.get('StarSystem', '')
             case 'CarrierStats' if self.carrier_id == entry.get('CarrierID', ''):
                 if 'FleetCarrier' not in self.route_params: self.route_params['FleetCarrier'] = {}
                 usage:dict = entry.get('SpaceUsage', {})
@@ -239,21 +247,14 @@ class Router():
         self.last_plot = which
         self._store_history()
 
+        Debug.logger.debug(f"Plotting route {which} {spec.url} {params}")
         Thread(target=self._plotter, args=(which, spec.url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
         return True
 
 
-    def _flatten_nested_bodies_result(self, systems:list) -> list:
-        """ Flatten Spansh's nested "systems containing bodies" result (used by the whole riches
-        family -- Road to Riches, Ammonia/Earth-like/Rocky-metal, and Exobiology) into one row per
-        body. Systems with no scannable bodies (e.g. the starting system) are omitted, matching the
-        row shape of a Spansh-exported riches CSV, which never includes a bodyless system.
-
-        Exobiology bodies additionally carry a `landmarks` list (biological species found there) and
-        a `landmark_value` -- the figure that actually matters there, unlike `estimated_scan_value`
-        which stays near-zero. Those two columns are only added when a body has `landmarks` at all,
-        so plain riches-family rows (which never have that key) don't grow empty columns. """
+    def _flatten_bodies_result(self, systems:list) -> list:
+        """ Flatten Spansh's nested result """
         rows:list = []
         for system in systems:
             bodies:list = system.get('bodies', [])
@@ -276,11 +277,7 @@ class Router():
 
 
     def _flatten_trade_result(self, hops:list) -> list:
-        """ Flatten Spansh's trade route -- a flat list of hops, each carrying one or more
-        commodities at once (splitting cargo between them) -- into one row per commodity per
-        hop. Each row's system/station is the hop's *destination*, matching every other route
-        type's convention that a row represents the next place to travel to, not the
-        already-occupied starting position (which is never a row of its own here either). """
+        """ Flatten Spansh's trade route """
         rows:list = []
         for hop in hops:
             dest:dict = hop.get('destination', {})
@@ -293,14 +290,6 @@ class Router():
                     'cumulative_profit': hop.get('cumulative_profit', 0)
                 })
         return rows
-
-
-    def _flatten_fleetcarrier_result(self, jumps:list) -> list:
-        """ Each requested stop appears twice in Spansh's jumps list -- once ending the leg
-        that reached it, once starting the next -- so filter to distance_to_destination == 0
-        (arrivals only) for one row per stop, with the starting system never included. """
-        return [j for j in jumps if j.get('distance_to_destination') == 0]
-
 
     def _plotter(self, which:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
@@ -337,11 +326,11 @@ class Router():
             if url in (SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE):
                 # Every "systems containing bodies" route (Road to Riches and its body_types-filtered
                 # variants, plus Exobiology) returns this same nested shape.
-                res:list = self._flatten_nested_bodies_result(raw_result)
+                res:list = self._flatten_bodies_result(raw_result)
             elif url == SPANSH_TRADE_ROUTE:
                 res:list = self._flatten_trade_result(raw_result)
-            elif url == SPANSH_FLEETCARRIER_ROUTE:
-                res:list = self._flatten_fleetcarrier_result(raw_result.get('jumps', []))
+            #elif url == SPANSH_FLEETCARRIER_ROUTE:
+            #    res:list = self._flatten_fleetcarrier_result(raw_result.get('jumps', []))
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 
@@ -368,7 +357,11 @@ class Router():
 
             Context.route = Route(hdrs, rte)
             Context.route.offset = 0
-            Context.route.update_route(0, self.system)
+
+            if Context.route.fleetcarrier and self.carrier_location != '':
+                Context.route.update_route(0, self.carrier_location)
+            if not Context.route.fleetcarrier:
+                Context.route.update_route(0, self.system)
 
             Context.ui.show_frame('Route')
             Context.overlay.update_jump_overlay()

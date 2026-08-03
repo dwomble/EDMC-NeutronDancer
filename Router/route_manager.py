@@ -173,12 +173,15 @@ class Router():
                 self.carrier_location = entry.get('StarSystem', '')
                 if Context.route.fleetcarrier == True:
                     Context.route.update_route(0, self.carrier_location)
+                    Context.route.record_jump(entry.get('StarSystem', self.carrier_location), Context.route.dist_to_prev())
                     Context.ui.update_progress()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
                 Context.overlay.display_carrier('Cooldown', 300)
+
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
+
             case 'CarrierStats':
                 self.carrier_id = self.carrier_id or entry.get('CarrierID', '')
                 if 'FleetCarrier' not in self.route_params: self.route_params['FleetCarrier'] = {}

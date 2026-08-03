@@ -179,7 +179,8 @@ class Router():
                 Context.overlay.display_carrier('Cooldown', 300)
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
-            case 'CarrierStats' if self.carrier_id == entry.get('CarrierID', ''):
+            case 'CarrierStats':
+                self.carrier_id = self.carrier_id or entry.get('CarrierID', '')
                 if 'FleetCarrier' not in self.route_params: self.route_params['FleetCarrier'] = {}
                 usage:dict = entry.get('SpaceUsage', {})
                 self.route_params['FleetCarrier']['capacity_used'] = usage.get('Crew', 0) + usage.get('Cargo', 0) + \
@@ -329,8 +330,10 @@ class Router():
                 res:list = self._flatten_bodies_result(raw_result)
             elif url == SPANSH_TRADE_ROUTE:
                 res:list = self._flatten_trade_result(raw_result)
-            #elif url == SPANSH_FLEETCARRIER_ROUTE:
-            #    res:list = self._flatten_fleetcarrier_result(raw_result.get('jumps', []))
+            elif url == SPANSH_FLEETCARRIER_ROUTE:
+                # Each requested stop appears twice (ending one leg, starting the next) --
+                # only the arrival row (distance_to_destination == 0) is a real waypoint.
+                res:list = [j for j in raw_result.get('jumps', []) if j.get('distance_to_destination') == 0]
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 

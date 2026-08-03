@@ -100,6 +100,11 @@ def harness(request) -> Generator:
 
     yield test_harness
 
+    # Cheap, per-test hygiene only -- stopping countdown threads is local and instant. The
+    # network-bound Autocompleter.join_all() (see plugin_stop()) runs once at session end
+    # instead (tests/conftest.py), since joining live lookup threads per-test multiplies
+    # real network round-trips across the whole suite.
+    test_harness.plugin.overlay.stop_countdowns()
     test_harness.assert_no_unhandled_exceptions()
     TestHarness.reset_instance()
 
@@ -934,8 +939,8 @@ class TestOverlay:
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=- jh=- rj=- rd=- st=✨'
 
-    def test_update_jump_overlay(self, harness:TestHarness, monkeypatch) -> None:
-        """Ensure update_jump_overlay renders using the configured progress_display template."""
+    def test_update_overlays(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure update_overlays renders using the configured progress_display template."""
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -946,7 +951,7 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
 
-        overlay.update_jump_overlay()
+        overlay.update_overlays()
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
@@ -966,7 +971,7 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "PD jc={jc}"  # would be shown if this were misclassified
 
-        overlay.update_jump_overlay()
+        overlay.update_overlays()
 
         next_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
         assert 'Farside' in next_line
@@ -976,7 +981,7 @@ class TestOverlay:
         assert 'PD jc=' not in detail_line  # customizable template must not be used here
 
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
-        """Ensure update_jump_overlay handles invalid progress_display format."""
+        """Ensure update_overlays handles invalid progress_display format."""
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -987,7 +992,7 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "invalid={unknown}"
 
-        overlay.update_jump_overlay()
+        overlay.update_overlays()
 
         progress_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
         assert progress_line == "Error formatting progress display"
@@ -1002,7 +1007,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.update_jump_overlay()
+        overlay.update_overlays()
 
         msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
         assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
@@ -1026,7 +1031,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.update_jump_overlay()
+        overlay.update_overlays()
 
         msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
         assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
@@ -1486,7 +1491,7 @@ class TestPlotMethods:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
-    def test_neutron_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_neutron_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
         ui = harness.plugin.ui
         neutron_fr = ui.plot_frames['Neutron']
@@ -1528,7 +1533,7 @@ class TestPlotMethods:
         _, params = mock_plot_route.call_args[0]
         assert params['via'] == ['Deciat']
 
-    def test_galaxy_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_galaxy_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: GalaxyPlotter.plot() must actually invoke Context.router.plot_route()."""
         harness.play_sequence('loadout')
         ui = harness.plugin.ui
@@ -1547,7 +1552,7 @@ class TestPlotMethods:
         assert params['source'] == 'Sol'
         assert params['destination'] == 'Colonia'
 
-    def test_rtor_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_rtor_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: RichesPlotter.plot() must actually invoke Context.router.plot_route()."""
         ui = harness.plugin.ui
         rtor_fr = ui.plot_frames['RtoR']
@@ -1596,7 +1601,7 @@ class TestPlotMethods:
         ('EarthLike', ['Earth-like world']),
         ('RockyMetal', ['Rocky body', 'High metal content world']),
     ])
-    def test_riches_body_filter_plotter_plot_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
+    def test_riches_body_filter_plotter_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
         """Regression: each body-type-filtered riches plotter (Ammonia/Earth-like/Rocky-metal)
         must invoke plot_route with its own fixed body_types filter and min_value=1."""
         if route_type not in PLOTTER_SPECS:
@@ -1623,7 +1628,7 @@ class TestPlotMethods:
         assert params['min_value'] == 1
         assert 'use_mapping_value' not in params  # these pages don't expose that option
 
-    def test_exobiology_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_exobiology_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: Exobiology has no body_types filter (unlike Ammonia/Earth-like/Rocky-metal)
         -- its filtering criterion is a real "Minimum Landmark Value" slider (0-21, units of
         millions of credits implied), which must be scaled by 1,000,000 before being sent."""
@@ -1658,7 +1663,7 @@ class TestPlotMethods:
         assert float(slider.cget('to')) == 20
         assert int(slider.get()) == 0
 
-    def test_trade_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_trade_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: TradePlotter.plot() must invoke plot_route with system/station (not
         from/to like every other plotter) and the numeric/boolean fields, and must refuse to
         submit when the typed station text doesn't resolve to a real station (single combined
@@ -1715,7 +1720,7 @@ class TestPlotMethods:
         plotter._remove_hop_row(0)
         assert len(plotter.hop_rows) == 0
 
-    def test_tourist_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
+    def test_tourist_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """TouristPlotter.plot() must send source/destination(list)/range, and must omit
         final_destination entirely (rather than sending literal "None") when left blank."""
         ui = harness.plugin.ui
@@ -1763,52 +1768,35 @@ class TestPlotMethods:
         _, params = mock_plot_route.call_args[0]
         assert params['final_destination'] == 'Colonia'
 
-    def test_fleetcarrier_plotter_plot_calls_plot_route(self, harness:TestHarness) -> None:
-        """FleetCarrierPlotter.plot() must resolve each system to an id64 (Spansh's API needs
-        ids here, unlike every other route type) and send capacity/mass by carrier type."""
+    def test_fleetcarrier_plotter_calls_plot_route(self, harness:TestHarness) -> None:
+        """FleetCarrierPlotter.plot() sends system names directly -- Spansh's fleetcarrier API
+        accepts names, no id64 resolution needed despite older docs suggesting otherwise."""
         ui = harness.plugin.ui
         fr = ui.plot_frames['FleetCarrier']
         plotter = ui.plotters['FleetCarrier']
 
         fr.nametowidget("source_ac").set_text("Sol", False)
+        fr.nametowidget("dest_ac").set_text("Alpha Centauri", False)
         plotter._add_hop_row(-1)
         plotter.hop_rows[0]['ac'].set_text("Deciat", False)
         fr.nametowidget("capacity_used_entry").set_text("500", False)
-        plotter.carrier_type.set('fleet')
 
-        id_map = {'Sol': 10477373803, 'Deciat': 6681123623626}
         with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(ui, 'resolve_system_id64', side_effect=lambda name: id_map[name]):
-                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                    plotter.plot()
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
 
         mock_plot_route.assert_called_once()
         which, params = mock_plot_route.call_args[0]
         assert which == 'FleetCarrier'
-        assert params['source_name'] == 'Sol'
-        assert params['source'] == 10477373803
+        assert params['source'] == 'Sol'
+        assert params['destination'] == 'Alpha Centauri'
         assert params['destination_names'] == ['Deciat']
-        assert params['destinations'] == [6681123623626]
+        assert params['destinations'] == ['Alpha Centauri', 'Deciat']
         assert params['capacity'] == 25000
         assert params['mass'] == 25000
-        assert params['capacity_used'] == '500'
-        assert params['calculate_starting_fuel'] == 1
+        assert params['capacity_used'] == 500
+        assert params['calculate_starting_fuel'] == "1"
 
-    def test_fleetcarrier_plotter_unresolved_system_shows_error(self, harness:TestHarness) -> None:
-        """If a validated system name can't be resolved to an id64, plot() must bail with an
-        error rather than sending a broken request."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['FleetCarrier']
-        plotter = ui.plotters['FleetCarrier']
-
-        fr.nametowidget("source_ac").set_text("Sol", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(ui, 'resolve_system_id64', return_value=None):
-                with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                    plotter.plot()
-
-        mock_plot_route.assert_not_called()
 
 
 class TestUIFunctions:

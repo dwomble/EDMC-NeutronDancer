@@ -18,7 +18,7 @@ import edmc_data # type: ignore
 from utils.debug import Debug, catch_exceptions
 from utils.misc import singleton, hfplus, str_truncate
 from .context import Context
-from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf, errs
+from .constants import OVERLAY_PROGRESS_DEFAULT, CarrierStates, lbls, ovr, cnf, errs
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -26,6 +26,7 @@ try:
 except ImportError:
     Debug.logger.warning(f"EDMC Overlay not installed")
     edmcoverlay = None
+    define_plugin_group = None
 
 #FLAGS = [edmc_data.FlagsDocked, edmc_data.FlagsLanded, edmc_data.FlagsLandingGearDown, edmc_data.FlagsShieldsUp, edmc_data.FlagsSupercruise,
 #         edmc_data.FlagsFlightAssistOff, edmc_data.FlagsHardpointsDeployed, edmc_data.FlagsInWing]
@@ -85,7 +86,7 @@ class Overlay():
             self.clear_frame('Default')
             self.clear_frame('Galaxy Map')
             self.clear_frame('Alert')
-            if Context.router.carrier_state == 'Idle':
+            if Context.router.carrier_state == CarrierStates.Idle:
                 self.clear_frame('Carrier')
             return
 
@@ -258,7 +259,7 @@ class Overlay():
     @catch_exceptions
     def create_frame(self, group:str, ovf:OvFrame) -> None:
         """ Initialize a frame """
-        if not self._get_overlay(): return
+        if not self._get_overlay() or not define_plugin_group: return
 
         kw:dict = {
             'plugin_group': group,
@@ -344,7 +345,7 @@ class Overlay():
     def _countdown(self, frame:str, content:str|list[dict], end:datetime, stop:Event) -> None:
         """ Update the countdown display frame until zero or stopped """
         rem:timedelta = end - datetime.now(tz=end.tzinfo)
-        while rem.seconds > 0 and not stop.wait(1):
+        while rem.total_seconds() > 0 and not stop.wait(1):
             Debug.logger.debug(f"Countdown thread running {frame} {content} {end}")
             rem = end - datetime.now(tz=end.tzinfo)
             display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c.items()} for c in content] \
@@ -361,6 +362,12 @@ class Overlay():
         """ Stop a countdown display for a frame """
         if frame not in self.stoppers: return
         self.stoppers[frame].set()
+
+
+    def stop_countdowns(self) -> None:
+        """ Stop every active countdown thread -- call on shutdown so background threads don't outlive the app """
+        for frame in list(self.stoppers.keys()):
+            self.stop_countdown(frame)
 
 
     @catch_exceptions

@@ -19,7 +19,6 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 
-@catch_exceptions
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir)
 
@@ -47,10 +46,10 @@ def plugin_start(plugin_dir: str) -> None:
 @catch_exceptions
 def plugin_stop() -> None:
     Context.router.save()
+    Context.overlay.stop_countdowns()
     if Context.updater.install_update:
         Context.updater.install()
 
-@catch_exceptions
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()
     Context.csv = CSV()

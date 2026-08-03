@@ -542,7 +542,7 @@ class RichesPlotter(Plotter):
         #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
         radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER,
                                              name="radius_entry")
-        self.ui.set_entry(radius_entry, str(params.get('radius')))
+        self.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
         radius_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -550,7 +550,7 @@ class RichesPlotter(Plotter):
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
         max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER,
                                                   name="max_results_entry")
-        self.ui.set_entry(max_results_entry, str(params.get('max_results')))
+        self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -654,7 +654,7 @@ class TradePlotter(Plotter):
         row += 1; col = 0
         #starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
         starting_capital_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['starting_capital'], from_=1000, to=10000000, increment=1000, width=WIDTH3-2, justify=tk.CENTER, name="starting_capital_entry")
-        self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital')))
+        self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
         th.Tooltip(starting_capital_entry, tts["starting_capital"])
         starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -662,14 +662,14 @@ class TradePlotter(Plotter):
         #max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER,
         # name="max_cargo_entry")
         max_cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2, justify=tk.CENTER, name="max_cargo_entry")
-        self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo')))
+        self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
         th.Tooltip(max_cargo_entry, tts["max_cargo"])
         max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
         max_hops_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hops'], from_=1, to=100, width=WIDTH3-2, justify=tk.CENTER, name="max_hops_entry")
-        self.ui.set_entry(max_hops_entry, str(params.get('max_hops')))
+        self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
         th.Tooltip(max_hops_entry, tts["max_hops"])
         max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -678,7 +678,7 @@ class TradePlotter(Plotter):
         row += 1; col = 0
         #max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
         max_hop_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hop_distance'], from_=5, to=120, width=WIDTH3-2, justify=tk.CENTER, name="max_hop_distance_entry")
-        self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance')))
+        self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
         th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
         max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -686,7 +686,7 @@ class TradePlotter(Plotter):
         col += 1
         #max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
         max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3-2, justify=tk.CENTER, name="max_system_distance_entry")
-        self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance')))
+        self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
         th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
         max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -865,7 +865,7 @@ class FleetCarrierPlotter(Plotter):
         self.hop_label = lbls['via_system']; self.hop_tooltip = tts['via_system']
         self.hops_frame = th.Frame(route_fr)
         self.hop_rows = []
-        self._rebuild_hop_rows(params.get('destination_names', ['dummy'])[:-1])
+        self._rebuild_hop_rows(params.get('destination_names', []))
         self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
         self._create_dest(route_fr, 2, 0)
@@ -917,13 +917,12 @@ class FleetCarrierPlotter(Plotter):
         params:dict = {}
 
         source_name:str = src_ac.get().strip()
-        dest_name:list|str = dest_ac.get().strip()
+        final_dest:str = dest_ac.get().strip()
 
         # No pre-validation per destination name -- Spansh errors on a bad one regardless.
         dest_names:list = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
-        if dest_names != []:
-            dest_name = [dest_name] + dest_names
+        destinations:list|str = [final_dest] + dest_names if dest_names != [] else final_dest
 
         capacity_used_entry = self.frame.nametowidget("capacity_used_entry")
         capacity_used:str = capacity_used_entry.get().strip()
@@ -938,7 +937,9 @@ class FleetCarrierPlotter(Plotter):
         stats:dict = FLEET_CARRIER_STATS[carrier_type]
 
         params['source'] = source_name
-        params['destinations'] = dest_name
+        params['destination'] = final_dest
+        params['destination_names'] = dest_names
+        params['destinations'] = destinations
         params['capacity'] = stats['capacity']
         params['mass'] = stats['mass']
         params['capacity_used'] = int(capacity_used)

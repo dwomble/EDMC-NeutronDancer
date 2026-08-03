@@ -12,7 +12,7 @@ from .route import Route
 from .context import Context
 
 
-LEFT_ALIGN:list = ['System Name', 'System', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
+LEFT_ALIGN:list = ['System Name', 'System', 'Body Name', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
                    'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity',
                    'Species']
 
@@ -181,4 +181,4 @@ class RouteWindow:
             if i > 0 and i == route.offset:
                 tree.selection_set(r)
 
-        return sum([int(widths[i]*8*scale) for i in range(len(widths))]) + 30
+        return sum([int(widths[i]*6.5*scale) for i in range(len(widths))]) + 30

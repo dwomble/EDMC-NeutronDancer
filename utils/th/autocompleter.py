@@ -19,6 +19,8 @@ class Autocompleter(Placeholder):
             :param func: The function to call to get a list of suggestions which should
                             take a single string argument (the current input) and return a list of suggestions.
     """
+    LOOKUP_TIMEOUT:float = 3
+
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
         self.func = None
@@ -186,10 +188,22 @@ class Autocompleter(Placeholder):
 
     def get_list(self, inp:str) -> None:
         inp = inp.strip()
-        if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
-            lista:list = self.func(inp)
-            if lista:
-                self.queue.put(lista)
+        func = self.func
+        if inp == self.placeholder or inp.__len__() < 3 or func == None:
+            return
+
+        result:list = []
+        def call() -> None:
+            result.extend(func(inp) or [])
+        t = threading.Thread(target=call, daemon=True)
+        t.start()
+        t.join(self.LOOKUP_TIMEOUT)
+        if t.is_alive():
+            Debug.logger.error(f"Autocompleter lookup timed out after {self.LOOKUP_TIMEOUT}s for {inp!r}")
+            return
+
+        if result:
+            self.queue.put(result)
 
     def update_me(self) -> None:
         try:

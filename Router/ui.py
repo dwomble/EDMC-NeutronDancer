@@ -147,7 +147,7 @@ class UI():
         """ Display the chosen frame, recreating it if necessary """
         self.hide_error()
         self._show_busy_gui(False)
-        Context.router.cancel_plot = True
+        Context.router.cancel_plot = True # tell router to stop plotting if it's currently doing so
         self.sub_fr.grid_remove()
 
         Context.router.route_params['Neutron']['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
@@ -511,13 +511,18 @@ class UI():
 
         # Reverse the route
         if Context.router.dest == Context.router.system:
-            Debug.logger.debug(f"Reversing route as we're at the end")
             self._update_item('all', 'source_ac', Context.router.dest)
             self._update_item('all', 'dest_ac', Context.router.src)
 
         self.show_frame(Context.router.last_plot)
         Context.router.clear_route()
 
+
+    def cancel_plot(self) -> None:
+        """ Cancel the plot planning and return to the default frame """
+        Context.router.cancel_plot = True
+        Context.router.clear_route()
+        self.show_frame('Default')
 
     @catch_exceptions
     def import_route(self) -> None:

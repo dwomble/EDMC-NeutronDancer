@@ -307,13 +307,14 @@ class Router():
                 return
 
             tries = 0
+            route_response:Response|None = None
             while tries < limit+1:
                 if config.shutting_down or self.cancel_plot: return # Quit
                 response:dict = json.loads(results.content)
                 job:str = response["job"]
 
                 results_url:str = f"{SPANSH_RESULTS}/{job}"
-                route_response:Response = requests.get(results_url, timeout=5)
+                route_response = requests.get(results_url, timeout=5)
                 if route_response.status_code != 202:
                     break
                 tries += 1
@@ -331,9 +332,10 @@ class Router():
             elif url == SPANSH_TRADE_ROUTE:
                 res:list = self._flatten_trade_result(raw_result)
             elif url == SPANSH_FLEETCARRIER_ROUTE:
-                # Each requested stop appears twice (ending one leg, starting the next) --
-                # only the arrival row (distance_to_destination == 0) is a real waypoint.
-                res:list = [j for j in raw_result.get('jumps', []) if j.get('distance_to_destination') == 0]
+                # distance == 0 marks bookkeeping rows -- the initial source, and each
+                # requested stop's leg-restart duplicate -- not real jumps. Every other row,
+                # including every intermediate hop of a long single-leg route, is a real jump.
+                res:list = [j for j in raw_result.get('jumps', []) if j.get('distance', 0) != 0]
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 
@@ -377,8 +379,10 @@ class Router():
 
 
     @catch_exceptions
-    def plot_error(self, which:str, params:dict, response:Response) -> None:
+    def plot_error(self, which:str, params:dict, response:Response|None) -> None:
         """ Parse the response from Spansh on a failed route query """
+
+        if response is None: return errs["no_response"]
 
         Debug.logger.info(f"Plot error: {which}, {params}\n{response} {json.loads(response.content)}")
         err:str = errs["no_response"]

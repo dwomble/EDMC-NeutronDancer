@@ -1410,8 +1410,9 @@ class TestPlotMethods:
 
     def test_plotter_success_creates_route_fleetcarrier(self, harness:TestHarness) -> None:
         """Test that _plotter flattens a Fleet Carrier response -- each requested stop appears
-        twice (ending one leg, starting the next), so only distance_to_destination == 0 rows
-        should survive. Real shape captured from the live Spansh fleet carrier API."""
+        twice (ending one leg, starting the next, with distance == 0), so only the
+        distance != 0 rows (the real jumps) should survive. Real shape captured from the
+        live Spansh fleet carrier API."""
         global plotter_thread
         plotter_thread = None
 
@@ -1462,6 +1463,51 @@ class TestPlotMethods:
         assert row1[harness.plugin.route.hdrs.index("System Name")] == 'Alpha Centauri'
         assert "Icy Ring" in harness.plugin.route.hdrs
         assert "Restock Tritium" in harness.plugin.route.hdrs
+
+    def test_plotter_fleetcarrier_single_leg_keeps_every_hop(self, harness:TestHarness) -> None:
+        """Regression: a direct route (no via-stops) with multiple intermediate hops must keep
+        every hop, not just the final arrival. distance_to_destination stays nonzero for every
+        row except the last in a single-leg route, so filtering on it (instead of on
+        distance != 0) collapsed the whole route down to one jump."""
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": {"jumps": [
+                {"distance": 0, "distance_to_destination": 300, "id64": 1, "name": "Bleae Thua NI-B b27-5",
+                 "is_desired_destination": 1, "has_icy_ring": False, "is_system_pristine": False,
+                 "must_restock": 0, "restock_amount": 0, "tritium_in_market": 0, "fuel_in_tank": 42, "fuel_used": 0},
+                {"distance": 100, "distance_to_destination": 200, "id64": 2, "name": "Hop One",
+                 "is_desired_destination": 0, "has_icy_ring": False, "is_system_pristine": False,
+                 "must_restock": 0, "restock_amount": 0, "tritium_in_market": 0, "fuel_in_tank": 21, "fuel_used": 21},
+                {"distance": 100, "distance_to_destination": 100, "id64": 3, "name": "Hop Two",
+                 "is_desired_destination": 0, "has_icy_ring": False, "is_system_pristine": False,
+                 "must_restock": 0, "restock_amount": 0, "tritium_in_market": 0, "fuel_in_tank": 0, "fuel_used": 21},
+                {"distance": 100, "distance_to_destination": 0, "id64": 4, "name": "Colonia",
+                 "is_desired_destination": 1, "has_icy_ring": False, "is_system_pristine": False,
+                 "must_restock": 0, "restock_amount": 0, "tritium_in_market": 0, "fuel_in_tank": 21, "fuel_used": 21},
+            ]}
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('requests.post', return_value=job_response):
+                with patch('requests.get', return_value=result_response):
+                    params = {'source': 1, 'destinations': 4, 'capacity': 25000, 'mass': 25000,
+                              'capacity_used': '0', 'calculate_starting_fuel': 1, 'max_time': 1}
+                    harness.plugin.router.plot_route('FleetCarrier', params)
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=30)
+
+        assert harness.plugin.route is not None
+        names = [row[harness.plugin.route.hdrs.index("System Name")] for row in harness.plugin.route.route]
+        assert names == ['Hop One', 'Hop Two', 'Colonia']
 
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
@@ -1767,6 +1813,31 @@ class TestPlotMethods:
         mock_plot_route.assert_called_once()
         _, params = mock_plot_route.call_args[0]
         assert params['final_destination'] == 'Colonia'
+
+    def test_tourist_plotter_no_hops_does_not_letter_split_on_reopen(self, harness:TestHarness) -> None:
+        """Regression: with no via-stops, params['destination'] collapses to the plain
+        final-destination string (for Spansh) rather than a list. create_frame() must rebuild
+        hop rows from a separate destination_names list, or it iterates that string
+        character-by-character and creates one hop row per letter."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Tourist']
+        plotter = ui.plotters['Tourist']
+
+        fr.nametowidget("source_ac").set_text("Sol", False)
+        fr.nametowidget("dest_ac").set_text("Colonia", False)
+        fr.nametowidget("range_entry").set_text("50", False)
+
+        with patch('requests.get', side_effect=fake_systems_get):
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                plotter.plot()
+
+        _, params = mock_plot_route.call_args[0]
+        assert params['destination'] == 'Colonia'
+        assert params['destination_names'] == []
+
+        harness.plugin.router.route_params['Tourist'] = params
+        plotter.create_frame(ui.frame)
+        assert plotter.hop_rows == []
 
     def test_fleetcarrier_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """FleetCarrierPlotter.plot() sends system names directly -- Spansh's fleetcarrier API

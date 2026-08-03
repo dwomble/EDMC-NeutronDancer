@@ -43,10 +43,8 @@ class PlotterSpec:
 class Plotter(ABC):
     """Base class for all route plotters."""
 
-    def __init__(self, ui, frwidth:int, route_type:str) -> None:
+    def __init__(self, route_type:str) -> None:
         """ Initialize the plotter. """
-        self.ui = ui
-        self.frwidth = frwidth
         self.frame:th.Frame | None = None
         self.route_type = route_type
         self.options:list = PLOTTER_SPECS[route_type].options
@@ -79,7 +77,7 @@ class Plotter(ABC):
                               add_cmd=None, remove_cmd=None, pady:int = 5) -> th.Autocompleter:
         """ One system-entry row: an autocompleter, optionally named (source/dest) or menued
         (right-click history), optionally with -/+ buttons in the two columns after it. """
-        kw:dict = {'width': 30, 'func': self.ui.query_systems}
+        kw:dict = {'width': 30, 'func': Context.ui.query_systems}
         if menu:
             kw['menu'] = menu
         if name:
@@ -88,7 +86,7 @@ class Plotter(ABC):
         ac:th.Autocompleter = th.Autocompleter(parent, label, **kw)
         th.Tooltip(ac, tooltip)
         if initial:
-            self.ui.set_entry(ac, initial)
+            Context.ui.set_entry(ac, initial)
         ac.grid(row=row, column=col, columnspan=3, padx=5, pady=pady)
 
         spwidth:int = 0
@@ -114,12 +112,12 @@ class Plotter(ABC):
         """Create source system autocompleter widget."""
         srcmenu:dict = {}
         if Context.router.system != '':
-            srcmenu[Context.router.system] = [self.ui.menu_callback, 'src']
+            srcmenu[Context.router.system] = [Context.ui.menu_callback, 'src']
         if Context.router.carrier_location != '':
-            srcmenu[Context.router.carrier_location] = [self.ui.menu_callback, 'src']
+            srcmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'src']
         for sys in Context.router.history:
             if sys not in srcmenu:
-                srcmenu[sys] = [self.ui.menu_callback, 'src']
+                srcmenu[sys] = [Context.ui.menu_callback, 'src']
 
         self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
                                    name="source_ac", menu=srcmenu, initial=Context.router.src, add_cmd=add_cmd)
@@ -128,10 +126,10 @@ class Plotter(ABC):
         """Create destination system autocompleter widget."""
         destmenu:dict = {}
         if Context.router.carrier_location != '':
-            destmenu[Context.router.carrier_location] = [self.ui.menu_callback, 'dest']
+            destmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'dest']
         for sys in Context.router.history:
             if sys not in destmenu:
-                destmenu[sys] = [self.ui.menu_callback, 'dest']
+                destmenu[sys] = [Context.ui.menu_callback, 'dest']
 
         if placeholder == '': placeholder = lbls["dest_system"]
         self._create_system_entry(parent, row, col, placeholder, tts["dest_system"],
@@ -149,7 +147,7 @@ class Plotter(ABC):
 
     def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
         """Create range entry widget."""
-        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=self.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
         range_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
 
@@ -208,19 +206,19 @@ class Plotter(ABC):
         @catch_exceptions
         def on_combo_change(e):
             which:str = next((k for k, v in routers.items() if v == routedd.get()), '')
-            self.ui.show_frame(which)
+            Context.ui.show_frame(which)
 
-        sfr:th.Frame = th.Frame(fr, width=self.frwidth)
+        sfr:th.Frame = th.Frame(fr, width=Context.ui.frwidth)
 
         th.Label(sfr, text=lbls['route'], justify=tk.LEFT).grid(row=0, column=0, padx=5, pady=5)
 
-        routedd:th.ComboBox = th.ComboBox(sfr, self.ui.router, values=list(routers.values()), width=25)
+        routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=list(routers.values()), width=25)
         routedd.bind("<<ComboboxSelected>>", on_combo_change)
         th.Tooltip(routedd, tts["route_type"])
         routedd.grid(row=0, column=1, padx=5, pady=5)
 
-        #r3:th.Button = th.Button(sfr, image=self.ui.help_img, cursor="hand2", command=lambda: self.ui._show_help())
-        r3:th.Button = th.Button(sfr, image=self.ui.help_img, command=lambda: self.ui._show_help())
+        #r3:th.Button = th.Button(sfr, image=Context.ui.help_img, cursor="hand2", command=lambda: Context.ui._show_help())
+        r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=lambda: Context.ui._show_help())
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
@@ -228,7 +226,7 @@ class Plotter(ABC):
 
     def _validate_system(self, inp:str, widget:th.Autocompleter) -> str | None:
         """ Validate and return the exact system name. """
-        validated = next((x for x in self.ui.query_systems(inp) if x.casefold() == inp.casefold()), None)
+        validated = next((x for x in Context.ui.query_systems(inp) if x.casefold() == inp.casefold()), None)
         if validated is None:
             widget.set_text(inp, False)
             widget.set_error_style()
@@ -240,7 +238,7 @@ class Plotter(ABC):
         btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
 
         row = 0; col = 0
-        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: self.ui.import_route())
+        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: Context.ui.import_route())
         self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -248,7 +246,7 @@ class Plotter(ABC):
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.ui.clear_route())
+        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: Context.router.clear_route())
         self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
 
 
@@ -257,7 +255,7 @@ class NeutronPlotter(Plotter):
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the neutron plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Neutron', {})
@@ -299,14 +297,14 @@ class NeutronPlotter(Plotter):
 
         col += 1
         r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
-        r1.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
+        r1.bind('<Button-3>', lambda e: Context.ui.show_menu(e, 'Neutron'))
         th.Tooltip(r1, tts['standard_multiplier'])
         r1.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
         th.Tooltip(r2, tts['overcharge_multiplier'])
-        r2.bind('<Button-3>', lambda e: self.ui.show_menu(e, 'Neutron'))
+        r2.bind('<Button-3>', lambda e: Context.ui.show_menu(e, 'Neutron'))
         r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
 
         # Buttons
@@ -322,7 +320,7 @@ class NeutronPlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
 
         src_ac = self.frame.nametowidget("source_ac")
         dest_ac = self.frame.nametowidget("dest_ac")
@@ -332,13 +330,13 @@ class NeutronPlotter(Plotter):
         # frm:str = src_ac.get().strip()
         # params["from"] = self._validate_system(frm, src_ac)
         # if params['from'] is None:
-        #     self.ui.show_frame('Neutron')
+        #     Context.ui.show_frame('Neutron')
         #     return
 
         # to:str = dest_ac.get().strip()
         # params["to"] = self._validate_system(to, dest_ac)
         # if params['to'] is None:
-        #     self.ui.show_frame('Neutron')
+        #     Context.ui.show_frame('Neutron')
         #     return
 
         params['from'] = src_ac.get().strip()
@@ -350,7 +348,7 @@ class NeutronPlotter(Plotter):
 
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
-            self.ui.show_frame('Neutron')
+            Context.ui.show_frame('Neutron')
             range_entry.set_error_style()
             return
 
@@ -358,7 +356,7 @@ class NeutronPlotter(Plotter):
         params['via'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
         Context.router.plot_route('Neutron', params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 
 class GalaxyPlotter(Plotter):
@@ -366,7 +364,7 @@ class GalaxyPlotter(Plotter):
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the galaxy plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Galaxy', {})
@@ -387,7 +385,7 @@ class GalaxyPlotter(Plotter):
         # Row three: ship selection and cargo
         row += 1; col = 0
         if Context.router.shiplist == {}:
-            self.ui.show_error(errs["no_ships"])
+            Context.ui.show_error(errs["no_ships"])
 
         names:list = Context.router.shipnames()
         init:str = params.get('ship_build', {}).get('ShipName', '')
@@ -395,14 +393,14 @@ class GalaxyPlotter(Plotter):
             init = names[0]
 
         self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
-        self.shipvar.trace_add("write", self.ui.ship_selected)
+        self.shipvar.trace_add("write", Context.ui.ship_selected)
         self.shipdd:th.ComboBox = th.ComboBox(plot_fr, self.shipvar, values=names, width=WIDTH2)
         th.Tooltip(self.shipdd, tts["select_ship"])
         self.shipdd.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2, justify=tk.CENTER, name="cargo_entry")
-        self.ui.set_entry(cargo_entry, str(Context.router.cargo))
+        Context.ui.set_entry(cargo_entry, str(Context.router.cargo))
         cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
 
@@ -418,7 +416,7 @@ class GalaxyPlotter(Plotter):
         #self.fuel_res:th.Placeholder = th.Placeholder(plot_fr, lbls['fuel_reserve'], width=WIDTH3, justify=tk.CENTER)
         self.fuel_res:th.Spinbox = th.Spinbox(plot_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
         if params.get('reserve_size', 0) != 0:
-            self.ui.set_entry(self.fuel_res, str(params.get('reserve_size')))
+            Context.ui.set_entry(self.fuel_res, str(params.get('reserve_size')))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
         self.fuel_res.grid(row=row, column=col, padx=5, pady=5)
 
@@ -435,7 +433,7 @@ class GalaxyPlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
         gal_fr:th.Frame = self.frame
 
         src_ac = gal_fr.nametowidget("source_ac")
@@ -448,8 +446,8 @@ class GalaxyPlotter(Plotter):
 
         ship_id:str = Context.router.shipid(self.shipvar.get())
         if ship_id == '':
-            self.ui.show_frame('Galaxy')
-            self.ui.show_error(errs['no_ship'])
+            Context.ui.show_frame('Galaxy')
+            Context.ui.show_error(errs['no_ship'])
             return
 
         ship:Ship | None = Context.router.load_ship(ship_id)
@@ -483,19 +481,19 @@ class GalaxyPlotter(Plotter):
         # src:str = gal_fr.nametowidget("source_ac").get().strip()
         # params["source"] = self._validate_system(src, gal_fr.nametowidget("source_ac"))
         # if params['source'] is None:
-        #     self.ui.show_frame('Galaxy')
+        #     Context.ui.show_frame('Galaxy')
         #     return
 
         # dest:str = gal_fr.nametowidget("dest_ac").get().strip()
         # params['destination'] = self._validate_system(dest, gal_fr.nametowidget("dest_ac"))
         # if params['destination'] is None:
-        #     self.ui.show_frame('Galaxy')
+        #     Context.ui.show_frame('Galaxy')
         #     return
 
         params['source'] = src_ac.get().strip()
         params['destination'] = dest_ac.get().strip()
         Context.router.plot_route('Galaxy', params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 
 class RichesPlotter(Plotter):
@@ -505,7 +503,7 @@ class RichesPlotter(Plotter):
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the riches-family plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get(self.route_type, {})
@@ -542,7 +540,7 @@ class RichesPlotter(Plotter):
         #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
         radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER,
                                              name="radius_entry")
-        self.ui.set_entry(radius_entry, str(params.get('radius', 25)))
+        Context.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
         radius_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -550,7 +548,7 @@ class RichesPlotter(Plotter):
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
         max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER,
                                                   name="max_results_entry")
-        self.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
+        Context.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
         max_results_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -567,7 +565,7 @@ class RichesPlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
 
         src_ac = self.frame.nametowidget("source_ac")
         dest_ac = self.frame.nametowidget("dest_ac")
@@ -585,7 +583,7 @@ class RichesPlotter(Plotter):
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
-            self.ui.show_frame(self.route_type)
+            Context.ui.show_frame(self.route_type)
             range_entry.set_error_style()
             return
 
@@ -593,7 +591,7 @@ class RichesPlotter(Plotter):
         params['radius'] = radius_entry.get().strip()
         if not re.match(r"^\d+(\.\d+)?$", params['radius']):
             Debug.logger.info(f"Invalid radius entry {params['radius']}")
-            self.ui.show_frame(self.route_type)
+            Context.ui.show_frame(self.route_type)
             radius_entry.set_error_style()
             return
 
@@ -601,7 +599,7 @@ class RichesPlotter(Plotter):
         params['max_results'] = max_results_entry.get().strip()
         if not re.match(r"^\d+$", params['max_results']):
             Debug.logger.info(f"Invalid max results entry {params['max_results']}")
-            self.ui.show_frame(self.route_type)
+            Context.ui.show_frame(self.route_type)
             max_results_entry.set_error_style()
             return
 
@@ -622,7 +620,7 @@ class RichesPlotter(Plotter):
             params['min_value'] = spec.min_value
 
         Context.router.plot_route(self.route_type, params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 
 class TradePlotter(Plotter):
@@ -632,7 +630,7 @@ class TradePlotter(Plotter):
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the trade route plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('Trade', {})
@@ -641,10 +639,10 @@ class TradePlotter(Plotter):
         # Row 1: source station -- a single field, like Spansh's own "Source Station" combobox,
         # rather than picking a system first and a station within it second.
         row += 1; col = 0
-        station_ac = th.Autocompleter(plot_fr, lbls["station"], width=30, func=self.ui.query_station_names, name="station_ac")
+        station_ac = th.Autocompleter(plot_fr, lbls["station"], width=30, func=Context.ui.query_station_names, name="station_ac")
         th.Tooltip(station_ac, tts["station"])
         if params.get('system') and params.get('station'):
-            self.ui.set_entry(station_ac, params["system"] +" / " + params['station'])
+            Context.ui.set_entry(station_ac, params["system"] +" / " + params['station'])
         station_ac.grid(row=row, column=col, columnspan=3, padx=5, pady=5)
 
         col += 3
@@ -654,7 +652,7 @@ class TradePlotter(Plotter):
         row += 1; col = 0
         #starting_capital_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['starting_capital'], width=WIDTH3, justify=tk.CENTER, name="starting_capital_entry")
         starting_capital_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['starting_capital'], from_=1000, to=10000000, increment=1000, width=WIDTH3-2, justify=tk.CENTER, name="starting_capital_entry")
-        self.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
+        Context.ui.set_entry(starting_capital_entry, str(params.get('starting_capital', 1000)))
         th.Tooltip(starting_capital_entry, tts["starting_capital"])
         starting_capital_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -662,14 +660,14 @@ class TradePlotter(Plotter):
         #max_cargo_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_cargo'], width=WIDTH3, justify=tk.CENTER,
         # name="max_cargo_entry")
         max_cargo_entry:th.Spinbox = th.Spinbox(plot_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2, justify=tk.CENTER, name="max_cargo_entry")
-        self.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
+        Context.ui.set_entry(max_cargo_entry, str(params.get('max_cargo', 7)))
         th.Tooltip(max_cargo_entry, tts["max_cargo"])
         max_cargo_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_hops_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hops'], width=WIDTH3, justify=tk.CENTER, name="max_hops_entry")
         max_hops_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hops'], from_=1, to=100, width=WIDTH3-2, justify=tk.CENTER, name="max_hops_entry")
-        self.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
+        Context.ui.set_entry(max_hops_entry, str(params.get('max_hops', 5)))
         th.Tooltip(max_hops_entry, tts["max_hops"])
         max_hops_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -678,7 +676,7 @@ class TradePlotter(Plotter):
         row += 1; col = 0
         #max_hop_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_hop_distance'], width=WIDTH3, justify=tk.CENTER, name="max_hop_distance_entry")
         max_hop_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_hop_distance'], from_=5, to=120, width=WIDTH3-2, justify=tk.CENTER, name="max_hop_distance_entry")
-        self.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
+        Context.ui.set_entry(max_hop_distance_entry, str(params.get('max_hop_distance', 50)))
         th.Tooltip(max_hop_distance_entry, tts["max_hop_distance"])
         max_hop_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -686,7 +684,7 @@ class TradePlotter(Plotter):
         col += 1
         #max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
         max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3-2, justify=tk.CENTER, name="max_system_distance_entry")
-        self.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
+        Context.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
         th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
         max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -694,7 +692,7 @@ class TradePlotter(Plotter):
         #max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
         max_price_age_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_price_age'], from_=0, to=720, width=WIDTH3-2, justify=tk.CENTER, name="max_price_age_entry")
         if params.get('max_price_age_days'):
-            self.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
+            Context.ui.set_entry(max_price_age_entry, str(params.get('max_price_age_days')))
         th.Tooltip(max_price_age_entry, tts["max_price_age"])
         max_price_age_entry.grid(row=row, column=col, padx=5, pady=5)
 
@@ -712,7 +710,7 @@ class TradePlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
 
         station_ac = self.frame.nametowidget("station_ac")
         options = self.frame.nametowidget("options")
@@ -734,7 +732,7 @@ class TradePlotter(Plotter):
             value:str = entry.get().strip()
             if not re.match(r"^\d+(\.\d+)?$", value):
                 Debug.logger.info(f"Invalid {param_name} entry {value}")
-                self.ui.show_frame('Trade')
+                Context.ui.show_frame('Trade')
                 entry.set_error_style()
                 return
             params[param_name] = value
@@ -754,7 +752,7 @@ class TradePlotter(Plotter):
             params[opt] = 1 if options.selection_includes(self.options.index(opt)) else 0
 
         Context.router.plot_route('Trade', params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 
 class TouristPlotter(Plotter):
@@ -764,7 +762,7 @@ class TouristPlotter(Plotter):
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the tourist route plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
         try:
             params:dict = Context.router.route_params.get('Tourist', {})
@@ -780,7 +778,7 @@ class TouristPlotter(Plotter):
             self.hop_label = lbls['destination']; self.hop_tooltip = tts['destination']
             self.hops_frame = th.Frame(route_fr)
             self.hop_rows = []
-            self._rebuild_hop_rows(params.get('destination', []))
+            self._rebuild_hop_rows(params.get('destination_names', []))
             self.hops_frame.grid(row=1, column=0, columnspan=5, sticky=tk.W)
 
             self._create_dest(route_fr, 2, 0, lbls['final_dest'])
@@ -814,7 +812,7 @@ class TouristPlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
 
         src_ac = self.frame.nametowidget("source_ac")
         dest_ac = self.frame.nametowidget("dest_ac")
@@ -832,25 +830,26 @@ class TouristPlotter(Plotter):
         params['range'] = range_entry.var.get()
         if not re.match(r"^\d+(\.\d+)?$", params['range']):
             Debug.logger.info(f"Invalid range entry {params['range']}")
-            self.ui.show_frame('Tourist')
+            Context.ui.show_frame('Tourist')
             range_entry.set_error_style()
             return
 
         # No pre-validation per destination -- Spansh errors on a bad name regardless.
-        params['destination'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
+        params['destination_names'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
+        params['destination'] = params['destination_names']
         if params['destination'] == []:
             params['destination'] = params.get('final_destination', '')
         #params['loop'] = self.loop_var.get()
 
         Context.router.plot_route('Tourist', params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 class FleetCarrierPlotter(Plotter):
     """Plotter for /api/fleetcarrier/route"""
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the fleet carrier plotter frame."""
-        plot_fr:th.Frame = th.Frame(parent, width=self.frwidth)
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         row:int = 0; col:int = 0
 
         params:dict = Context.router.route_params.get('FleetCarrier', {})
@@ -875,7 +874,7 @@ class FleetCarrierPlotter(Plotter):
         col = 4
         capacity_used_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['capacity_used'], from_=0, to=100000, increment=10, width=WIDTH3, justify=tk.CENTER, name="capacity_used_entry")
         Debug.logger.debug(f"Setting capacity_used_entry to {params.get('capacity_used')}")
-        self.ui.set_entry(capacity_used_entry, str(params.get('capacity_used')))
+        Context.ui.set_entry(capacity_used_entry, str(params.get('capacity_used')))
         th.Tooltip(capacity_used_entry, tts["capacity_used"])
         capacity_used_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
 
@@ -909,7 +908,7 @@ class FleetCarrierPlotter(Plotter):
         if not self.frame:
             return
 
-        self.ui.hide_error()
+        Context.ui.hide_error()
 
         src_ac = self.frame.nametowidget("source_ac")
         dest_ac = self.frame.nametowidget("dest_ac")
@@ -928,7 +927,7 @@ class FleetCarrierPlotter(Plotter):
         capacity_used:str = capacity_used_entry.get().strip()
         if not re.match(r"^\d+(\.\d+)?$", capacity_used):
             Debug.logger.info(f"Invalid capacity_used entry {capacity_used}")
-            self.ui.show_frame('FleetCarrier')
+            Context.ui.show_frame('FleetCarrier')
             capacity_used_entry.set_error_style()
             return
 
@@ -946,7 +945,7 @@ class FleetCarrierPlotter(Plotter):
         params['calculate_starting_fuel'] = "1"
 
         Context.router.plot_route('FleetCarrier', params)
-        self.ui._show_busy_gui(True)
+        Context.ui._show_busy_gui(True)
 
 
 PLOTTER_SPECS:dict = {

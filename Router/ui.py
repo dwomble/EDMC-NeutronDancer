@@ -40,6 +40,11 @@ class UI():
             Debug.logger.info(f"No parent")
             return
 
+        # Plotters reference Context.ui directly (rather than a constructor-passed reference),
+        # so it must point here before they're constructed below -- not just after load.py's
+        # `Context.ui = UI(parent)` assignment, which only runs once this constructor returns.
+        Context.ui = self
+
         self.frwidth:int = int(375 * (config.get_int('ui_scale') / 100))
         self.parent:tk.Widget|None = parent
         self.window_route:RouteWindow = RouteWindow(self.parent.winfo_toplevel())
@@ -70,7 +75,7 @@ class UI():
 
         # Create plotter instances, one per entry in the PLOTTER_SPECS registry
         self.plotters:dict = {
-            name: spec.plotter_class(self, self.frwidth, name)
+            name: spec.plotter_class(name)
             for name, spec in PLOTTER_SPECS.items()
         }
 

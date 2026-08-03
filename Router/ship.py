@@ -7,10 +7,10 @@ class Ship:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
 
         # This is used when we're initializing from a journal entry
-        self.id:str = str(entry.get('ShipID', ''))
-        self.type:str = entry.get('Ship', '')
-        self.ident:str = entry.get('ShipIdent', '')
-        self.name:str = entry.get('ShipName', '') or self.ident or self.type
+        self.id:str = str(entry.get('ShipID', '')).strip()
+        self.type:str = entry.get('Ship', '').strip()
+        self.ident:str = entry.get('ShipIdent', '').strip()
+        self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type
 
         # The journal loadout entry
         self.loadout:dict = {}

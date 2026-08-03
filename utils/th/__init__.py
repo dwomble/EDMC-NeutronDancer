@@ -1,19 +1,46 @@
 # -*- coding: utf-8 -*-
-from typing import Any
+from typing import Any, cast
+from functools import partial
 
 import tkinter as tk
 from tkinter import ttk
+import tkinter.font as tkfont
 
 from theme import theme # type: ignore
 from config import config # type: ignore
 
 from .autocompleter import Autocompleter
-from .placeholder import Placeholder
+from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-from utils.debug import Debug
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Tooltip", "Autocompleter", "Placeholder"]
+DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
+index:int = 0
+
+def _strip_name(kw:dict) -> dict:
+    """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
+    return {k: v for k, v in kw.items() if k != 'name'}
+
+def _bind_hover(btn:ttk.Button) -> None:
+    """ Bind hover to implement hover for themed buttons."""
+    #normal_relief = btn.cget('relief')
+    #hover_relief = tk.SUNKEN if normal_relief == tk.RAISED else tk.RAISED
+
+    def on_enter(e:tk.Event) -> None:
+        w = cast(ttk.Button, e.widget)
+        #setattr(w, '_th_normal', (w['background'], w['foreground']))
+        #w.configure(background=w['activebackground'], foreground=w['activeforeground'], relief=hover_relief)
+    def on_leave(e:tk.Event) -> None:
+        w = cast(ttk.Button, e.widget)
+        #bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
+        #w.configure(background=bg, foreground=fg, relief=normal_relief)
+    btn.bind('<Enter>', on_enter)
+    btn.bind('<Leave>', on_leave)
+
+def resolve(widget:Any) -> Any:
+    """ Resolve the actual base object for a tk nametowidget() lookup. """
+    return getattr(widget, 'themed', widget)
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
@@ -23,23 +50,29 @@ class Base:
         object.__setattr__(self, 'obj', obj)
         object.__setattr__(self, 'alt', alt)
 
+        # Back-reference so th.resolve() can recover this wrapper from a nametowidget() lookup.
+        setattr(obj, 'themed', self)
+        if alt is not None:
+            setattr(alt, 'themed', self)
+
         theme.register(obj)
         if alt is not None:
             theme.register(alt)
 
-
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
-        if self.alt is not None:
-            gridopts:dict = {}
+        if self.alt is None:
+            return self.obj.grid(*args, **kw)
 
-            if len(args) > 0 and isinstance(args[0], dict):
-                gridopts.update(args[0])
-            if len(kw) > 0:
-                gridopts.update(kw)
+        gridopts:dict = {}
 
-            if len(gridopts) > 0:
-                theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
+        if len(args) > 0 and isinstance(args[0], dict):
+            gridopts.update(args[0])
+        if len(kw) > 0:
+            gridopts.update(kw)
+
+        if len(gridopts) > 0:
+            theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
 
         return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
 
@@ -52,8 +85,11 @@ class Base:
             self.alt.configure(cnf, **kw)
         self.obj.configure(cnf, **kw)
 
+    def config(self, cnf=None, **kw) -> None:
+        """ config/configure are synonyms """
+        return self.configure(cnf, **kw)
 
-    def callable_attr(self, name:str, *args, **kw) -> Any:
+    def _callable_attr(self, name:str, *args, **kw) -> Any:
         """Call a same-named method on both widgets, returning the primary result."""
         method = getattr(self.obj, name)
         result = method(*args, **kw)
@@ -73,7 +109,7 @@ class Base:
         if attr is None:
             raise AttributeError(name)
         if callable(attr):
-            return lambda *args, **kw: self.callable_attr(name, *args, **kw)
+            return lambda *args, **kw: self._callable_attr(name, *args, **kw)
 
         return attr
 
@@ -92,6 +128,10 @@ class Base:
             return self.alt[key]
         raise KeyError(key)
 
+    def __setitem__(self, key, value) -> None:
+        """Support subscript assignment for themedItem, e.g. widget['fg'] = 'red'."""
+        self.configure(**{key: value})
+
 class TopLevel(tk.Toplevel):
     """ A themed toplevel window that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
@@ -101,8 +141,33 @@ class TopLevel(tk.Toplevel):
 class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
+        global index
+
         tk.Frame.__init__(self, master, **kw)
+        if DEBUG_FRAMES:
+            colors = ["lightcoral", "lightgreen", "lightblue", "lightyellow", "plum"]
+            self.configure(background=colors[index])
+            index += 1
+            if index >= len(colors): index = 0
+
         theme.update(self)
+
+    def nametowidget(self, name:str) -> Any:
+        """ A recursive descendant search for nametowidget(), resolved to the themed wrapper. """
+        try:
+            return resolve(super().nametowidget(name))
+        except KeyError:
+            pass
+
+        for child in self.winfo_children():
+            find = getattr(child, 'nametowidget', None)
+            if find is None:
+                continue
+            try:
+                return resolve(find(name))
+            except (KeyError, AttributeError):
+                continue
+        raise KeyError(name)
 
 class LabelFrame(tk.LabelFrame):
     """ A themed label frame that can switch between light and dark mode. """
@@ -119,10 +184,35 @@ class Label(tk.Label):
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        # EDMC theme throws an error trying to set a foreground on a ttk.Button if it has an image.
-        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'image' in kw else ttk.Button(master, **kw)
+        # EDMC's theme has a bug if the cursor is set on a ttk.Button with an image so we use a tk.Button
+        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'cursor' in kw else ttk.Button(master, **kw)
+        #if 'image' in kw:
+        #    _bind_hover(btn)
 
-        super().__init__(btn, tk.Button(master, **kw))
+        alt:tk.Button = tk.Button(master, **_strip_name(kw))
+        #_bind_hover(alt)
+
+        super().__init__(btn, alt)
+
+        # ttk.Button width is characters. tk.Button width is pixels.
+        w = kw.get('width')
+        object.__setattr__(self, '_char_width', int(w) if w is not None else None)
+
+    def configure(self, cnf=None, **kw) -> None:
+        """ Override configure to also counteract tk.Button's width-unit switch on image attach. """
+        if 'cursor' in kw and isinstance(self.obj, ttk.Button):
+            # obj was built ttk.Button adding a cursor now would break EDMC's theme code.
+            raise ValueError("th.Button: pass cursor= at creation, not via a later configure()")
+
+        super().configure(cnf, **kw)
+
+        if self._char_width is None or 'image' not in kw:
+            return
+
+        for w in (self.obj, self.alt):
+            if isinstance(w, tk.Button):
+                px:int = tkfont.Font(font=w.cget('font')).measure('0' * self._char_width)
+                w.configure(width=px)
 
     def grid(self, *args, **kw) -> Any:
         """ Override grid to handle themed buttons. """
@@ -140,8 +230,9 @@ class Button(Base):
 class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        tkrb:tk.Radiobutton = tk.Radiobutton(master, **kw)
-        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black', selectcolor='black', border=0, borderwidth=0)
+        tkrb:tk.Radiobutton = tk.Radiobutton(master, **_strip_name(kw))
+        tkrb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black',
+                        selectcolor='black', border=0, borderwidth=0)
         super().__init__(ttk.Radiobutton(master, **kw), tkrb)
 
 class ComboBox(Base):
@@ -157,11 +248,26 @@ class ComboBox(Base):
             values = kw['values'][1:]
 
         tkcb:tk.OptionMenu = tk.OptionMenu(master, v, value, *values)
-        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0, borderwidth=0, highlightthickness=0)
+        tkcb.configure(activeforeground=config.get_str('dark_text'), highlightbackground='black', activebackground='black', border=0,
+                        borderwidth=1, highlightthickness=0)
         tkcb["menu"].config(bg='black', fg=config.get_str('dark_text'), activebackground=config.get_str('dark_text'), activeforeground="BLACK")
 
         super().__init__(ttkcb, tkcb)
         object.__setattr__(self, '_variable', v)
+        object.__setattr__(self, '_select_func', None)
+
+    def _wire_alt_menu(self) -> None:
+        """ (Re-)apply the bound <<ComboboxSelected>> callback, if any, to every entry in the alt's menu. """
+        func = self._select_func
+        if self.alt is None or func is None:
+            return
+        menu = self.alt["menu"]
+        last:int|None = menu.index("end")
+        if last is None:
+            return
+        for i in range(last + 1):
+            label = menu.entrycget(i, "label")
+            menu.entryconfigure(i, command=lambda label=label: (self._variable.set(label), func(None)))
 
     def set_menu(self, menu:list[str]) -> None:
         """ Set the menu for the themed combobox. """
@@ -171,6 +277,18 @@ class ComboBox(Base):
             for item in menu:
                 self.alt['menu'].add_command(label=item, command=tk._setit(self._variable, item))
             self._variable.set(menu[0])
+            self._wire_alt_menu()
+
+    def bind(self, sequence:str, func, **kw) -> None:
+        """ workaround tk.OptionMenu not having a <<ComboboxSelected>> like ttk.Combobox """
+        self.obj.bind(sequence, func, **kw)
+        if self.alt is None:
+            return
+        if sequence == "<<ComboboxSelected>>":
+            object.__setattr__(self, '_select_func', func)
+            self._wire_alt_menu()
+        else:
+            self.alt.bind(sequence, func, **kw)
 
 class Listbox(Base):
     """ A themed listbox that can switch between light and dark mode. """
@@ -185,25 +303,52 @@ class Listbox(Base):
         lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
 
-        lb2:tk.Listbox = tk.Listbox(master, height=rows, **kw)
-        lb2.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
-        lb2.configure(selectbackground='gray25', highlightbackground='black', background='black')
+        lb2:tk.Listbox = tk.Listbox(master, height=rows, **_strip_name(kw))
+        lb2.configure(borderwidth=1, border=1, activestyle=tk.NONE, highlightthickness=0, relief=tk.GROOVE,
+                      selectbackground='gray25', highlightbackground='black', background='black')
 
         for i in range(len(items)):
             lb1.insert(tk.END, items[i])
             lb2.insert(tk.END, items[i])
+
+        def sync(source:tk.Listbox, target:tk.Listbox) -> None:
+            """ Mirror a user-driven selection change on the visible widget onto its hidden twin. """
+            target.selection_clear(0, tk.END)
+            for i in source.curselection():
+                target.selection_set(i)
+
+        lb1.bind('<<ListboxSelect>>', lambda e: sync(lb1, lb2))
+        lb2.bind('<<ListboxSelect>>', lambda e: sync(lb2, lb1))
 
         super().__init__(lb1, lb2)
 
 class Checkbutton(Base):
     """ A themed checkbutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        super().__init__(tk.Checkbutton(master, **kw), tk.Checkbutton(master, **kw))
+        super().__init__(tk.Checkbutton(master, **kw), tk.Checkbutton(master, **_strip_name(kw)))
 
 class Scale(Base):
     """ A themed scale that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tksc1:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
-        tksc2:tk.Scale = tk.Scale(master, **kw, border=0, borderwidth=0, highlightthickness=0)
+        tksc2:tk.Scale = tk.Scale(master, **_strip_name(kw), border=0, borderwidth=0, highlightthickness=0)
         tksc2.configure(troughcolor='gray25', highlightbackground='black', activebackground='black')
         super().__init__(tksc1, tksc2)
+
+class Spinbox(PlaceholderMixin, Base):
+    """ A themed spinbox that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, placeholder:str = "", **kw) -> None:
+        menu:dict = kw.pop('menu', {})
+        placeholder_color:str = kw.pop('placeholder_color', "grey")
+        error_color:str = kw.pop('error_color', "red")
+
+        rgb = master.winfo_rgb(master['background'])
+        background:str = '#{:02x}{:02x}{:02x}'.format(rgb[0] // 256, rgb[1] // 256, rgb[2] // 256)
+
+        sb1:ttk.Spinbox = ttk.Spinbox(master, **kw, background=background, foreground='black')
+        sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
+        sb2.configure(background='black', foreground=config.get_str('dark_text'), highlightbackground='black',
+                      fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
+        super().__init__(sb1, sb2)
+
+        self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)

@@ -2,10 +2,9 @@ from email import message
 import json
 from dataclasses import dataclass, asdict
 from functools import partial
-from datetime import datetime, timedelta
 from threading import Thread, Event
 from math import floor
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from copy import deepcopy
 
 import tkinter as tk
@@ -17,9 +16,9 @@ from config import config # type: ignore
 import edmc_data # type: ignore
 
 from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus
+from utils.misc import singleton, hfplus, str_truncate
 from .context import Context
-from .constants import OVERLAY_PROGRESS_DEFAULT, lbls, ovr, cnf, errs
+from .constants import OVERLAY_PROGRESS_DEFAULT, CarrierStates, lbls, ovr, cnf, errs
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -27,6 +26,7 @@ try:
 except ImportError:
     Debug.logger.warning(f"EDMC Overlay not installed")
     edmcoverlay = None
+    define_plugin_group = None
 
 #FLAGS = [edmc_data.FlagsDocked, edmc_data.FlagsLanded, edmc_data.FlagsLandingGearDown, edmc_data.FlagsShieldsUp, edmc_data.FlagsSupercruise,
 #         edmc_data.FlagsFlightAssistOff, edmc_data.FlagsHardpointsDeployed, edmc_data.FlagsInWing]
@@ -52,7 +52,8 @@ class Overlay():
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900),
                                          'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200),
-                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900)
+                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900),
+                                         'Alert': OvFrame('Alert', x = 640, y = 670, ttl=15)
                                          }
         self.stoppers:dict[str, Event] = {}
 
@@ -77,75 +78,102 @@ class Overlay():
             return
 
     @catch_exceptions
-    def update_jump_overlay(self) -> None:
+    def update_overlays(self) -> None:
         """ Update overlay after a waypoint """
         if not self._get_overlay(): return
 
         if Context.route.route == []:
             self.clear_frame('Default')
             self.clear_frame('Galaxy Map')
+            self.clear_frame('Alert')
+            if Context.router.carrier_state == CarrierStates.Idle:
+                self.clear_frame('Carrier')
             return
 
-        wp:str = Context.route.next_stop()
+        primary:str = Context.route.next_stop()
+        detail:str = Context.route.next_stop_station()
+        wp:str = f"{primary} · {detail}" if detail else primary
         if Context.route.jumps_to_wp() != 0:
             wp += f" ({Context.route.jumps_to_wp()} {lbls['jumps'] if Context.route.jumps_to_wp() != 1 else lbls['jump']})"
+        # 40 is a guessed overlay width -- adjust if it looks off in-game.
+        wp = str_truncate(wp, length=40, loc='right')
 
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
         # Galaxy map frame just shows next jump
-        Context.overlay.update_frame('Galaxy Map', message, ttl=120)
+        self.update_frame('Galaxy Map', message, ttl=120)
+
+        if Context.route.fleetcarrier:
+            self.display_carrier('Idle', 120, destination=primary)
+            return
 
         if self.progress_bar:
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
-        # The following variables are available for the progress display:
-            # Jumps completed {jc}
-            # Jumps remaining {jr}
-            # Jumps total {jt}
+        if Context.route.tracks_refuel_or_neutron():
+            # The following variables are available for the progress display:
+                # Jumps completed {jc}
+                # Jumps remaining {jr}
+                # Jumps total {jt}
 
-            # Distance to next checkpoint. {dc}
-            # Distance remaining {dr}
-            # Distance total {dt}
+                # Distance to next checkpoint. {dc}
+                # Distance remaining {dr}
+                # Distance total {dt}
 
-            # Distance per hour {dh}
-            # Jumps per hour {jh}
+                # Distance per hour {dh}
+                # Jumps per hour {jh}
 
-            # Refuel jumps {rj}
-            # Distance (or jumps) to next refuel {rd}
+                # Refuel jumps {rj}
+                # Distance (or jumps) to next refuel {rd}
+                # Refuel message {rs}
 
-            # Star type next stop {st}
+                # Star type next stop {st}
 
-        jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
-        jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
-        jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
+            jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
+            jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
+            jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
 
-        dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
-        dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
-        dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
+            dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
+            dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
+            dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
 
-        dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
-        jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
+            dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
+            jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
 
-        rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
-        rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
+            rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
+            rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
 
-        # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
-        st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
+            rs:str = lbls["next_refuel"].format(rd=rd) if rd != '-' else ""
 
-        try:
-            message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, st=st)})
-        except Exception as e:
-            Debug.logger.warning(f"Error formatting progress display: {e}")
-            message.append({'size': "normal", 'text': errs["format_error"]})
+            # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
+            st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
-        Context.overlay.update_frame('Default', message, ttl=120)
+            try:
+                message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)})
+            except Exception as e:
+                Debug.logger.warning(f"Error formatting progress display: {e}")
+                message.append({'size': "normal", 'text': errs["format_error"]})
+        else:
+            # No refuel/neutron columns -- show detail lines instead of the template.
+            detail_lines:list = Context.route.next_stop_details()
+            if detail_lines:
+                message.append({'size': "normal", 'text': "\n".join(detail_lines)})
+
+        self.update_frame('Default', message, ttl=120)
+
+        if Context.route.refuel() and not Context.route.fuel_full:
+            self.display_alert(ovr["refuel"])
+        elif Context.route.is_neutron() == True:
+            Context.overlay.display_alert(ovr["neutron"])
+        elif Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
+            self.clear_frame("Alert")
 
 
-    def display_carrier(self, type:str, end:datetime|int, destination:str = '') -> None:
+    def display_carrier(self, type:str, end:datetime|int = 120, destination:str = '') -> None:
         """ Display carrier arrival info """
         cstr:str = ''
 
-        Context.overlay.stop_countdown('Carrier')
+        self.stop_countdown('Carrier')
         match type:
             case 'Carrier':
                 cstr = ovr['jump'].format(d=destination, t='{t}')
@@ -153,8 +181,16 @@ class Overlay():
                 cstr = 'Squadron ' + ovr['jump'].format(d=destination, t='{t}')
             case 'Cooldown':
                 cstr = ovr['cooldown']
+            case 'Idle':
+                cstr = ovr['idle'].format(d=destination)
 
-        Context.overlay.display_countdown('Carrier', cstr, end)
+        self.display_countdown('Carrier', [{'size': 'large', 'text' : cstr}], end)
+
+
+    def display_alert(self, message:str = '') -> None:
+        """ Display an alert message """
+        self.show_frame('Alert')
+        self.update_frame('Alert', [{'size': 'large', 'text' : message}], ttl=5)
 
 
     def redraw_frames(self) -> None:
@@ -223,7 +259,7 @@ class Overlay():
     @catch_exceptions
     def create_frame(self, group:str, ovf:OvFrame) -> None:
         """ Initialize a frame """
-        if not self._get_overlay(): return
+        if not self._get_overlay() or not define_plugin_group: return
 
         kw:dict = {
             'plugin_group': group,
@@ -264,7 +300,7 @@ class Overlay():
                 args['color'] = c.get('colour', fr.text_colour)
                 args['fill'] = '#00000000'
                 args['w'] = c.get('width', 100)
-                args['h'] = c.get('height', 16)
+                args['h'] = c.get('height', 12)
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
@@ -275,7 +311,7 @@ class Overlay():
                 argsb['color'] = c.get('colour', fr.text_colour)
                 argsb['fill'] = c.get('colour', fr.text_colour)
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
-                argsb['h'] = c.get('height', 16)
+                argsb['h'] = c.get('height', 12)
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
@@ -285,6 +321,7 @@ class Overlay():
                 args['text'] = c.get('text', '')
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
+                Debug.logger.debug(f"Overlay {frame} message {args} {fr.enabled} {fr.visible}")
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
@@ -308,14 +345,16 @@ class Overlay():
     def _countdown(self, frame:str, content:str|list[dict], end:datetime, stop:Event) -> None:
         """ Update the countdown display frame until zero or stopped """
         rem:timedelta = end - datetime.now(tz=end.tzinfo)
-        while rem.seconds > 0 and not stop.wait(1):
+        while rem.total_seconds() > 0 and not stop.wait(1):
+            Debug.logger.debug(f"Countdown thread running {frame} {content} {end}")
             rem = end - datetime.now(tz=end.tzinfo)
-            display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
+            display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c.items()} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
-            Context.overlay.update_frame(frame, display, ttl=1)
+            Debug.logger.debug(f"Countdown thread running {frame} [{display}]")
+            self.update_frame(frame, display, ttl=1)
 
         stop.clear()
-        Context.overlay.update_frame(frame, '', ttl=1)
+        self.update_frame(frame, '', ttl=1)
         #Debug.logger.debug("Countdown thread is ending.")
 
 
@@ -325,13 +364,19 @@ class Overlay():
         self.stoppers[frame].set()
 
 
+    def stop_countdowns(self) -> None:
+        """ Stop every active countdown thread -- call on shutdown so background threads don't outlive the app """
+        for frame in list(self.stoppers.keys()):
+            self.stop_countdown(frame)
+
+
     @catch_exceptions
     def display_countdown(self, frame:str, content:str|list[dict], end:datetime|int|None) -> None:
         """
         Like display message but with a countdown either until a specific time or for some number of seconds
         The countdown should be in a variable t in the content string
         """
-        #Debug.logger.debug(f"Countdown starting {content} {end}")
+        Debug.logger.debug(f"Countdown starting {content} {end}")
         if end == None or frame not in self.ovfrs: return
         self.stop_countdown(frame)
         self.stoppers[frame] = Event()
@@ -364,7 +409,7 @@ class Overlay():
             entry.get("GuiFocus") != edmc_data.GuiFocusNoFocus:
             self.hide_frame('Carrier')
         else:
-            self.redraw_frame('Carrier')
+            self.show_frame('Carrier')
 
 
     @catch_exceptions
@@ -409,7 +454,7 @@ class Overlay():
         row:int = 0; col:int = 0
         nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT, font=bold).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
-        row += 1; col = 0
+        row += 1; col = 1
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():
@@ -459,7 +504,7 @@ class Overlay():
         self.progress_display = self.pv.get().replace('\\n', '\n')
         config.set(f"{Context.plugin_name}_progress_display", self.progress_display)
 
-        self.update_jump_overlay()
+        self.update_overlays()
         self.redraw_frames()
 
         Debug.logger.info(f"Saved frames to EDMC config")

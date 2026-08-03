@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .csv import CSV
     from .overlay import Overlay
     from .hotkeys import Hotkeys
+    from .prefs import Prefs
 from .route import Route
 
 @dataclass
@@ -36,6 +37,7 @@ class Context:
     modules:list = field(default_factory=list) # Module details from Coriolis
 
     # Global objects
+    prefs:'Prefs' = None
     route:Route = Route([], [], -1)
     router:'Router' = None
     csv:'CSV' = None

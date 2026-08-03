@@ -1,13 +1,22 @@
 # EDMC-NeutronDancer Changelog
 
-## V2.0.0 2026-??-??
+## v2.0.0 2026-??-??
 
 ### New Features
 
+* Added support for directly plotting:
+  * Road to Riches
+  * Exobiology (Expressway to Exomastery)
+  * Trade Routes
+  * Tourist Routes
+  * Fleet Carrier Routes
+* Added "Via" hops to the Neutron plotter, and migrated the Tourist plotter's stop list to the same +/- row UI
+* Next stop button, tooltip, and overlay support route-specific metrics
 * Made the directory for importing and exporting routes configurable in the preferences
 
 ### Changes
 
+* Refactored the plot UI and plot initiation to support more route types
 * Refactored ship loadout storage to be more efficient
 
 ## v1.10.0 2026-07-25
@@ -17,6 +26,7 @@
 * Added customizable progress text to overlay
 * Added optional progress bar to the jump overlay
 * Refuel reminder is automatically removed once you've refueled
+* Added alert overlays for Refuel and Neutron boost
 
 ### Changes
 

@@ -392,7 +392,7 @@ class UI():
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=lambda: self._clear_route())
+        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=lambda: self.clear_route())
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         return route_fr
@@ -501,7 +501,7 @@ class UI():
         self.show_frame('Route')
 
 
-    def _clear_route(self) -> None:
+    def clear_route(self) -> None:
         """ Display a confirmation dialog for clearing the current route """
         clear:bool = confirmDialog.askyesno(Context.plugin_title, lbls["clear_route_yesno"])
         if not clear: return

@@ -248,7 +248,7 @@ class Plotter(ABC):
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.ui.show_frame('Default'))
+        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: self.ui.clear_route())
         self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
 
 

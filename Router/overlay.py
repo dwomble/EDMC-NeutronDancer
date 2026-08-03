@@ -79,13 +79,14 @@ class Overlay():
     @catch_exceptions
     def update_overlays(self) -> None:
         """ Update overlay after a waypoint """
-        Debug.logger.debug(f"Updating overlays")
         if not self._get_overlay(): return
 
         if Context.route.route == []:
             self.clear_frame('Default')
             self.clear_frame('Galaxy Map')
             self.clear_frame('Alert')
+            if Context.router.carrier_state == 'Idle':
+                self.clear_frame('Carrier')
             return
 
         primary:str = Context.route.next_stop()
@@ -102,11 +103,9 @@ class Overlay():
         self.update_frame('Galaxy Map', message, ttl=120)
 
         if Context.route.fleetcarrier:
-            self.update_carrier_overlay('Idle', 120, destination=primary)
-            Debug.logger.debug(f"Fleet carrier route")
+            self.display_carrier('Idle', 120, destination=primary)
             return
 
-        Debug.logger.debug(f"Regular route")
         if self.progress_bar:
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
@@ -169,7 +168,7 @@ class Overlay():
             self.clear_frame("Alert")
 
 
-    def update_carrier_overlay(self, type:str, end:datetime|int = 120, destination:str = '') -> None:
+    def display_carrier(self, type:str, end:datetime|int = 120, destination:str = '') -> None:
         """ Display carrier arrival info """
         cstr:str = ''
 
@@ -182,11 +181,9 @@ class Overlay():
             case 'Cooldown':
                 cstr = ovr['cooldown']
             case 'Idle':
-                self.clear_frame('Carrier')
-                self.update_frame('Carrier', ovr['idle'].format(d=destination), ttl=end if isinstance(end, int) else 120)
-                return
+                cstr = ovr['idle'].format(d=destination)
 
-        self.display_countdown('Carrier', cstr, end)
+        self.display_countdown('Carrier', [{'size': 'large', 'text' : cstr}], end)
 
 
     def display_alert(self, message:str = '') -> None:
@@ -323,6 +320,7 @@ class Overlay():
                 args['text'] = c.get('text', '')
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
+                Debug.logger.debug(f"Overlay {frame} message {args} {fr.enabled} {fr.visible}")
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
@@ -347,9 +345,11 @@ class Overlay():
         """ Update the countdown display frame until zero or stopped """
         rem:timedelta = end - datetime.now(tz=end.tzinfo)
         while rem.seconds > 0 and not stop.wait(1):
+            Debug.logger.debug(f"Countdown thread running {frame} {content} {end}")
             rem = end - datetime.now(tz=end.tzinfo)
-            display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c} for c in content] \
+            display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c.items()} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
+            Debug.logger.debug(f"Countdown thread running {frame} [{display}]")
             self.update_frame(frame, display, ttl=1)
 
         stop.clear()
@@ -369,7 +369,7 @@ class Overlay():
         Like display message but with a countdown either until a specific time or for some number of seconds
         The countdown should be in a variable t in the content string
         """
-        #Debug.logger.debug(f"Countdown starting {content} {end}")
+        Debug.logger.debug(f"Countdown starting {content} {end}")
         if end == None or frame not in self.ovfrs: return
         self.stop_countdown(frame)
         self.stoppers[frame] = Event()
@@ -402,7 +402,7 @@ class Overlay():
             entry.get("GuiFocus") != edmc_data.GuiFocusNoFocus:
             self.hide_frame('Carrier')
         else:
-            self.redraw_frame('Carrier')
+            self.show_frame('Carrier')
 
 
     @catch_exceptions

@@ -160,13 +160,13 @@ class Router():
                 self.carrier_dest:str = entry.get('SystemName', '')
                 end:datetime = datetime.fromisoformat(entry.get("DepartureTime", ''))
 
-                Context.overlay.update_carrier_overlay(entry.get('CarrierType', ''), end, self.carrier_dest)
+                Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
                 Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
-                Context.overlay.update_carrier_overlay('Cooldown', 60)
+                Context.overlay.display_carrier('Cooldown', 60)
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
@@ -176,7 +176,7 @@ class Router():
                     Context.ui.update_progress()
                 self.carrier_state = CarrierStates.Cooldown
                 Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-                Context.overlay.update_carrier_overlay('Cooldown', 300)
+                Context.overlay.display_carrier('Cooldown', 300)
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
             case 'CarrierStats' if self.carrier_id == entry.get('CarrierID', ''):
@@ -212,7 +212,7 @@ class Router():
             Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
         Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-        Context.overlay.update_carrier_overlay('Cooldown', 300)
+        Context.overlay.display_carrier('Cooldown', 300)
 
 
     def cooldown_complete(self) -> None:
@@ -550,7 +550,6 @@ class Router():
         ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 
         # Migrate
-        Debug.logger.debug(f"Dict: {dict.keys()}")
         if dict.get('neutron_params'):
             self.route_params['Neutron'] = dict.get('neutron_params', {})
             self.route_params['Galaxy'] = dict.get('galaxy_params', {})

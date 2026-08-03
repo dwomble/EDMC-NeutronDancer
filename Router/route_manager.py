@@ -85,19 +85,6 @@ class Router():
                 return id
         return ""
 
-    def shipnames(self) -> list:
-        """ Return a list of shipnames """
-        names:list = list(self.shiplist.values())
-        names.reverse()
-        return names
-
-    def shipid(self, name:str) -> str:
-        """ Get a ship's id from its name """
-        for id, ship in self.shiplist.items():
-            if name == ship:
-                return id
-        return ""
-
 
     def swap_ship(self, ship_id:str) -> None:
         """

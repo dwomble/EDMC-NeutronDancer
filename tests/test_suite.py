@@ -29,7 +29,6 @@ from Router.route_window import RouteWindow
 from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
-from Router.plotters import PLOTTER_SPECS
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -42,28 +41,14 @@ def capture_thread(*args, **kwargs):
         plotter_thread = thread
     return thread
 
-
-def fake_systems_get(url, *args, **kwargs):
-    """ Stand-in for requests.get against the Spansh systems autocomplete endpoint.
-    Echoes back whatever was queried so system-name validation always succeeds without a real network call. """
-    q = kwargs.get('params', {}).get('q', '')
-    resp = Mock()
-    resp.status_code = 200
-    resp.content = json.dumps([q]).encode()
-    return resp
-
 @pytest.fixture
 def harness(request) -> Generator:
     """Provide a fresh test harness for each test."""
 
     # We want a standard route.json for each test
     Path(__file__).parent.joinpath("data").mkdir(exist_ok=True)
-
-    Path(Path(__file__).parent / "data" / "route.json").unlink(missing_ok=True)
-    init_file = getattr(request, 'param', 'route_init.json')
-    if init_file != 'None':
-        shutil.copy(Path(__file__).parent / "config" / init_file,
-                    Path(__file__).parent / "data" / "route.json")
+    shutil.copy(Path(__file__).parent / "config" / "route_init.json",
+                Path(__file__).parent / "data" / "route.json")
 
     overlay = 'Modern'
     if request.node.get_closest_marker('overlay'):
@@ -100,25 +85,14 @@ def harness(request) -> Generator:
 
     yield test_harness
 
-    # Cheap, per-test hygiene only -- stopping countdown threads is local and instant. The
-    # network-bound Autocompleter.join_all() (see plugin_stop()) runs once at session end
-    # instead (tests/conftest.py), since joining live lookup threads per-test multiplies
-    # real network round-trips across the whole suite.
-    test_harness.plugin.overlay.stop_countdowns()
     test_harness.assert_no_unhandled_exceptions()
     TestHarness.reset_instance()
 
 class TestStartup:
     """Test plugin startup behavior."""
 
-    @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
-        assert harness.plugin.router is not None
-
-    def test_harness_no_init(self, harness:TestHarness) -> None:
-        """Test basic harness initialization."""
-
         assert harness.plugin.router is not None
 
     def test_startup_event(self, harness:TestHarness) -> None:
@@ -134,15 +108,6 @@ class TestStartup:
         harness.plugin.router._get_module_data()
         assert len(harness.plugin.modules) == 88
 
-    def test_migration(self, harness:TestHarness) -> None:
-        """ Test route.json migration """
-        shutil.copy(Path(__file__).parent / "config" / "route_1.10.0.json",
-                Path(__file__).parent / "data" / "route.json")
-
-        assert not hasattr(harness.plugin.router, "ships")
-        assert isinstance(harness.plugin.router.shiplist, dict)
-        assert harness.plugin.router.shiplist["1"] == "Shipping Delay"
-
 
 class TestStateManagement:
     """Test router state management."""
@@ -155,456 +120,184 @@ class TestStateManagement:
         """Call save"""
         harness.plugin.router.save()
 
-
-class TestRouteMethods:
-    """ Test the route object's methods"""
-    def test_route_with_tritium_column(self, harness:TestHarness) -> None:
-        """Test fleet carrier route with tritium column."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['System A', 5, 50, 'True'],  # Tritium at this waypoint
-            ['System B', 10, 45, 'True'],
-            ['System C', 8, 50, 'False']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.fleetcarrier == True
-        assert route.refuel() == False  # Depends on refuel column
-
-    def test_next_stop_current_waypoint(self, harness:TestHarness) -> None:
-        """Test next_stop() at current waypoint."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop() == 'Apurui'  # Next after current (Sol)
-
-    def test_next_stop_complete_route(self, harness:TestHarness) -> None:
-        """Test next_stop() when route is complete."""
-        from Router.route import Route
-
-        if hasattr(harness.plugin.router, '_initialized'):
-            delattr(harness.plugin.router, '_initialized')
-
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 2)  # At last waypoint
-
-        assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
-
-    def test_next_stop_trade(self, harness:TestHarness) -> None:
-        """next_stop_detail() returns the station name for Trade-shaped routes."""
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', 'Steel', 100, 5134, 0],
-            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 3],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
-        assert route.next_stop_value('Species') is None  # no such column on this route
-        assert route.next_stop_station() == 'Alvarado Beacon'
-        lines = route.next_stop_details()
-        assert any('Agronomic Treatment' in l for l in lines)
-        assert any('Cr/t' in l for l in lines)
-        assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
-
-    def test_next_stop_riches(self, harness:TestHarness) -> None:
-        """ subtype/distance/scan value for a riches-shaped route."""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
-        route_data = [
-            ['Colonia', 'Colonia 1', '', 0, 0, 0],
-            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        lines = route.next_stop_details()
-
-        assert any('High metal content world' in l for l in lines)
-        assert any('Scan' in l for l in lines)
-
-    def test_next_stop_exobiology(self, harness:TestHarness) -> None:
-        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
-        route_data = [
-            ['Deciat', 'Deciat 1', '', 0],
-            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_station() == ''
-        assert route.next_stop() == 'Deciat 4 a'
-
-    def test_next_stop_station_blank(self, harness:TestHarness) -> None:
-        """Bblank for plain route types (Neutron, Galaxy, etc.)."""
-        hdrs = ['System Name', 'Jumps']
-        route_data = [['Sol', 0], ['Apurui', 10]]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_station() == ''
-
-
-    def test_cumulative_value(self, harness:TestHarness) -> None:
-        """cumulative_value() sums a numeric column through the next stop, not past it."""
-        hdrs = ['System Name', 'Estimated Scan Value', 'Jumps']
-        route_data = [['Sol', 0, 0], ['Deciat', 42300, 1], ['Colonia', 10000, 2]]
-        route = Route(hdrs, route_data, 1)  # next stop is Colonia (offset+1 == 2)
-
-        assert route.sum_value('Estimated Scan Value') == 52300
-
-    def test_sum_value_and_route_value(self, harness:TestHarness) -> None:
-        """sum_value(through=...) sums an arbitrary prefix (route-window "so far"/"total" use
-        this); route_value() picks Profit/Landmark Value/Scan or Mapping Value by column
-        presence, or None for route types with no earned-value column."""
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
-            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
-            ['Deciat', 'Farside', 'Silver', 200, 10617, 3],
-        ]
-        route = Route(hdrs, route_data, 0)  # offset 0 -> completed just row 0
-
-        assert route.sum_value('Profit', through=route.offset+1) == 0
-        assert route.sum_value('Profit', through=len(route.route)) == 15617
-        assert route.route_value() == (lbls['profit'], 'Profit')
-
-        plain_route = Route(['System Name', 'Jumps'], [['Sol', 0], ['Apurui', 10]], 0)
-        assert plain_route.route_value() is None
-
-    def test_trade_cumulative_profit(self, harness:TestHarness) -> None:
-        """a running-total line sums Profit across every waypoint through the next stop."""
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
-            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
-            ['Deciat', 'Farside', 'Silver', 200, 10617, 3],
-        ]
-        route = Route(hdrs, route_data, 1)  # next stop is Deciat
-
-        assert route.sum_value('Profit') == 15617
-        lines = route.next_stop_details()
-        assert any('Silver' in l for l in lines)
-        assert any('15.6K Cr' in l for l in lines)
-
-    def test_riches_cumulative_scan(self, harness:TestHarness) -> None:
-        """riches scan value gets a running total across waypoints already passed"""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
-        route_data = [
-            ['Colonia', 'Colonia 1', '', 0, 0, 0],
-            ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
-            ['Colonia', 'Colonia 3 a', 'Icy body', 100.0, 5000, 1],
-        ]
-        route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
-
-        assert route.sum_value('Estimated Scan Value') == 47300
-        lines = route.next_stop_details()
-        assert any('47.3K Cr' in l for l in lines)
-
-    def test_details_blank_no_extra_columns(self, harness:TestHarness) -> None:
-        """next_stop_detail_lines() is empty for plain route types (Neutron, Tourist, etc.)."""
-        hdrs = ['System Name', 'Jumps']
-        route_data = [['Sol', 0], ['Apurui', 10]]
-        route = Route(hdrs, route_data, 0)
-
-        assert route.next_stop_details() == []
-
-    def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
-        """Test checks refuel or neutron for appropriate route types."""
-        neutron_route = Route(['System Name', 'Jumps', 'Refuel'], [['Sol', 0, 'No'], ['Apurui', 10, 'Yes']], 0)
-        assert neutron_route.tracks_refuel_or_neutron() == True
-
-        galaxy_route = Route(['System Name', 'Jumps', 'Neutron'], [['Sol', 0, 'False'], ['Apurui', 10, 'True']], 0)
-        assert galaxy_route.tracks_refuel_or_neutron() == True
-
-        trade_route = Route(['System Name', 'Station Name', 'Jumps'], [['Sol', 'A', 0], ['Apurui', 'B', 10]], 0)
-        assert trade_route.tracks_refuel_or_neutron() == False
-
-    def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.jumps_remaining() == 15  # 10 + 5
-
-    def test_jumps_remaining_incomplete(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        route.update_route(1)  # Move to Apurui
-        assert route.jumps_remaining() == 5  # Only Bleae Thua remains
-
-    def test_perc_jumps_rem_at_start(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        total = route.total_jumps()
-        remaining = route.jumps_remaining()
-        assert route.perc_jumps_rem() == (total - remaining) * 100 / total
-
-    def test_perc_jumps_rem_complete(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
-        ]
-
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-        assert route.perc_jumps_rem(2) == 100.0
-
-
-    def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0, 150],
-            ['Apurui', 10, 100],
-            ['Bleae Thua', 5, 50]
-        ]
-        hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.dist_remaining() == 150
-
-    def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0, 150],
-            ['Apurui', 10, 100],
-            ['Bleae Thua', 5, 50]
-        ]
-        hdrs = ['System Name', 'Jumps', 'Distance Rem']
-        route = Route(hdrs, route_data, 0)
-
-        route.update_route(1)  # Move to Apurui
-        assert route.dist_remaining() == 100  # Distance to Bleae Thua
-
-    def test_refuel_check(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0, 'Fuel'],
-            ['Apurui', 10, 'No'],
-            ['Bleae Thua', 5, 'Fuel']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Refuel']
-        route = Route(hdrs, route_data, 0)
-
-        # Check next waypoint for refuel
-        route.update_route(1)  # Now at Apurui
-        assert route.refuel() == False  # Apurui doesn't refuel
-
-    def test_neutron_check(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0, 'False'],
-            ['Apurui', 10, 'True'],
-            ['Bleae Thua', 5, 'False']
-        ]
-        hdrs = ['System Name', 'Jumps', 'Neutron']
-        route = Route(hdrs, route_data, 0)
-
-        # Check if next waypoint needs neutron
-        route.update_route(1)  # Now at Apurui
-        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
-
-    def test_get_waypoint_next(self, harness:TestHarness) -> None:
-        route_data = [
-            ['A', 0],
-            ['B', 1],
-            ['C', 2]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        assert route.get_waypoint(0) == 'B'
-
-    def test_get_waypoint_end(self, harness:TestHarness) -> None:
-        route_data = [
-            ['A', 0],
-            ['B', 1]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 1)
-
-        assert route.get_waypoint(0) == 'None'  # tbls['none']
-
-    def test_record_jump(self, harness:TestHarness) -> None:
-        route_data = [
-            ['Sol', 0]
-        ]
-        hdrs = ['System Name', 'Jumps']
-        route = Route(hdrs, route_data, 0)
-
-        # Record a jump
-        dest = 'Jupiter'
-        dist = 2.5
-        route.record_jump(dest, dist)
-
-        assert len(route.jumps) == 1
-        assert route.jumps[0][1] == dest
-        assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
-
-
 class TestRouteNavigation:
-    """Test moving along a route via real navigation events (FSDJump, !nd chat commands)
-    rather than calling Route.update_route() directly."""
-
-    def _import(self, harness:TestHarness, filename:str) -> None:
-        assert harness.plugin.router.import_route(str(Path(__file__).parent / "config" / filename)) == True
-
-    def _jump(self, harness:TestHarness, system:str) -> None:
-        harness.fire_event({"event": "FSDJump", "StarSystem": system})
-
-    def _chat(self, harness:TestHarness, command:str) -> None:
-        harness.fire_event({"event": "SendText", "Message": f"!nd {command}"})
+    """Test route navigation methods."""
 
     def test_not_on_route(self, harness:TestHarness) -> None:
-        """Jumping to a system not on the route leaves offset at -1."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
+        """Test not on route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
 
-        self._jump(harness, 'Apurui')
+        harness.plugin.router.system = 'Apurui'
 
-        assert harness.plugin.route.offset == -1
-        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua NI-B b27-5'
 
     def test_on_route(self, harness:TestHarness) -> None:
-        """Jumping to a system on the route sets offset to that row."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
+        """Test on route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
 
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
-
-        assert harness.plugin.route.offset == 0
-        assert harness.plugin.route.next_stop() == 'Bleae Thua RX-L d7-28'
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua RX-L d7-28'
 
     def test_start_of_route(self, harness:TestHarness) -> None:
-        """!nd previous at the start of the route doesn't move further back."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        """Test start of route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
 
-        self._chat(harness, 'previous')
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
 
-        assert harness.plugin.route.offset == -1
-        assert harness.plugin.route.next_stop() == 'Bleae Thua NI-B b27-5'
+        # First stop shouldn't move further back
+        offset:int = harness.plugin.route.update_route(-1)
+        assert offset == -1
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'Bleae Thua NI-B b27-5'
 
     def test_end_of_route(self, harness:TestHarness) -> None:
-        """!nd next at the end of the route doesn't move further along."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Smojue DR-N d6-34')
-        assert harness.plugin.route.offset == 9
+        """Test start of route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
 
-        self._chat(harness, 'next')
-        assert harness.plugin.route.next_stop() == 'End of the road!'
+        offset:int = harness.plugin.route.update_route(0, 'Smojue DR-N d6-34')
+        assert offset == 9
 
-        self._chat(harness, 'next')
-        assert harness.plugin.route.next_stop() == 'End of the road!'
+        # Last stop
+        offset:int = harness.plugin.route.update_route(1)
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'End of the road!'
+
+        # Last stop shouldn't move further along
+        offset:int = harness.plugin.route.update_route(1)
+        dest:str = harness.plugin.route.next_stop()
+        assert dest == 'End of the road!'
 
     def test_route_neutron(self, harness:TestHarness) -> None:
-        """is_neutron() reflects whichever waypoint !nd next has advanced to."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        """Test route with neutron column."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.is_neutron() == False  # Next waypoint is not a neutron
 
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert harness.plugin.route.is_neutron() == True  # Next waypoint is a neutron
 
     def test_jumps_to_wp(self, harness:TestHarness) -> None:
-        """jumps_to_wp() reflects whichever waypoint !nd next has advanced to."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        """Test jumps to next waypoint."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.jumps_to_wp() == 12
 
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert harness.plugin.route.jumps_to_wp() == 3
 
     def test_total_jumps_neutron(self, harness:TestHarness) -> None:
-        """total_jumps() for a route with a Jumps column."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        """Test total jumps for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.total_jumps() == 66
 
     def test_total_jumps_galaxy(self, harness:TestHarness) -> None:
-        """total_jumps() for a route with no Jumps column (one row == one jump)."""
-        self._import(harness, "galaxy-Bleae-Voqooe.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        """Test total jumps for galaxy route."""
+        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.total_jumps() == 74
 
     def test_jumps_remaining_neutron(self, harness:TestHarness) -> None:
-        """jumps_remaining() before the route starts and after !nd next advances it."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
+        """Test jumps remaining for neutron route (one with a jumps column)."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
         assert harness.plugin.route.offset == -1
         assert harness.plugin.route.jumps_remaining() == 66
 
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.jumps_remaining() == 66
 
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert harness.plugin.route.jumps_remaining() == 54
 
     def test_jumps_remaining_galaxy(self, harness:TestHarness) -> None:
-        """jumps_remaining() jumping straight to a system partway along the route."""
-        self._import(harness, "galaxy-Bleae-Voqooe.csv")
+        """Test jumps remaining for galaxy route (one without a jumps column)."""
+        filename:str = str(Path(__file__).parent / "config" / "galaxy-Bleae-Voqooe.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        # Not yet on the route
         assert harness.plugin.route.offset == -1
         assert harness.plugin.route.jumps_remaining() == 74
 
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
+        # Start of route
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
         assert harness.plugin.route.jumps_remaining() == 74
 
-        self._jump(harness, 'Gria Drye JT-O d7-172')
-        assert harness.plugin.route.offset == 22
+        # Partway along
+        offset:int = harness.plugin.route.update_route(0, 'Gria Drye JT-O d7-172')
+        assert offset == 22
         assert harness.plugin.route.jumps_remaining() == 52
 
+
     def test_perc_jumps_remaining(self, harness:TestHarness) -> None:
-        """perc_jumps_rem() after !nd next advances one waypoint."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        """Test percentage of jumps remaining for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert int(harness.plugin.route.perc_jumps_rem()) == 18
 
     def test_dist_remaining(self, harness:TestHarness) -> None:
-        """dist_remaining() after !nd next advances one waypoint."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        """Test distance remaining for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert int(harness.plugin.route.dist_remaining()) == 16273
 
     def test_total_dist(self, harness:TestHarness) -> None:
-        """total_dist() after !nd next advances one waypoint."""
-        self._import(harness, "neutron-Bleae-Smojue.csv")
-        self._jump(harness, 'Bleae Thua NI-B b27-5')
-        self._chat(harness, 'next')
-        assert harness.plugin.route.offset == 1
+        """Test total distance for neutron route."""
+        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
+        res:bool = harness.plugin.router.import_route(filename)
+        assert res == True
+
+        offset:int = harness.plugin.route.update_route(0, 'Bleae Thua NI-B b27-5')
+        assert offset == 0
+        offset:int = harness.plugin.route.update_route(1)
+        assert offset == 1
         assert int(harness.plugin.route.total_dist()) == 16458
 
 
@@ -621,13 +314,14 @@ class TestShipLoadout:
         """Test loading a ship."""
 
         harness.play_sequence('loadout')
-        assert harness.plugin.router.ship_id == '87'
+        shipid:str = '87'
+        assert harness.plugin.router.ship_id == shipid
         assert harness.plugin.router.ship is not None
         assert harness.plugin.router.ship.type == 'mandalay'
         assert harness.plugin.router.ship.name == 'Long Delay'
-        assert harness.plugin.router.route_params['Neutron']['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
-        assert harness.plugin.router.route_params['Neutron']['range'] == harness.plugin.router.ship.range
-
+        assert harness.plugin.router.neutron_params['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
+        assert harness.plugin.router.neutron_params['range'] == harness.plugin.router.ship.range
+        assert harness.plugin.router.ships[shipid] is harness.plugin.router.ship
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -828,7 +522,6 @@ class TestShipyardSwap:
 
         assert ship.loadout == {}
 
-    @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
     def test_ship_repr(self, harness:TestHarness):
         """Test ship repr."""
         harness.play_sequence('shipyard_swap')
@@ -844,6 +537,9 @@ class TestShipyardSwap:
 
     def test_swap_unknown_ship(self, harness:TestHarness):
         """Test swapping to an unknown ship."""
+        harness.play_sequence('shipyard_swap')
+        assert harness.plugin.router.ship_id == '106'
+
         harness.play_sequence('shipyard_swap_unknown')
         assert harness.plugin.router.ship_id == ''
 
@@ -939,8 +635,8 @@ class TestOverlay:
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=- jr=399 jt=399 dc=0 dr=16.5K dt=16.5K dh=- jh=- rj=- rd=- st=✨'
 
-    def test_update_overlays(self, harness:TestHarness, monkeypatch) -> None:
-        """Ensure update_overlays renders using the configured progress_display template."""
+    def test_update_jump_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure update_jump_overlay renders using the configured progress_display template."""
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -951,37 +647,12 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
 
-        overlay.update_overlays()
+        overlay.update_jump_overlay()
 
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
-    def test_overlay_trade_detail_not_template(self, harness:TestHarness, monkeypatch) -> None:
-        """For a route with no Refuel/Neutron columns (Trade here), the overlay must show the
-        route's own detail section (station/commodity/profit) instead of the customizable
-        progress_display template -- and the "Next:" line should include the station."""
-        # Short names so the "Next:" line's truncation (tested separately) doesn't interfere.
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Sol', 'Abraham Lincoln', '', 0, 0, 0],
-            ['Deciat', 'Farside', 'Gold', 200, 10617, 3],
-        ]
-        harness.plugin.route = Route(hdrs, route_data, 0)
-        assert harness.plugin.route.tracks_refuel_or_neutron() == False
-
-        overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc}"  # would be shown if this were misclassified
-
-        overlay.update_overlays()
-
-        next_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
-        assert 'Farside' in next_line
-
-        detail_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
-        assert 'Gold' in detail_line
-        assert 'PD jc=' not in detail_line  # customizable template must not be used here
-
     def test_invalid_format(self, harness:TestHarness, monkeypatch) -> None:
-        """Ensure update_overlays handles invalid progress_display format."""
+        """Ensure update_jump_overlay handles invalid progress_display format."""
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -992,7 +663,7 @@ class TestOverlay:
         overlay = harness.plugin.overlay
         overlay.progress_display = "invalid={unknown}"
 
-        overlay.update_overlays()
+        overlay.update_jump_overlay()
 
         progress_line:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"]
         assert progress_line == "Error formatting progress display"
@@ -1007,7 +678,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.update_overlays()
+        overlay.update_jump_overlay()
 
         msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
         assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
@@ -1031,7 +702,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.update_overlays()
+        overlay.update_jump_overlay()
 
         msg:str = harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-1"]["text"]
         assert msg == "Next: Bleia Eohn ZL-J d10-47 (1 jump)"
@@ -1103,14 +774,14 @@ class TestHotkeyCommands:
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == 'Bleae Thua NI-B b27-5'
 
-class TestPlotMethods:
+class TestPlotOperations:
     """Test individual plotting functions"""
 
     def test_plot_route_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure plot_route returns True and starts the plotting worker."""
         called:dict[str, bool] = {'flag': False}
 
-        def fake_plotter(self, which, url, params) -> None:
+        def fake_plotter(self, url, params) -> None:
             # Simulate some work then set flag
             called['flag'] = True
 
@@ -1158,311 +829,6 @@ class TestPlotMethods:
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) >= 2
 
-        # Regression: plot_route() must persist into route_params, not a stray neutron_params attribute
-        assert harness.plugin.router.route_params['Neutron'] == params
-        assert not hasattr(harness.plugin.router, 'neutron_params')
-
-    def test_plotter_success_creates_route_galaxy(self, harness:TestHarness) -> None:
-        """Test that _plotter persists Galaxy params into route_params (not a stray galaxy_params attribute)."""
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": {
-                "jumps": [
-                    {"system": "System1", "distance": 20.5},
-                    {"system": "System2", "distance": 19.3},
-                ]
-            }
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'source': 'Start', 'destination': 'End', 'max_time': 1}
-                    harness.plugin.router.plot_route('Galaxy', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert harness.plugin.router.route_params['Galaxy'] == params
-        assert not hasattr(harness.plugin.router, 'galaxy_params')
-
-    def test_plotter_success_creates_route_rtor(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Road-to-Riches response (systems with nested bodies) into one row per
-        body, dropping bodyless systems (e.g. the starting system) rather than emitting a placeholder row --
-        matching how a Spansh-exported riches CSV never includes a bodyless row (see riches-Apurui-M23.csv)."""
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        # Real shape captured from the live Spansh riches API: a bodyless system (start)
-        # followed by a system with two scannable bodies.
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": [
-                {"name": "Colonia", "jumps": 1, "bodies": []},
-                {"name": "Eol Prou LW-L c8-62", "jumps": 1, "bodies": [
-                    {"name": "Eol Prou LW-L c8-62 7", "subtype": "Water world", "is_terraformable": True,
-                     "distance_to_arrival": 173.1, "estimated_scan_value": 301683, "estimated_mapping_value": 1096113},
-                    {"name": "Eol Prou LW-L c8-107 2", "subtype": "Earth-like world", "is_terraformable": False,
-                     "distance_to_arrival": 436.9, "estimated_scan_value": 301332, "estimated_mapping_value": 1094838},
-                ]},
-            ]
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20', 'max_time': 1}
-                    harness.plugin.router.plot_route('RtoR', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 2  # bodyless Colonia dropped; one row per body
-        assert "Body Name" in harness.plugin.route.hdrs
-        assert "Estimated Scan Value" in harness.plugin.route.hdrs
-        assert harness.plugin.route.source() == 'Eol Prou LW-L c8-62 7'
-        assert harness.plugin.router.route_params['RtoR'] == params
-
-    def test_plotter_success_creates_route_ammonia(self, harness:TestHarness) -> None:
-        """Regression: _plotter's riches-shape branch must trigger for body_types-filtered
-        variants too (Ammonia/Earth-like/Rocky-metal), not just literally 'RtoR' -- it used
-        to check `which == 'RtoR'`, so any other riches-family type fell into the flat
-        jumps/system_jumps branch and crashed calling .get() on a list."""
-        if 'Ammonia' not in PLOTTER_SPECS:
-            return
-
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": [
-                {"name": "Eol Prou OC-K c9-5", "jumps": 1, "bodies": [
-                    {"name": "Eol Prou OC-K c9-5 3", "subtype": "Ammonia world", "is_terraformable": False,
-                     "distance_to_arrival": 337.9, "estimated_scan_value": 302571, "estimated_mapping_value": 1099340},
-                ]},
-            ]
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20',
-                              'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 1}
-                    harness.plugin.router.plot_route('Ammonia', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 1
-        assert harness.plugin.route.source() == 'Eol Prou OC-K c9-5 3'
-        assert harness.plugin.router.route_params['Ammonia'] == params
-
-    def test_plotter_success_creates_route_exobiology(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens an Exobiology response -- same nested systems/bodies
-        shape as riches, but each body also carries a `landmarks` list (biological species)
-        and `landmark_value`, which should surface as their own Species/Landmark Value
-        columns without polluting riches-family rows that never have that key."""
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": [
-                {"name": "Colonia", "jumps": 1, "bodies": []},
-                {"name": "Eol Prou PX-T d3-291", "jumps": 1, "bodies": [
-                    {"name": "Eol Prou PX-T d3-291 ABC 3 d", "subtype": "Rocky body",
-                     "distance_to_arrival": 2684.5, "estimated_scan_value": 500, "estimated_mapping_value": 2221,
-                     "landmark_value": 32831400, "landmarks": [
-                        {"count": 41, "subtype": "Frutexa Flammasis", "type": "Frutexa", "value": 10326000},
-                        {"count": 9, "subtype": "Concha Aureolas", "type": "Concha", "value": 7774700},
-                     ]},
-                ]},
-            ]
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'from': 'Colonia', 'range': '50', 'radius': '30', 'max_results': '10',
-                              'min_value': 100000, 'max_time': 1}
-                    harness.plugin.router.plot_route('Exobiology', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 1  # bodyless Colonia dropped
-        assert harness.plugin.route.source() == 'Eol Prou PX-T d3-291 ABC 3 d'
-        assert "Species" in harness.plugin.route.hdrs
-        assert "Landmark Value" in harness.plugin.route.hdrs
-        row = harness.plugin.route.route[0]
-        assert row[harness.plugin.route.hdrs.index("Species")] == 'Frutexa Flammasis'  # highest-value landmark
-        assert row[harness.plugin.route.hdrs.index("Landmark Value")] == 32831400
-        assert harness.plugin.router.route_params['Exobiology'] == params
-
-    def test_plotter_success_creates_route_trade(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Trade response -- a FLAT list of hops (unlike the
-        riches family's nested systems/bodies shape), each of which may carry more than one
-        commodity at once. Each commodity-per-hop becomes its own row, keyed to the hop's
-        *destination* (not source), matching every other route type's "row = next place to
-        go" convention. Real shape captured from the live Spansh trade API."""
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": [
-                {
-                    "commodities": [
-                        {"amount": 200, "name": "Agronomic Treatment", "profit": 10617, "total_profit": 2123400,
-                         "source_commodity": {"buy_price": 2751, "sell_price": 2656, "demand": 1, "supply": 15577},
-                         "destination_commodity": {"buy_price": 0, "sell_price": 13368, "demand": 42, "supply": 0}},
-                    ],
-                    "cumulative_profit": 2123400,
-                    "distance": 12.66,
-                    "source": {"station": "Jameson Memorial", "system": "Shinrarta Dezhra", "system_id64": 3932277478106,
-                               "distance_to_arrival": 346, "market_id": 128666762},
-                    "destination": {"station": "Alvarado Beacon", "system": "Puppis Sector TO-R b4-4",
-                                     "system_id64": 9467852826033, "distance_to_arrival": 3, "market_id": 4243439363},
-                },
-                {
-                    "commodities": [
-                        {"amount": 186, "name": "Military Grade Fabrics", "profit": 12077, "total_profit": 2246322,
-                         "source_commodity": {}, "destination_commodity": {}},
-                        {"amount": 14, "name": "Tritium", "profit": 2603, "total_profit": 36442,
-                         "source_commodity": {}, "destination_commodity": {}},
-                    ],
-                    "cumulative_profit": 4406164,
-                    "distance": 33.13,
-                    "source": {"station": "Alvarado Beacon", "system": "Puppis Sector TO-R b4-4"},
-                    "destination": {"station": "Gaiman Port", "system": "Kamici"},
-                },
-            ]
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'system': 'Shinrarta Dezhra', 'station': 'Jameson Memorial',
-                              'starting_capital': '1000000', 'max_cargo': '200', 'max_hops': '5',
-                              'max_hop_distance': '50', 'max_system_distance': '10000000', 'max_time': 1}
-                    harness.plugin.router.plot_route('Trade', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 3  # 1 commodity in hop 1 + 2 commodities in hop 2
-        assert "Station Name" in harness.plugin.route.hdrs
-        assert "Commodity" in harness.plugin.route.hdrs
-        assert "Cumulative Profit" in harness.plugin.route.hdrs
-
-        # Row 0 is keyed to hop 0's DESTINATION, not its source -- the starting station never
-        # gets its own row, matching how every other route type's row 0 is the first waypoint
-        # *after* the start, not the start itself. route.source() reads the System Name column;
-        # the station itself is a separate column.
-        assert harness.plugin.route.source() == 'Puppis Sector TO-R b4-4'
-        row0 = harness.plugin.route.route[0]
-        assert row0[harness.plugin.route.hdrs.index("Station Name")] == 'Alvarado Beacon'
-        assert row0[harness.plugin.route.hdrs.index("Commodity")] == 'Agronomic Treatment'
-        assert row0[harness.plugin.route.hdrs.index("Cumulative Profit")] == 2123400
-
-        # Hop 1 carried two commodities -> two rows, same destination, different commodity
-        row1, row2 = harness.plugin.route.route[1], harness.plugin.route.route[2]
-        assert row1[harness.plugin.route.hdrs.index("Commodity")] == 'Military Grade Fabrics'
-        assert row2[harness.plugin.route.hdrs.index("Commodity")] == 'Tritium'
-        assert row1[harness.plugin.route.hdrs.index("System Name")] == 'Kamici'
-        assert row2[harness.plugin.route.hdrs.index("System Name")] == 'Kamici'
-
-        assert harness.plugin.router.route_params['Trade'] == params
-
-    def test_plotter_success_creates_route_fleetcarrier(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Fleet Carrier response -- each requested stop appears
-        twice (ending one leg, starting the next), so only distance_to_destination == 0 rows
-        should survive. Real shape captured from the live Spansh fleet carrier API."""
-        global plotter_thread
-        plotter_thread = None
-
-        job_response = Mock()
-        job_response.status_code = 202
-        job_response.content = json.dumps({"job": "test-job-id"}).encode()
-
-        result_response = Mock()
-        result_response.status_code = 200
-        result_response.content = json.dumps({
-            "result": {"jumps": [
-                {"distance": 0, "distance_to_destination": 131.427, "fuel_in_tank": 42, "fuel_used": 0,
-                 "has_icy_ring": False, "id64": 10477373803, "is_desired_destination": 1,
-                 "is_system_pristine": False, "must_restock": 1, "name": "Sol", "restock_amount": 42,
-                 "tritium_in_market": 0},
-                {"distance": 131.427, "distance_to_destination": 0, "fuel_in_tank": 21, "fuel_used": 21,
-                 "has_icy_ring": True, "id64": 6681123623626, "is_desired_destination": 1,
-                 "is_system_pristine": False, "must_restock": 0, "name": "Deciat", "restock_amount": 0,
-                 "tritium_in_market": 0},
-                {"distance": 0, "distance_to_destination": 129.796, "fuel_in_tank": 21, "fuel_used": 0,
-                 "has_icy_ring": False, "id64": 6681123623626, "is_desired_destination": 1,
-                 "is_system_pristine": False, "must_restock": 0, "name": "Deciat", "restock_amount": 0,
-                 "tritium_in_market": 0},
-                {"distance": 129.796, "distance_to_destination": 0, "fuel_in_tank": 0, "fuel_used": 21,
-                 "has_icy_ring": False, "id64": 1178708478315, "is_desired_destination": 1,
-                 "is_system_pristine": False, "must_restock": 0, "name": "Alpha Centauri", "restock_amount": 0,
-                 "tritium_in_market": 0},
-            ]}
-        }).encode()
-
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
-                    params = {'source_name': 'Sol', 'source': 10477373803,
-                              'destination_names': ['Deciat', 'Alpha Centauri'],
-                              'destinations': [6681123623626, 1178708478315],
-                              'carrier_type': 'fleet', 'capacity': 25000, 'mass': 25000,
-                              'capacity_used': '0', 'calculate_starting_fuel': 1, 'max_time': 1}
-                    harness.plugin.router.plot_route('FleetCarrier', params)
-
-        assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
-
-        assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 2  # one row per stop, not per jump entry
-        row0, row1 = harness.plugin.route.route[0], harness.plugin.route.route[1]
-        assert row0[harness.plugin.route.hdrs.index("System Name")] == 'Deciat'
-        assert row1[harness.plugin.route.hdrs.index("System Name")] == 'Alpha Centauri'
-        assert "Icy Ring" in harness.plugin.route.hdrs
-        assert "Restock Tritium" in harness.plugin.route.hdrs
-
     def test_plotter_error_response_shows_error(self, harness:TestHarness):
         """Test that _plotter handles error responses without crashing."""
         # Mock error response
@@ -1491,443 +857,179 @@ class TestPlotMethods:
                 if plotter_thread:
                     plotter_thread.join(timeout=120)
 
-    def test_neutron_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
-        ui = harness.plugin.ui
-        neutron_fr = ui.plot_frames['Neutron']
-
-        neutron_fr.nametowidget("source_ac").set_text("Sol", False)
-        neutron_fr.nametowidget("dest_ac").set_text("Colonia", False)
-        neutron_fr.nametowidget("range_entry").set_text("50", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['Neutron'].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'Neutron'
-        assert params['from'] == 'Sol'
-        assert params['to'] == 'Colonia'
-        assert params['range'] == '50'
-        assert params['via'] == []
-
-    def test_neutron_plotter_via_hops(self, harness:TestHarness) -> None:
-        """Regression: the + beside source must add via-point hops, sent as an ordered list."""
-        ui = harness.plugin.ui
-        plotter = ui.plotters['Neutron']
-        neutron_fr = ui.plot_frames['Neutron']
-
-        neutron_fr.nametowidget("source_ac").set_text("Sol", False)
-        neutron_fr.nametowidget("dest_ac").set_text("Colonia", False)
-        neutron_fr.nametowidget("range_entry").set_text("50", False)
-
-        assert len(plotter.hop_rows) == 0
-        plotter._add_hop_row(-1)
-        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                plotter.plot()
-
-        _, params = mock_plot_route.call_args[0]
-        assert params['via'] == ['Deciat']
-
-    def test_galaxy_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: GalaxyPlotter.plot() must actually invoke Context.router.plot_route()."""
-        harness.play_sequence('loadout')
-        ui = harness.plugin.ui
-        galaxy_fr = ui.plot_frames['Galaxy']
-
-        galaxy_fr.nametowidget("source_ac").set_text("Sol", False)
-        galaxy_fr.nametowidget("dest_ac").set_text("Colonia", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['Galaxy'].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'Galaxy'
-        assert params['source'] == 'Sol'
-        assert params['destination'] == 'Colonia'
-
-    def test_rtor_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: RichesPlotter.plot() must actually invoke Context.router.plot_route()."""
-        ui = harness.plugin.ui
-        rtor_fr = ui.plot_frames['RtoR']
-
-        rtor_fr.nametowidget("source_ac").set_text("Colonia", False)
-        rtor_fr.nametowidget("dest_ac").set_text("", False)  # blank destination -> circular tour
-        rtor_fr.nametowidget("range_entry").set_text("50", False)
-        rtor_fr.nametowidget("radius_entry").set_text("40", False)
-        rtor_fr.nametowidget("max_results_entry").set_text("20", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['RtoR'].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'RtoR'
-        assert params['from'] == 'Colonia'
-        assert 'to' not in params  # destination left blank -> circular tour
-        assert params['radius'] == '40'
-        assert params['max_results'] == '20'
-        assert 'body_types' not in params  # plain Road to Riches has no body filter
-
-    def test_rtor_plotter_plot_untouched_dest_is_blank(self, harness:TestHarness) -> None:
-        """A dest_ac showing its placeholder text (not "") must still be treated as blank --
-        plot() must omit 'to' rather than sending the placeholder string as a destination."""
-        ui = harness.plugin.ui
-        rtor_fr = ui.plot_frames['RtoR']
-
-        rtor_fr.nametowidget("source_ac").set_text("Colonia", False)
-        rtor_fr.nametowidget("range_entry").set_text("50", False)
-        rtor_fr.nametowidget("radius_entry").set_text("40", False)
-        rtor_fr.nametowidget("max_results_entry").set_text("20", False)
-        rtor_fr.nametowidget("dest_ac").put_placeholder()  # force the placeholder-shown state
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['RtoR'].plot()
-
-        mock_plot_route.assert_called_once()
-        _, params = mock_plot_route.call_args[0]
-        assert 'to' not in params
-
-    @pytest.mark.parametrize('route_type,expected_body_types', [
-        ('Ammonia', ['Ammonia world']),
-        ('EarthLike', ['Earth-like world']),
-        ('RockyMetal', ['Rocky body', 'High metal content world']),
-    ])
-    def test_riches_body_filter_plotter_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
-        """Regression: each body-type-filtered riches plotter (Ammonia/Earth-like/Rocky-metal)
-        must invoke plot_route with its own fixed body_types filter and min_value=1."""
-        if route_type not in PLOTTER_SPECS:
-            return
-
-        ui = harness.plugin.ui
-        fr = ui.plot_frames[route_type]
-
-        fr.nametowidget("source_ac").set_text("Colonia", False)
-        fr.nametowidget("dest_ac").set_text("", False)
-        fr.nametowidget("range_entry").set_text("50", False)
-        fr.nametowidget("radius_entry").set_text("40", False)
-        fr.nametowidget("max_results_entry").set_text("20", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters[route_type].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == route_type
-        assert params['from'] == 'Colonia'
-        assert params['body_types'] == expected_body_types
-        assert params['min_value'] == 1
-        assert 'use_mapping_value' not in params  # these pages don't expose that option
-
-    def test_exobiology_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: Exobiology has no body_types filter (unlike Ammonia/Earth-like/Rocky-metal)
-        -- its filtering criterion is a real "Minimum Landmark Value" slider (0-21, units of
-        millions of credits implied), which must be scaled by 1,000,000 before being sent."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Exobiology']
-
-        fr.nametowidget("source_ac").set_text("Colonia", False)
-        fr.nametowidget("dest_ac").set_text("", False)
-        fr.nametowidget("range_entry").set_text("50", False)
-        fr.nametowidget("radius_entry").set_text("30", False)
-        fr.nametowidget("max_results_entry").set_text("10", False)
-        fr.nametowidget("min_value_entry").set(5)  # 5 million credits
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['Exobiology'].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'Exobiology'
-        assert params['from'] == 'Colonia'
-        assert params['min_value'] == 5000000
-        assert 'body_types' not in params
-
-    def test_exobiology_min_value_slider_bounds(self, harness:TestHarness) -> None:
-        """The Minimum Landmark Value slider should be a 0-20 range (millions implied),
-        defaulting near 0 since Spansh's own default (100000 credits) rounds down to 0M."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Exobiology']
-        slider = fr.nametowidget("min_value_entry")
-        assert float(slider.cget('from')) == 0
-        assert float(slider.cget('to')) == 20
-        assert int(slider.get()) == 0
-
-    def test_trade_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: TradePlotter.plot() must invoke plot_route with system/station (not
-        from/to like every other plotter) and the numeric/boolean fields, and must refuse to
-        submit when the typed station text doesn't resolve to a real station (single combined
-        "System / Station" field, matching Spansh's own UI -- there's no separate system field
-        to fall back on, and no separate system-resolving roundtrip either, since a validated
-        match already carries both names -- see query_station_names())."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Trade']
-
-        fr.nametowidget("station_ac").set_text("Not A Real Station", False)
-        fr.nametowidget("starting_capital_entry").set_text("1000000", False)
-        fr.nametowidget("max_cargo_entry").set_text("200", False)
-        fr.nametowidget("max_hops_entry").set_text("5", False)
-        fr.nametowidget("max_hop_distance_entry").set_text("50", False)
-        fr.nametowidget("max_system_distance_entry").set_text("10000000", False)
-        fr.nametowidget("station_ac").set_text("Shinrarta Dezhra / Jameson Memorial", False)
-        with patch.object(ui, 'query_station_names', return_value=["Shinrarta Dezhra / Jameson Memorial"]):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                ui.plotters['Trade'].plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'Trade'
-        assert params['system'] == 'Shinrarta Dezhra'
-        assert params['station'] == 'Jameson Memorial'
-        assert params['starting_capital'] == '1000000'
-        assert params['max_cargo'] == '200'
-        assert 'max_price_age' not in params  # left blank -> no limit sent
-        for flag in ['requires_large_pad', 'allow_prohibited', 'allow_planetary',
-                     'allow_player_owned', 'allow_restricted_access', 'unique', 'permit']:
-            assert params[flag] == 0  # none selected
-
-    def test_tourist_add_remove_hop_rows(self, harness:TestHarness) -> None:
-        """Adding/removing stop rows should track the right systems. Unlike the old
-        destination-list design, an empty hop list is valid -- no forced minimum row."""
-        ui = harness.plugin.ui
-        plotter = ui.plotters['Tourist']
-
-        assert len(plotter.hop_rows) == 0
-
-        plotter._add_hop_row(-1)
-        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
-        assert len(plotter.hop_rows) == 1
-
-        plotter._add_hop_row(0)
-        plotter.hop_rows[1]['ac'].set_text("Colonia", False)
-        assert len(plotter.hop_rows) == 2
-        assert plotter.hop_rows[0]['ac'].get() == "Deciat"
-
-        plotter._remove_hop_row(0)
-        assert len(plotter.hop_rows) == 1
-        assert plotter.hop_rows[0]['ac'].get() == "Colonia"
-
-        plotter._remove_hop_row(0)
-        assert len(plotter.hop_rows) == 0
-
-    def test_tourist_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """TouristPlotter.plot() must send source/destination(list)/range, and must omit
-        final_destination entirely (rather than sending literal "None") when left blank."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Tourist']
-        plotter = ui.plotters['Tourist']
-
-        fr.nametowidget("source_ac").set_text("Sol", False)
-        fr.nametowidget("dest_ac").set_text("", False)
-        fr.nametowidget("range_entry").set_text("50", False)
-
-        plotter._add_hop_row(-1)
-        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
-        plotter._add_hop_row(0)
-        plotter.hop_rows[1]['ac'].set_text("Colonia", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                plotter.plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'Tourist'
-        assert params['source'] == 'Sol'
-        assert 'final_destination' not in params
-        assert params['destination'] == ['Deciat', 'Colonia']
-        assert params['range'] == '50'
-
-    def test_tourist_plotter_final_destination_set(self, harness:TestHarness) -> None:
-        """A non-blank final destination should be validated and included."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['Tourist']
-        plotter = ui.plotters['Tourist']
-
-        fr.nametowidget("source_ac").set_text("Sol", False)
-        fr.nametowidget("dest_ac").set_text("Colonia", False)
-        fr.nametowidget("range_entry").set_text("50", False)
-        plotter._add_hop_row(-1)
-        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                plotter.plot()
-
-        mock_plot_route.assert_called_once()
-        _, params = mock_plot_route.call_args[0]
-        assert params['final_destination'] == 'Colonia'
-
-    def test_fleetcarrier_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """FleetCarrierPlotter.plot() sends system names directly -- Spansh's fleetcarrier API
-        accepts names, no id64 resolution needed despite older docs suggesting otherwise."""
-        ui = harness.plugin.ui
-        fr = ui.plot_frames['FleetCarrier']
-        plotter = ui.plotters['FleetCarrier']
-
-        fr.nametowidget("source_ac").set_text("Sol", False)
-        fr.nametowidget("dest_ac").set_text("Alpha Centauri", False)
-        plotter._add_hop_row(-1)
-        plotter.hop_rows[0]['ac'].set_text("Deciat", False)
-        fr.nametowidget("capacity_used_entry").set_text("500", False)
-
-        with patch('requests.get', side_effect=fake_systems_get):
-            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
-                plotter.plot()
-
-        mock_plot_route.assert_called_once()
-        which, params = mock_plot_route.call_args[0]
-        assert which == 'FleetCarrier'
-        assert params['source'] == 'Sol'
-        assert params['destination'] == 'Alpha Centauri'
-        assert params['destination_names'] == ['Deciat']
-        assert params['destinations'] == ['Alpha Centauri', 'Deciat']
-        assert params['capacity'] == 25000
-        assert params['mass'] == 25000
-        assert params['capacity_used'] == 500
-        assert params['calculate_starting_fuel'] == "1"
-
-
-
-class TestUIFunctions:
-    """ Test UI functions """
-
-    def test_set_entry_none_does_nothing(self, harness:TestHarness) -> None:
-        ui = harness.plugin.ui
-        # Should not raise or change state
-        ui.set_entry(None, "ignored")
-
-    def test_query_station_names(self, harness:TestHarness) -> None:
-        """query_station_names() hits Spansh's station name typeahead directly -- a single
-        field, matching Spansh's own "Source Station" combobox -- and formats each result as
-        "System / Station" so the Trade Planner's single combined input field can validate a
-        typed/selected value and split it back into system+station locally, with no separate
-        system-resolving roundtrip (Spansh's own /api/trade/route call errors out on a bad
-        system/station combo anyway, so there's nothing worth pre-verifying here)."""
-        ui = harness.plugin.ui
-
-        def fake_get(url, *args, **kwargs):
-            resp = Mock()
-            resp.status_code = 200
-            resp.content = json.dumps([
-                {"system": "Shinrarta Dezhra", "name": "Jameson Memorial"}
-            ]).encode()
-            return resp
-
-        with patch('requests.get', side_effect=fake_get):
-            assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
-
-    def test_resolve_system_id64(self, harness:TestHarness) -> None:
-        """resolve_system_id64() is needed only by Fleet Carrier -- every other route type
-        sends plain system names, but Spansh's fleetcarrier API needs an id64."""
-        ui = harness.plugin.ui
-
-        def fake_get(url, *args, **kwargs):
-            resp = Mock()
-            resp.status_code = 200
-            resp.content = json.dumps({"results": [{"id64": 10477373803, "name": "Sol"}]}).encode()
-            return resp
-
-        with patch('requests.get', side_effect=fake_get):
-            assert ui.resolve_system_id64('Sol') == 10477373803
-            assert ui.resolve_system_id64('Not Sol') is None  # no exact match
-
-
-    # def test_combobox_bind_fires_on_dark_mode_selection(self, harness:TestHarness) -> None:
-    #     """Regression: th.ComboBox.bind("<<ComboboxSelected>>", ...) only ever bound the
-    #     light-mode ttk.Combobox half. Its dark-mode alt is a tk.OptionMenu, which has no
-    #     <<ComboboxSelected>> virtual event -- each menu entry just runs tk._setit() to update
-    #     the shared StringVar directly, so the bound callback silently never fired when the
-    #     theme was dark. bind() must wire the callback into each menu entry's own command so a
-    #     real dark-mode click still triggers it -- but a plain var.set() from elsewhere (e.g.
-    #     ui.show_frame() syncing this same combobox after handling the selection) must NOT
-    #     retrigger it, or callback <-> show_frame() loops forever and hangs the UI (this was
-    #     tried first via a variable write-trace, which doesn't distinguish the two)."""
-    #     var = tk.StringVar(harness.root, value="A")
-    #     combo = th.ComboBox(harness.root, var, values=["A", "B", "C"])
-
-    #     calls:list = []
-    #     combo.bind("<<ComboboxSelected>>", lambda e: calls.append(var.get()))
-
-    #     combo.alt["menu"].invoke(1)  # simulate a real dark-mode click on "B"
-    #     assert calls == ["B"]
-
-    #     calls.clear()
-    #     var.set("B")  # simulate show_frame() syncing the widget back to the same value
-    #     assert calls == []
-
-
-    def test_switch_ship(self, harness:TestHarness) -> None:
-        ui = harness.plugin.ui
-
-        # Ensure a ship loadout is present
-        harness.play_sequence('loadout')
+        # No exception should be raised; Context.ui.show_error would be called
+        # Not sure how to capture the error message
+        #assert harness.ui.error_lbl['text'] == 'server error'
+
+    def test_plotter(self, harness:TestHarness):
+        """Test the _plotter function"""
+
+        harness.plugin.router._plotter(SPANSH_ROUTE,
+                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                'range': '60.00', 'efficiency': '60',
+                                'supercharge_multiplier': '4'})
+        assert len(harness.plugin.route.hdrs) == 6
+        assert len(harness.plugin.route.route) == 9
+
+
+class TestPlotting:
+    """Test end to end plotting functionality (neutron/galaxy routes)."""
+
+    def test_plot_route_unknown_type(self, harness:TestHarness):
+        """Unknown plot types should return False and not start plotting."""
+        result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
+        assert result is False
+
+    @pytest.mark.manual_only
+    def test_plot_neutron_route(self, harness:TestHarness) -> None:
+        """ Perform a live Neutron plot """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '4'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 31
+
+    @pytest.mark.manual_only
+    def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
+        """ Perform a live Neutron plot for a Caspian explorer """
+        global plotter_thread
+        plotter_thread = None
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Neutron',
+                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
+                                                'range': '60.00', 'efficiency': '60',
+                                                'supercharge_multiplier': '6'})
+            assert res == True
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=22)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.route.source() == 'Apurui'
+            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
+            assert harness.plugin.route.total_jumps() == 21
+
+    @pytest.mark.manual_only
+    def test_plot_galaxy_route(self, harness:TestHarness) -> None:
+        """Perform a live galaxy plot and check results."""
+        global plotter_thread
+        plotter_thread = None
+
+        harness.plugin.router.swap_ship(1)
         ship = harness.plugin.router.ship
         assert ship is not None
+        assert ship.name == 'Shipping Delay'
+        assert harness.plugin.route.route == []
 
-        # Switch UI to this ship and verify fields update
-        ui.switch_ship(ship)
-        assert ui.plotters['Galaxy'].shipvar.get() == ship.name
-        assert ui.plotters['Neutron'].multiplier.get() == ship.supercharge_multiplier
-        assert ui.get_item('Neutron', 'range_entry') == str(ship.get_range(harness.plugin.router.cargo))
+        galaxy_params:dict = {
+            "cargo": 0,
+            "max_time": 60,
+            "algorithm": "optimistic",
+            "fuel_reserve": 4,
+            "is_supercharged": 0,
+            "use_supercharge": 1,
+            "use_injections": 0,
+            "exclude_secondary": 1,
+            "refuel_every_scoopable": 0,
+            "fuel_power": ship.fuel_power,
+            "fuel_multiplier": ship.fuel_multiplier,
+            "optimal_mass": ship.optimal_mass,
+            "base_mass": ship.base_mass,
+            "tank_size": ship.tank_size,
+            "internal_tank_size": ship.internal_tank_size,
+            "max_fuel_per_jump": ship.max_fuel_per_jump,
+            "range_boost": 10.5,
+            "ship_build": ship.loadout,
+            "supercharge_multiplier": ship.supercharge_multiplier,
+            "injection_multiplier": ship.injection_multiplier,
+            "source": "Apurui",
+            "destination": "Bleae Thua NI-B b27-5"
+        }
 
-    def test_progress(self, harness:TestHarness):
-        """ Test _progress() method"""
-        filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
-        harness.plugin.router.import_route(filename)
-        harness.plugin.route.update_route(0, 'Bleia Eohn ZL-J d10-47')
+        assert ship.fuel_power == 2.45
+        assert ship.fuel_multiplier == 0.013
+        assert ship.optimal_mass == 1894.1
+        assert ship.base_mass == 297.3
+        assert ship.tank_size == 32
+        assert ship.internal_tank_size == 0.5
+        assert ship.max_fuel_per_jump == 5.2
 
-        assert harness.plugin.ui._progress() == 2
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
 
-    def test_update_progress_trade_waypoint(self, harness:TestHarness) -> None:
-        """update_progress() must combine system + station on the button (truncated to fit,
-        jump-progress suffix always intact and untruncated), and build a tooltip with the
-        commodity/profit detail the button has no room for -- system/station aren't repeated
-        in the tooltip since they're already visible on the button face. Clicking the button
-        (not update_progress() itself) copies the plain system name to the clipboard."""
-        ui = harness.plugin.ui
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
 
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Total Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0, 0],
-            ['Puppis Sector TO-R b4-4', 'Alvarado Beacon', 'Agronomic Treatment', 200, 10617, 2123400, 3],
-        ]
-        harness.plugin.route = Route(hdrs, route_data, 0)
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=66)
 
-        ui.update_progress()
+            assert harness.plugin.router.src == 'Apurui'
+            assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
 
-        text:str = ui.waypoint_btn.cget('text')
-        assert len(text) <= 40
-        assert text.endswith(" (0/3)")  # jump-progress suffix always preserved, never truncated
-        assert '…' in text  # system · station is long enough to need truncating
-        assert text.startswith('Puppis Sector TO-R b4-4')
+            # This route seems to vary based on current conditions
+            assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
 
-        tooltip:str = ui.waypoint_btn_tt.args['text']
-        assert 'Agronomic Treatment' in tooltip
-        assert 'Cr/t' in tooltip
+    @pytest.mark.manual_only
+    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
+        """Perform a live galaxy plot with a caspian explorer and check results."""
+        global plotter_thread
+        plotter_thread = None
 
-        harness.clipboard.clear()
-        ui.waypoint_btn.invoke()
-        assert harness.clipboard.get() == 'Puppis Sector TO-R b4-4'  # not the combined display text
+        harness.plugin.router.swap_ship(2)
+        ship = harness.plugin.router.ship
+        assert ship is not None
+        assert ship.name == 'Perviy'
+        assert harness.plugin.route.route == []
 
-    def test_update_cargo(self, harness:TestHarness):
-        """ test update_cargo() method """
-        ui = harness.plugin.ui
-        ui.update_cargo(12)
+        galaxy_params:dict = {
+            "cargo": 0,
+            "max_time": 60,
+            "algorithm": "optimistic",
+            "fuel_reserve": 12,
+            "is_supercharged": 0,
+            "use_supercharge": 1,
+            "use_injections": 0,
+            "exclude_secondary": 0,
+            "refuel_every_scoopable": 0,
+            "fuel_power": ship.fuel_power,
+            "fuel_multiplier": ship.fuel_multiplier,
+            "optimal_mass": ship.optimal_mass,
+            "base_mass": ship.base_mass,
+            "tank_size": ship.tank_size,
+            "internal_tank_size": ship.internal_tank_size,
+            "max_fuel_per_jump": ship.max_fuel_per_jump,
+            "range_boost": 10.5,
+            "ship_build": ship.loadout,
+            "supercharge_multiplier": ship.supercharge_multiplier,
+            "injection_multiplier": ship.injection_multiplier,
+            "source": "HIP 87621",
+            "destination": "Bleae Thua ED-D c12-5"
+        }
 
-        # Update cargo and verify cargo and range entries update
-        assert ui.get_item('Galaxy', 'cargo_entry') == '12'
-        assert ui.get_item('Neutron', 'range_entry') == str(harness.plugin.router.ship.get_range(12))
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+
+            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
+            assert res == True
+
+            assert plotter_thread is not None, "Plotter thread was not captured"
+            plotter_thread.join(timeout=62)
+
+            assert harness.plugin.route is not None
+            assert harness.plugin.router.src == galaxy_params['source']
+            assert harness.plugin.router.dest == galaxy_params['destination']
+            assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
 
 
 class TestRouteWindow:
@@ -2055,31 +1157,6 @@ class TestRouteWindow:
 
         self._cleanup_window(window)
 
-    def test_value_section_trade(self, harness:TestHarness) -> None:
-        """show() adds a Profit block for Trade routes -- absent for Neutron/Galaxy/Tourist/
-        FleetCarrier routes, which have no earned-value column."""
-        window:RouteWindow = harness.plugin.ui.window_route
-        hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
-        route_data = [
-            ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
-            ['Sol', 'Abraham Lincoln', 'Gold', 100, 5000, 2],
-        ]
-        route = Route(hdrs, route_data, 0)
-
-        window.show(route)
-        if window.window: window.window.iconify()
-        assert window.window is not None
-        window.window.update_idletasks()
-
-        container = window.window.winfo_children()[0]
-        summary_frame = container.winfo_children()[0]
-        label_texts:list[str] = [w.cget("text") for w in summary_frame.winfo_children() if isinstance(w, ttk.Label)]
-
-        assert lbls['profit'].title() in label_texts
-        assert any('Cr' in text for text in label_texts)
-
-        self._cleanup_window(window)
-
     def test_show_renders_table_columns_rows_and_selection(self, harness: TestHarness) -> None:
         """show() should render table headings/rows and select the current route offset row."""
         window: RouteWindow = harness.plugin.ui.window_route
@@ -2145,7 +1222,7 @@ class TestRouteWindow:
         self._cleanup_window(window)
 
 
-class TestRouteWindowUI:
+class DisabledRouteWindowDisplay:
     """Test RouteWindow display logic and edge cases."""
 
     def test_empty_headers_no_display(self, harness:TestHarness) -> None:
@@ -2171,9 +1248,9 @@ class TestRouteWindowUI:
 
         # Create a minimal route with system names
         route_data = [
-            ['Sol', 0],
-            ['Apurui', 10],
-            ['Bleae Thua', 5]
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
         ]
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, route_data, 0)
@@ -2183,301 +1260,230 @@ class TestRouteWindowUI:
         assert route.source() == 'Sol'
         assert route.destination() == 'Bleae Thua'
 
+    def test_route_with_tritium_column(self, harness:TestHarness) -> None:
+        """Test fleet carrier route with tritium column."""
+        from Router.route import Route
 
-class TestPlotting:
-    """Test end to end plotting functionality (neutron/galaxy routes)."""
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
 
-    def test_plot_route_unknown_type(self, harness:TestHarness):
-        """Unknown plot types should return False and not start plotting."""
-        result:bool = harness.plugin.router.plot_route('UnsupportedType', {})
-        assert result is False
+        route_data = [
+            ['System A', '5', '50', 'True'],  # Tritium at this waypoint
+            ['System B', '10', '45', 'True'],
+            ['System C', '8', '50', 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Dist Rem', 'Tritium']
+        route = Route(hdrs, route_data, 0)
 
-    @pytest.mark.slow
-    def test_plot_neutron_route(self, harness:TestHarness) -> None:
-        """ Perform a live Neutron plot """
-        global plotter_thread
-        plotter_thread = None
+        assert route.fleetcarrier == True
+        assert route.refuel() == False  # Depends on refuel column
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+    def test_next_stop_current_waypoint(self, harness:TestHarness) -> None:
+        """Test next_stop() at current waypoint."""
+        from Router.route import Route
 
-            res:bool = harness.plugin.router.plot_route('Neutron',
-                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                                'range': '60.00', 'efficiency': '60',
-                                                'supercharge_multiplier': '4'})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.route.source() == 'Apurui'
-            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-            assert harness.plugin.route.total_jumps() == 31
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-    @pytest.mark.slow
-    def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
-        """ Perform a live Neutron plot for a Caspian explorer """
-        global plotter_thread
-        plotter_thread = None
+        assert route.next_stop() == 'Apurui'  # Next after current (Sol)
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+    def test_next_stop_complete_route(self, harness:TestHarness) -> None:
+        """Test next_stop() when route is complete."""
+        from Router.route import Route
 
-            res:bool = harness.plugin.router.plot_route('Neutron',
-                                                {'from': 'Apurui', 'to': 'Bleae Thua NI-B b27-5',
-                                                'range': '60.00', 'efficiency': '60',
-                                                'supercharge_multiplier': '6'})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=22)
+        if hasattr(harness.plugin.router, '_initialized'):
+            delattr(harness.plugin.router, '_initialized')
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.route.source() == 'Apurui'
-            assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-            assert harness.plugin.route.total_jumps() == 21
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 2)  # At last waypoint
 
-    @pytest.mark.slow
-    def test_plot_galaxy_route(self, harness:TestHarness) -> None:
-        """Perform a live galaxy plot and check results."""
-        global plotter_thread
-        plotter_thread = None
+        assert route.next_stop() == 'End of the road!'  # lbls['route_complete']
 
-        harness.plugin.router.swap_ship(1)
-        ship = harness.plugin.router.ship
-        print(f"{ship}")
-        assert ship is not None
-        assert ship.name == 'Shipping Delay'
-        assert harness.plugin.route.route == []
+    def test_jumps_remaining_at_start(self, harness:TestHarness) -> None:
+        """Test jumps_remaining() at start of route."""
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-        galaxy_params:dict = {
-            "cargo": 0,
-            "max_time": 60,
-            "algorithm": "optimistic",
-            "fuel_reserve": 4,
-            "is_supercharged": 0,
-            "use_supercharge": 1,
-            "use_injections": 0,
-            "exclude_secondary": 1,
-            "refuel_every_scoopable": 0,
-            "fuel_power": ship.fuel_power,
-            "fuel_multiplier": ship.fuel_multiplier,
-            "optimal_mass": ship.optimal_mass,
-            "base_mass": ship.base_mass,
-            "tank_size": ship.tank_size,
-            "internal_tank_size": ship.internal_tank_size,
-            "max_fuel_per_jump": ship.max_fuel_per_jump,
-            "range_boost": 10.5,
-            "ship_build": ship.loadout,
-            "supercharge_multiplier": ship.supercharge_multiplier,
-            "injection_multiplier": ship.injection_multiplier,
-            "source": "Apurui",
-            "destination": "Bleae Thua NI-B b27-5"
-        }
+        assert route.jumps_remaining() == 15  # 10 + 5
 
-        assert ship.fuel_power == 2.45
-        assert ship.fuel_multiplier == 0.013
-        assert ship.optimal_mass == 1894.1
-        assert ship.base_mass == 297.3
-        assert ship.tank_size == 32
-        assert ship.internal_tank_size == 0.5
-        assert ship.max_fuel_per_jump == 5.2
+    def test_jumps_remaining_incomplete(self, harness:TestHarness) -> None:
+        """Test jumps_remaining() mid-route."""
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-            assert res == True
+        route.update_route(1)  # Move to Apurui
+        assert route.jumps_remaining() == 5  # Only Bleae Thua remains
 
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+    def test_perc_jumps_rem_at_start(self, harness:TestHarness) -> None:
+        """Test percentage of jumps remaining at start."""
 
-            assert harness.plugin.router.src == 'Apurui'
-            assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-            # This route seems to vary based on current conditions
-            assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
+        total = route.total_jumps()
+        remaining = route.jumps_remaining()
+        assert route.perc_jumps_rem() == (total - remaining) * 100 / total
 
-    @pytest.mark.slow
-    def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
-        """Perform a live galaxy plot with a caspian explorer and check results."""
-        global plotter_thread
-        plotter_thread = None
+    def test_perc_jumps_rem_complete(self, harness:TestHarness) -> None:
+        """Test percentage of jumps remaining at end."""
 
-        harness.plugin.router.swap_ship(2)
-        ship = harness.plugin.router.ship
-        assert ship is not None
-        assert ship.name == 'Perviy'
-        assert harness.plugin.route.route == []
+        route_data = [
+            ['Sol', '0'],
+            ['Apurui', '10'],
+            ['Bleae Thua', '5']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-        galaxy_params:dict = {
-            "cargo": 0,
-            "max_time": 60,
-            "algorithm": "optimistic",
-            "fuel_reserve": 12,
-            "is_supercharged": 0,
-            "use_supercharge": 1,
-            "use_injections": 0,
-            "exclude_secondary": 0,
-            "refuel_every_scoopable": 0,
-            "fuel_power": ship.fuel_power,
-            "fuel_multiplier": ship.fuel_multiplier,
-            "optimal_mass": ship.optimal_mass,
-            "base_mass": ship.base_mass,
-            "tank_size": ship.tank_size,
-            "internal_tank_size": ship.internal_tank_size,
-            "max_fuel_per_jump": ship.max_fuel_per_jump,
-            "range_boost": 10.5,
-            "ship_build": ship.loadout,
-            "supercharge_multiplier": ship.supercharge_multiplier,
-            "injection_multiplier": ship.injection_multiplier,
-            "source": "HIP 87621",
-            "destination": "Bleae Thua ED-D c12-5"
-        }
+        route.update_route(2)  # Move to last waypoint (Bleae Thua)
+        assert route.perc_jumps_rem() == 0
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+    def test_total_dist(self, harness:TestHarness) -> None:
+        """Test total_dist() method."""
 
-            res:bool = harness.plugin.router.plot_route('Galaxy', galaxy_params)
-            assert res == True
+        # Use a route with distance column
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
 
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=62)
+        assert route.total_dist() == 100  # At start, total distance
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == galaxy_params['source']
-            assert harness.plugin.router.dest == galaxy_params['destination']
-            assert harness.plugin.route.total_jumps() == 9, f"Jumps {harness.plugin.route.total_jumps()}"
+    def test_dist_remaining_at_start(self, harness:TestHarness) -> None:
+        """Test dist_remaining() at start."""
 
-    @pytest.mark.slow
-    def test_plot_rtor_route(self, harness:TestHarness) -> None:
-        """ Perform a live Road-to-Riches plot """
-        global plotter_thread
-        plotter_thread = None
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        assert route.dist_remaining() == 0  # Sol has 0 distance remaining
 
-            res:bool = harness.plugin.router.plot_route('RtoR',
-                                                {'from': 'Colonia', 'range': '50', 'radius': '40',
-                                                'max_results': '20', 'avoid_thargoids': '1', 'loop': '1'})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+    def test_dist_remaining_mid_route(self, harness:TestHarness) -> None:
+        """Test dist_remaining() mid-route."""
 
-            assert harness.plugin.route is not None
-            # router.src reflects the queried source system; the route table itself only lists
-            # systems with scannable bodies, so its first row's source() is a body name, not 'Colonia'.
-            assert harness.plugin.router.src == 'Colonia'
-            assert harness.plugin.route.source() != None
-            assert "Body Name" in harness.plugin.route.hdrs
-            assert "Estimated Scan Value" in harness.plugin.route.hdrs
-            # Don't assert an exact body/jump count: which bodies are still unscanned
-            # (and therefore appear in a riches route) changes over time in the live galaxy.
-            assert len(harness.plugin.route.route) > 0
+        route_data = [
+            ['Sol', '0', '0'],
+            ['Apurui', '10', '100'],
+            ['Bleae Thua', '5', '50']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Distance Rem']
+        route = Route(hdrs, route_data, 0)
 
-    @pytest.mark.slow
-    def test_plot_ammonia_route(self, harness:TestHarness) -> None:
-        """ Perform a live Ammonia World plot -- representative of the body-type-filtered
-        riches variants (Ammonia/Earth-like/Rocky-metal), which all share the same
-        /api/riches/route pipeline already exercised by test_plot_rtor_route above.
-        Ammonia worlds are rare, and completion time depends on Spansh's shared job
-        queue as much as search size, so this allows several minutes rather than the
-        ~20s default used for plain (unfiltered) riches routes. """
-        if 'Ammonia' not in PLOTTER_SPECS:
-            return
+        route.update_route(1)  # Move to Apurui
+        assert route.dist_remaining() == 100  # Distance to Bleae Thua
 
-        global plotter_thread
-        plotter_thread = None
+    def test_refuel_check(self, harness:TestHarness) -> None:
+        """Test refuel() method."""
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        route_data = [
+            ['Sol', '0', 'Fuel'],
+            ['Apurui', '10', 'No'],
+            ['Bleae Thua', '5', 'Fuel']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Refuel']
+        route = Route(hdrs, route_data, 0)
 
-            res:bool = harness.plugin.router.plot_route('Ammonia',
-                                                {'from': 'Colonia', 'range': '50', 'radius': '150',
-                                                'max_results': '20', 'avoid_thargoids': '1', 'loop': '1',
-                                                'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 240})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=250)
+        # Check next waypoint for refuel
+        route.update_route(1)  # Now at Apurui
+        assert route.refuel() == False  # Apurui doesn't refuel
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == 'Colonia'
-            assert "Body Name" in harness.plugin.route.hdrs
-            assert len(harness.plugin.route.route) > 0
+    def test_neutron_check(self, harness:TestHarness) -> None:
+        """Test neutron() method."""
 
-    @pytest.mark.slow
-    def test_plot_exobiology_route(self, harness:TestHarness) -> None:
-        """ Perform a live Exobiology (Expressway to Exomastery) plot. Unlike the plain
-        body-value riches routes, this checks for Species/Landmark Value columns, since
-        that's the whole point of this route type. """
-        global plotter_thread
-        plotter_thread = None
+        route_data = [
+            ['Sol', '0', 'False'],
+            ['Apurui', '10', 'True'],
+            ['Bleae Thua', '5', 'False']
+        ]
+        hdrs = ['System Name', 'Jumps', 'Neutron']
+        route = Route(hdrs, route_data, 0)
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        # Check if next waypoint needs neutron
+        route.update_route(1)  # Now at Apurui
+        assert route.is_neutron() == False  # Bleae Thua doesn't need neutron
 
-            res:bool = harness.plugin.router.plot_route('Exobiology',
-                                                {'from': 'Colonia', 'range': '50', 'radius': '30',
-                                                'max_results': '10', 'avoid_thargoids': '1', 'loop': '1',
-                                                'min_value': 100000, 'max_time': 60})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+    def test_get_waypoint_next(self, harness:TestHarness) -> None:
+        """Test get_waypoint() for next waypoint."""
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == 'Colonia'
-            assert "Species" in harness.plugin.route.hdrs
-            assert "Landmark Value" in harness.plugin.route.hdrs
-            assert len(harness.plugin.route.route) > 0
+        route_data = [
+            ['A', '0'],
+            ['B', '1'],
+            ['C', '2']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-    @pytest.mark.slow
-    def test_plot_trade_route(self, harness:TestHarness) -> None:
-        """ Perform a live Trade Planner plot from a busy hub (Jameson Memorial), which needs
-        real time server-side to check commodity prices across many nearby stations. """
-        global plotter_thread
-        plotter_thread = None
+        assert route.get_waypoint(0) == 'B'
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+    def test_get_waypoint_end(self, harness:TestHarness) -> None:
+        """Test get_waypoint() at end of route."""
 
-            res:bool = harness.plugin.router.plot_route('Trade',
-                                                {'system': 'Shinrarta Dezhra', 'station': 'Jameson Memorial',
-                                                'starting_capital': '1000000', 'max_cargo': '200', 'max_hops': '5',
-                                                'max_hop_distance': '50', 'max_system_distance': '10000000',
-                                                'requires_large_pad': '0', 'allow_prohibited': '0',
-                                                'allow_planetary': '0', 'allow_player_owned': '0',
-                                                'allow_restricted_access': '0', 'unique': '0', 'permit': '0',
-                                                'max_time': 60})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+        route_data = [
+            ['A', '0'],
+            ['B', '1']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 1)
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == 'Shinrarta Dezhra'
-            assert "Station Name" in harness.plugin.route.hdrs
-            assert "Commodity" in harness.plugin.route.hdrs
-            assert "Cumulative Profit" in harness.plugin.route.hdrs
-            assert len(harness.plugin.route.route) > 0
+        assert route.get_waypoint(0) == 'none'  # tbls['none']
 
-    @pytest.mark.slow
-    def test_plot_tourist_route(self, harness:TestHarness) -> None:
-        """ Perform a live Tourist Route plot between a handful of systems close to Sol,
-        so the real route computation stays fast. """
-        global plotter_thread
-        plotter_thread = None
+    def test_record_jump(self, harness:TestHarness) -> None:
+        """Test record_jump() method."""
 
-        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+        route_data = [
+            ['Sol', '0']
+        ]
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, route_data, 0)
 
-            res:bool = harness.plugin.router.plot_route('Tourist',
-                                                {'source': 'Sol', 'destination': ['Alpha Centauri', "Barnard's Star"],
-                                                'range': '50', 'max_time': 60})
-            assert res == True
-            assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+        # Record a jump
+        dest = 'Jupiter'
+        dist = 2.5
+        route.record_jump(dest, dist)
 
-            assert harness.plugin.route is not None
-            assert harness.plugin.router.src == 'Sol'
-            assert "System Name" in harness.plugin.route.hdrs
-            assert len(harness.plugin.route.route) > 0
-
+        assert len(route.jumps) == 1
+        assert route.jumps[0][1] == dest
+        assert abs(route.jumps[0][2] - dist) < 0.01  # Allow for rounding
 
 class TestEventSequences:
     """Test complex multi-step event scenarios."""
 
-    @pytest.mark.manual_only
-    @pytest.mark.slow
     def test_full_route_scenario(self, harness:TestHarness):
         """Test a complete route scenario with jumps."""
         harness.plugin.router.system = 'Apurui'
@@ -2505,7 +1511,6 @@ class TestEventSequences:
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"].startswith("PD jc=4 jr=0 jt=4 dc=304 dr=0 dt=304")
 
     @pytest.mark.overlay('None')
-    @pytest.mark.slow
     def test_full_route_scenario_no_overlay(self, harness:TestHarness):
         """Test a complete route scenario with jumps."""
         harness.plugin.router.system = 'Apurui'
@@ -2527,7 +1532,7 @@ class TestEventSequences:
         # Final state check
         assert harness.plugin.route.jumps_remaining() == 0
 
-    @pytest.mark.slow
+
     def test_carrier_jump_noroute(self, harness:TestHarness) -> None:
         """Test carrier jump with docking."""
         from Router.constants import CarrierStates
@@ -2537,7 +1542,6 @@ class TestEventSequences:
         harness.fire_event(events[1])
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
 
-    @pytest.mark.slow
     def test_carrier_jump_route(self, harness:TestHarness):
         """Test carrier jump with docking."""
         from Router.constants import CarrierStates

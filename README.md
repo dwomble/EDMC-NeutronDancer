@@ -8,7 +8,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NEutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galacy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It can work for almost any router by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galacy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and automatically copying the next waypoint into your clipboard. It can work for almost any router by importing a CSV of the jumps.
 
 The original goal of this fork was support for the new 6x overcharge of the Caspian Explorer and a cleaner UI. It has grown beyond that into a significant rewrite.
 
@@ -17,12 +17,12 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- Use Spansh's **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners, all directly from EDMC.
-- Click the next destination button to copy it straight into your paste buffer.
+- Use Spansh's **Neutron Plotter** directly from EDMC.
+- Next destination is automatically put into the paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
 - Star name autocompletion
-- CSV import supports almost any route file, for any route type above or otherwise.
+- CSV import supports almost any route file including Road to Riches, Expressway to Exomastery, Tourist planner, and Fleetcarrier plotter.
 - Route export makes it easy to save a route for later reuse.
 - Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications.
 - Tracks and reports statistics including jumps and distance per hour.
@@ -46,17 +46,17 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 By default Neutron Dancer starts in a minimized mode in order to be as unobtrusive as possible when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
 
-Neutron Dancer supports direct route creation for:
+Neutron dancer supports two direct route creation methods:
 
 1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
+
+It also supports CSV file import in a wide variety of formats
+
 1. Road to Riches
 1. Expressway to Exomastery
-1. Trade Planner
-1. Tourist Route
-1. Fleet Carrier Route
-
-It also supports CSV file import for any of the above, or any other Spansh route export.
+1. Tourist planner
+1. Fleetcarrier plotter, etc.
 
 ### Galaxy Plotting
 
@@ -78,9 +78,9 @@ This works like the Galaxy plotter but is simpler and produces less efficient ro
 
 <img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/3e44b43e-919d-46f9-82ef-fdb0d1a0e19d" />
 
-Once your route is plotted, the next waypoint is shown on the **System Name** button — click it to copy that waypoint to your clipboard. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
+Once your route is plotted, and every time you reach a waypoint, the next one is automatically copied to your clipboard when you enter the Galaxy Map. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
 
-If for some reason your clipboard is empty or contains other stuff that you copied yourself, click the **System Name** button again to re-copy the waypoint.
+If for some reason, your clipboard should be empty or contain other stuff that you copied yourself, click on the **System Name** button, and the waypoint will be copied again to your clipboard.
 
 The progress bar has a Tooltip that provides the number of jumps remaining and distance remaining if those values are known.
 

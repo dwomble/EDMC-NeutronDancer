@@ -172,20 +172,6 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
 
     return ret + units
 
-def str_truncate(s:str, length:int = 20, elipsis:str = '…', loc:str = 'right') -> str:
-    """ Truncate a string to a specified length, adding an ellipsis if the string is longer than the specified length. """
-    if len(s) <= length:
-        return s
-
-    match loc:
-        case 'left':
-            return elipsis + s[-(length - len(elipsis)):]
-        case 'middle':
-            half_length = (length - len(elipsis)) // 2
-            return s[:half_length] + elipsis + s[-half_length:]
-        case _:
-            # Default to truncating at the right side
-            return s[:length - len(elipsis)] + elipsis
 
 class PopupNotice:
     """ Create a temporary popup window """

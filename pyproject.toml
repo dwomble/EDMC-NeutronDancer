@@ -3,7 +3,3 @@ omit = [
     "tests/**",
     "utils/**",
 ]
-
-[tool.pyright]
-venvPath = "."
-venv = ".venv"

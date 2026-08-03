@@ -185,12 +185,10 @@ sys.modules['plug'] = _plug
 
 _l10n = _types.ModuleType('l10n')
 _l10n.FALLBACK = 'en' # type: ignore
-_l10n.LANGUAGE_ID = 'language' # type: ignore
 _l10n.LOCALISATION_DIR = 'L10n' # type: ignore
 _translations = _types.ModuleType('Translations')
 class MockTranslations:
     FALLBACK = 'en'
-    FALLBACK_NAME = 'English'
 
     def __init__(self) -> None:
         pass
@@ -198,15 +196,6 @@ class MockTranslations:
         return x
     def tl(self, x: str = "", context: str | None = None, lang: str | None = None) -> str:
         return x
-    @staticmethod
-    def contents(lang: str, l10n_path=None) -> dict[str, str]:
-        language_names = {
-            'en': 'English',
-            'de': 'German',
-            'fr': 'French',
-            'es': 'Spanish'
-        }
-        return {'language': language_names.get(lang, lang)}
     @staticmethod
     def available() -> set[str]:
         return set('en')
@@ -217,7 +206,7 @@ class MockTranslations:
 for name, val in MockTranslations.__dict__.items():
     if not name.startswith('__'):
         setattr(_translations, name, val)
-translation_attributes = {'FALLBACK': 'en', 'FALLBACK_NAME': 'English'}
+translation_attributes = {'FALLBACK': 'en'}
 for name, val in translation_attributes.items():
     setattr(_translations, name, val)
 

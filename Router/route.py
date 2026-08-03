@@ -1,6 +1,10 @@
 from time import time
 from utils.debug import Debug
+from utils.misc import hfplus
 from .constants import HEADER_MAP, tts, lbls, TRUE
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .context import Context
 
 class Route:
     """
@@ -14,7 +18,8 @@ class Route:
         self.fleetcarrier:bool = False
         self.fuel_full = False
 
-        self.sc:int|None = None # System name column index
+        self.sc:int|None = None # System column index
+        self.nc:int|None = None # System / body column index
         self.jc:int|None = None # Jumps column index
         self.dc:int|None = None # Distance column index
 
@@ -34,26 +39,133 @@ class Route:
             for i in range(0, len(route)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
-        self.sc:int|None = self.colind()
-        self.dc:int|None = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
-        self.dn:int|None = self.colind('Distance')
+        self.sc = self.colind(['System Name', 'system', 'name'])
+        self.nc = self.colind()
+        self.dc = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
+        self.dn = self.colind('Distance')
 
 
     def source(self) -> str:
         if self.route == []: return ''
-        return self.route[0][self.sc]
+        return self.route[0][self.nc]
 
 
     def destination(self) -> str:
         if self.route == []: return ''
-        return self.route[-1][self.sc]
+        return self.route[-1][self.nc]
 
+
+    def next_system(self) -> str:
+        """ Return systen name of next waypoint """
+        if self.route == []: return ''
+        if self.offset >= len(self.route)-1: return lbls['route_complete']
+        return self.route[self.offset+1][self.sc]
 
     def next_stop(self) -> str:
         """ Return system name or body name of the next waypoint """
         if self.route == []: return ''
         if self.offset >= len(self.route)-1: return lbls['route_complete']
-        return self.route[self.offset+1][self.sc]
+        return self.route[self.offset+1][self.nc]
+
+
+    def next_stop_value(self, header:str) -> str|None:
+        """ Return the next waypoint's value for a given header """
+        if self.route == [] or self.offset >= len(self.route)-1: return None
+        ind:int|None = self.colind(header)
+        if ind is None: return None
+        return self.route[self.offset+1][ind]
+
+
+    def sum_value(self, header:str, through:int|None = None) -> float:
+        """ Sum a numeric column across route[:through] (default: through the next stop) """
+        ind:int|None = self.colind(header)
+        if ind is None or self.route == []: return 0
+        if through is None: through = self.offset+2
+        return sum(r[ind] for r in self.route[:through] if isinstance(r[ind], (int, float)))
+
+
+    def route_value(self) -> tuple[str, str] | None:
+        """ (label, header) of this route's earned-value column, or None for route types that
+        don't track one (Neutron/Galaxy/Tourist/FleetCarrier). """
+        if self.colind('Commodity') is not None:
+            return (lbls['profit'], 'Profit')
+
+        if self.colind('Species') is not None:
+            return (lbls['landmark_value'], 'Landmark Value')
+
+        if self.colind('Estimated Scan Value') is not None:
+            from .context import Context
+            params:dict = Context.router.route_params.get(Context.router.last_plot, {})
+            if params.get('use_mapping_value', False):
+                return (lbls['mapping_value'], 'Estimated Mapping Value')
+            return (lbls['scan_value'], 'Estimated Scan Value')
+
+        return None
+
+
+    def next_stop_station(self) -> str:
+        """ Return the station of the next waypoint """
+        station = self.next_stop_value('Station Name')
+        if station: return str(station)
+
+        return ''
+
+
+    def next_stop_details(self) -> list[str]:
+        """ Extra per-route-type details for the next waypoint """
+        lines:list = []
+
+        commodity = self.next_stop_value('Commodity')
+        amount:str = hfplus(tuple([self.next_stop_value('Amount'), 'int', '', 't']))
+        if commodity:
+            profit:str = hfplus(tuple([self.next_stop_value('Profit'), 'int', '', ' Cr/t']))
+            lines.append(f"{amount + ' ' if amount else ''}{commodity} · {profit}")
+
+            cum_profit:str = hfplus(tuple([self.sum_value('Profit'), 'float', '', ' Cr']))
+            perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', '', ' Cr/hr']))
+            lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
+
+
+        subtype = self.next_stop_value('Body Subtype')
+        if subtype:
+            dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
+            lines.append(" · ".join(p for p in [subtype, dist] if p))
+
+        species = self.next_stop_value('Species')
+        if species:
+            landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
+            lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
+
+            cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
+            perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', '', ' Cr/hr']))
+            lines.append(f"{cum_landmark} · ({perhour})" if perhour != '' else f"{cum_landmark}")
+
+        scanval = self.next_stop_value('Estimated Scan Value')
+        mapval = self.next_stop_value('Estimated Mapping Value')
+        if not species and (scanval or mapval):
+            scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
+            mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
+            lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
+
+            type:str = 'Scan'
+            from .context import Context
+            if Context.router.last_plot in Context.router.route_params and \
+                Context.router.route_params[Context.router.last_plot].get('use_mapping_value', False):
+                type = 'Mapping'
+
+            cum_scan = hfplus(tuple([self.sum_value(f'Estimated {type} Value'), 'float', '', ' Cr']))
+            if cum_scan:
+                perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', '', ' Cr/hr']))
+                lines.append(f"{cum_scan} · {perhour}" if perhour != '' else f"{cum_scan}")
+
+        return lines
+
+
+    def tracks_refuel_or_neutron(self) -> bool:
+        """ Whether this route has Refuel/Restock/Neutron columns -- column presence,
+        not route-type name, so CSV imports are handled correctly too. """
+        return (self.colind('Refuel') is not None or self.colind('Restock') is not None
+                or self.colind('Neutron') is not None or self.colind('Neutron Star') is not None)
 
 
     def jumps_to_refuel(self) -> int|None:
@@ -122,14 +234,18 @@ class Route:
     def perc_jumps_rem(self, offset:int|None = None) -> float:
         """ Percentage of jumps remaining """
         if self.route == []: return 0
-        return (self.total_jumps() - self.jumps_remaining()) * 100 / self.total_jumps()
+        return (self.total_jumps() - self.jumps_remaining(offset)) * 100 / self.total_jumps()
 
 
     def dist_to_next(self) -> int:
         """ Return the distance to the next waypoint """
-        if self.route == [] or self.dn == None: return 0
+        if self.route == []: return 0
         if self.offset+1 >= len(self.route): return 0
-        return self.route[self.offset+1][self.dn]
+        if self.dn:
+            return self.route[self.offset+1][self.dn]
+        if self.offset >= 0 and self.dc:
+            return self.route[self.offset][self.dc]- self.route[self.offset+1][self.dc]
+        return 0
 
 
     def dist_to_prev(self) -> int:
@@ -157,6 +273,14 @@ class Route:
         td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
         return sum([j[2] for j in self.jumps]) / td if td > 0 else 0
 
+    def credits_per_hour(self, header:str) -> float:
+        """ Credits per hour on this route """
+        if self.jumps == []: return 0
+        i:int|None = self.colind(header)
+        if i is None or self.route == []: return 0
+
+        td:float = (int(self.jumps[-1][0]) - int(self.jumps[0][0])) / 3600
+        return self.sum_value(header) / td if td > 0 else 0
 
     def dist_remaining(self, offset:int|None = None) -> int:
         """ Distance remaining if we know it """
@@ -171,7 +295,7 @@ class Route:
         return (self.total_dist() - self.dist_remaining(offset)) * 100 / self.total_dist()
 
 
-    def colind(self, which:str = '') -> int|None:
+    def colind(self, which:str|list = '') -> int|None:
         """ Return the index of a given column, by default the system name column """
         if self.hdrs == []: return None
 
@@ -181,9 +305,9 @@ class Route:
                     Debug.logger.debug(f"{h} {self.hdrs.index(h)}")
                     return self.hdrs.index(h)
             return 0
-
-        for w in [which, which.lower()]:
-            if w in self.hdrs:
+        if isinstance(which, str): which = [which]
+        for w in which:
+            if w in self.hdrs or w.lower() in self.hdrs:
                 return self.hdrs.index(w)
 
             if w in HEADER_MAP.keys() and HEADER_MAP[w] in self.hdrs:
@@ -196,7 +320,7 @@ class Route:
         inc += 1 # Offset is our current location, but waypoint needs to show the next not the current
         if self.route == [] or self.offset + inc >= len(self.route) or self.offset+inc < 0: return tts["none"]
 
-        return self.route[self.offset+inc][self.sc]
+        return self.route[self.offset+inc][self.nc]
 
 
     def update_route(self, direction:int = 0, system:str = '') -> int:
@@ -209,7 +333,7 @@ class Route:
         if direction == 0: # Figure out if we're on the route
             self.offset = -1
             for i, r in enumerate(self.route):
-                if r[self.sc] == system:
+                if r[self.nc] == system:
                     self.offset = i
                     break
 
@@ -217,7 +341,7 @@ class Route:
             if self.offset == -1:
                 Debug.logger.debug(f"We aren't on the route")
                 return -1
-            Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.sc]}")
+            Debug.logger.debug(f"New offset {self.offset} {direction} {self.route[self.offset][self.nc]}")
 
         # Are we at one end or the other?
         if self.offset + direction < 0:
@@ -239,7 +363,7 @@ class Route:
 
     def __repr__(self) -> str:
         if self.route == []: return "No route"
-        return f"{self.route[0][self.sc]} to {self.route[-1][self.sc]}"
+        return f"{self.route[0][self.nc]} to {self.route[-1][self.nc]}"
 
 
     def __str__(self) -> str:

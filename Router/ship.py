@@ -6,10 +6,11 @@ class Ship:
     def __init__(self, entry:dict) -> None:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
 
-        self.id:str = ''
-        self.type:str = ''
-        self.ident:str = ''
-        self.name:str = ''
+        # This is used when we're initializing from a journal entry
+        self.id:str = str(entry.get('ShipID', '')).strip()
+        self.type:str = entry.get('Ship', '').strip()
+        self.ident:str = entry.get('ShipIdent', '').strip()
+        self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type
 
         # The journal loadout entry
         self.loadout:dict = {}
@@ -17,7 +18,7 @@ class Ship:
         self.injection_multiplier:int = 2
 
         if entry.get('event', None) != 'Loadout':
-            Debug.logger.debug(f"Not an event")
+            Debug.logger.debug(f"Not an event {entry}")
             if entry.get('loadout', None) == None:
                 Debug.logger.debug(f"Not a save")
                 return
@@ -29,12 +30,6 @@ class Ship:
                 "header": { "appName": "EDMC-NeutronDancer", "appVersion": "2.0.0-dev"},
                 "data": entry
             }]
-
-        # This is used when we're initializing from a journal entry
-        self.id = str(entry.get('ShipID', ''))
-        self.type = entry.get('Ship', '')
-        self.ident = entry.get('ShipIdent', '')
-        self.name = entry.get('ShipName', '') or self.ident or self.type
 
         fsd:dict = [m for m in entry.get('Modules', []) if m['Slot'] == 'FrameShiftDrive'][0]
         fsd_type:str = fsd['Item']
@@ -104,5 +99,5 @@ class Ship:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def to_dict(self) -> dict:
+    def as_dict(self) -> dict:
         return self.loadout

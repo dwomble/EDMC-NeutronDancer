@@ -26,13 +26,24 @@ GH_MODULES:str = "https://raw.githubusercontent.com/Brighter-Applications/coriol
 SPANSH_API:str = "https://spansh.co.uk/api"
 SPANSH_ROUTE:str = f"{SPANSH_API}/route"
 SPANSH_GALAXY_ROUTE:str = f"{SPANSH_API}/generic/route"
+SPANSH_RICHES_ROUTE:str = f"{SPANSH_API}/riches/route"
+SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
+SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
+SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
+SPANSH_FLEETCARRIER_ROUTE:str = f"{SPANSH_API}/fleetcarrier/route"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
+SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
+SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, used to resolve a station's system name
+SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 
 # Directory we store our save data in
 DATA_DIR = 'data'
+SHIP_DIR = 'ships'
 ASSET_DIR = 'assets'
 ROUTE_DIR = 'routes'
+
+FLEET_CARRIER_STATS:dict = {'fleet': {'capacity': 25000, 'mass': 25000}, 'squadron': {'capacity': 60000, 'mass': 15000}}
 
 # Font info
 FONT:tuple = ("Helvetica", 9, "normal")
@@ -44,17 +55,31 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                    "distance_left": "Distance Rem", "distance_to_destination": "Distance Rem",
                     "fuel_in_tank": "Fuel Left", "fuel_used": "Fuel Used", "must_refuel": "Refuel",
                     "jumps": "Jumps", "neutron_star": "Neutron", "has_neutron": "Neutron", "is_scoopable": "Scoopable",
+                    "body_name": "Body Name", "subtype": "Body Subtype", "is_terraformable": "Is Terraformable",
+                    "distance_to_arrival": "Distance To Arrival", "estimated_scan_value": "Estimated Scan Value",
+                    "estimated_mapping_value": "Estimated Mapping Value",
+                    "species": "Species", "landmark_value": "Landmark Value",
+                    "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
+                    "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
+                    "has_icy_ring": "Icy Ring", "is_system_pristine": "Pristine", "must_restock": "Restock Tritium",
                     #"x": "", "y": "", "z": "", "id64": ""
                     }
 
 # Headers that we accept
-HEADERS:list = ["System Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron", "Body Name", "Body Subtype",
-                "Is Terraformable", "Distance To Arrival", "Estimated Scan Value", "Estimated Mapping Value",
-                "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining", "Fuel Left", "Fuel Used",
-                "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
+HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
+                "Body Name", "Body Subtype", "Is Terraformable", "Species", "Landmark Value", "Commodity", "Amount",
+                "Profit", "Total Profit", "Cumulative Profit", "Distance To Arrival", "Estimated Scan Value",
+                "Estimated Mapping Value", "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining",
+                "Fuel Left", "Fuel Used", "Refuel", "Scoopable", "Neutron Star", "Icy Ring", "Pristine", "Restock Tritium"]
 
 # Formatting info for each header
 HEADER_TYPES:dict = {"System Name": ["str", ""],
+                    "Station Name": ["str", ""],
+                    "Commodity": ["str", ""],
+                    "Amount": ["int", "", " t"],
+                    "Profit": ["float", "", " Cr"],
+                    "Total Profit": ["float", "", " Cr"],
+                    "Cumulative Profit": ["float", "", " Cr"],
                     "Jumps": ["int", ""],
                     "Jumps Rem": ["int", ""],
                     "Waypoints": ["int", ""],
@@ -63,6 +88,8 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Body Name": ["str", ""],
                     "Body Subtype": ["str", ""],
                     "Is Terraformable": ["bool", ""],
+                    "Species": ["str", ""],
+                    "Landmark Value": ["float", "", " Cr"],
                     "Distance To Arrival": ["float", "", " ls"],
                     "Estimated Scan Value": ["float", "", " Cr"],
                     "Estimated Mapping Value": ["float", "", " Cr"],
@@ -109,12 +136,14 @@ lbls:dict = {
     "help": "Help",
     "route": "Route",
     "plot_title": "I'm just burnin'…",
+    "plotter": "Neutron Dancer v{version}",
     "no_route": "No route planned",
     "jumps_remaining": "Remaining",
     "body_count": "Bodies to scan at",
     "restock_tritium": "Time to restock Tritium",
     "source_system": "Source System",
     "dest_system": "Destination System",
+    "final_dest": "Final Destination",
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
@@ -131,27 +160,61 @@ lbls:dict = {
     "galaxy_router": "Galaxy Plotter",
     "cargo": "Cargo",
     "fuel_reserve": "Fuel Reserve",
+    "radius": "Search Radius",
+    "max_results": "Max Systems",
+    "min_landmark_value": "Min Value",
+    "station": "Station",
+    "starting_capital": "Start Cap",
+    "max_cargo": "Max Cargo",
+    "max_hops": "Max Hops",
+    "max_hop_distance": "Max Dist",
+    "max_system_distance": "Max Arrival",
+    "max_price_age": "Max Age",
+    "destination": "Destination",
+    "via_system": "Via System",
+    "add_hop": "+",
+    "remove_hop": "-",
+    "carrier_type": "Carrier Type",
+    "fleet_carrier": "Fleet Carrier",
+    "squadron_carrier": "Squadron Carrier",
+    "capacity_used": "Cargo/Module Space Used",
+    "requires_large_pad": "Requires Large Pad",
+    "allow_prohibited": "Allow Prohibited",
+    "allow_planetary": "Allow Planetary",
+    "allow_player_owned": "Allow Player Owned",
+    "allow_restricted_access": "Allow Restricted Access",
+    "unique": "Unique",
+    "permit": "Permit",
     "is_supercharged": "Already Supercharged",
     "use_supercharge": "Use Supercharge",
     "use_injections": "Use FSD Injections",
     "exclude_secondary": "Exclude Secondary Stars",
     "refuel_every_scoopable": "Refuel Every scoopable",
+    "use_mapping_value": "Use Mapping Value",
+    "avoid_thargoids": "Avoid Thargoids",
+    "loop": "Loop",
     "cooldown_complete": "Carrier cooldown completed",
-    "plotting": "Plotting route from {s} to {d}",
+    "plotting": "Plotting route, please wait ...",
     "progress": "Progress",
     "speed": "Speed",
     "jumps_per_hour": " jumps/hr",
     "dist_per_hour": " ly/hr",
+    "profit": "Profit",
+    "scan_value": "Scan Value",
+    "mapping_value": "Mapping Value",
+    "landmark_value": "Landmark Value",
     "refuel": "Refuel",
     "carrier_jumping": "Carrier Jump Scheduled",
     "carrier_cooldown": "Carrier Cooldown",
     "next_refuel": "Refuel in {r}",
     "refuel_now": "Refuel now!",
-    "overlays": "Overlays"
+    "overlays": "Overlays",
+    "router": "Router"
 }
 
 # Tooltips
 tts:dict = {
+    'route_type': "The router to plot",
     'neutron_plotter': "Spansh Neutron Plotter",
     'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
     'help': "Help and user guide",
@@ -172,6 +235,31 @@ tts:dict = {
     "calc_time": "How long to spend calculating route",
     "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
+    "radius": "Search radius in light years, right click for menu",
+    "max_results": "Maximum number of systems to include in the route",
+    "min_landmark_value": "Minimum landmark (species) value to look for, in millions of credits",
+    "station": "Departure station -- start typing to search",
+    "starting_capital": "Credits available to spend on cargo",
+    "max_cargo": "Maximum cargo capacity in tonnes",
+    "max_hops": "Maximum number of trade hops in the route",
+    "max_hop_distance": "Maximum jump distance per hop, in light years",
+    "max_system_distance": "Maximum distance of a station from its arrival point, in light seconds",
+    "max_price_age": "Ignore market prices older than this many days. Leave blank for no limit",
+    "final_destination": "System to end the route at, right click for menu",
+    "destination": "Stop system name, right click for menu",
+    "via_system": "Intermediate system to route through",
+    "add_hop": "Add another stop after this one",
+    "remove_hop": "Remove this stop",
+    "carrier_type": "Fleet carriers have more cargo/module space but less jump range than squadron carriers",
+    "capacity_used": "Cargo and installed module space already in use, in tonnes",
+    "requires_large_pad": "Only include stations with a large landing pad",
+    "allow_prohibited": "Allow commodities prohibited by the destination's superpower",
+    "allow_planetary": "Allow planetary stations",
+    "allow_player_owned": "Allow player-owned fleet carriers as stops",
+    "allow_restricted_access": "Allow stations with restricted access (e.g. engineer bases)",
+    "unique": "Only visit each station once",
+    "permit": "Allow systems that require a permit",
+    "loop": "Prefer a route that loops back on itself rather than a straight line",
     "progress": "Progress",
     "none": "None"
 }
@@ -206,6 +294,7 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
+    "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display"
 }
 
@@ -217,10 +306,15 @@ cnf:dict = {
     "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
     "default_overlay": "Default Overlay Options",
     "progress_bar": "Progress Bar",
-    "progress_display": "Progress Display"
+    "progress_display": "Progress Display",
+    "options": "Neutron Dancer Options",
+    "select": "Select",
+    "show_carrier_cooldown": "Show Carrier Cooldown Popup",
+    "routes_directory": "Default Route File Directory"
 }
 
 ovr:dict = {
+    "idle": "Next jump: {d}",
     "jump": "Carrier jump to {d} in {t}",
     "cooldown": "Carrier cooldown {t}",
     "neutron": "Neutron Boost Here",

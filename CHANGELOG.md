@@ -13,6 +13,8 @@
 * Added "Via" hops to the Neutron plotter, and migrated the Tourist plotter's stop list to the same +/- row UI
 * Next stop button, tooltip, and overlay support route-specific metrics
 * Made the directory for importing and exporting routes configurable in the preferences
+* Carrier routes track speed and distance
+* Road to Riches, Exobiology, and Trade routes track credits
 
 ### Changes
 

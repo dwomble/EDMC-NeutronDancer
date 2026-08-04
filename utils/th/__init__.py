@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any, cast
-from functools import partial
+from typing import Any
 
 import tkinter as tk
 from tkinter import ttk
@@ -21,22 +20,6 @@ index:int = 0
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
-
-def _bind_hover(btn:ttk.Button) -> None:
-    """ Bind hover to implement hover for themed buttons."""
-    #normal_relief = btn.cget('relief')
-    #hover_relief = tk.SUNKEN if normal_relief == tk.RAISED else tk.RAISED
-
-    def on_enter(e:tk.Event) -> None:
-        w = cast(ttk.Button, e.widget)
-        #setattr(w, '_th_normal', (w['background'], w['foreground']))
-        #w.configure(background=w['activebackground'], foreground=w['activeforeground'], relief=hover_relief)
-    def on_leave(e:tk.Event) -> None:
-        w = cast(ttk.Button, e.widget)
-        #bg, fg = getattr(w, '_th_normal', (w['background'], w['foreground']))
-        #w.configure(background=bg, foreground=fg, relief=normal_relief)
-    btn.bind('<Enter>', on_enter)
-    btn.bind('<Leave>', on_leave)
 
 def resolve(widget:Any) -> Any:
     """ Resolve the actual base object for a tk nametowidget() lookup. """
@@ -142,7 +125,6 @@ class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         global index
-
         tk.Frame.__init__(self, master, **kw)
         if DEBUG_FRAMES:
             colors = ["lightcoral", "lightgreen", "lightblue", "lightyellow", "plum"]
@@ -186,11 +168,8 @@ class Button(Base):
     def __init__(self, master:tk.Widget, **kw) -> None:
         # EDMC's theme has a bug if the cursor is set on a ttk.Button with an image so we use a tk.Button
         btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'cursor' in kw else ttk.Button(master, **kw)
-        #if 'image' in kw:
-        #    _bind_hover(btn)
 
         alt:tk.Button = tk.Button(master, **_strip_name(kw))
-        #_bind_hover(alt)
 
         super().__init__(btn, alt)
 

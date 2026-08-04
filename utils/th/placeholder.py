@@ -3,7 +3,6 @@ from functools import partial
 from typing import Any, TYPE_CHECKING
 from theme import theme  # type: ignore
 from config import config  # type: ignore
-from utils.debug import Debug, catch_exceptions
 
 class PlaceholderMixin:
     """

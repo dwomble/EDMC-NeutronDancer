@@ -152,7 +152,7 @@ class Frame(tk.Frame):
 
         theme.update(self)
 
-    def nametowidget(self, name:str) -> Any:
+    def nametowidget(self, name) -> Any:
         """ A recursive descendant search for nametowidget(), resolved to the themed wrapper. """
         try:
             return resolve(super().nametowidget(name))
@@ -348,7 +348,7 @@ class Spinbox(PlaceholderMixin, Base):
         sb1:ttk.Spinbox = ttk.Spinbox(master, **kw, background=background, foreground='black')
         sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
         sb2.configure(background='black', foreground=config.get_str('dark_text'), highlightbackground='black',
-                      fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
+                      buttonbackground='black', fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)
 
         self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)

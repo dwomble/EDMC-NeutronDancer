@@ -12,7 +12,7 @@ from .route import Route
 from .context import Context
 
 
-LEFT_ALIGN:list = ['System Name', 'System', 'Body Name', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
+LEFT_ALIGN:list = ['System Name', 'System', 'Body Type', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
                    'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity',
                    'Species']
 

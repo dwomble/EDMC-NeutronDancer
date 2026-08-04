@@ -166,6 +166,11 @@ class RouteWindow:
         tree.configure(yscrollcommand=sb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Do some route preprocessing to make sure the data is in a displayable format
+        if 'Body' in route.hdrs: # Strip the system name from the body name column
+            for i, row in enumerate(route.route):
+                row[route.hdrs.index('Body')] = row[route.hdrs.index('Body')].replace(row[route.sc], '')
+
         # Calculate column widths based on header and data lengths, with some padding
         widths:list = [len(w)+4 for w in route.hdrs]
         for r in route.route:

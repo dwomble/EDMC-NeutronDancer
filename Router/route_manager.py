@@ -251,7 +251,7 @@ class Router():
         self.last_plot = which
         self._store_history()
 
-        Debug.logger.debug(f"Plotting route {which} {spec.url} {params}")
+        Debug.logger.info(f"Plotting route {which} {spec.url} {params}")
         Thread(target=self._plotter, args=(which, spec.url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
         return True
@@ -262,6 +262,13 @@ class Router():
         rows:list = []
         for system in systems:
             bodies:list = system.get('bodies', [])
+            if bodies == []:
+                rows.append({
+                    'system': system.get('name', ''), 'jumps': system.get('jumps', 0),
+                    'body_name': '', 'subtype': '', 'is_terraformable': False,
+                    'distance_to_arrival': 0, 'estimated_scan_value': 0,
+                    'estimated_mapping_value': 0, 'species': '', 'landmark_value': 0
+                })
             for body in bodies:
                 row:dict = {
                     'system': system.get('name', ''), 'jumps': system.get('jumps', 0),
@@ -342,6 +349,12 @@ class Router():
             else:
                 res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
 
+            if res == []:
+                Debug.logger.info(f"Spansh returned no results for {which}, {params}")
+                Context.ui.show_frame(which) # Return to the plot gui
+                Context.ui.show_error(errs["plot_error"])
+                return
+
             cols:list = []; hdrs:list = []; h:str
             for h in HEADERS:
                 k:str
@@ -354,13 +367,13 @@ class Router():
             for i, waypoint in enumerate(res):
                 r:list = []
                 for c in cols:
-                    if re.match(r"^(\d+)?$", str(waypoint[c])):
-                        r.append(round(int(waypoint[c]), 2))
+                    if re.match(r"^(\d+)$", str(waypoint.get(c, ''))):
+                        r.append(round(int(waypoint.get(c, 0)), 2))
                         continue
-                    if re.match(r"^\d+\.(\d+)?$", str(waypoint[c])):
-                        r.append(round(float(waypoint[c]), 2))
+                    if re.match(r"^\d+\.(\d+)?$", str(waypoint.get(c, ''))):
+                        r.append(round(float(waypoint.get(c, 0)), 2))
                         continue
-                    r.append(waypoint[c])
+                    r.append(waypoint.get(c, ''))
                 rte.append(r)
 
             Context.route = Route(hdrs, rte)

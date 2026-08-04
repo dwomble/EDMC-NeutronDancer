@@ -37,7 +37,7 @@ class PlotterSpec:
     body_types:list|None = None  # riches-family body_types filter, e.g. ["Ammonia world"]
     min_value:int|None = None    # min_value threshold: fixed always-sent value, or the slider's
                                   # initial position (raw credits) when min_value_slider is True
-    min_value_slider:bool = False  # show an actual "Minimum Landmark Value" slider (Exobiology only --
+    min_value_slider:bool = False  # show an actual "Minimum Landmark Value" slider (Exobiology & Riches only --
                                     # the other riches-family types fix min_value with no UI control)
 
 class Plotter(ABC):
@@ -149,7 +149,7 @@ class Plotter(ABC):
         """Create range entry widget."""
         range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
-        range_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.NW)
+        range_entry.grid(row=row, column=col, padx=5, pady=5)
 
         th.Tooltip(range_entry, tts["range"])
 
@@ -520,13 +520,18 @@ class RichesPlotter(Plotter):
         self._create_options(col2_fr, 0, 0, self.options, params)
 
         # Exobiology's real filtering criterion
-        if spec.min_value_slider:
-            r = int(len(self.options) / 2)+2
+        r:int = int(len(self.options) / 2)+2
+        if spec.label == "Expressway to Exomastery" and spec.min_value_slider:
             min_value_slider:th.Scale = th.Scale(col2_fr, from_=0, to=20, resolution=1, orient=tk.HORIZONTAL, name="min_value_entry")
-            th.Tooltip(min_value_slider, tts["min_landmark_value"])
+            th.Tooltip(min_value_slider, tts["min_species_value"])
             min_value_slider.grid(row=r, column=0, padx=5, pady=5, sticky=tk.EW)
             min_value_slider.set(int(params.get('min_value', spec.min_value or 0)) // 1_000_000)
-        col2_fr.grid(row=row, column=4, rowspan=3, sticky=tk.N)
+        elif spec.label == "Road to Riches" and spec.min_value_slider:
+            min_value_slider:th.Scale = th.Scale(col2_fr, from_=0, to=3_500_000, resolution=50_000, orient=tk.HORIZONTAL, name="min_value_entry")
+            th.Tooltip(min_value_slider, tts["min_body_value"])
+            min_value_slider.grid(row=r, column=0, padx=5, pady=5, sticky=tk.EW)
+            min_value_slider.set(int(params.get('min_value', spec.min_value or 5000)))
+        col2_fr.grid(row=row, column=4, columnspan=2, rowspan=3, sticky=tk.N)
 
         # Row 2: destination
         row += 1; col = 0
@@ -537,8 +542,13 @@ class RichesPlotter(Plotter):
         self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
 
         col += 1
-        #radius_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['radius'], width=WIDTH3, justify=tk.CENTER, name="radius_entry")
-        radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3-2, from_=1, to=99, justify=tk.CENTER,
+        max_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_distance'], from_=0, to=500_000, increment=100, width=WIDTH3, justify=tk.CENTER, name="max_distance_entry")
+        Context.ui.set_entry(max_distance_entry, str(params.get('max_system_distance', 5_000)))
+        th.Tooltip(max_distance_entry, tts["max_distance"])
+        max_distance_entry.grid(row=row, column=col, padx=5, pady=5)
+
+        row += 1; col = 0
+        radius_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['radius'], width=WIDTH3, from_=1, to=99, justify=tk.CENTER,
                                              name="radius_entry")
         Context.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
@@ -546,7 +556,7 @@ class RichesPlotter(Plotter):
 
         col += 1
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
-        max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3-2, justify=tk.CENTER,
+        max_results_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_results'], from_=1, to=999, width=WIDTH3, justify=tk.CENTER,
                                                   name="max_results_entry")
         Context.ui.set_entry(max_results_entry, str(params.get('max_results', 100)))
         th.Tooltip(max_results_entry, tts["max_results"])
@@ -615,7 +625,7 @@ class RichesPlotter(Plotter):
             params['body_types'] = spec.body_types
         if spec.min_value_slider:
             min_value_slider = self.frame.nametowidget("min_value_entry")
-            params['min_value'] = int(min_value_slider.get()) * 1_000_000
+            params['min_value'] = int(min_value_slider.get()) * (1_000_000 if spec.label == "Expressway to Exomastery" else 1)
         elif spec.min_value is not None:
             params['min_value'] = spec.min_value
 
@@ -682,11 +692,11 @@ class TradePlotter(Plotter):
 
         # Row 4: max distance to arrival and max market age
         col += 1
-        #max_system_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_system_distance'], width=WIDTH3, justify=tk.CENTER, name="max_system_distance_entry")
-        max_system_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_system_distance'], from_=0, to=1000000, increment=100, width=WIDTH3-2, justify=tk.CENTER, name="max_system_distance_entry")
-        Context.ui.set_entry(max_system_distance_entry, str(params.get('max_system_distance', 10000000)))
-        th.Tooltip(max_system_distance_entry, tts["max_system_distance"])
-        max_system_distance_entry.grid(row=row, column=col, padx=5, pady=5)
+        #max_distance_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_distance'], width=WIDTH3, justify=tk.CENTER, name="max_distance_entry")
+        max_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_distance'], from_=0, to=500_000, increment=100, width=WIDTH3-2, justify=tk.CENTER, name="max_distance_entry")
+        Context.ui.set_entry(max_distance_entry, str(params.get('max_system_distance', 5_000)))
+        th.Tooltip(max_distance_entry, tts["max_distance"])
+        max_distance_entry.grid(row=row, column=col, padx=5, pady=5)
 
         col += 1
         #max_price_age_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_price_age'], width=WIDTH3, justify=tk.CENTER, name="max_price_age_entry")
@@ -727,7 +737,7 @@ class TradePlotter(Plotter):
 
         for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
                                         ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),
-                                        ("max_system_distance_entry", "max_system_distance")]:
+                                        ("max_distance_entry", "max_system_distance")]:
             entry = self.frame.nametowidget(entry_name)
             value:str = entry.get().strip()
             if not re.match(r"^\d+(\.\d+)?$", value):
@@ -959,11 +969,11 @@ PLOTTER_SPECS:dict = {
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,
-        options=['use_mapping_value', 'avoid_thargoids', 'loop']
+        options=['use_mapping_value', 'avoid_thargoids', 'loop'], min_value=1000000, min_value_slider=True
     ),
     'Exobiology': PlotterSpec(
         label='Expressway to Exomastery', plotter_class=RichesPlotter, url=SPANSH_EXOBIOLOGY_ROUTE,
-        options=['avoid_thargoids', 'loop'], min_value=100000, min_value_slider=True
+        options=['avoid_thargoids', 'loop'], min_value=10000000, min_value_slider=True
     ),
     'Trade': PlotterSpec(
         label='Trade Planner', plotter_class=TradePlotter, url=SPANSH_TRADE_ROUTE,

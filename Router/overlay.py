@@ -321,7 +321,7 @@ class Overlay():
                 args['text'] = c.get('text', '')
                 args['color'] = c.get('colour', fr.text_colour)
                 args['size'] = c.get('size', 'normal')
-                Debug.logger.debug(f"Overlay {frame} message {args} {fr.enabled} {fr.visible}")
+                #Debug.logger.debug(f"Overlay {frame} message {args} {fr.enabled} {fr.visible}")
                 if fr.visible == True and fr.enabled == True:
                     overlay.send_message(**args)
                 self.msgs[frame][args['msgid']] = args
@@ -346,11 +346,9 @@ class Overlay():
         """ Update the countdown display frame until zero or stopped """
         rem:timedelta = end - datetime.now(tz=end.tzinfo)
         while rem.total_seconds() > 0 and not stop.wait(1):
-            Debug.logger.debug(f"Countdown thread running {frame} {content} {end}")
             rem = end - datetime.now(tz=end.tzinfo)
             display:list|str = [{k:v.format(t=self._timedelta_str(rem)) for k, v in c.items()} for c in content] \
                 if isinstance(content, list) else content.format(t=self._timedelta_str(rem))
-            Debug.logger.debug(f"Countdown thread running {frame} [{display}]")
             self.update_frame(frame, display, ttl=1)
 
         stop.clear()

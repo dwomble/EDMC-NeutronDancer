@@ -152,7 +152,7 @@ class Frame(tk.Frame):
 
         theme.update(self)
 
-    def nametowidget(self, name) -> Any:
+    def nametowidget(self, name:str) -> Any: # type: ignore
         """ A recursive descendant search for nametowidget(), resolved to the themed wrapper. """
         try:
             return resolve(super().nametowidget(name))

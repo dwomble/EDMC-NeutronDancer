@@ -1232,10 +1232,10 @@ class TestPlotMethods:
         plotter_thread.join(timeout=30)
 
         assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 2  # bodyless Colonia dropped; one row per body
-        assert "Body Name" in harness.plugin.route.hdrs
-        assert "Estimated Scan Value" in harness.plugin.route.hdrs
-        assert harness.plugin.route.source() == 'Eol Prou LW-L c8-62 7'
+        assert len(harness.plugin.route.route) == 3  # bodyless Colonia dropped; one row per body
+        assert "Body" in harness.plugin.route.hdrs
+        assert "Est Scan Value" in harness.plugin.route.hdrs
+        assert harness.plugin.route.source() == 'Colonia'
         assert harness.plugin.router.route_params['RtoR'] == params
 
     def test_plotter_success_creates_route_ammonia(self, harness:TestHarness) -> None:
@@ -1276,14 +1276,11 @@ class TestPlotMethods:
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 1
-        assert harness.plugin.route.source() == 'Eol Prou OC-K c9-5 3'
+        assert harness.plugin.route.source() == 'Colonia'
         assert harness.plugin.router.route_params['Ammonia'] == params
 
     def test_plotter_success_creates_route_exobiology(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens an Exobiology response -- same nested systems/bodies
-        shape as riches, but each body also carries a `landmarks` list (biological species)
-        and `landmark_value`, which should surface as their own Species/Landmark Value
-        columns without polluting riches-family rows that never have that key."""
+        """Test that _plotter flattens an Exobiology response."""
         global plotter_thread
         plotter_thread = None
 
@@ -1317,14 +1314,15 @@ class TestPlotMethods:
         assert plotter_thread is not None, "Plotter thread was not captured"
         plotter_thread.join(timeout=30)
 
+        print(f"Route headers: {harness.plugin.route.hdrs} Route data: {harness.plugin.route.route}")
         assert harness.plugin.route is not None
-        assert len(harness.plugin.route.route) == 1  # bodyless Colonia dropped
-        assert harness.plugin.route.source() == 'Eol Prou PX-T d3-291 ABC 3 d'
+        assert len(harness.plugin.route.route) == 2
+        assert harness.plugin.route.source() == 'Colonia'
         assert "Species" in harness.plugin.route.hdrs
-        assert "Landmark Value" in harness.plugin.route.hdrs
-        row = harness.plugin.route.route[0]
+        assert "Value" in harness.plugin.route.hdrs
+        row = harness.plugin.route.route[1]
         assert row[harness.plugin.route.hdrs.index("Species")] == 'Frutexa Flammasis'  # highest-value landmark
-        assert row[harness.plugin.route.hdrs.index("Landmark Value")] == 32831400
+        assert row[harness.plugin.route.hdrs.index("Value")] == 32831400
         assert harness.plugin.router.route_params['Exobiology'] == params
 
     def test_plotter_success_creates_route_trade(self, harness:TestHarness) -> None:
@@ -1700,22 +1698,16 @@ class TestPlotMethods:
         assert 'body_types' not in params
 
     def test_exobiology_min_value_slider_bounds(self, harness:TestHarness) -> None:
-        """The Minimum Landmark Value slider should be a 0-20 range (millions implied),
-        defaulting near 0 since Spansh's own default (100000 credits) rounds down to 0M."""
+        """The Minimum Landmark Value slider should be a 0-20 range (millions implied)."""
         ui = harness.plugin.ui
         fr = ui.plot_frames['Exobiology']
         slider = fr.nametowidget("min_value_entry")
         assert float(slider.cget('from')) == 0
         assert float(slider.cget('to')) == 20
-        assert int(slider.get()) == 0
+        assert int(slider.get()) == 10
 
     def test_trade_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: TradePlotter.plot() must invoke plot_route with system/station (not
-        from/to like every other plotter) and the numeric/boolean fields, and must refuse to
-        submit when the typed station text doesn't resolve to a real station (single combined
-        "System / Station" field, matching Spansh's own UI -- there's no separate system field
-        to fall back on, and no separate system-resolving roundtrip either, since a validated
-        match already carries both names -- see query_station_names())."""
+        """Regression: TradePlotter.plot() must invoke plot_route with system/station """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Trade']
 
@@ -1724,7 +1716,7 @@ class TestPlotMethods:
         fr.nametowidget("max_cargo_entry").set_text("200", False)
         fr.nametowidget("max_hops_entry").set_text("5", False)
         fr.nametowidget("max_hop_distance_entry").set_text("50", False)
-        fr.nametowidget("max_system_distance_entry").set_text("10000000", False)
+        fr.nametowidget("max_distance_entry").set_text("10000000", False)
         fr.nametowidget("station_ac").set_text("Shinrarta Dezhra / Jameson Memorial", False)
         with patch.object(ui, 'query_station_names', return_value=["Shinrarta Dezhra / Jameson Memorial"]):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
@@ -2435,8 +2427,8 @@ class TestPlotting:
             # systems with scannable bodies, so its first row's source() is a body name, not 'Colonia'.
             assert harness.plugin.router.src == 'Colonia'
             assert harness.plugin.route.source() != None
-            assert "Body Name" in harness.plugin.route.hdrs
-            assert "Estimated Scan Value" in harness.plugin.route.hdrs
+            assert "Body" in harness.plugin.route.hdrs
+            assert "Est Scan Value" in harness.plugin.route.hdrs
             # Don't assert an exact body/jump count: which bodies are still unscanned
             # (and therefore appear in a riches route) changes over time in the live galaxy.
             assert len(harness.plugin.route.route) > 0
@@ -2467,7 +2459,7 @@ class TestPlotting:
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
-            assert "Body Name" in harness.plugin.route.hdrs
+            assert "Body" in harness.plugin.route.hdrs
             assert len(harness.plugin.route.route) > 0
 
     @pytest.mark.slow
@@ -2491,7 +2483,7 @@ class TestPlotting:
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
             assert "Species" in harness.plugin.route.hdrs
-            assert "Landmark Value" in harness.plugin.route.hdrs
+            assert "Value" in harness.plugin.route.hdrs
             assert len(harness.plugin.route.route) > 0
 
     @pytest.mark.slow

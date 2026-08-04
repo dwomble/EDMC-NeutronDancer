@@ -8,8 +8,8 @@ from datetime import UTC, datetime, timedelta
 from threading import Thread
 
 from config import config # type: ignore
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton
 
 from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE
 from .context import Context

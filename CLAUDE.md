@@ -27,7 +27,7 @@ Use the repo's `.venv`, not a bare `pytest`/`python` on PATH:
 .venv/bin/pyright Router/plotters.py
 
 # Lint (matches CI -- only catches syntax errors/undefined names, not style)
-flake8 . --extend-exclude .venv,utils --count --select=E9,F63,F7,F82 --show-source --statistics
+flake8 . --extend-exclude .venv,Router/utils --count --select=E9,F63,F7,F82 --show-source --statistics
 ```
 
 Test markers are declared in `tests/pytest.ini` (the top-level `pytest.ini` is not the one actually used — pytest resolves `tests/` as rootdir): `slow` (real network calls to spansh.co.uk, can take minutes), `manual_only` (excluded from CI), `live_requests`, `overlay`. CI (`.github/workflows/unit-tests.yml`) runs `-m "not manual_only"` — note this *does* include `slow` tests.
@@ -38,7 +38,7 @@ Release/build packaging (zip for distribution, VirusTotal scan, version bump on 
 
 ### Global state: `Context` + `@singleton`
 
-Almost every major class (`Router`, `UI`, `CSV`, `Overlay`, `Hotkeys`, `Prefs`) is decorated `@singleton` (`utils/misc.py`) and stored as a class attribute on `Router/context.py`'s `Context` dataclass (`Context.router`, `Context.ui`, `Context.route`, etc.) rather than instantiated and passed around. Any module reaches any other subsystem via `Context.xxx`. `Context.route` is the currently-plotted `Route`; everything else is a `@singleton` service object created once in `load.py`'s `plugin_app()`.
+Almost every major class (`Router`, `UI`, `CSV`, `Overlay`, `Hotkeys`, `Prefs`) is decorated `@singleton` (`Router/utils/misc.py`) and stored as a class attribute on `Router/context.py`'s `Context` dataclass (`Context.router`, `Context.ui`, `Context.route`, etc.) rather than instantiated and passed around. Any module reaches any other subsystem via `Context.xxx`. `Context.route` is the currently-plotted `Route`; everything else is a `@singleton` service object created once in `load.py`'s `plugin_app()`.
 
 ### EDMC plugin lifecycle (`load.py`)
 
@@ -56,13 +56,13 @@ EDMC calls these module-level functions directly; there's no `main()`:
 - `ui.py` (`UI`, `Context.ui`): the Tkinter frame tree; `self.plotters`/`self.plot_frames` dicts keyed by route type
 - `overlay.py`, `hotkeys.py`, `csv.py`, `prefs.py`, `route_window.py`, `ship.py`, `context.py`, `constants.py` — in-game overlay, hotkey integration, CSV import/export, the EDMC preferences pane, the route detail window, ship loadout modeling, the `Context` registry, and shared strings/HTTP endpoints/headers respectively
 
-### Themed widgets (`utils/th/`)
+### Themed widgets (`Router/utils/th/`)
 
 EDMC's dark/light theme system needs each widget to exist as a light/dark pair. `th.Base` wraps a light `obj` + dark `alt` widget pair, switched via `theme.register()`/`config.get_bool('dark_mode')`; most `th.*` widget classes (`Button`, `ComboBox`, `Listbox`, `Radiobutton`, `Checkbutton`, `Scale`, `Spinbox`) subclass `Base`. Gotchas worth knowing before touching this file: passing the same explicit Tk `name=` to both halves makes Tk silently alias one onto the other; `nametowidget()` can only ever return the raw wrapped widget, never the `Base` wrapper (`th.resolve()` recovers it when needed); `Base.__setattr__` silently *drops* any new attribute not already present on the wrapped widget(s) — no error, just a no-op — so new per-instance state must go through `object.__setattr__()` directly; a `tk.OptionMenu` (used for the dark half of `ComboBox`) has no `<<ComboboxSelected>>` virtual event, so cross-mode event wiring needs to hook the widget's own command, not a shared-variable trace (a trace fires on *every* write, including unrelated code syncing the same variable, and can create infinite callback loops).
 
 ### Error handling: `@catch_exceptions`
 
-Most UI callback methods (in particular every `Plotter.plot()`) are decorated `@catch_exceptions` (`utils/debug.py`), which logs and *swallows* any exception rather than raising. A bug inside one of these methods fails silently at runtime — it won't crash, the button just quietly does nothing. Check `Debug.logger`'s output rather than assuming a silent no-op means the code path wasn't reached.
+Most UI callback methods (in particular every `Plotter.plot()`) are decorated `@catch_exceptions` (`Router/utils/debug.py`), which logs and *swallows* any exception rather than raising. A bug inside one of these methods fails silently at runtime — it won't crash, the button just quietly does nothing. Check `Debug.logger`'s output rather than assuming a silent no-op means the code path wasn't reached.
 
 ### Test harness (`tests/harness.py`, `tests/edmc/`)
 

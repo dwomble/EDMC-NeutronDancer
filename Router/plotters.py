@@ -16,8 +16,8 @@ from dataclasses import dataclass, field
 import re
 import tkinter as tk
 
-import utils.th as th
-from utils.debug import Debug, catch_exceptions
+from .utils import th
+from .utils.debug import Debug, catch_exceptions
 
 from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, FLEET_CARRIER_STATS
 from .context import Context

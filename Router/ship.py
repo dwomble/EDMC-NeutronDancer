@@ -1,5 +1,5 @@
-from utils.debug import Debug
-from utils.misc import get_by_path
+from .utils.debug import Debug
+from .utils.misc import get_by_path
 from .context import Context
 
 class Ship:

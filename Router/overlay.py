@@ -15,8 +15,8 @@ from config import config # type: ignore
 #from edmc_data import GuiFocusNoFocus, FlagsInMainShip, GuiFocusGalaxyMap # type: ignore
 import edmc_data # type: ignore
 
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus, str_truncate
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton, hfplus, str_truncate
 from .context import Context
 from .constants import OVERLAY_PROGRESS_DEFAULT, CarrierStates, lbls, ovr, cnf, errs
 

@@ -66,9 +66,15 @@ STARTUP_ATTRS:dict = {
 
 
 def reset_plugin_modules() -> None:
-    """Clear plugin modules so each test can import a fresh plugin runtime."""
+    """Clear plugin modules so each test can import a fresh plugin runtime.
+    Router.utils is generic library code (no NeutronDancer state lives there) and must stay
+    loaded across tests -- resetting it would reload classes like TreeviewPlus under a new
+    identity each test, breaking isinstance() checks against a reference imported once at
+    module load time."""
     for module_name in list(sys.modules):
-        if module_name == 'load' or module_name.startswith('Router'):
+        is_router:bool = module_name == 'Router' or module_name.startswith('Router.')
+        is_router_utils:bool = module_name == 'Router.utils' or module_name.startswith('Router.utils.')
+        if module_name == 'load' or (is_router and not is_router_utils):
             sys.modules.pop(module_name, None)
 
 

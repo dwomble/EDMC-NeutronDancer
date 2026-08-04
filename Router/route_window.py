@@ -3,9 +3,9 @@ from tkinter import ttk
 
 from config import config  # type: ignore
 
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus
-from utils.treeviewplus import TreeviewPlus
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton, hfplus
+from .utils.treeviewplus import TreeviewPlus
 
 from .constants import FONT, BOLD, NAME, HEADER_TYPES, lbls
 from .route import Route

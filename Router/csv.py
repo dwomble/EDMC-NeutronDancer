@@ -7,8 +7,8 @@ import re
 from config import config # type: ignore
 
 from .constants import HEADERS, ROUTE_DIR, errs
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton
 from .context import Context
 
 @singleton

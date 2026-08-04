@@ -12,10 +12,10 @@ import myNotebook as nb # type: ignore
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-import utils.th as th
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
-from utils.tkrichtext import RichScrolledText
+from .utils import th
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
+from .utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship

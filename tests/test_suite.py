@@ -17,8 +17,8 @@ from tkinter import ttk
 import threading
 
 from tests.edmc import edmc_data
-from utils.treeviewplus import TreeviewPlus
-import utils.th as th
+from Router.utils.treeviewplus import TreeviewPlus
+from Router.utils import th
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
@@ -810,7 +810,7 @@ class TestChatCommands:
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
         assert res == True
-        from utils.misc import copy_to_clipboard
+        from Router.utils.misc import copy_to_clipboard
         copy_to_clipboard(harness.plugin.ui.parent, '')
 
         events:list = harness.events.get('chat_commands', [])

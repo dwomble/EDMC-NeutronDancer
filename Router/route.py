@@ -1,6 +1,6 @@
 from time import time
-from utils.debug import Debug
-from utils.misc import hfplus
+from .utils.debug import Debug
+from .utils.misc import hfplus
 from .constants import HEADER_MAP, tts, lbls, TRUE
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:

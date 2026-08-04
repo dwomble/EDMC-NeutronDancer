@@ -7,8 +7,8 @@ import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
 
-from utils.misc import singleton
-from utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton
+from .utils.debug import Debug, catch_exceptions
 
 from .constants import ROUTE_DIR, cnf
 from .context import Context

@@ -6,10 +6,10 @@ import tkinter as tk
 import myNotebook as nb  #type: ignore
 import edmc_data # type: ignore
 
-from Router.constants import GH_PROJECT, NAME, TITLE, errs, CarrierStates
-from utils.debug import Debug, catch_exceptions
-from utils.updater import Updater
-from utils.misc import copy_to_clipboard
+from Router.constants import GH_PROJECT, GH_RELEASE_INFO, NAME, TITLE, errs, CarrierStates
+from Router.utils.debug import Debug, catch_exceptions
+from Router.utils.updater import Updater
+from Router.utils.misc import copy_to_clipboard
 
 from Router.context import Context
 from Router.route_manager import Router
@@ -32,7 +32,7 @@ def plugin_start3(plugin_dir: str) -> str:
         version = Version(version_file.read_text())
     Context.plugin_version = version
     Context.plugin_useragent = f"{GH_PROJECT}-{version}"
-    Context.updater = Updater(str(Context.plugin_dir))
+    Context.updater = Updater(str(Context.plugin_dir), GH_PROJECT, GH_RELEASE_INFO)
     Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
 
     return NAME

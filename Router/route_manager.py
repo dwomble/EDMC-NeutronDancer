@@ -401,7 +401,7 @@ class Router():
 
         if response is None: return errs["no_response"]
 
-        Debug.logger.info(f"Plot error: {which}, {params}\n{response} {json.loads(response.content)}")
+        Debug.logger.info(f"Plot error: {which}, {params}\n{response}")
         err:str = errs["no_response"]
         #if response:
         #    Debug.logger.info(f"Server response: {response.json()}")

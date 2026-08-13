@@ -108,6 +108,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
     """
     units:str = ''
     default:str = ''
+    value:int|float|str|bool = default
 
     if isinstance(val, tuple): # Handle a tuple of 1-4 elements: (value, type, default, units)
         if len(val) > 1: type = val[1]
@@ -115,7 +116,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         if len(val) > 3: units = val[3]
         if len(val) > 0: value = val[0]
     else:
-        value:int|float|str|bool = val
+        value = val
         if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
         if isinstance(value, bool): type = 'bool'
         if isinstance(value, int) or isinstance(value, float): type = 'num'

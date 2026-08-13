@@ -12,7 +12,8 @@ from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox",
+           "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -116,10 +117,12 @@ class Base:
         self.configure(**{key: value})
 
 class TopLevel(tk.Toplevel):
-    """ A themed toplevel window that can switch between light and dark mode. """
+    """
+    A plain themed toplevel window. Deliberately does NOT call theme.update()/register() on
+    itself
+    """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Toplevel.__init__(self, master, **kw)
-        theme.update(self)
 
 class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """
@@ -331,3 +334,7 @@ class Spinbox(PlaceholderMixin, Base):
         super().__init__(sb1, sb2)
 
         self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)
+
+# Imported last: scrollableframe.py does `from . import Frame`, which needs Frame already
+# defined on this module before it runs.
+from .scrollableframe import ScrollableFrame

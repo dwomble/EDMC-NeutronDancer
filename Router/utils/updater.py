@@ -47,11 +47,11 @@ class Updater():
 
         r:requests.Response|None = None
         try:
-            r = requests.get(self.download_url)
+            r = requests.get(self.download_url, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else ''}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
             return
 
         with open(zip_file, 'wb') as f:
@@ -79,7 +79,7 @@ class Updater():
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
             Debug.logger.debug(f"Requesting {self.gh_release_info}")
-            r:requests.Response = requests.get(self.gh_release_info, timeout=TIMEOUT)
+            r:requests.Response = requests.get(self.gh_release_info, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)

@@ -78,7 +78,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':
             Context.router.carrier_event(entry)
         case 'Loadout':
-            Context.router.set_ship(entry)
+            Context.router.add_loadout(entry)
         case 'ShipyardSwap':
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'SendText':

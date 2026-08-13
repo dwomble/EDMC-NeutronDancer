@@ -92,21 +92,14 @@ class Router():
         On a ship swap we don't get the full loadout so we have torely on our shipyard and hope we've seen this ship before
         """
         ship = self.load_ship(ship_id)
-        if not ship:
+        if not ship or not ship.id:
             Debug.logger.info(f"ShipID {ship_id} not found in shipyard")
             self.ship_id = ""
             self.ship = None
             return
-        self.set_ship(ship.as_dict())
 
-
-    def set_ship(self, entry:dict) -> None:
-        """ Set the current ship details and update the UI """
-        ship:Ship = Ship(entry)
         self.ship = ship
         self.ship_id = str(ship.id)
-
-        self._save_ship(ship)
 
         # Re-add so keys are in reverse order
         if ship.id in self.shiplist:
@@ -114,13 +107,21 @@ class Router():
         self.shiplist[ship.id] = ship.name
 
         # Context.ui may be None in headless/test environments; guard the call.
-        if getattr(Context, 'ui', None) is not None and hasattr(Context.ui, 'switch_ship'):
-            try:
-                Context.ui.switch_ship(ship)
-            except Exception as e:
-                Debug.logger.exception(f"Error switching ship in UI: {e}")
-        else:
-            Debug.logger.debug("No UI available to switch ship; skipping UI update.")
+        if getattr(Context, 'ui', None) is None or not hasattr(Context.ui, 'switch_ship'):
+            return
+
+        Context.ui.switch_ship(ship)
+
+
+    def add_loadout(self, entry:dict) -> None:
+        """ Save ship details on loadout event and maybe update the UI """
+        ship:Ship = Ship(entry)
+        self._save_ship(ship)
+
+        # If we always get a swap_ship() when switching this will be redundant.
+        if not ship.id or ship.id == self.ship_id:
+            return
+        self.swap_ship(ship.id)
 
 
     def jumped(self, system:str, entry:dict) -> None:
@@ -505,6 +506,7 @@ class Router():
         if file.exists():
             with open(file) as json_file:
                 return Ship(json.load(json_file))
+
 
     @catch_exceptions
     def _save_ship(self, ship:Ship) -> None:

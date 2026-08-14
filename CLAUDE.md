@@ -43,6 +43,7 @@ Almost every major class (`Router`, `UI`, `CSV`, `Overlay`, `Hotkeys`, `Prefs`) 
 ### EDMC plugin lifecycle (`load.py`)
 
 EDMC calls these module-level functions directly; there's no `main()`:
+
 - `plugin_start3` — one-time init (version, user agent, update check)
 - `plugin_app` — builds every `Context.xxx` singleton, returns the root UI frame
 - `journal_entry` — the real-time event loop; `match entry['event']` dispatches journal events (`FSDJump`, `CarrierJumpRequest`, `Loadout`, `SendText` for chat commands, etc.) to `Context.router`/`Context.route`

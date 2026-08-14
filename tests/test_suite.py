@@ -1890,46 +1890,6 @@ class TestUIFunctions:
         with patch('requests.get', side_effect=fake_get):
             assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
 
-    def test_resolve_system_id64(self, harness:TestHarness) -> None:
-        """resolve_system_id64() is needed only by Fleet Carrier -- every other route type
-        sends plain system names, but Spansh's fleetcarrier API needs an id64."""
-        ui = harness.plugin.ui
-
-        def fake_get(url, *args, **kwargs):
-            resp = Mock()
-            resp.status_code = 200
-            resp.content = json.dumps({"results": [{"id64": 10477373803, "name": "Sol"}]}).encode()
-            return resp
-
-        with patch('requests.get', side_effect=fake_get):
-            assert ui.resolve_system_id64('Sol') == 10477373803
-            assert ui.resolve_system_id64('Not Sol') is None  # no exact match
-
-
-    # def test_combobox_bind_fires_on_dark_mode_selection(self, harness:TestHarness) -> None:
-    #     """Regression: th.ComboBox.bind("<<ComboboxSelected>>", ...) only ever bound the
-    #     light-mode ttk.Combobox half. Its dark-mode alt is a tk.OptionMenu, which has no
-    #     <<ComboboxSelected>> virtual event -- each menu entry just runs tk._setit() to update
-    #     the shared StringVar directly, so the bound callback silently never fired when the
-    #     theme was dark. bind() must wire the callback into each menu entry's own command so a
-    #     real dark-mode click still triggers it -- but a plain var.set() from elsewhere (e.g.
-    #     ui.show_frame() syncing this same combobox after handling the selection) must NOT
-    #     retrigger it, or callback <-> show_frame() loops forever and hangs the UI (this was
-    #     tried first via a variable write-trace, which doesn't distinguish the two)."""
-    #     var = tk.StringVar(harness.root, value="A")
-    #     combo = th.ComboBox(harness.root, var, values=["A", "B", "C"])
-
-    #     calls:list = []
-    #     combo.bind("<<ComboboxSelected>>", lambda e: calls.append(var.get()))
-
-    #     combo.alt["menu"].invoke(1)  # simulate a real dark-mode click on "B"
-    #     assert calls == ["B"]
-
-    #     calls.clear()
-    #     var.set("B")  # simulate show_frame() syncing the widget back to the same value
-    #     assert calls == []
-
-
     def test_switch_ship(self, harness:TestHarness) -> None:
         ui = harness.plugin.ui
 

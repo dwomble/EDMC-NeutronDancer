@@ -45,7 +45,7 @@ class Plotter(ABC):
 
     def __init__(self, route_type:str) -> None:
         """ Initialize the plotter. """
-        self.frame:th.Frame | None = None
+        self.frame:th.Frame|None = None
         self.route_type = route_type
         self.options:list = PLOTTER_SPECS[route_type].options
 
@@ -66,7 +66,7 @@ class Plotter(ABC):
         """Execute the plotting logic for this plotter."""
         pass
 
-    def get_frame(self) -> th.Frame | None:
+    def get_frame(self) -> th.Frame|None:
         """Get the plotter's frame."""
         return self.frame
 
@@ -75,8 +75,7 @@ class Plotter(ABC):
     def _create_system_entry(self, parent:th.Frame, row:int, col:int, label:str, tooltip:str, *,
                               name:str = '', menu:dict|None = None, initial:str = '',
                               add_cmd=None, remove_cmd=None, pady:int = 5) -> th.Autocompleter:
-        """ One system-entry row: an autocompleter, optionally named (source/dest) or menued
-        (right-click history), optionally with -/+ buttons in the two columns after it. """
+        """ An autocompleter system entry widget with optional name (source/dest), menu (right-click history), and -/+ buttons. """
         kw:dict = {'width': 30, 'func': Context.ui.query_systems}
         if menu:
             kw['menu'] = menu
@@ -90,21 +89,21 @@ class Plotter(ABC):
         ac.grid(row=row, column=col, columnspan=3, padx=5, pady=pady)
 
         spwidth:int = 0
-        if add_cmd is not None:
+        if add_cmd is not None: # + button
             add_btn:th.Button = th.Button(parent, text=lbls['add_hop'], width=2, command=add_cmd)
             th.Tooltip(add_btn, tts['add_hop'])
             add_btn.grid(row=row, column=col+3, padx=2, pady=2, sticky=tk.W)
             spwidth = add_btn.winfo_reqwidth()
 
-        rb:th.Button|th.Frame
-        if remove_cmd is not None:
-            rb = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
+        if remove_cmd is not None: # - button
+            rb:th.Button = th.Button(parent, text=lbls['remove_hop'], width=2, command=remove_cmd)
             th.Tooltip(rb, tts['remove_hop'])
-        else:
-            rb = th.Frame(parent, width=spwidth, height=1)
-            rb.grid_propagate(False)
+            rb.grid(row=row, column=col+4, padx=2, pady=2)
 
-        rb.grid(row=row, column=col+4, padx=2, pady=2)
+        if add_cmd is None and remove_cmd is None: # blank space to maintain alignment
+            sp:th.Frame = th.Frame(parent, width=spwidth, height=1)
+            sp.grid_propagate(False)
+            sp.grid(row=row, column=col+4, padx=2, pady=2)
 
         return ac
 
@@ -224,7 +223,7 @@ class Plotter(ABC):
 
         sfr.grid(row=row, column=col, columnspan=5, sticky=tk.EW)
 
-    def _validate_system(self, inp:str, widget:th.Autocompleter) -> str | None:
+    def _validate_system(self, inp:str, widget:th.Autocompleter) -> str|None:
         """ Validate and return the exact system name. """
         validated = next((x for x in Context.ui.query_systems(inp) if x.casefold() == inp.casefold()), None)
         if validated is None:
@@ -450,8 +449,10 @@ class GalaxyPlotter(Plotter):
             Context.ui.show_error(errs['no_ship'])
             return
 
-        ship:Ship | None = Context.router.load_ship(ship_id)
+        ship:Ship|None = Context.router.load_ship(ship_id)
         if not ship:
+            Context.ui.show_frame('Galaxy')
+            Context.ui.show_error(errs['ship_not_found'])
             return
 
         options = gal_fr.nametowidget("options")

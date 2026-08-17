@@ -89,7 +89,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
         return
 
     # Final fallback to the tkinter version
-    Debug.logger.debug(f"Using linux tkinter clipboard fallback")
+    Debug.logger.warning(f"No clipboard commands found, falling back to native tkinter clipboard")
     parent.clipboard_clear()
     parent.clipboard_append(text)
     parent.update()

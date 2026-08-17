@@ -31,6 +31,7 @@ def plugin_start3(plugin_dir: str) -> str:
     if version_file.is_file():
         version = Version(version_file.read_text())
     Context.plugin_version = version
+    VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f"{GH_PROJECT}-{version}"
     Context.updater = Updater(str(Context.plugin_dir), GH_PROJECT, GH_RELEASE_INFO)
     Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)

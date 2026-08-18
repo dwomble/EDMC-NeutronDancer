@@ -1,5 +1,9 @@
 [tool.coverage.run]
 omit = [
     "tests/**",
-    "utils/**",
+    "Router/utils/**",
 ]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

@@ -16,9 +16,9 @@ import bisect
 import weakref
 from collections import OrderedDict
 
-import utils.dateutil.six
-from utils.dateutil.six import string_types
-from utils.dateutil.six.moves import _thread
+from .. import six
+from ..six import string_types
+from ..six.moves import _thread
 from ._common import tzname_in_python2, _tzinfo
 from ._common import tzrangebase, enfold
 from ._common import _validate_fromutc_inputs
@@ -38,7 +38,7 @@ EPOCH = datetime.datetime(1970, 1, 1, 0, 0)
 EPOCHORDINAL = EPOCH.toordinal()
 
 
-@utils.dateutil.six.add_metaclass(_TzSingleton)
+@six.add_metaclass(_TzSingleton)
 class tzutc(datetime.tzinfo):
     """
     This is a tzinfo object that represents the UTC time zone.
@@ -129,7 +129,7 @@ class tzutc(datetime.tzinfo):
 UTC = tzutc()
 
 
-@utils.dateutil.six.add_metaclass(_TzOffsetFactory)
+@six.add_metaclass(_TzOffsetFactory)
 class tzoffset(datetime.tzinfo):
     """
     A simple class for representing a fixed offset from UTC.
@@ -1033,7 +1033,7 @@ class tzrange(tzrangebase):
         return self._dst_base_offset_
 
 
-@utils.dateutil.six.add_metaclass(_TzStrFactory)
+@six.add_metaclass(_TzStrFactory)
 class tzstr(tzrange):
     """
     ``tzstr`` objects are time zone objects specified by a time-zone string as

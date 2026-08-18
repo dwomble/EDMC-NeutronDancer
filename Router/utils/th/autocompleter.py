@@ -1,11 +1,12 @@
 import queue
 import threading
 import tkinter as tk
+from tkinter import font as tkfont
 
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from utils.debug import Debug, catch_exceptions
+from ..debug import Debug, catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -18,6 +19,8 @@ class Autocompleter(Placeholder):
             :param func: The function to call to get a list of suggestions which should
                             take a single string argument (the current input) and return a list of suggestions.
     """
+    LOOKUP_TIMEOUT:float = 3
+
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
         self.func = None
@@ -51,8 +54,10 @@ class Autocompleter(Placeholder):
 
         self.last_hovered = None
         self.lb.bind("<Motion>", self.mouse_move)
+        self.lb.bind("<Leave>", self.mouse_leave)
         self.bind("<Leave>", self.mouse_leave)
 
+        self.last_value:str|None = None
         self.update_me()
 
     def mouse_move(self, event):
@@ -98,6 +103,11 @@ class Autocompleter(Placeholder):
 
     def changed(self, name=None, index=None, mode=None) -> None:
         value:str = self.var.get()
+        # A StringVar write trace fires even on a no-op .set(), e.g. from tab-switch sync.
+        if value == self.last_value:
+            return
+        self.last_value = value
+
         if value.__len__() < 3 and self.lb_up or self.has_selected:
             self.hide_list()
             self.has_selected = False
@@ -112,6 +122,7 @@ class Autocompleter(Placeholder):
         self.var.trace_remove("write", self.traceid)
 
         self.var.set(self.lb.get(index))
+        self.last_value = self.var.get()
         self.hide_list()
         self.icursor(tk.END)
         self.traceid = self.var.trace_add('write', self.changed)
@@ -144,20 +155,23 @@ class Autocompleter(Placeholder):
         if widget != "listbox":
             self.lb.activate(index)
 
-
-    def show_results(self, results) -> None:
+    @catch_exceptions
+    def show_results(self, results:list[str]) -> None:
         if results:
+            width:int = self.lb["width"]
             self.lb.delete(0, tk.END)
             for w in results:
                 self.lb.insert(tk.END, w)
+                width = max(width, len(w.rstrip()))
 
-            self.show_list(len(results))
+            self.show_list(len(results), width)
         else:
             if self.lb_up:
                 self.hide_list()
 
-    def show_list(self, height) -> None:
+    def show_list(self, height, width) -> None:
         self.lb["height"] = height
+        self.lb["width"] = width
         if not self.lb_up and self.parent.focus_get() is self:
             self.popup.configure(bg=theme.current['background'])
             self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], highlightbackground=theme.current['activebackground'], highlightcolor=theme.current['activeforeground'])
@@ -174,10 +188,22 @@ class Autocompleter(Placeholder):
 
     def get_list(self, inp:str) -> None:
         inp = inp.strip()
-        if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
-            lista:list = self.func(inp)
-            if lista:
-                self.queue.put(lista)
+        func = self.func
+        if inp == self.placeholder or inp.__len__() < 3 or func == None:
+            return
+
+        result:list = []
+        def call() -> None:
+            result.extend(func(inp) or [])
+        t = threading.Thread(target=call, daemon=True)
+        t.start()
+        t.join(self.LOOKUP_TIMEOUT)
+        if t.is_alive():
+            Debug.logger.error(f"Autocompleter lookup timed out after {self.LOOKUP_TIMEOUT}s for {inp!r}")
+            return
+
+        if result:
+            self.queue.put(result)
 
     def update_me(self) -> None:
         try:

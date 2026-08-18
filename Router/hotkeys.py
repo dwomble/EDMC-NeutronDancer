@@ -1,5 +1,5 @@
-from utils.debug import Debug, catch_exceptions
-from utils.misc import singleton, copy_to_clipboard
+from .utils.debug import Debug, catch_exceptions
+from .utils.misc import singleton, copy_to_clipboard
 from .context import Context
 
 try:

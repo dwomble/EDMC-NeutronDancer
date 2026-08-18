@@ -7,8 +7,7 @@ from threading import Thread
 from semantic_version import Version # type: ignore
 
 from config import config # type: ignore
-from Router.constants import GH_PROJECT, GH_RELEASE_INFO, UPDATE_CHECK_INTERVAL
-from utils.debug import Debug
+from .debug import Debug
 
 TIMEOUT=10
 
@@ -19,20 +18,11 @@ class Updater():
     Call check_for_update() at plugin startup. It's asynchonrous.
     Install the update when you choose (commonly on shutdown).
     """
-    # Singleton pattern
-    _instance = None
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
-    def __init__(self, plugin_dir:str='') -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
-        if plugin_dir != '': self.plugin_dir:str = plugin_dir
+    def __init__(self, plugin_dir:str, gh_project:str, gh_release_info:str) -> None:
+        self.plugin_dir:str = plugin_dir
+        self.gh_project:str = gh_project
+        self.gh_release_info:str = gh_release_info
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -42,10 +32,6 @@ class Updater():
         self.download_url:str = ""
         self.zip_downloaded:str = "" # ZIP file that was downloaded
 
-        # Make sure we're actually initialized
-        if self.plugin_dir != '':
-            self._initialized = True
-
 
     def download_zip(self) -> None:
         """ Download the zipfile of the latest version """
@@ -53,22 +39,23 @@ class Updater():
         self.zip_path:str = os.path.join(self.plugin_dir, "updates")
         os.makedirs(self.zip_path, exist_ok=True)
 
-        zip_file:str = os.path.join(self.zip_path, f"{GH_PROJECT}-{str(self.update_version)}.zip")
+        zip_file:str = os.path.join(self.zip_path, f"{self.gh_project}-{str(self.update_version)}.zip")
         # Don't download again if we already have it. (Was os.remove(zip_file))
         if os.path.exists(zip_file):
             self.zip_downloaded = zip_file
             return
 
+        r:requests.Response|None = None
         try:
-            r:requests.Response = requests.get(self.download_url)
+            r = requests.get(self.download_url, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {GH_PROJECT} update (status code {r.status_code}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
             return
 
         with open(zip_file, 'wb') as f:
-            Debug.logger.info(f"Downloading {GH_PROJECT} to " + zip_file)
+            Debug.logger.info(f"Downloading {self.gh_project} to " + zip_file)
             for chunk in r.iter_content(chunk_size=32768):
                 f.write(chunk)
         self.zip_downloaded = zip_file
@@ -91,8 +78,8 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {GH_RELEASE_INFO}")
-            r:requests.Response = requests.get(GH_RELEASE_INFO, timeout=TIMEOUT)
+            Debug.logger.debug(f"Requesting {self.gh_release_info}")
+            r:requests.Response = requests.get(self.gh_release_info, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -144,10 +131,11 @@ class Updater():
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
 
-    def check_for_update(self, version:Version, plugin_name: str) -> None:
-        """ Start an update check thread """
+    def check_for_update(self, version:Version, plugin_name: str, interval:int = 3600 * 24) -> None:
+        """ Start an update check thread. `interval` (seconds) throttles how often the check
+        actually runs -- defaults to once a day. """
         last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
-        if last >= int(time.time()) - UPDATE_CHECK_INTERVAL: # Check for updates at most once per interval
+        if last >= int(time.time()) - interval:
             return
 
         config.set(f"{plugin_name}_last_update_check", int(time.time()))

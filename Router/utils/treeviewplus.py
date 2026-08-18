@@ -6,7 +6,7 @@ from functools import partial
 from datetime import datetime
 import re
 from re import Pattern, compile, Match
-from utils.dateutil.parser import parse
+from .dateutil.parser import parse
 
 PAT_HUMAN_READABLE_NUM_OR_PERC:Pattern = compile(r"^(\d*\.?\d*)([KkMmBbTt%]?)$")
 

@@ -1,11 +1,16 @@
 # Guide to Navl's Neutron Dancer [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
 
-There are two Neutron route plotting options.
+There are several route plotting options.
 
 1. Galaxy Plotter
 1. Neutron Plotter
+1. Road to Riches
+1. Expressway to Exomastery (Exobiology)
+1. Trade Planner
+1. Tourist Route
+1. Fleet Carrier Route
 
-You can switch between them with the radio buttons.
+You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
 ## Galaxy Plotter
 
@@ -66,6 +71,45 @@ Next click **Calculate** to query Spansh and plot your route.
 
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
+- Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
+
+## Road to Riches and Exobiology
+
+**Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.
+
+Common options:
+
+- *Avoid Thargoids* Route around systems affected by a Thargoid war
+- *Loop* Prefer routes that loop back on themselves rather than a straight line
+
+They differ only in what they're actually looking for:
+
+- **Road to Riches** looks for any valuable body along the way. *Use Mapping Value* ranks bodies by their DSS (Detailed Surface Scanner) mapping value rather than their FSS (Full Spectrum Scanner) scan value — select this if you intend to map every body rather than just scan it.
+
+- **Expressway to Exomastery** looks for systems with valuable biological (exobiology) signals instead of body scan value. The *Minimum Landmark (Species) Value* slider filters out finds below that threshold, in millions of credits — raise it to skip low-value species and focus only on the most lucrative signals.
+
+Both avoid populated systems, so they don't work well close to the bubble — increase your search radius if a route can't be found.
+
+### Tips
+
+- Road To Riches — You should decide if you want to DSS (Detailed Surface Scanner which requires you to travel to the body in system and surface map) or simply FSS (Full Spectrum Scanner from the system jump in point). FSS is faster for each system but will pay substantially less credits.
+
+## Trade Planner
+
+Plans a closed loop of trade hops starting and ending at a single **Source Station** (start typing to search — this is the one route type that starts from a station rather than just a system). Set your **Start Capital** and **Max Cargo** capacity, then cap the search with **Max Hops** (trade legs in the loop), **Max Dist** (jump distance per hop), **Max Arrival** (how far a station can be from its system's arrival point), and **Max Age** (ignore market prices older than this many days — leave blank for no limit).
+
+Options:
+
+- *Requires Large Pad* / *Allow Planetary* / *Allow Restricted Access* filter stations by landing pad size, planetary surface, and restricted (e.g. engineer base) access
+- *Allow Prohibited* Allow commodities prohibited by the destination's superpower
+- *Allow Player Owned* Allow player-owned fleet carriers as stops
+- *Unique* Only visit each station once
+- *Permit* Allow systems that require a permit
+
+## Tourist Route
+
+Enter a source system and add stops with the **+** beside it — each stop gets its own **-** (remove) and **+** (insert another below), just like the Neutron Plotter's via-points. Optionally set a **Final Destination** to end the tour somewhere other than back at the source. Set your ship's jump range and click **Calculate**.
+
 ## Importing Routes
 
 Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters.
@@ -78,9 +122,11 @@ Click **Export** and choose or enter a file to save the route in. Including the 
 
 ## Following Routes
 
-Once a route is plotted, and every time you reach a waypoint, the next one is automatically copied to your clipboard. In Elite Dangerous bring up the Galaxy Map and paste in the waypoint. If you're using the Neutron Plotter click **Plot route**. If using the Galaxy Plotter click **Target System**. If it's too far then use **Plot route**.
+Once a route is plotted, the next waypoint is shown on the button between the **◄**/**►** navigation buttons — click it to copy that waypoint to your clipboard. In Elite Dangerous bring up the Galaxy Map and paste in the waypoint. If you're using the Neutron Plotter click **Plot route**. If using the Galaxy Plotter click **Target System**. If it's too far then use **Plot route**.
 
-If for some reason your clipboard is empty or contains other stuff that you copied yourself exiting and returning to the Galaxy Map should correct it. If it doesn't you may be running Linux and should follow the [Linux Clipboard](https://github.com/dwomble/EDMC-NeutronDancer/tree/develop#linux-clipboard) instructions.
+If for some reason your clipboard is empty or contains other stuff that you copied yourself, click the waypoint button again. If it doesn't help you may be running Linux and should follow the [Linux Clipboard](https://github.com/dwomble/EDMC-NeutronDancer/tree/develop#linux-clipboard) instructions.
+
+Hover over the waypoint button for a tooltip with further detail on the next stop (station/commodity/profit for trades, body/scan value for exploration, and so on) that doesn't fit on the button itself.
 
 The progress bar has a tooltip that shows the number of jumps remaining and distance remaining if those values are known.
 
@@ -92,7 +138,9 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 ## Fleet Carrier Routes
 
-Neutron Dancer doesn't (yet) directly plot fleet carrier routes but it can import and monitor them. When it does it functions just like for a Neutron route. It will also notify you when the jump cooldown is finished.
+The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrier. Enter a source system, add stops with the **+** beside it (each stop gets its own **-**/**+**), pick your carrier type, and enter how much cargo/module space is already in use. Starting fuel is calculated automatically.
+
+Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
 
 ## Overlays
 
@@ -118,7 +166,10 @@ The *Default* frame can optionally display a progress bar and a customizable for
 - `{jh}` Jumps performed per hour
 - `{rj}` Jumps to next refuel star
 - `{rd}` Distance to next refuel
+- `{rs}` A ready-made "Refuel in N jumps" message (blank if no refuel stop is coming up)
 - `{st}` Star type indicating if the next star is a refuel location or a neutron star
+
+This customizable format only applies to Neutron/Galaxy-type routes (and refuel-aware CSV imports). For Trade, Road to Riches/Exobiology, Tourist, and Fleet Carrier routes — which have no refuel/neutron concept — the *Default* frame instead shows the same per-route detail as the waypoint tooltip (station/commodity/profit, body/scan value, and so on).
 
 ## Chat Commands
 

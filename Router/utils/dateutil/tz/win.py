@@ -10,8 +10,8 @@ Attempting to import this module on a non-Windows platform will raise an
 import datetime
 import struct
 
-from utils.dateutil.six.moves import winreg
-from utils.dateutil.six import text_type
+from ..six.moves import winreg
+from ..six import text_type
 
 try:
     import ctypes

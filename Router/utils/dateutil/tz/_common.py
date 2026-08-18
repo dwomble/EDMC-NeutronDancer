@@ -1,4 +1,4 @@
-from utils.dateutil.six import PY2
+from ..six import PY2
 
 from functools import wraps
 

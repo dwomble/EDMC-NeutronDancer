@@ -15,9 +15,9 @@ from functools import wraps
 # For warning about deprecation of until and count
 from warnings import warn
 
-from utils.dateutil.six import advance_iterator, integer_types
+from .six import advance_iterator, integer_types
 
-from utils.dateutil.six.moves import _thread, range
+from .six.moves import _thread, range
 
 from ._common import weekday as weekdaybase
 

@@ -5,7 +5,7 @@ Supports basic markdown syntax without external dependencies.
 
 import re
 from typing import List
-from utils.debug import Debug
+from ..debug import Debug
 
 class MarkdownConverter:
     """Simple markdown to HTML converter with support for common markdown syntax."""

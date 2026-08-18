@@ -16,7 +16,7 @@ from tkinter import ttk
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from utils.debug import Debug, catch_exceptions
+from .debug import Debug, catch_exceptions
 
 
 """ Class decorators """
@@ -89,7 +89,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
         return
 
     # Final fallback to the tkinter version
-    Debug.logger.debug(f"Using linux tkinter clipboard fallback")
+    Debug.logger.warning(f"No clipboard commands found, falling back to native tkinter clipboard")
     parent.clipboard_clear()
     parent.clipboard_append(text)
     parent.update()
@@ -108,6 +108,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
     """
     units:str = ''
     default:str = ''
+    value:int|float|str|bool = default
 
     if isinstance(val, tuple): # Handle a tuple of 1-4 elements: (value, type, default, units)
         if len(val) > 1: type = val[1]
@@ -115,7 +116,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         if len(val) > 3: units = val[3]
         if len(val) > 0: value = val[0]
     else:
-        value:int|float|str|bool = val
+        value = val
         if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
         if isinstance(value, bool): type = 'bool'
         if isinstance(value, int) or isinstance(value, float): type = 'num'
@@ -172,6 +173,20 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
 
     return ret + units
 
+def str_truncate(s:str, length:int = 20, elipsis:str = '…', loc:str = 'right') -> str:
+    """ Truncate a string to a specified length, adding an ellipsis if the string is longer than the specified length. """
+    if len(s) <= length:
+        return s
+
+    match loc:
+        case 'left':
+            return elipsis + s[-(length - len(elipsis)):]
+        case 'middle':
+            half_length = (length - len(elipsis)) // 2
+            return s[:half_length] + elipsis + s[-half_length:]
+        case _:
+            # Default to truncating at the right side
+            return s[:length - len(elipsis)] + elipsis
 
 class PopupNotice:
     """ Create a temporary popup window """

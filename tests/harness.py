@@ -35,6 +35,7 @@ sys.path.insert(0, str(test_dir))
 
 import tests.edmc.requests
 from tests.edmc.TkScheduler import HarnessTkScheduler
+from tests.edmc.Clipboard import HarnessClipboard
 import tests.edmc.mocks as mocks
 from tests.edmc.monitor import monitor
 
@@ -65,9 +66,15 @@ STARTUP_ATTRS:dict = {
 
 
 def reset_plugin_modules() -> None:
-    """Clear plugin modules so each test can import a fresh plugin runtime."""
+    """Clear plugin modules so each test can import a fresh plugin runtime.
+    Router.utils is generic library code (no NeutronDancer state lives there) and must stay
+    loaded across tests -- resetting it would reload classes like TreeviewPlus under a new
+    identity each test, breaking isinstance() checks against a reference imported once at
+    module load time."""
     for module_name in list(sys.modules):
-        if module_name == 'load' or module_name.startswith('Router'):
+        is_router:bool = module_name == 'Router' or module_name.startswith('Router.')
+        is_router_utils:bool = module_name == 'Router.utils' or module_name.startswith('Router.utils.')
+        if module_name == 'load' or (is_router and not is_router_utils):
             sys.modules.pop(module_name, None)
 
 
@@ -120,14 +127,23 @@ class TestHarness:
             self._original_threading_excepthook = threading.excepthook
         threading.excepthook = self._capture_thread_exception
 
-        # Create Tk root for headless mode
-        try:
-            if not hasattr(self, '_initialized'):
-                self.root:tk.Tk = tk.Tk()
-                self.parent:tk.Frame = tk.Frame(self.root)
-                self.root.withdraw()
-        except Exception as e:
-            logging.error(f"Failed to create Tk root: {e}")
+        # Create Tk root for headless mode. Retry a couple of times since rapid, repeated
+        # Tk() creation can transiently fail to locate tk.tcl (seen with MSIX-packaged Pythons).
+        if not hasattr(self, '_initialized'):
+            last_exc:Exception|None = None
+            for attempt in range(3):
+                try:
+                    self.root:tk.Tk = tk.Tk()
+                    self.parent:tk.Frame = tk.Frame(self.root)
+                    self.root.withdraw()
+                    last_exc = None
+                    break
+                except Exception as e:
+                    last_exc = e
+                    logging.warning(f"Failed to create Tk root (attempt {attempt + 1}/3): {e}")
+                    sleep(0.2)
+            if last_exc is not None:
+                raise RuntimeError("Failed to create Tk root after 3 attempts") from last_exc
 
         if hasattr(self, 'root') and not hasattr(self, '_tk_scheduler'):
             self._tk_scheduler = HarnessTkScheduler(self.root)
@@ -135,6 +151,13 @@ class TestHarness:
             if not hasattr(self, '_atexit_registered'):
                 atexit.register(self._tk_scheduler.uninstall)
                 self._atexit_registered = True
+
+        if not hasattr(self, 'clipboard'):
+            self.clipboard = HarnessClipboard()
+            self.clipboard.install()
+            if not hasattr(self, '_clipboard_atexit_registered'):
+                atexit.register(self.clipboard.uninstall)
+                self._clipboard_atexit_registered = True
 
         self._initialized = True
 
@@ -152,6 +175,13 @@ class TestHarness:
             except Exception:
                 pass
             del instance._tk_scheduler
+
+        if hasattr(instance, 'clipboard'):
+            try:
+                instance.clipboard.uninstall()
+            except Exception:
+                pass
+            del instance.clipboard
 
         if hasattr(instance, 'root'):
             try:
@@ -176,7 +206,7 @@ class TestHarness:
             sys.modules.pop(module_name, None)
 
         match which:
-            case 'Modern' | True:
+            case 'All' | 'Any' | 'Modern' | True:
                 sys.modules['EDMCOverlay'] = mocks._edmcoverlay
                 sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
                 sys.modules['overlay_plugin'] = mocks._overlay_plugin
@@ -184,7 +214,7 @@ class TestHarness:
             case 'Legacy':
                 sys.modules['EDMCOverlay'] = mocks._edmcoverlay
                 sys.modules['EDMCOverlay.edmcoverlay'] = mocks._overlay
-            case 'None' | False:
+            case 'None' | False | None:
                 pass
 
     def set_hotkeys_mode(self, hotkeys:bool = True) -> None:
@@ -246,7 +276,7 @@ class TestHarness:
 
     def assert_no_unhandled_exceptions(self) -> None:
         """Fail the current test if any unhandled thread exceptions were captured."""
-        self._pump_ui(timeout_s=0.4)
+        self._pump_ui(timeout_s=0.25)
 
         scheduler_failures: list[str] = []
         if hasattr(self, '_tk_scheduler'):
@@ -372,7 +402,7 @@ class TestHarness:
                 raise
         self._pump_ui()
 
-    def play_sequence(self, name:str, delay:float = 0.5, state:dict = {}) -> None:
+    def play_sequence(self, name:str, delay:float = 0.2, state:dict = {}) -> None:
         """ Fire a sequence of events """
         for event in self.events.get(name, []):
             self.fire_event(event, state=state)

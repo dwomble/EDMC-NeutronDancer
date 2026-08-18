@@ -5,7 +5,7 @@ import calendar
 import operator
 from math import copysign
 
-from utils.dateutil.six import integer_types
+from .six import integer_types
 from warnings import warn
 
 from ._common import weekday

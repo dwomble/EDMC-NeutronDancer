@@ -39,15 +39,15 @@ import warnings
 from calendar import monthrange
 from io import StringIO
 
-import utils.dateutil.six
-from utils.dateutil.six import integer_types, text_type
+from .. import six
+from ..six import integer_types, text_type
 
 from decimal import Decimal
 
 from warnings import warn
 
-from utils.dateutil import relativedelta
-from utils.dateutil import tz
+from .. import relativedelta
+from .. import tz
 
 __all__ = ["parse", "parserinfo", "ParserError"]
 

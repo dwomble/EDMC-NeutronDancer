@@ -108,6 +108,7 @@ class Overlay():
             return
 
         if self.progress_bar:
+            Debug.logger.debug(f"Updating progress bar with progress: {floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1))}")
             message.insert(0, {'progressbar': floor((Context.route.total_dist() - Context.route.dist_remaining()) * 100 / (Context.route.total_dist()+1)), 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
         if Context.route.tracks_refuel_or_neutron():

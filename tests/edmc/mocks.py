@@ -94,7 +94,8 @@ _cfg_attrs = {
     'config_logger': logging.getLogger('TestHarness'),
     'shutting_down': False,
     'logger': logging.getLogger('TestHarness'),
-    'trace_on': []
+    'trace_on': [],
+    'user_agent': 'EDMC-TestHarness/1.0',
     }
 
 _cfg = _types.ModuleType('config')

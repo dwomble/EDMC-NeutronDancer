@@ -56,14 +56,20 @@ def fake_systems_get(url, *args, **kwargs):
 def harness(request) -> Generator:
     """Provide a fresh test harness for each test."""
 
-    # We want a standard route.json for each test
-    Path(__file__).parent.joinpath("data").mkdir(exist_ok=True)
+    # Clean route/ships each test, but keep module_data.json --
+    # else every test forces a live Coriolis download, not one.
+    data_dir:Path = Path(__file__).parent / "data"
+    (data_dir / "route.json").unlink(missing_ok=True)
+    shutil.rmtree(data_dir / "ships", ignore_errors=True)
 
-    Path(Path(__file__).parent / "data" / "route.json").unlink(missing_ok=True)
-    init_file = getattr(request, 'param', 'route_init.json')
-    if init_file != 'None':
-        shutil.copy(Path(__file__).parent / "config" / init_file,
-                    Path(__file__).parent / "data" / "route.json")
+    param = getattr(request, 'param', ('route_init.json', 'ships'))
+    init_file, ships_dir = param if isinstance(param, tuple) else (param, None)
+    if init_file != 'None' or ships_dir:
+        data_dir.mkdir(exist_ok=True)
+        if init_file != 'None':
+            shutil.copy(Path(__file__).parent / "config" / init_file, data_dir / "route.json")
+        if ships_dir:
+            shutil.copytree(Path(__file__).parent / "config" / ships_dir, data_dir / "ships")
 
     overlay = 'Modern'
     if request.node.get_closest_marker('overlay'):
@@ -111,15 +117,31 @@ def harness(request) -> Generator:
 class TestStartup:
     """Test plugin startup behavior."""
 
-    @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
+    @pytest.mark.parametrize('harness', ['None', ('route_init.json', 'ships')], indirect=True)
     def test_harness_initialization(self, harness:TestHarness) -> None:
-        """Test basic harness initialization."""
+        """ Blank slate and a v2.0 route.json + ships/ both init. """
         assert harness.plugin.router is not None
+        assert isinstance(harness.plugin.router.shiplist, dict)
 
-    def test_harness_no_init(self, harness:TestHarness) -> None:
-        """Test basic harness initialization."""
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_harness_initialization_loads_ships_directory(self, harness:TestHarness) -> None:
+        """ v2.0 ships/ load without a migration rewrite. """
+        assert harness.plugin.router.shiplist == {"1": "Shipping Delay", "2": "Perviy"}
+        assert harness.plugin.router.load_ship("1").name == "Shipping Delay"
 
-        assert harness.plugin.router is not None
+    @pytest.mark.parametrize('harness', ['None'], indirect=True)
+    def test_migration(self, harness:TestHarness) -> None:
+        """ Test v1.10.0's route.json migrates to v2.0's separate ships files. """
+        shutil.copy(Path(__file__).parent / "config" / "route_1.10.0.json", Path(__file__).parent / "data" / "route.json")
+        harness.plugin.router._load()
+
+        assert not hasattr(harness.plugin.router, "ships")
+        assert isinstance(harness.plugin.router.shiplist, dict)
+        assert harness.plugin.router.shiplist["1"] == "Shipping Delay"
+
+        ships_dir = Path(__file__).parent / "data" / "ships"
+        assert (ships_dir / "1.json").exists()
+        assert (ships_dir / "2.json").exists()
 
     def test_startup_event(self, harness:TestHarness) -> None:
         """Test that startup event sets system correctly."""
@@ -133,16 +155,6 @@ class TestStartup:
         harness.plugin.modules = []
         harness.plugin.router._get_module_data()
         assert len(harness.plugin.modules) == 88
-
-    def test_migration(self, harness:TestHarness) -> None:
-        """ Test route.json migration """
-        shutil.copy(Path(__file__).parent / "config" / "route_1.10.0.json",
-                Path(__file__).parent / "data" / "route.json")
-
-        assert not hasattr(harness.plugin.router, "ships")
-        assert isinstance(harness.plugin.router.shiplist, dict)
-        assert harness.plugin.router.shiplist["1"] == "Shipping Delay"
-
 
 class TestStateManagement:
     """Test router state management."""
@@ -617,6 +629,7 @@ class TestShipLoadout:
 
         assert not hasattr(harness.plugin.router.ship, "ship_id")
 
+    @pytest.mark.parametrize('harness', ['None', ('route_init.json', 'ships')], indirect=True)
     def test_loadout_event(self, harness:TestHarness) -> None:
         """Test loading a ship."""
 
@@ -627,7 +640,6 @@ class TestShipLoadout:
         assert harness.plugin.router.ship.name == 'Long Delay'
         assert harness.plugin.router.route_params['Neutron']['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.route_params['Neutron']['range'] == harness.plugin.router.ship.range
-
 
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
@@ -1147,8 +1159,8 @@ class TestPlotMethods:
 
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'from': 'Start', 'to': 'End', 'max_time': 1}
                     harness.plugin.router.plot_route('Neutron', params)
 
@@ -1183,8 +1195,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'source': 'Start', 'destination': 'End', 'max_time': 1}
                     harness.plugin.router.plot_route('Galaxy', params)
 
@@ -1223,8 +1235,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20', 'max_time': 1}
                     harness.plugin.router.plot_route('RtoR', params)
 
@@ -1265,8 +1277,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'from': 'Colonia', 'range': '50', 'radius': '40', 'max_results': '20',
                               'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 1}
                     harness.plugin.router.plot_route('Ammonia', params)
@@ -1305,8 +1317,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'from': 'Colonia', 'range': '50', 'radius': '30', 'max_results': '10',
                               'min_value': 100000, 'max_time': 1}
                     harness.plugin.router.plot_route('Exobiology', params)
@@ -1371,8 +1383,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'system': 'Shinrarta Dezhra', 'station': 'Jameson Memorial',
                               'starting_capital': '1000000', 'max_cargo': '200', 'max_hops': '5',
                               'max_hop_distance': '50', 'max_system_distance': '10000000', 'max_time': 1}
@@ -1442,8 +1454,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'source_name': 'Sol', 'source': 10477373803,
                               'destination_names': ['Deciat', 'Alpha Centauri'],
                               'destinations': [6681123623626, 1178708478315],
@@ -1494,8 +1506,8 @@ class TestPlotMethods:
         }).encode()
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=job_response):
-                with patch('requests.get', return_value=result_response):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
                     params = {'source': 1, 'destinations': 4, 'capacity': 25000, 'mass': 25000,
                               'capacity_used': '0', 'calculate_starting_fuel': 1, 'max_time': 1}
                     harness.plugin.router.plot_route('FleetCarrier', params)
@@ -1526,7 +1538,7 @@ class TestPlotMethods:
             return thread
 
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            with patch('requests.post', return_value=error_response):
+            with patch('Router.route_manager.SESSION.post', return_value=error_response):
                 params = {'from': 'Start', 'to': 'End', 'max_time': 1}
                 # Should not raise exception, just handle error gracefully
                 harness.plugin.router.plot_route('Neutron', params)

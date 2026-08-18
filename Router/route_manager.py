@@ -8,6 +8,8 @@ from datetime import UTC, datetime, timedelta
 from threading import Thread
 
 from config import config # type: ignore
+from timeout_session import new_session # type: ignore
+
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
@@ -21,6 +23,8 @@ SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'carrier_id': '', 'carrier_location': '', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [],
                   'window_geometries' : {}}
+
+SESSION:requests.Session = new_session() # shared, per PLUGINS.md -- default timeout + UA
 
 @singleton
 class Router():
@@ -309,7 +313,7 @@ class Router():
         self.cancel_plot = False
         try:
             limit:int = int(params.get('max_time', 20))
-            results:Response = requests.post(url, data=params,
+            results:Response = SESSION.post(url, data=params,
                                              headers={'User-Agent': Context.plugin_useragent,
                                                       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
 
@@ -325,7 +329,7 @@ class Router():
                 job:str = response["job"]
 
                 results_url:str = f"{SPANSH_RESULTS}/{job}"
-                route_response = requests.get(results_url, timeout=5)
+                route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=5)
                 if route_response.status_code != 202:
                     break
                 tries += 1
@@ -469,7 +473,7 @@ class Router():
             for key, url  in {"fsd": f"{GH_MODULES}/standard/frame_shift_drive.json",
                               "gfsb": f"{GH_MODULES}/internal/guardian_fsd_booster.json",
                               "ft": f"{GH_MODULES}/standard/fuel_tank.json"}.items():
-                r:Response = requests.get(url, timeout=10)
+                r:Response = SESSION.get(url, headers={'User-Agent': Context.plugin_useragent}, timeout=10)
                 if r.status_code != 200:
                     Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")
                     return

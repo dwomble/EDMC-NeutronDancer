@@ -1,9 +1,10 @@
 
 from pathlib import Path
-from semantic_version import Version #type: ignore
+from semantic_version import Version
 import tkinter as tk
 
-import myNotebook as nb  #type: ignore
+import myNotebook as nb  # type: ignore
+from config import user_agent # type: ignore
 import edmc_data # type: ignore
 
 from Router.constants import GH_PROJECT, GH_RELEASE_INFO, NAME, TITLE, errs, CarrierStates
@@ -32,7 +33,7 @@ def plugin_start3(plugin_dir: str) -> str:
         version = Version(version_file.read_text())
     Context.plugin_version = version
     VERSION:str = version.__str__() # For the plugin browser
-    Context.plugin_useragent = f"{GH_PROJECT}-{version}"
+    Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_PROJECT, GH_RELEASE_INFO)
     Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
 

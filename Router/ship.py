@@ -5,29 +5,43 @@ from .context import Context
 class Ship:
     def __init__(self, entry:dict) -> None:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
-
-        # This is used when we're initializing from a journal entry
         self.id:str = str(entry.get('ShipID', '')).strip()
         self.type:str = entry.get('Ship', '').strip()
         self.ident:str = entry.get('ShipIdent', '').strip()
-        self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type
+        self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type or '?'
 
-        # The journal loadout entry
-        self.loadout:dict = {}
+        self.fuel_power:float = 1.0
+        self.fuel_multiplier:float = 1.0
+        self.max_fuel_per_jump:float = 0.0
+        self.base_mass:float = 0.0
+        self.optimal_mass:float = 0.0
+        self.tank_size:float = 0.0
+        self.internal_tank_size:float = 0.0
+        self.range_boost:int = 0
+        self.range:float = 32.0
         self.supercharge_multiplier:int = 4
         self.injection_multiplier:int = 2
 
+        # The journal loadout entry
+        self.loadout:dict = {}
+
+        # If we get an actual entry we can populate the loadout and calculate derived attributes.
         if entry.get('event', None) != 'Loadout':
-            Debug.logger.debug(f"Not an event {entry}")
+            Debug.logger.error(f"Not an event {entry}, cannot initialize ship")
             if entry.get('loadout', None) == None:
-                Debug.logger.debug(f"Not a save")
+                Debug.logger.debug(f"Event has no loadout, cannot initialize ship")
                 return
             entry = entry['loadout']
 
+        if Context.modules == []:
+            Debug.logger.error(f"Modules not loaded, cannot initialize ship.")
+            return
+
         self.loadout = entry
 
+        # Create Standard Loadout Exchange Format (SLEF)
         self.slef:list = [{
-                "header": { "appName": "EDMC-NeutronDancer", "appVersion": "2.0.0-dev"},
+                "header": { "appName": Context.plugin_title, "appVersion": Context.plugin_version.__str__()},
                 "data": entry
             }]
 
@@ -35,10 +49,6 @@ class Ship:
         fsd_type:str = fsd['Item']
 
         self.supercharge_multiplier = 6 if fsd_type.lower().endswith('overchargebooster_mkii') else 4
-
-        if Context.modules == []:
-            Debug.logger.error(f"Ship has no modules. Cannot calculate range.")
-            return
 
         tmp:list = [f for f in Context.modules if f['symbol'].lower() == fsd_type.lower()]
         if tmp == []:
@@ -72,7 +82,6 @@ class Ship:
             self.tank_size += ft.get('fuel', 0)
 
         # Guardian FSD booster
-        self.range_boost:int = 0
         gfbs:list = [m['Item'] for m in entry.get('Modules', []) if m['Item'].startswith('int_guardianfsdbooster')]
         if gfbs != []:
             gfb:dict = [f for f in Context.modules if f['symbol'].lower() == gfbs[0].lower()][0]

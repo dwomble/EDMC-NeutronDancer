@@ -73,9 +73,11 @@ Next click **Calculate** to query Spansh and plot your route.
 
 - Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
 
-## Road to Riches and Exobiology
+## Road to Riches and Expressway to Exomastery
 
 **Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.
+
+![Expressway to Exomastery](https://github.com/user-attachments/assets/a577dce7-f8dd-4557-b479-ed68c02ccf00)
 
 Common options:
 
@@ -98,6 +100,8 @@ Both avoid populated systems, so they don't work well close to the bubble — in
 
 Plans a closed loop of trade hops starting and ending at a single **Source Station** (start typing to search — this is the one route type that starts from a station rather than just a system). Set your **Start Capital** and **Max Cargo** capacity, then cap the search with **Max Hops** (trade legs in the loop), **Max Dist** (jump distance per hop), **Max Arrival** (how far a station can be from its system's arrival point), and **Max Age** (ignore market prices older than this many days — leave blank for no limit).
 
+![Trade Planner](https://github.com/user-attachments/assets/d99e0ae4-bbc9-444b-859a-6997fdf8a604)
+
 Options:
 
 - *Requires Large Pad* / *Allow Planetary* / *Allow Restricted Access* filter stations by landing pad size, planetary surface, and restricted (e.g. engineer base) access
@@ -110,9 +114,19 @@ Options:
 
 Enter a source system and add stops with the **+** beside it — each stop gets its own **-** (remove) and **+** (insert another below), just like the Neutron Plotter's via-points. Optionally set a **Final Destination** to end the tour somewhere other than back at the source. Set your ship's jump range and click **Calculate**.
 
+![Tourist Route](https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3)
+
+## Fleet Carrier Router
+
+The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrier. Enter a source system, add stops with the **+** beside it (each stop gets its own **-**/**+**), pick your carrier type, and enter how much cargo/module space is already in use. Starting fuel is calculated automatically.
+
+Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
+
+![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
+
 ## Importing Routes
 
-Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters.
+Click **Import** and select a comma separated file such as that exported by the various Spansh route plotters. By default Neutron Dancer looks in its `routes` folder. This can be changed in the preferences.
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
 
@@ -136,19 +150,13 @@ The **Export** button will allow you to save the route as a CSV.
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
 
-## Fleet Carrier Routes
-
-The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrier. Enter a source system, add stops with the **+** beside it (each stop gets its own **-**/**+**), pick your carrier type, and enter how much cargo/module space is already in use. Starting fuel is calculated automatically.
-
-Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
-
 ## Overlays
 
 To enable overlays the [EDMC Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) which must be installed and activated. Neutron Dancer provides three frames that can be individually enabled, positioned, and configured.
 
 1. **Default** displays the next jump in the current route and other details in the ship main window
 1. **Galaxy Map** replaces the default frame when in the Galaxy Map and displays just the jump destination
-1. **Carrier** displays carrier detination and jump and cooldown timers
+1. **Carrier** displays carrier destination and jump and cooldown timers
 
 ### Overlay Frame Management
 
@@ -162,7 +170,7 @@ The *Default* frame can optionally display a progress bar and a customizable for
 - `{dc}` Distance to next checkpoint
 - `{dr}` Distance remaining
 - `{dt}` Distance total
-- `{dh}` Distance travelled per hour
+- `{dh}` Distance traveled per hour
 - `{jh}` Jumps performed per hour
 - `{rj}` Jumps to next refuel star
 - `{rd}` Distance to next refuel

@@ -17,7 +17,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- Use Spansh's **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners, all directly from EDMC.
+- **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported..
 - Click the next destination button to copy it straight into your paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
@@ -73,6 +73,31 @@ When you complete a route Neutron Dancer saves the source, destination, and ship
 This works like the Galaxy plotter but is simpler and produces less efficient routes.
 
 <img width="384" height="163" alt="Screenshot 2025-12-27 164632" src="https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2" />
+
+## Road to Riches and Expressway to Exomastery
+
+**Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way.
+
+<img width="435" height="219" alt="Screenshot 2026-08-18 195558" src="https://github.com/user-attachments/assets/a577dce7-f8dd-4557-b479-ed68c02ccf00" />
+
+## Trade Planner
+
+Trade routes are fully available.
+
+<img width="443" height="237" alt="Screenshot 2026-08-18 200130" src="https://github.com/user-attachments/assets/d99e0ae4-bbc9-444b-859a-6997fdf8a604" />
+
+## Tourist Route
+
+Tourist routes are also supported.
+
+<img width="445" height="219" alt="Screenshot 2026-08-18 195429" src="https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3" />
+
+## Fleet Carrier Router
+
+This is the final supported route type.
+
+<img width="443" height="237" alt="Screenshot 2026-08-18 200130" src="https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a" />
+
 
 ### Following the Route
 

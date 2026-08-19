@@ -36,4 +36,4 @@ jobs:
 
     - name: Test with xvfb-pytest
       run: |
-        xvfb-run pytest -m "not manual_only"  -c tests/pytest.ini
+        xvfb-run pytest -m "not slow" -c tests/pytest.ini

@@ -1,5 +1,5 @@
 <!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
-<img width="125" height="125" alt="neutrondancer_logo125_white" src="https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597" />
+![Neutron Dancer Logo](https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597)
 
 # Navl's Neutron Dancer
 
@@ -12,12 +12,12 @@ Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https
 
 The original goal of this fork was support for the new 6x overcharge of the Caspian Explorer and a cleaner UI. It has grown beyond that into a significant rewrite.
 
-<img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984" />
+![Route View](https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984)
 
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- Use Spansh's **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners, all directly from EDMC.
+- **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported.
 - Click the next destination button to copy it straight into your paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
@@ -42,7 +42,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 ## Route Plotting
 
-<img width="481" height="53" alt="neutron_dance" src="https://github.com/user-attachments/assets/32a2034a-06f6-4805-87c6-dab7fbddd57a" />
+![Idle View](https://github.com/user-attachments/assets/32a2034a-06f6-4805-87c6-dab7fbddd57a)
 
 By default Neutron Dancer starts in a minimized mode in order to be as unobtrusive as possible when not in use. To plot a route click **do the neutron dance** to open the route plotting form.
 
@@ -62,7 +62,7 @@ It also supports CSV file import for any of the above, or any other Spansh route
 
 To use the Galaxy Plotter, also known as the *exact plotter*, enter your source and destination systems, select the ship and set any other options and choose `Calculate`. The Galaxy Plotter options are explained in the help window as well as at [Spansh](https://spansh.co.uk/exact-plotter).
 
-<img width="439" height="239" alt="Screenshot 2026-01-16 173246" src="https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f" />
+![Galaxy Plotter](https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f)
 
 When you complete a route Neutron Dancer saves the source, destination, and ship details for easy entry. These are available from a right click menu to simplify entry.
 
@@ -72,11 +72,35 @@ When you complete a route Neutron Dancer saves the source, destination, and ship
 
 This works like the Galaxy plotter but is simpler and produces less efficient routes.
 
-<img width="384" height="163" alt="Screenshot 2025-12-27 164632" src="https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2" />
+![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
+
+## Road to Riches and Expressway to Exomastery
+
+**Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way.
+
+![Expressway to Exomastery](https://github.com/user-attachments/assets/a577dce7-f8dd-4557-b479-ed68c02ccf00)
+
+## Trade Planner
+
+Trade routes are fully available.
+
+![Trade Planner](https://github.com/user-attachments/assets/d99e0ae4-bbc9-444b-859a-6997fdf8a604)
+
+## Tourist Route
+
+Tourist routes are also supported.
+
+![Touriste Route](https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3)
+
+## Fleet Carrier Router
+
+This is the final supported route type.
+
+![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
 
 ### Following the Route
 
-<img width="429" height="87" alt="Screenshot 2025-12-27 164511" src="https://github.com/user-attachments/assets/3e44b43e-919d-46f9-82ef-fdb0d1a0e19d" />
+![Route View](https://github.com/user-attachments/assets/3e44b43e-919d-46f9-82ef-fdb0d1a0e19d)
 
 Once your route is plotted, the next waypoint is shown on the **System Name** button — click it to copy that waypoint to your clipboard. In Elite Dangerous bring up the Galaxy Map, paste in the waypoint, and click **Plot route**.
 
@@ -86,7 +110,7 @@ The progress bar has a Tooltip that provides the number of jumps remaining and d
 
 ### Viewing the Route
 
-<img width="1164" height="361" alt="route_window" src="https://github.com/user-attachments/assets/37d0080d-30bc-41f1-a992-701474b605ef" />
+![Route Window](https://github.com/user-attachments/assets/37d0080d-30bc-41f1-a992-701474b605ef)
 
 The **Show route** button will open a window showing progress and the details of the plotted route. The current waypoint is hightlighted and progress includes waypoints completed and remaining, distance completed and remaining, jumps and lightyears per hour. For each jump the details include waypoints, distance traveled and remaining, fuel used and remaining, tritium used and remaining, whether to refueld and whether a star is a neutron star or scoopable depending on the type of route being followed.
 
@@ -110,14 +134,14 @@ Three overlays are available.
 
 Each can be individually enabled and frame size, color, position, background, text alignment etc. are all configurable.
 
-<img width="410" height="122" alt="overlay" src="https://github.com/user-attachments/assets/bd492595-1cfa-4ac1-aaac-810a42e0cd4a" />
+![Route Overlay](https://github.com/user-attachments/assets/bd492595-1cfa-4ac1-aaac-810a42e0cd4a)
 
 The `Default` frame can be further customized with:
 
 - A progress bar showing route progress
 - A customizable route details string that can display a wide variety of route information
 
-<img width="777" height="56" alt="overlay_customization" src="https://github.com/user-attachments/assets/b86abb00-aba7-44e3-8006-ef32066c53de" />
+![Overlay Customization](https://github.com/user-attachments/assets/b86abb00-aba7-44e3-8006-ef32066c53de)
 
 ### Chat Commands
 

@@ -122,7 +122,7 @@ class RouteWindow:
         ttl:ttk.Label = ttk.Label(frm, text=f"{lbls['progress'].title()}", font=BOLD)
         ttl.pack(side=tk.LEFT, padx=5)
 
-        pfl:float = route.perc_dist_rem() if route.dc != None else route.perc_jumps_rem()
+        pfl:float = route.perc_dist_rem() if route.dr != None else route.perc_jumps_rem()
         lbl:ttk.Label = ttk.Label(frm, text=f"{int(pfl)}%", font=FONT)
         lbl.pack(side=tk.LEFT, padx=5)
 

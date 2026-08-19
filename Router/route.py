@@ -22,13 +22,15 @@ class Route:
         self.nc:int|None = None # System / body column index
         self.jc:int|None = None # Jumps column index
         self.dc:int|None = None # Distance column index
+        self.dr:int|None = None # Distance remaining column index
 
         if hdrs == [] or route == []: return
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
         self.fleetcarrier = any('tritium' in h.lower() for h in hdrs)
 
-        self.jc:int|None = self.colind('Jumps')
+        self.jc = self.colind('Jumps')
+        self.dc = self.colind('Distance')
 
         # If necessary calculate jumps or waypoints remaining and insert into the headers & the route
         if 'Jumps Rem' not in hdrs and 'Waypoints Rem' not in hdrs and self.fleetcarrier == False:
@@ -39,10 +41,19 @@ class Route:
             for i in range(0, len(route)):
                 self.route[i].insert(jr, self.jumps_remaining(i))
 
+        # Calculate distance remaining if we have a distance column and insert into the headers & the route
+        if 'Distance Remaining' not in hdrs and 'Distance Rem' not in hdrs and self.dc != None:
+            dr:int = len(hdrs)
+            if self.dc != None: dr = self.dc+1
+
+            self.hdrs.insert(dr, 'Distance Remaining')
+            for i in range(0, len(route)):
+                rem:int = sum(item[self.dc] for item in self.route[i+1:]) if i+1 < len(self.route) else 0
+                self.route[i].insert(dr, rem)
+
         self.sc = self.colind(['System Name', 'system', 'name'])
         self.nc = self.colind()
-        self.dc = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
-        self.dn = self.colind('Distance')
+        self.dr = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
 
     def source(self) -> str:
@@ -182,13 +193,13 @@ class Route:
 
     def dist_to_refuel(self) -> int|None:
         """ Returns distance to the next fuel stop. Returns None if no fuel stops. """
-        if self.route == [] or self.offset >= len(self.route) or self.dc == None: return None
+        if self.route == [] or self.offset >= len(self.route) or self.dr == None: return None
 
         ind:int|None = self.colind("Refuel") or self.colind("Restock")
         if ind == None: return None
         if self.route[self.offset][ind] in TRUE: return 0
         refind:int|None = next((i for i, wp in enumerate(self.route[self.offset:len(self.route)]) if wp[ind] in TRUE), None)
-        return self.route[self.offset][self.dc] - self.route[self.offset+refind][self.dc] if refind is not None else None
+        return self.route[self.offset][self.dr] - self.route[self.offset+refind][self.dr] if refind is not None else None
 
 
     def refuel(self) -> bool:
@@ -241,18 +252,18 @@ class Route:
         """ Return the distance to the next waypoint """
         if self.route == []: return 0
         if self.offset+1 >= len(self.route): return 0
-        if self.dn:
-            return self.route[self.offset+1][self.dn]
-        if self.offset >= 0 and self.dc:
-            return self.route[self.offset][self.dc]- self.route[self.offset+1][self.dc]
+        if self.dc:
+            return self.route[self.offset+1][self.dc]
+        if self.offset >= 0 and self.dr:
+            return self.route[self.offset][self.dr]- self.route[self.offset+1][self.dr]
         return 0
 
 
     def dist_to_prev(self) -> int:
         """ Return the distance to the previous waypoint """
-        if self.route == [] or self.dn == None: return 0
+        if self.route == [] or self.dc == None: return 0
         if self.offset+1 >= len(self.route): return 0
-        return self.route[self.offset][self.dn]
+        return self.route[self.offset][self.dc]
 
 
     def total_dist(self) -> int:
@@ -284,9 +295,9 @@ class Route:
 
     def dist_remaining(self, offset:int|None = None) -> int:
         """ Distance remaining if we know it """
-        if self.route == [] or self.dc == None: return 0
+        if self.route == [] or self.dr == None: return 0
         if offset == None: offset = max(0, self.offset)
-        return self.route[offset][self.dc]
+        return self.route[offset][self.dr]
 
 
     def perc_dist_rem(self, offset:int|None = None) -> float:

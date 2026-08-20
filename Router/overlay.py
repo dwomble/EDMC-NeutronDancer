@@ -272,7 +272,7 @@ class Overlay():
             'matching_prefixes': f"{group}-",
             'id_prefix_group': f"{group} {ovf.name}",
             'id_prefixes': [f"{group}-{ovf.name}-"],
-            'id_prefix_group_anchor': "nw",
+            'plugin_group_anchor': "nw",
             'payload_justification': "left",
             'marker_label_position': "below",
             'controller_preview_box_mode': "last",

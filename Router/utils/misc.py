@@ -3,6 +3,7 @@ import os
 import sys
 import shutil
 import re
+import locale
 from datetime import datetime
 from math import floor
 from typing import Any
@@ -95,6 +96,11 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     parent.update()
 
 
+def _strip_trailing_zeros(formatted:str) -> str:
+    """ Trims a locale float's trailing zeros/decimal point. """
+    decimal_point:str = locale.localeconv()['decimal_point']
+    return formatted.rstrip('0').rstrip(decimal_point)
+
 def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
     """
         A general customized formatting function.
@@ -132,8 +138,9 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         case 'bool': # We're going to display Yes (blanks and False are handled above)
             ret = "Yes"
 
-        case 'datetime': # If it's a datetime convert it from the json date format to our date format
-            ret = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d %H:%M")
+        case 'datetime': # %x is locale-aware; %H:%M keeps no-seconds behavior
+            dt:datetime = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S")
+            ret = f"{dt:%x} {dt:%H:%M}"
 
         case 'interval': # Approximated interval (no seconds, only show minutes if it's less than a day)
             days , rem = divmod(int(value), 60*60*24)
@@ -149,7 +156,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
                 elif mins > 0: tmp.append(f" 1 minute")
             ret = ' '.join(tmp)
 
-        case 'num' | 'float' | 'int': # We only shorten/simplify numbers over 100k. Smaller ones we just display with commas at thousands
+        case 'num' | 'float' | 'int': # Above 10k we shorten; below, locale-grouped digits
             if float(value) > 10000:
                 abbrs:list[str] = ['', 'K', 'M', 'B', 'T']  # Abbreviations for thousands, millions, billions, trillions
                 fnum:float = float('{:.3g}'.format(value))
@@ -158,15 +165,16 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
                     if magnitude >= len(abbrs) - 1: break
                     magnitude += 1
                     fnum /= 1000.0
-                ret = '{}{}'.format('{:f}'.format(fnum).rstrip('0').rstrip('.'), abbrs[magnitude])
+                digits:str = _strip_trailing_zeros(locale.format_string('%f', fnum, grouping=False))
+                ret = f"{digits}{abbrs[magnitude]}"
             elif float(value) > 100 or type == 'int': # No decimals above 100
-                ret = f"{value:,.0f}"
+                ret = locale.format_string('%.0f', value, grouping=True)
             elif float(value) > 10: # Only 1 above 10
-                ret = f"{value:,.1f}"
+                ret = locale.format_string('%.1f', value, grouping=True)
             elif type == 'float': # Two if it's <10 and a float.
-                ret = f"{value:,.2f}"
-            else:
-                ret = f"{value:,}"
+                ret = locale.format_string('%.2f', value, grouping=True)
+            else: # Not forced to 2dp, but capped there -- ED never needs more
+                ret = _strip_trailing_zeros(locale.format_string('%.2f', value, grouping=True))
 
         case _: # Title case two words, leave longer strings as is
             ret = str(value).title() if str(value).count(' ') < 2 and re.search(r"[A-Z0-9]", str(value)) == None else str(value)

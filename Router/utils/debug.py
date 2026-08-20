@@ -6,22 +6,23 @@ from os import path
 from config import appname  # type: ignore
 
 class Debug:
+    """ Generalized logging class for EDMC that adapts the log level based on whether we're in dev mode or not. """
     logger: logging.Logger
 
-    def __init__(self, plugin_dir, dev_mode: bool = False) -> None:
+    def __init__(self, plugin_dir, dev_mode:bool = False) -> None:
         # A Logger is used per 'found' plugin to make it easy to include the plugin's
         # folder name in the logging output format.
         Debug.logger = logging.getLogger(f'{appname}.{path.basename(plugin_dir)}')
 
-        #if dev_mode == False:
-        #    Debug.logger.setLevel(logging.INFO)
-        #else:
-        Debug.logger.setLevel(logging.DEBUG)
+        if dev_mode == False:
+            Debug.logger.setLevel(logging.INFO)
+        else:
+            Debug.logger.setLevel(logging.DEBUG)
 
 
 def catch_exceptions(func):
     """
-    Generic exception handler called via decorators. Used to ensure we get a stack trace in the debug log
+    Exception handler called via decorators. Used to ensure we get a stack trace in the debug log
     without having to constantly wrap methods in try except blocks.
     """
     @functools.wraps(func)
@@ -31,7 +32,6 @@ def catch_exceptions(func):
         except Exception as e:
             Debug.logger.error(f"An error occurred in {func.__name__}: {e}")
             trace:list = traceback.format_exc().splitlines()
-            #Debug.logger.error(trace[0] + "\n" + "\n".join(trace[4:]))
             Debug.logger.error(trace[0] + "\n" + "\n".join(trace))
     return wrapper
 
@@ -41,4 +41,3 @@ def catch_exceptions(func):
 Debug.logger = logging.getLogger(appname)
 Debug.logger.addHandler(logging.NullHandler())
 Debug.logger.setLevel(logging.INFO)
-

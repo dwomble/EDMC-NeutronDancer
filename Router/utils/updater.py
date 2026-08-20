@@ -6,10 +6,29 @@ import time
 from threading import Thread
 from semantic_version import Version # type: ignore
 
-from config import config # type: ignore
+from config import config, user_agent # type: ignore
+from timeout_session import new_session # type: ignore
 from .debug import Debug
 
 TIMEOUT=10
+
+def _headers(gh_project:str) -> dict:
+    """ Blends into EDMC's own UA, per PLUGINS.md. """
+    return {'User-Agent': f'{user_agent} {gh_project}-Updater'}
+
+def read_version_file(plugin_dir:str, default:str) -> Version:
+    """ Reads the "version" file install() writes -- also
+    stamped by CI at release, so a fresh install has one. """
+    version_file:str = os.path.join(plugin_dir, "version")
+    if os.path.isfile(version_file):
+        with open(version_file) as f:
+            text:str = f.read().strip()
+        if text:
+            try:
+                return Version.coerce(text)
+            except ValueError:
+                pass
+    return Version.coerce(default)
 
 class Updater():
     """
@@ -47,7 +66,8 @@ class Updater():
 
         r:requests.Response|None = None
         try:
-            r = requests.get(self.download_url, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
+            session:requests.Session = new_session(timeout=TIMEOUT)
+            r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
@@ -79,7 +99,8 @@ class Updater():
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
             Debug.logger.debug(f"Requesting {self.gh_release_info}")
-            r:requests.Response = requests.get(self.gh_release_info, headers={'User-Agent': f'{self.gh_project} Updater'}, timeout=TIMEOUT)
+            session:requests.Session = new_session(timeout=TIMEOUT)
+            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)

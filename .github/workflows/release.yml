@@ -35,7 +35,7 @@ jobs:
         git push origin HEAD:master
 
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip assets Router LICENSE load.py version -x \*__pycache__\* \*.pytest_cache\*
+      run: zip -r ${{ github.event.repository.name }}.zip assets Router CHANEGLOG.md LICENSE load.py README.md version -x \*__pycache__\* \*.pytest_cache\*
 
     - name: Release
       uses: softprops/action-gh-release@v2

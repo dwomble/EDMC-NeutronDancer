@@ -9,7 +9,7 @@ import edmc_data # type: ignore
 
 from Router.constants import GH_PROJECT, GH_RELEASE_INFO, NAME, TITLE, errs, CarrierStates
 from Router.utils.debug import Debug, catch_exceptions
-from Router.utils.updater import Updater
+from Router.utils.updater import Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
 
 from Router.context import Context
@@ -21,16 +21,13 @@ from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 
 def plugin_start3(plugin_dir: str) -> str:
-    Debug(plugin_dir)
+    Debug(plugin_dir, True)
 
     Context.plugin_name = NAME
     Context.plugin_title = TITLE
     Context.plugin_dir = Path(plugin_dir).resolve()
 
-    version:Version = Version("0.0.0")
-    version_file:Path = Context.plugin_dir / "version"
-    if version_file.is_file():
-        version = Version(version_file.read_text())
+    version:Version = read_version_file(str(Context.plugin_dir), "0.0.0")
     Context.plugin_version = version
     VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'

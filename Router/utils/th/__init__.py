@@ -13,7 +13,7 @@ from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox",
-           "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+           "Progressbar", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -165,6 +165,41 @@ class Label(tk.Label):
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Label.__init__(self, master, **kw)
         theme.update(self)
+
+class Text(tk.Text):
+    """ A themed text box that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        # Matches th.Label's defaults, or register() sees Text's own
+        # natural colors as pre-customized, blocking theme switches.
+        kw.setdefault('foreground', tk.Label()['foreground'])
+        kw.setdefault('background', tk.Label()['background'])
+        kw.setdefault('font', tk.Label()['font'])
+        kw.setdefault('insertbackground', kw['foreground']) # caret stays visible against a dark background too
+        tk.Text.__init__(self, master, **kw)
+        theme.update(self)
+
+class Progressbar(ttk.Progressbar):
+    """ A themed progress bar, colored via ttk.Style (no fg/bg for
+    theme.py to repaint). Call refresh_style() from your own
+    prefs_changed() for a live theme change mid-session. """
+
+    STYLE:str = "Th.Horizontal.TProgressbar"
+
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        kw.setdefault('style', self.STYLE)
+        Progressbar.refresh_style()
+        ttk.Progressbar.__init__(self, master, **kw)
+        theme.update(self)
+
+    @classmethod
+    def refresh_style(cls) -> None:
+        """ Recolors every Progressbar using STYLE to match the theme. """
+        style:ttk.Style = ttk.Style()
+        if config.get_int('theme', default=0) > 0:
+            style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
+        else: # native colors, whatever this platform's ttk theme uses
+            style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
+                             background=style.lookup('TProgressbar', 'background'))
 
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """

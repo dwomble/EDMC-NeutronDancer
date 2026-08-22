@@ -6,6 +6,7 @@ TITLE="Navl's Neutron Dancer"
 NAME="NeutronDancer"
 GH_USER="dwomble"
 GH_PROJECT="EDMC-NeutronDancer"
+GH_MAIN="master"
 
 # GIT info and URLs
 GH_BASE:str = f"https://github.com/{GH_USER}/{GH_PROJECT}"

@@ -89,7 +89,7 @@ class UI():
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_plugin_update())
-        parent.after(30000, lambda: self.show_notice())
+        parent.after(15000, lambda: self.show_notice())
 
 
     @catch_exceptions
@@ -116,20 +116,23 @@ class UI():
 
     @catch_exceptions
     def show_notice(self) -> None:
-        """ Display the pending NOTICES.md entry, if any """
+        """ Display pending NOTICES.md entry, if any """
         if not Context.notices or not Context.notices.pending_notice:
             return
-
-        self.notice:th.RichText = th.RichText(self.frame, markdown=Context.notices.pending_notice, cursor='hand2')
-        self.notice.fit_height()
+        notice:str = Context.notices.pending_notice
+        w:int = max(len(l) for l in notice.split("\n"))
+        h:int = len(notice.replace("\n\n", "\n").split("\n"))
+        self.notice:th.RichText = th.RichText(self.frame, width=w, height=h, markdown=notice, relief=tk.FLAT)
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
-        self.notice.grid(row=-1, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
+        self.notice.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
     @catch_exceptions
     def dismiss_notice(self, tkEvent = None) -> None:
         """ Hide the notice on click and never show it again """
         Context.notices.dismiss_notice()
+        self.notice.grid_remove()
         self.notice.destroy()
+        self.frame.update_idletasks()
 
     def _update_item(self, which:str, type:str, value:str = "") -> None:
         """ Update items of the given type from which source to all other plot types """

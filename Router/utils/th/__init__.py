@@ -8,7 +8,7 @@ import tkinter.font as tkfont
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from ..tkrichtext import RichText as _RichText, RichScrolledText as _RichScrolledText
+from ..tkrichtext import RichLabel as _RichLabel, RichText as _RichText, RichScrolledText as _RichScrolledText
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
@@ -195,6 +195,15 @@ class RichScrolledText(_RichScrolledText):
 
 class RichText(_RichText):
     """ RichScrolledText, minus its (always-hidden) scrollbar. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        _RichText.__init__(self, master, **kw)
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
+        theme.update(self)
+
+class RichLabel(_RichLabel):
+    """ Label version of RichText widget """
     def __init__(self, master:tk.Widget, **kw) -> None:
         _match_label_defaults(kw)
         _RichText.__init__(self, master, **kw)

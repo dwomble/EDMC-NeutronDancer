@@ -7,7 +7,7 @@ import myNotebook as nb  # type: ignore
 from config import user_agent # type: ignore
 import edmc_data # type: ignore
 
-from Router.constants import GH_PROJECT, GH_RELEASE_INFO, GH_USER, NAME, TITLE, errs, CarrierStates
+from Router.constants import GH_PROJECT, GH_RELEASE_INFO, GH_USER, GH_MAIN, NAME, TITLE, errs, CarrierStates
 from Router.utils.debug import Debug, catch_exceptions
 from Router.utils.updater import Notices, Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
@@ -34,7 +34,7 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.updater = Updater(str(Context.plugin_dir), GH_PROJECT, GH_RELEASE_INFO)
     Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
 
-    Context.notices = Notices(GH_USER, GH_PROJECT)
+    Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
 
     return NAME

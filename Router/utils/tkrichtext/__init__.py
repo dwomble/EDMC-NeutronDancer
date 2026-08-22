@@ -130,11 +130,9 @@ class RichText(RichScrolledText):
 
 
 class RichLabel(RichText):
-
     """
     HTML label widget
     """
-
     def _w_init(self, kwargs):
         super()._w_init(kwargs)
         if "background" not in kwargs.keys():
@@ -147,7 +145,9 @@ class RichLabel(RichText):
             self.config(borderwidth=0)
 
         if "padx" not in kwargs.keys():
-            self.config(padx=3)
+            self.config(padx=0)
+        if "pady" not in kwargs.keys():
+            self.config(pady=0)
 
     def set_html(self, *args, **kwargs):
         super().set_html(*args, **kwargs)

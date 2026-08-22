@@ -173,6 +173,7 @@ def parse_notices(text:str) -> list[tuple[int, str]]:
     for i, m in enumerate(matches):
         start:int = m.end()
         end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        Debug.logger.debug(f"Matches: {i} {text[start:end].strip()}")
         notices.append((int(m.group(1)), text[start:end].strip()))
     notices.sort(key=lambda n: -n[0])
     return notices
@@ -185,7 +186,7 @@ class Notices():
     Call check_for_notices() at startup -- async and throttled
     like Updater.check_for_update(). pending_notice holds the
     current one to show; call dismiss_notice() once seen. """
-    def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'master') -> None:
+    def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'main') -> None:
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
         self.gh_branch:str = gh_branch
@@ -212,7 +213,7 @@ class Notices():
         """ Start a notices-check thread, throttled like updates. """
         last:int = config.get_int(f"{self.gh_project}_last_notice_check", 0)
         if last >= int(time.time()) - interval:
-            return
+           return
 
         config.set(f"{self.gh_project}_last_notice_check", int(time.time()))
         thread:Thread = Thread(target=self._check_notices, args=[], name=f"{self.gh_project} notice checker")
@@ -224,6 +225,7 @@ class Notices():
         if self.notice_id == 0:
             return None
         dismissed:int = config.get_int(f"{self.gh_project}_dismissed_notice", 0)
+        dismissed = 0
         return self.notice if self.notice_id > dismissed else None
 
     def dismiss_notice(self) -> None:

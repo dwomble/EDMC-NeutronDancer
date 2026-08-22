@@ -11,7 +11,7 @@ from config import appname  #type: ignore
 
 # to avoid circular imports, local imports go here
 if TYPE_CHECKING:
-    from .utils.updater import Updater
+    from .utils.updater import Updater, Notices
     from .route_manager import Router
     from .ui import UI
     from .csv import CSV
@@ -45,3 +45,4 @@ class Context:
     hotkeys:'Hotkeys' = None
     ui:'UI' = None
     updater:'Updater' = None
+    notices:'Notices' = None

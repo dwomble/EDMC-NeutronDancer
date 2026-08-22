@@ -67,7 +67,7 @@ class UI():
         self.router:tk.StringVar = tk.StringVar()
         self.router.set('Galaxy Plotter')  # Set default value
 
-        self.progbar:ttk.Progressbar # Overall progress bar
+        self.progbar:th.Progressbar # Overall progress bar
 
         self.title_fr:th.Frame = self._create_title_fr(self.frame)
         self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
@@ -89,6 +89,7 @@ class UI():
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_plugin_update())
+        parent.after(30000, lambda: self.show_notice())
 
 
     @catch_exceptions
@@ -112,6 +113,23 @@ class UI():
         Context.updater.install_update = False
         self.update.destroy()
 
+
+    @catch_exceptions
+    def show_notice(self) -> None:
+        """ Display the pending NOTICES.md entry, if any """
+        if not Context.notices or not Context.notices.pending_notice:
+            return
+
+        self.notice:th.RichText = th.RichText(self.frame, markdown=Context.notices.pending_notice, cursor='hand2')
+        self.notice.fit_height()
+        self.notice.bind("<Button-1>", partial(self.dismiss_notice))
+        self.notice.grid(row=-1, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
+
+    @catch_exceptions
+    def dismiss_notice(self, tkEvent = None) -> None:
+        """ Hide the notice on click and never show it again """
+        Context.notices.dismiss_notice()
+        self.notice.destroy()
 
     def _update_item(self, which:str, type:str, value:str = "") -> None:
         """ Update items of the given type from which source to all other plot types """
@@ -348,7 +366,7 @@ class UI():
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
 
-        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate',
+        self.progbar = th.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate',
                                        length=self.frwidth-3)
         self.progtt:th.Tooltip = th.Tooltip(self.progbar, text=tts["progress"])
         self.progbar.rowconfigure(0, weight=1)

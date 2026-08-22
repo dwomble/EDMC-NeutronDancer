@@ -88,8 +88,9 @@ def harness(request) -> Generator:
 
     from load import plugin_start3, plugin_app, journal_entry, dashboard_entry
 
-    # Prevent network updater thread from making tests hang on teardown.
-    with patch('load.Updater.check_for_update', return_value=None):
+    # Avoid live update/notice threads hanging teardown.
+    with patch('load.Updater.check_for_update', return_value=None), \
+         patch('load.Notices.check_for_notices', return_value=None):
         plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
@@ -1963,6 +1964,26 @@ class TestUIFunctions:
         # Update cargo and verify cargo and range entries update
         assert ui.get_item('Galaxy', 'cargo_entry') == '12'
         assert ui.get_item('Neutron', 'range_entry') == str(harness.plugin.router.ship.get_range(12))
+
+    def test_show_notice_displays_pending_notice(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
+        harness.plugin.notices.notice_id = 1
+        harness.plugin.notices.notice = "test notice body"
+
+        ui.show_notice()
+
+        assert "test notice body" in ui.notice.get("1.0", tk.END)
+
+    def test_dismiss_notice_hides_and_persists(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
+        harness.plugin.notices.notice_id = 1
+        harness.plugin.notices.notice = "test notice body"
+        ui.show_notice()
+
+        ui.dismiss_notice()
+
+        assert not ui.notice.winfo_exists()
+        assert harness.plugin.notices.pending_notice is None
 
 
 class TestRouteWindow:

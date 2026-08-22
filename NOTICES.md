@@ -2,4 +2,5 @@
 
 ## 1
 Welcome to Neutron Dancer's new in-panel notices! 
-Click to dimiss.
+
+Click to dismiss.

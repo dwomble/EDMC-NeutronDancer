@@ -162,16 +162,16 @@ class TestStartup:
 
 class TestUpdater:
     def test_get_release_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
-        updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
         mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
 
         updater.get_release()
 
         call = mock_requests._mock_requests.calls[-1]
-        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-DummyPlugin-Updater"
+        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
 
     def test_download_zip_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
-        updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
         updater.update_version = "1.2.3" # type: ignore -- str is fine, only used for a filename here
         updater.download_url = "https://example.invalid/release.zip"
         mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
@@ -179,7 +179,7 @@ class TestUpdater:
         updater.download_zip()
 
         call = mock_requests._mock_requests.calls[-1]
-        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-DummyPlugin-Updater"
+        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
 
     def test_reads_the_version_file_when_present(self, tmp_path) -> None:
         (tmp_path / "version").write_text("1.2.3")

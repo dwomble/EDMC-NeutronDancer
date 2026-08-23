@@ -79,6 +79,14 @@ class Route:
         return self.route[self.offset+1][self.nc]
 
 
+    def next_stop_display(self) -> str:
+        """ next_stop() plus body, when this route has one:
+        Spansh already bakes the system into Body's value.
+        next_stop() itself stays bare -- pasted into the
+        galaxy map, which only searches by system. """
+        return self.next_stop_value('Body') or self.next_stop()
+
+
     def next_stop_value(self, header:str) -> str|None:
         """ Return the next waypoint's value for a given header """
         if self.route == [] or self.offset >= len(self.route)-1: return None
@@ -162,9 +170,8 @@ class Route:
 
         species = self.next_stop_value('Species')
         if species:
-            body:str|None = self.next_stop_value('Body')
             landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
-            lines.append(" · ".join(p for p in [body, species, landmark] if p))
+            lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
 
             bodies:list[tuple[str, str]] = self.bodies_at_next_stop()
             if len(bodies) > 1:

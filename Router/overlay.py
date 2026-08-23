@@ -90,7 +90,7 @@ class Overlay():
                 self.clear_frame('Carrier')
             return
 
-        primary:str = Context.route.next_stop()
+        primary:str = Context.route.next_stop_display()
         detail:str = Context.route.next_stop_station()
         wp:str = f"{primary} · {detail}" if detail else primary
         if Context.route.jumps_to_wp() != 0:

@@ -296,10 +296,19 @@ class TestRouteMethods:
 
         assert any('High metal content world' in l for l in lines)
         assert any('Scan' in l for l in lines)
+        assert route.next_stop_display() == 'Colonia 2 a'
+
+    def test_next_stop_display_falls_back_to_system_without_a_body_column(self, harness:TestHarness) -> None:
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)
+
+        assert route.next_stop_display() == route.next_stop() == 'Apurui'
 
     def test_next_stop_exobiology(self, harness:TestHarness) -> None:
-        """ next_stop() stays the system name (self.nc must match FSDJump's system-only
-        StarSystem for route-position tracking) -- next_stop_details() carries the body. """
+        """ next_stop() stays the system name (self.nc must
+        match FSDJump's StarSystem for position tracking) --
+        next_stop_display() carries the body instead;
+        next_stop_details() doesn't repeat it. """
         hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route_data = [
             ['Deciat', 'Deciat 1', '', 0],
@@ -309,7 +318,8 @@ class TestRouteMethods:
 
         assert route.next_stop_station() == ''
         assert route.next_stop() == 'Deciat'
-        assert any('Deciat 4 a' in l and 'Bacterium Nypoxia' in l for l in route.next_stop_details())
+        assert route.next_stop_display() == 'Deciat 4 a'
+        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details())
 
     def test_next_stop_details_lists_extra_bodies_in_the_same_system(self, harness:TestHarness) -> None:
         """ Riches/exobiology routes can list several bodies per system, all collapsed under

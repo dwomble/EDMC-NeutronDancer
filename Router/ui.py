@@ -325,7 +325,7 @@ class UI():
         nstr:str = route.get_waypoint(1) if route.dist_to_next() == 0 else f"{route.get_waypoint(1)} ({dn} ly)"
         self.waypoint_next_tt.set_text(nstr)
 
-        primary:str = route.next_stop()
+        primary:str = route.next_stop_display()
         detail:str = route.next_stop_station()
         wp:str = f"{primary} · {detail}" if detail else primary
         self._update_progbar()
@@ -390,7 +390,7 @@ class UI():
         self.waypoint_prev_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
-        self.waypoint_btn:th.Button = th.Button(fr1, text=Context.route.next_stop(), width=32,
+        self.waypoint_btn:th.Button = th.Button(fr1, text=Context.route.next_stop_display(), width=32,
                                               command=lambda: copy_to_clipboard(self.parent, Context.route.next_system()))
         self.waypoint_btn_tt:th.Tooltip = th.Tooltip(self.waypoint_btn, tts["copy_to_clipboard"])
         self.waypoint_btn.grid(row=row, column=col, padx=5, pady=5, sticky=tk.EW)

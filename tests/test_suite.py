@@ -282,8 +282,10 @@ class TestRouteMethods:
         assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
 
     def test_next_stop_riches(self, harness:TestHarness) -> None:
-        """ subtype/distance/scan value for a riches-shaped route."""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        """ subtype/distance/scan value for a riches-shaped route. Header names ('Body',
+        'Body Type') match what _flatten_bodies_result()/HEADER_MAP actually produce -- see
+        test_plotter_success_creates_route_riches's `assert "Body" in ...hdrs`. """
+        hdrs = ['System Name', 'Body', 'Body Type', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
         route_data = [
             ['Colonia', 'Colonia 1', '', 0, 0, 0],
             ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
@@ -296,7 +298,9 @@ class TestRouteMethods:
         assert any('Scan' in l for l in lines)
 
     def test_next_stop_exobiology(self, harness:TestHarness) -> None:
-        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
+        """ next_stop() stays the system name (self.nc must match FSDJump's system-only
+        StarSystem for route-position tracking) -- next_stop_details() carries the body. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route_data = [
             ['Deciat', 'Deciat 1', '', 0],
             ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
@@ -304,7 +308,24 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 0)
 
         assert route.next_stop_station() == ''
-        assert route.next_stop() == 'Deciat 4 a'
+        assert route.next_stop() == 'Deciat'
+        assert any('Deciat 4 a' in l and 'Bacterium Nypoxia' in l for l in route.next_stop_details())
+
+    def test_next_stop_details_lists_extra_bodies_in_the_same_system(self, harness:TestHarness) -> None:
+        """ Riches/exobiology routes can list several bodies per system, all collapsed under
+        one displayed system name (next_stop() can't disambiguate by body -- see above) --
+        the detail lines must call out that there's more than just the immediate one. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
+        route_data = [
+            ['Deciat', 'Deciat 1', '', 0],
+            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
+            ['Deciat', 'Deciat 4 b', 'Fonticulua Campestris', 0],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        lines = route.next_stop_details()
+
+        assert any('Deciat 4 b' in l and 'Fonticulua Campestris' in l for l in lines)
 
     def test_next_stop_station_blank(self, harness:TestHarness) -> None:
         """Bblank for plain route types (Neutron, Galaxy, etc.)."""
@@ -359,7 +380,7 @@ class TestRouteMethods:
 
     def test_riches_cumulative_scan(self, harness:TestHarness) -> None:
         """riches scan value gets a running total across waypoints already passed"""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        hdrs = ['System Name', 'Body', 'Body Type', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
         route_data = [
             ['Colonia', 'Colonia 1', '', 0, 0, 0],
             ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],

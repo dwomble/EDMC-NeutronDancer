@@ -87,6 +87,24 @@ class Route:
         return self.route[self.offset+1][ind]
 
 
+    def bodies_at_next_stop(self) -> list[tuple[str, str]]:
+        """ (body, species) for every row at the next stop's
+        system -- self.nc must stay the system column (FSDJump
+        matches on it), so a multi-body system would otherwise
+        show just one repeated name. """
+        if self.route == [] or self.offset >= len(self.route)-1: return []
+        bind:int|None = self.colind('Body')
+        if bind is None or self.sc is None: return []
+        sind:int|None = self.colind('Species')
+
+        system:str = self.route[self.offset+1][self.sc]
+        pairs:list[tuple[str, str]] = []
+        for r in self.route[self.offset+1:]:
+            if r[self.sc] != system: break
+            pairs.append((r[bind], r[sind] if sind is not None else ''))
+        return pairs
+
+
     def sum_value(self, header:str, through:int|None = None) -> float:
         """ Sum a numeric column across route[:through] (default: through the next stop) """
         ind:int|None = self.colind(header)
@@ -137,15 +155,20 @@ class Route:
             lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
 
 
-        subtype = self.next_stop_value('Body Subtype')
+        subtype = self.next_stop_value('Body Type')
         if subtype:
             dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
             lines.append(" · ".join(p for p in [subtype, dist] if p))
 
         species = self.next_stop_value('Species')
         if species:
+            body:str|None = self.next_stop_value('Body')
             landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
-            lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
+            lines.append(" · ".join(p for p in [body, species, landmark] if p))
+
+            bodies:list[tuple[str, str]] = self.bodies_at_next_stop()
+            if len(bodies) > 1:
+                lines.append(f"+ {len(bodies) - 1} more here: " + ", ".join(f"{b} ({s})" if s else b for b, s in bodies[1:]))
 
             cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
             perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', '', ' Cr/hr']))

@@ -11,6 +11,9 @@ from config import config, user_agent # type: ignore
 from timeout_session import new_session # type: ignore
 from .debug import Debug
 
+# Check for updates at most once per day
+CHECK_INTERVAL:int = (3600 * 24)
+_NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
 TIMEOUT=10
 
 def _headers(gh_project:str) -> dict:
@@ -18,8 +21,7 @@ def _headers(gh_project:str) -> dict:
     return {'User-Agent': f'{user_agent} {gh_project}-Updater'}
 
 def read_version_file(plugin_dir:str, default:str) -> Version:
-    """ Reads the "version" file install() writes -- also
-    stamped by CI at release, so a fresh install has one. """
+    """ Reads the "version" file  by CI at release and updated by install(). """
     version_file:str = os.path.join(plugin_dir, "version")
     if os.path.isfile(version_file):
         with open(version_file) as f:
@@ -33,16 +35,20 @@ def read_version_file(plugin_dir:str, default:str) -> Version:
 
 class Updater():
     """
-    Handle checking for, and installing, updates
+    Handle checking for, and installing, plugin updates.
 
-    Call check_for_update() at plugin startup. It's asynchonrous.
-    Install the update when you choose (commonly on shutdown).
+    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
+      gh_owner is the github owner/org, e.g. "coder"
+      gh_project is the github project name, e.g. "my-plugin"
+      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
+    Call check_for_update(version) at plugin startup. It's asynchronous.
+    Call install() to install the update when you choose (commonly on shutdown).
     """
 
-    def __init__(self, plugin_dir:str, gh_project:str, gh_release_info:str) -> None:
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
         self.plugin_dir:str = plugin_dir
+        self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
-        self.gh_release_info:str = gh_release_info
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -99,9 +105,10 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {self.gh_release_info}")
+            url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
+            Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -153,7 +160,7 @@ class Updater():
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
 
-    def check_for_update(self, version:Version, plugin_name: str, interval:int = 3600 * 24) -> None:
+    def check_for_update(self, version:Version, plugin_name:str, interval:int = CHECK_INTERVAL) -> None:
         """ Start an update check thread. `interval` (seconds) throttles how often the check
         actually runs -- defaults to once a day. """
         last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
@@ -163,20 +170,6 @@ class Updater():
         config.set(f"{plugin_name}_last_update_check", int(time.time()))
         thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
         thread.start()
-
-_NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
-
-def parse_notices(text:str) -> list[tuple[int, str]]:
-    """ (id, body) for every "## N" heading, highest id first. """
-    matches:list = list(_NOTICE_HEADING.finditer(text))
-    notices:list[tuple[int, str]] = []
-    for i, m in enumerate(matches):
-        start:int = m.end()
-        end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        Debug.logger.debug(f"Matches: {i} {text[start:end].strip()}")
-        notices.append((int(m.group(1)), text[start:end].strip()))
-    notices.sort(key=lambda n: -n[0])
-    return notices
 
 class Notices():
     """
@@ -193,23 +186,21 @@ class Notices():
         self.notice_id:int = 0
         self.notice:str = ""
 
-    def _notices_url(self) -> str:
-        return f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
-
     def _check_notices(self) -> None:
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(self._notices_url(), headers=_headers(self.gh_project), timeout=TIMEOUT)
+            url:str = f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except Exception as e:
             Debug.logger.error("Failed to fetch notices, exception info:", exc_info=e)
             return
 
-        notices:list[tuple[int, str]] = parse_notices(r.text)
+        notices:list[tuple[int, str]] = self._parse_notices(r.text)
         if notices:
             self.notice_id, self.notice = notices[0]
 
-    def check_for_notices(self, interval:int = 3600 * 24) -> None:
+    def check_for_notices(self, interval:int = CHECK_INTERVAL) -> None:
         """ Start a notices-check thread, throttled like updates. """
         last:int = config.get_int(f"{self.gh_project}_last_notice_check", 0)
         if last >= int(time.time()) - interval:
@@ -231,3 +222,15 @@ class Notices():
     def dismiss_notice(self) -> None:
         """ Never show this notice, or any older one, again. """
         config.set(f"{self.gh_project}_dismissed_notice", self.notice_id)
+
+    @staticmethod
+    def _parse_notices(text:str) -> list[tuple[int, str]]:
+        """ (id, body) for every "## N" heading, highest id first. """
+        matches:list = list(_NOTICE_HEADING.finditer(text))
+        notices:list[tuple[int, str]] = []
+        for i, m in enumerate(matches):
+            start:int = m.end()
+            end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            notices.append((int(m.group(1)), text[start:end].strip()))
+        notices.sort(key=lambda n: -n[0])
+        return notices

@@ -216,7 +216,6 @@ class Notices():
         if self.notice_id == 0:
             return None
         dismissed:int = config.get_int(f"{self.gh_project}_dismissed_notice", 0)
-        dismissed = 0
         return self.notice if self.notice_id > dismissed else None
 
     def dismiss_notice(self) -> None:

@@ -161,6 +161,16 @@ class TestStartup:
         assert len(harness.plugin.modules) == 88
 
 class TestUpdater:
+    @pytest.fixture(autouse=True)
+    def _mock_network(self) -> Generator[None, None, None]:
+        """ queue_response()/.calls need the shared mock --
+        _use_live is a global a prior harness-based test may
+        have left True -- it never resets on its own. """
+        previous:bool = mock_requests.live_requests()
+        mock_requests.live_requests(False)
+        yield
+        mock_requests.live_requests(previous)
+
     def test_get_release_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
         mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))

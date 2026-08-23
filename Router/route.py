@@ -80,11 +80,15 @@ class Route:
 
 
     def next_stop_display(self) -> str:
-        """ next_stop() plus body, when this route has one:
-        Spansh already bakes the system into Body's value.
-        next_stop() itself stays bare -- pasted into the
-        galaxy map, which only searches by system. """
-        return self.next_stop_value('Body') or self.next_stop()
+        """ "<system> <body>" when this route has one --
+        Body's value can't be trusted to include the system
+        (opening the route window strips it -- see
+        route_window.py's _table()). next_stop() stays bare
+        -- pasted into the galaxy map, system-only. """
+        system:str = self.next_stop()
+        body:str|None = self.next_stop_value('Body')
+        if not body: return system
+        return body if body.startswith(system) else f"{system} {body}"
 
 
     def next_stop_value(self, header:str) -> str|None:

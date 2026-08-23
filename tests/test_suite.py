@@ -298,6 +298,15 @@ class TestRouteMethods:
         assert any('Scan' in l for l in lines)
         assert route.next_stop_display() == 'Colonia 2 a'
 
+    def test_next_stop_display_prepends_system_when_body_lacks_it(self, harness:TestHarness) -> None:
+        """ Body's own value can't be trusted to include the system name -- e.g. after the
+        route window strips it (route_window.py's _table()) -- so next_stop_display() must
+        add it itself rather than assuming Spansh always bakes it in. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
+        route = Route(hdrs, [['Deciat', 'Deciat 1', '', 0], ['Deciat', '4 a', 'Bacterium Nypoxia', 1]], 0)
+
+        assert route.next_stop_display() == 'Deciat 4 a'
+
     def test_next_stop_display_falls_back_to_system_without_a_body_column(self, harness:TestHarness) -> None:
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)

@@ -20,6 +20,7 @@
 
 * Refactored the plot UI and plot initiation to support more route types
 * Refactored ship loadout storage to be more efficient
+* Ensured that on login the current ship is added to the ships dropdown list
 
 ## v1.10.0 2026-07-25
 

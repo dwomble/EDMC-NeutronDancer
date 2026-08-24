@@ -79,12 +79,42 @@ class Route:
         return self.route[self.offset+1][self.nc]
 
 
+    def next_stop_display(self) -> str:
+        """ "<system> <body>" when this route has one --
+        Body's value can't be trusted to include the system
+        (opening the route window strips it -- see
+        route_window.py's _table()). next_stop() stays bare
+        -- pasted into the galaxy map, system-only. """
+        system:str = self.next_stop()
+        body:str|None = self.next_stop_value('Body')
+        if not body: return system
+        return body if body.startswith(system) else f"{system} {body}"
+
+
     def next_stop_value(self, header:str) -> str|None:
         """ Return the next waypoint's value for a given header """
         if self.route == [] or self.offset >= len(self.route)-1: return None
         ind:int|None = self.colind(header)
         if ind is None: return None
         return self.route[self.offset+1][ind]
+
+
+    def bodies_at_next_stop(self) -> list[tuple[str, str]]:
+        """ (body, species) for every row at the next stop's
+        system -- self.nc must stay the system column (FSDJump
+        matches on it), so a multi-body system would otherwise
+        show just one repeated name. """
+        if self.route == [] or self.offset >= len(self.route)-1: return []
+        bind:int|None = self.colind('Body')
+        if bind is None or self.sc is None: return []
+        sind:int|None = self.colind('Species')
+
+        system:str = self.route[self.offset+1][self.sc]
+        pairs:list[tuple[str, str]] = []
+        for r in self.route[self.offset+1:]:
+            if r[self.sc] != system: break
+            pairs.append((r[bind], r[sind] if sind is not None else ''))
+        return pairs
 
 
     def sum_value(self, header:str, through:int|None = None) -> float:
@@ -137,7 +167,7 @@ class Route:
             lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
 
 
-        subtype = self.next_stop_value('Body Subtype')
+        subtype = self.next_stop_value('Body Type')
         if subtype:
             dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
             lines.append(" · ".join(p for p in [subtype, dist] if p))
@@ -146,6 +176,10 @@ class Route:
         if species:
             landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
             lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
+
+            bodies:list[tuple[str, str]] = self.bodies_at_next_stop()
+            if len(bodies) > 1:
+                lines.append(f"+ {len(bodies) - 1} more here: " + ", ".join(f"{b} ({s})" if s else b for b, s in bodies[1:]))
 
             cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
             perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', '', ' Cr/hr']))

@@ -624,7 +624,7 @@ class RichesPlotter(Plotter):
         spec = PLOTTER_SPECS[self.route_type]
         if spec.body_types:
             params['body_types'] = spec.body_types
-        if spec.min_value_slider:
+        if spec.min_value:
             min_value_slider = self.frame.nametowidget("min_value_entry")
             params['min_value'] = int(min_value_slider.get()) * (1_000_000 if spec.label == "Expressway to Exomastery" else 1)
         elif spec.min_value is not None:

@@ -8,12 +8,13 @@ import tkinter.font as tkfont
 from theme import theme # type: ignore
 from config import config # type: ignore
 
+from ..tkrichtext import RichLabel as _RichLabel, RichText as _RichText, RichScrolledText as _RichScrolledText
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox",
-           "Progressbar", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
+           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -21,6 +22,14 @@ index:int = 0
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
+
+def _match_label_defaults(kw:dict) -> None:
+    """ Matches th.Label's own defaults, or register() sees a raw
+    tk.Text as pre-customized and blocks theme switches. """
+    kw.setdefault('foreground', tk.Label()['foreground'])
+    kw.setdefault('background', tk.Label()['background'])
+    kw.setdefault('font', tk.Label()['font'])
+    kw.setdefault('insertbackground', kw['foreground']) # caret stays visible against a dark background too
 
 def resolve(widget:Any) -> Any:
     """ Resolve the actual base object for a tk nametowidget() lookup. """
@@ -169,37 +178,64 @@ class Label(tk.Label):
 class Text(tk.Text):
     """ A themed text box that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        # Matches th.Label's defaults, or register() sees Text's own
-        # natural colors as pre-customized, blocking theme switches.
-        kw.setdefault('foreground', tk.Label()['foreground'])
-        kw.setdefault('background', tk.Label()['background'])
-        kw.setdefault('font', tk.Label()['font'])
-        kw.setdefault('insertbackground', kw['foreground']) # caret stays visible against a dark background too
+        _match_label_defaults(kw)
         tk.Text.__init__(self, master, **kw)
         theme.update(self)
 
-class Progressbar(ttk.Progressbar):
-    """ A themed progress bar, colored via ttk.Style (no fg/bg for
-    theme.py to repaint). Call refresh_style() from your own
-    prefs_changed() for a live theme change mid-session. """
-
-    STYLE:str = "Th.Horizontal.TProgressbar"
-
+class RichScrolledText(_RichScrolledText):
+    """ A themed, scrollable HTML/markdown text box. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        kw.setdefault('style', self.STYLE)
-        Progressbar.refresh_style()
-        ttk.Progressbar.__init__(self, master, **kw)
+        _match_label_defaults(kw)
+        _RichScrolledText.__init__(self, master, **kw)
+        # .frame is a bare tk.Frame; nothing else themes it, so
+        # it'd show through as an unthemed border around the Text.
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
         theme.update(self)
 
-    @classmethod
-    def refresh_style(cls) -> None:
-        """ Recolors every Progressbar using STYLE to match the theme. """
-        style:ttk.Style = ttk.Style()
-        if config.get_int('theme', default=0) > 0:
-            style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
-        else: # native colors, whatever this platform's ttk theme uses
-            style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
-                             background=style.lookup('TProgressbar', 'background'))
+class RichText(_RichText):
+    """ RichScrolledText, minus its (always-hidden) scrollbar. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        _RichText.__init__(self, master, **kw)
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
+        theme.update(self)
+
+class RichLabel(_RichLabel):
+    """ Label version of RichText widget """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        _RichText.__init__(self, master, **kw)
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
+        theme.update(self)
+
+# class Progressbar(ttk.Progressbar):
+#     """ A themed progress bar, colored via ttk.Style (no fg/bg for
+#     theme.py to repaint). Call refresh_style() from your own
+#     prefs_changed() for a live theme change mid-session. """
+
+#     STYLE:str = "Th.Horizontal.TProgressbar"
+
+#     def __init__(self, master:tk.Widget, **kw) -> None:
+#         kw.setdefault('style', self.STYLE)
+#         Progressbar.refresh_style()
+#         ttk.Progressbar.__init__(self, master, **kw)
+#         theme.update(self)
+
+#     @classmethod
+#     def refresh_style(cls) -> None:
+#         """ Recolors every Progressbar using STYLE to match the theme. """
+#         Debug.logger.debug(f"Refreshing style {cls}")
+#         style:ttk.Style = ttk.Style()
+#         if config.get_int('theme', default=0) > 0:
+#             style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
+#             return
+
+#         # native colors, whatever this platform's ttk theme uses
+#         style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
+#                         background=style.lookup('TProgressbar', 'background'))
 
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """

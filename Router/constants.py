@@ -6,15 +6,7 @@ TITLE="Navl's Neutron Dancer"
 NAME="NeutronDancer"
 GH_USER="dwomble"
 GH_PROJECT="EDMC-NeutronDancer"
-
-# GIT info and URLs
-GH_BASE:str = f"https://github.com/{GH_USER}/{GH_PROJECT}"
-GH_RELEASES:str = f"{GH_BASE}/releases"
-GH_LATEST:str = f"{GH_RELEASES}/latest"
-GH_DOWNLOAD:str = f"{GH_RELEASES}/download"
-GH_VERSION:str = f"https://raw.githubusercontent.com/{GH_USER}/{GH_PROJECT}/master/version"
-GH_RELEASE_INFO:str = f"https://api.github.com/repos/{GH_USER}/{GH_PROJECT}/releases/latest"
-GH_CHANGELOG:str = f"{GH_BASE}/blob/master/CHANGELOG.md#"
+GH_MAIN="master"
 
 # Check for updates at most once per day
 UPDATE_CHECK_INTERVAL:int = (3600 * 24)

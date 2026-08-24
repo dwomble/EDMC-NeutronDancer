@@ -16,9 +16,12 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 
+import tests.edmc.requests as mock_requests
 from tests.edmc import edmc_data
+
 from Router.utils.treeviewplus import TreeviewPlus
 from Router.utils import th
+from Router.utils.updater import Updater, read_version_file
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
@@ -88,8 +91,9 @@ def harness(request) -> Generator:
 
     from load import plugin_start3, plugin_app, journal_entry, dashboard_entry
 
-    # Prevent network updater thread from making tests hang on teardown.
-    with patch('load.Updater.check_for_update', return_value=None):
+    # Avoid live update/notice threads hanging teardown.
+    with patch('load.Updater.check_for_update', return_value=None), \
+         patch('load.Notices.check_for_notices', return_value=None):
         plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
@@ -155,6 +159,54 @@ class TestStartup:
         harness.plugin.modules = []
         harness.plugin.router._get_module_data()
         assert len(harness.plugin.modules) == 88
+
+class TestUpdater:
+    @pytest.fixture(autouse=True)
+    def _mock_network(self) -> Generator[None, None, None]:
+        """ queue_response()/.calls need the shared mock --
+        _use_live is a global a prior harness-based test may
+        have left True -- it never resets on its own. """
+        previous:bool = mock_requests.live_requests()
+        mock_requests.live_requests(False)
+        yield
+        mock_requests.live_requests(previous)
+
+    def test_get_release_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+        updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
+        mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
+
+        updater.get_release()
+
+        call = mock_requests._mock_requests.calls[-1]
+        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
+
+    def test_download_zip_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+        updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
+        updater.update_version = "1.2.3" # type: ignore -- str is fine, only used for a filename here
+        updater.download_url = "https://example.invalid/release.zip"
+        mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
+
+        updater.download_zip()
+
+        call = mock_requests._mock_requests.calls[-1]
+        assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
+
+    def test_reads_the_version_file_when_present(self, tmp_path) -> None:
+        (tmp_path / "version").write_text("1.2.3")
+        assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
+
+    def test_falls_back_to_default_when_no_file_exists(self, tmp_path) -> None:
+        assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
+
+    def test_falls_back_to_default_when_the_file_is_unparseable(self, tmp_path) -> None:
+        """ e.g. a fresh git checkout with an empty/placeholder version file. """
+        (tmp_path / "version").write_text("not-a-version!!")
+        assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
+
+    def test_strips_surrounding_whitespace(self, tmp_path) -> None:
+        """ CI's release.yml writes the tag via `echo`, which appends a newline. """
+        (tmp_path / "version").write_text("1.2.3\n")
+        assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
 
 class TestStateManagement:
     """Test router state management."""
@@ -240,8 +292,10 @@ class TestRouteMethods:
         assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
 
     def test_next_stop_riches(self, harness:TestHarness) -> None:
-        """ subtype/distance/scan value for a riches-shaped route."""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        """ subtype/distance/scan value for a riches-shaped route. Header names ('Body',
+        'Body Type') match what _flatten_bodies_result()/HEADER_MAP actually produce -- see
+        test_plotter_success_creates_route_riches's `assert "Body" in ...hdrs`. """
+        hdrs = ['System Name', 'Body', 'Body Type', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
         route_data = [
             ['Colonia', 'Colonia 1', '', 0, 0, 0],
             ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
@@ -252,9 +306,29 @@ class TestRouteMethods:
 
         assert any('High metal content world' in l for l in lines)
         assert any('Scan' in l for l in lines)
+        assert route.next_stop_display() == 'Colonia 2 a'
+
+    def test_next_stop_display_prepends_system_when_body_lacks_it(self, harness:TestHarness) -> None:
+        """ Body's own value can't be trusted to include the system name -- e.g. after the
+        route window strips it (route_window.py's _table()) -- so next_stop_display() must
+        add it itself rather than assuming Spansh always bakes it in. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
+        route = Route(hdrs, [['Deciat', 'Deciat 1', '', 0], ['Deciat', '4 a', 'Bacterium Nypoxia', 1]], 0)
+
+        assert route.next_stop_display() == 'Deciat 4 a'
+
+    def test_next_stop_display_falls_back_to_system_without_a_body_column(self, harness:TestHarness) -> None:
+        hdrs = ['System Name', 'Jumps']
+        route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)
+
+        assert route.next_stop_display() == route.next_stop() == 'Apurui'
 
     def test_next_stop_exobiology(self, harness:TestHarness) -> None:
-        hdrs = ['System Name', 'Body Name', 'Species', 'Jumps']
+        """ next_stop() stays the system name (self.nc must
+        match FSDJump's StarSystem for position tracking) --
+        next_stop_display() carries the body instead;
+        next_stop_details() doesn't repeat it. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route_data = [
             ['Deciat', 'Deciat 1', '', 0],
             ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
@@ -262,7 +336,25 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 0)
 
         assert route.next_stop_station() == ''
-        assert route.next_stop() == 'Deciat 4 a'
+        assert route.next_stop() == 'Deciat'
+        assert route.next_stop_display() == 'Deciat 4 a'
+        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details())
+
+    def test_next_stop_details_lists_extra_bodies_in_the_same_system(self, harness:TestHarness) -> None:
+        """ Riches/exobiology routes can list several bodies per system, all collapsed under
+        one displayed system name (next_stop() can't disambiguate by body -- see above) --
+        the detail lines must call out that there's more than just the immediate one. """
+        hdrs = ['System Name', 'Body', 'Species', 'Jumps']
+        route_data = [
+            ['Deciat', 'Deciat 1', '', 0],
+            ['Deciat', 'Deciat 4 a', 'Bacterium Nypoxia', 1],
+            ['Deciat', 'Deciat 4 b', 'Fonticulua Campestris', 0],
+        ]
+        route = Route(hdrs, route_data, 0)
+
+        lines = route.next_stop_details()
+
+        assert any('Deciat 4 b' in l and 'Fonticulua Campestris' in l for l in lines)
 
     def test_next_stop_station_blank(self, harness:TestHarness) -> None:
         """Bblank for plain route types (Neutron, Galaxy, etc.)."""
@@ -317,7 +409,7 @@ class TestRouteMethods:
 
     def test_riches_cumulative_scan(self, harness:TestHarness) -> None:
         """riches scan value gets a running total across waypoints already passed"""
-        hdrs = ['System Name', 'Body Name', 'Body Subtype', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
+        hdrs = ['System Name', 'Body', 'Body Type', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
         route_data = [
             ['Colonia', 'Colonia 1', '', 0, 0, 0],
             ['Colonia', 'Colonia 2 a', 'High metal content world', 812.0, 42300, 1],
@@ -1027,7 +1119,7 @@ class TestOverlay:
         harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
         assert harness.plugin.overlay.ovfrs["Default"].visible == True
 
-        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusExternalPanel})
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusInternalPanel})
         assert harness.plugin.overlay.ovfrs["Default"].visible == False
 
         harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
@@ -1963,6 +2055,26 @@ class TestUIFunctions:
         # Update cargo and verify cargo and range entries update
         assert ui.get_item('Galaxy', 'cargo_entry') == '12'
         assert ui.get_item('Neutron', 'range_entry') == str(harness.plugin.router.ship.get_range(12))
+
+    def test_show_notice_displays_pending_notice(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
+        harness.plugin.notices.notice_id = 1
+        harness.plugin.notices.notice = "test notice body"
+
+        ui.show_notice()
+
+        assert "test notice body" in ui.notice.get("1.0", tk.END)
+
+    def test_dismiss_notice_hides_and_persists(self, harness:TestHarness) -> None:
+        ui = harness.plugin.ui
+        harness.plugin.notices.notice_id = 1
+        harness.plugin.notices.notice = "test notice body"
+        ui.show_notice()
+
+        ui.dismiss_notice()
+
+        assert not ui.notice.winfo_exists()
+        assert harness.plugin.notices.pending_notice is None
 
 
 class TestRouteWindow:

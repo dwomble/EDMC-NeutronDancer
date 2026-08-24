@@ -7,9 +7,9 @@ import myNotebook as nb  # type: ignore
 from config import user_agent # type: ignore
 import edmc_data # type: ignore
 
-from Router.constants import GH_PROJECT, GH_RELEASE_INFO, NAME, TITLE, errs, CarrierStates
+from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, errs, CarrierStates
 from Router.utils.debug import Debug, catch_exceptions
-from Router.utils.updater import Updater, read_version_file
+from Router.utils.updater import Notices, Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
 
 from Router.context import Context
@@ -31,8 +31,11 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_version = version
     VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
-    Context.updater = Updater(str(Context.plugin_dir), GH_PROJECT, GH_RELEASE_INFO)
+    Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
     Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
+
+    Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
+    Context.notices.check_for_notices()
 
     return NAME
 
@@ -67,11 +70,12 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     if Context.router == None: return
 
     match entry['event']:
-        case 'Startup':
+        case 'Startup' | 'StartUp':
             Context.router.carrier_state = CarrierStates.Idle
             if Context.route.route != [] and not Context.route.fleetcarrier:
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
+            Context.router.add_state(state)
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':

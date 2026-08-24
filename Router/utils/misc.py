@@ -10,12 +10,7 @@ from typing import Any
 from functools import reduce
 import operator
 import threading
-
 import tkinter as tk
-from tkinter import ttk
-
-from theme import theme # type: ignore
-from config import config # type: ignore
 
 from .debug import Debug, catch_exceptions
 
@@ -122,7 +117,7 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         if len(val) > 3: units = val[3]
         if len(val) > 0: value = val[0]
     else:
-        value = val
+        value:int|float|str|bool = val
         if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
         if isinstance(value, bool): type = 'bool'
         if isinstance(value, int) or isinstance(value, float): type = 'num'

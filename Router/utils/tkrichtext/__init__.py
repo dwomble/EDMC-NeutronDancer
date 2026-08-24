@@ -51,10 +51,7 @@ class _ScrolledText(tk.Text):
 
 
 class RichScrolledText(_ScrolledText):
-
-    """
-    HTML scrolled text widget
-    """
+    """ Rich scrolled text widget """
 
     def __init__(self, *args, **kwargs):
         html = None
@@ -114,10 +111,7 @@ class RichScrolledText(_ScrolledText):
 
 
 class RichText(RichScrolledText):
-
-    """
-    HTML text widget
-    """
+    """ Rich text widget """
 
     def _w_init(self, kwargs):
         super()._w_init(kwargs)
@@ -125,15 +119,11 @@ class RichText(RichScrolledText):
 
     def fit_height(self):
         super().fit_height()
-        # self.master.update()
         self.vbar.pack_forget()
 
 
 class RichLabel(RichText):
-
-    """
-    HTML label widget
-    """
+    """ Rich label widget """
 
     def _w_init(self, kwargs):
         super()._w_init(kwargs)
@@ -147,7 +137,9 @@ class RichLabel(RichText):
             self.config(borderwidth=0)
 
         if "padx" not in kwargs.keys():
-            self.config(padx=3)
+            self.config(padx=0)
+        if "pady" not in kwargs.keys():
+            self.config(pady=0)
 
     def set_html(self, *args, **kwargs):
         super().set_html(*args, **kwargs)

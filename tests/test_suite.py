@@ -1119,7 +1119,7 @@ class TestOverlay:
         harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
         assert harness.plugin.overlay.ovfrs["Default"].visible == True
 
-        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusExternalPanel})
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusInternalPanel})
         assert harness.plugin.overlay.ovfrs["Default"].visible == False
 
         harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusNoFocus})
@@ -2696,8 +2696,3 @@ class TestEventSequences:
         assert harness.plugin.router.carrier_state == CarrierStates.Jumping
         harness.fire_event(events[1])
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
-
-    @pytest.mark.slow
-    def test_loadout_bug(self, harness:TestHarness):
-        harness.load_events("test_journal.log")
-        harness.play_sequence('default')

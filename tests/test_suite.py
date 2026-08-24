@@ -2076,22 +2076,6 @@ class TestUIFunctions:
         assert not ui.notice.winfo_exists()
         assert harness.plugin.notices.pending_notice is None
 
-    def test_prefs_changed_refreshes_progressbar_style(self, harness:TestHarness) -> None:
-        """ ttk widgets have no fg/bg for theme.py to repaint --
-        prefs_changed() must re-apply Progressbar's style for a
-        live theme change to actually show up. """
-        from tkinter import ttk
-        from load import prefs_changed
-        from Router.utils.th import Progressbar
-
-        harness.config.set('theme', 1)
-        try:
-            prefs_changed('Testy', False)
-            assert ttk.Style().lookup(Progressbar.STYLE, 'troughcolor') == 'grey4'
-        finally:
-            harness.config.set('theme', 0)
-            Progressbar.refresh_style()
-
 
 class TestRouteWindow:
     """Test RouteWindow lifecycle and display behavior."""

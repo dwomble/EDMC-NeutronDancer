@@ -11,7 +11,6 @@ from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, errs, Ca
 from Router.utils.debug import Debug, catch_exceptions
 from Router.utils.updater import Notices, Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
-from Router.utils.th import Progressbar
 
 from Router.context import Context
 from Router.route_manager import Router
@@ -122,4 +121,3 @@ def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool) -> nb.Frame:
 @catch_exceptions
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
     Context.prefs.save_prefs()
-    Progressbar.refresh_style() # ttk has no fg/bg to paint

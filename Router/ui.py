@@ -67,7 +67,7 @@ class UI():
         self.router:tk.StringVar = tk.StringVar()
         self.router.set('Galaxy Plotter')  # Set default value
 
-        self.progbar:th.Progressbar # Overall progress bar
+        self.progbar:ttk.Progressbar # Overall progress bar
 
         self.title_fr:th.Frame = self._create_title_fr(self.frame)
         self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
@@ -369,7 +369,7 @@ class UI():
         self.bar_fr.grid_propagate(False)
         self.bar_fr.grid(row=0, column=0, pady=0, sticky=tk.EW)
 
-        self.progbar = th.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate',
+        self.progbar = ttk.Progressbar(self.bar_fr, orient=tk.HORIZONTAL, value=self._progress(), maximum=100, mode='determinate',
                                        length=self.frwidth-3)
         self.progtt:th.Tooltip = th.Tooltip(self.progbar, text=tts["progress"])
         self.progbar.rowconfigure(0, weight=1)

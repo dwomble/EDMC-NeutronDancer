@@ -119,12 +119,15 @@ class Router():
 
     def add_state(self, state:dict) -> None:
         """ Build a synthetic loadout event from the state and pass it to add_loadout() """
+        if not state or not state.get('ShipID') or not state.get('Modules'): return
+
         l:dict = {
             'event': 'Loadout',
             'Ship': state.get('Ship', state.get('ShipType', '')) # EDMC stores Ship as ShipType
             }
 
-        for e in ('ShipID', 'ShipName', 'ShipIdent', 'HullValue', 'ModulesValue', 'HullHealth', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange', 'FuelCapacity', 'Rebuy'):
+        for e in ('ShipID', 'ShipName', 'ShipIdent', 'HullValue', 'ModulesValue', 'HullHealth', 'UnladenMass',
+                  'CargoCapacity', 'MaxJumpRange', 'FuelCapacity', 'Rebuy'):
             l[e] = state.get(e)
         # And modules as a dict instead of an array
         l['Modules'] = list(state.get('Modules', {}).values())

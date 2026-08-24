@@ -398,7 +398,7 @@ class Overlay():
         if not Context.route or not (bool(entry["Flags"] & edmc_data.FlagsInMainShip)):
             self.hide_frame('Default')
             self.hide_frame('Galaxy Map')
-        elif entry.get("GuiFocus") == edmc_data.GuiFocusNoFocus:
+        elif entry.get("GuiFocus") in (edmc_data.GuiFocusNoFocus, edmc_data.GuiFocusExternalPanel):
             self.show_frame('Default')
             self.hide_frame('Galaxy Map')
         elif entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:

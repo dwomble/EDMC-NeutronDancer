@@ -117,6 +117,20 @@ class Router():
         Context.ui.switch_ship(ship)
 
 
+    def add_state(self, state:dict) -> None:
+        """ Build a synthetic loadout event from the state and pass it to add_loadout() """
+        l:dict = {
+            'event': 'Loadout',
+            'Ship': state.get('Ship', state.get('ShipType', '')) # EDMC stores Ship as ShipType
+            }
+
+        for e in ('ShipID', 'ShipName', 'ShipIdent', 'HullValue', 'ModulesValue', 'HullHealth', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange', 'FuelCapacity', 'Rebuy'):
+            l[e] = state.get(e)
+        # And modules as a dict instead of an array
+        l['Modules'] = list(state.get('Modules', {}).values())
+        self.add_loadout(l)
+
+
     def add_loadout(self, entry:dict) -> None:
         """ Save ship details on loadout event and maybe update the UI """
         ship:Ship = Ship(entry)

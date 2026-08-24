@@ -70,11 +70,12 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     if Context.router == None: return
 
     match entry['event']:
-        case 'Startup':
+        case 'Startup' | 'StartUp':
             Context.router.carrier_state = CarrierStates.Idle
             if Context.route.route != [] and not Context.route.fleetcarrier:
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
+                Context.router.add_state(state)
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':

@@ -13,7 +13,7 @@ from timeout_session import new_session # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -24,7 +24,7 @@ SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [],
                   'window_geometries' : {}}
 
-SESSION:requests.Session = new_session() # shared, per PLUGINS.md -- default timeout + UA
+SESSION:requests.Session = new_session(SPANSH_TIMEOUT) # shared, per PLUGINS.md
 
 @singleton
 class Router():

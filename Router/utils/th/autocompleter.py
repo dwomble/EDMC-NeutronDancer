@@ -179,6 +179,9 @@ class Autocompleter(Placeholder):
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")
             self.popup.deiconify() # Show the popup
+            # Match EDMC's "Always on top" setting
+            self.popup.attributes('-topmost', self.parent.winfo_toplevel().attributes('-topmost'))
+            self.popup.lift()
             self.lb_up = True
 
     def hide_list(self) -> None:

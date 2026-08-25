@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v2.0.0 2026-??-??
+## v2.0.0 2026-08-25
 
 ### New Features
 
@@ -21,6 +21,10 @@
 * Refactored the plot UI and plot initiation to support more route types
 * Refactored ship loadout storage to be more efficient
 * Ensured that on login the current ship is added to the ships dropdown list
+
+### Bug Fixes
+
+* Fixed bug with autocompleter dropdown being behind the main EDMC window if "always on top" is enabled.
 
 ## v1.10.0 2026-07-25
 

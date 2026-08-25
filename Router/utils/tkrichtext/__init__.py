@@ -29,7 +29,7 @@ class _ScrolledText(tk.Text):
         self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.vbar["command"] = self.yview
 
-        tk.Text.__init__(self, self.frame, **kw)
+        tk.Text.__init__(self, self.frame , **kw)
         if 'spacing1' not in kw: self.configure(spacing1=6)
         if 'spacing2' not in kw: self.configure(spacing2=2)
         if 'spacing3' not in kw: self.configure(spacing3=4)
@@ -78,11 +78,11 @@ class RichScrolledText(_ScrolledText):
     def _w_init(self, kwargs):
         if "wrap" not in kwargs.keys():
             self.config(wrap="word")
-        if "background" not in kwargs.keys():
-            if sys.platform.startswith("win"):
-                self.config(background="SystemWindow")
-            else:
-                self.config(background="white")
+        # if "background" not in kwargs.keys():
+        #     if sys.platform.startswith("win"):
+        #         self.config(background="SystemWindow")
+        #     else:
+        #         self.config(background="white")
 
     def fit_height(self):
         """
@@ -127,11 +127,11 @@ class RichLabel(RichText):
 
     def _w_init(self, kwargs):
         super()._w_init(kwargs)
-        if "background" not in kwargs.keys():
-            if sys.platform.startswith("win"):
-                self.config(background="SystemButtonFace")
-            else:
-                self.config(background="#d9d9d9")
+        # if "background" not in kwargs.keys():
+        #     if sys.platform.startswith("win"):
+        #         self.config(background="SystemButtonFace")
+        #     else:
+        #         self.config(background="#d9d9d9")
 
         if "borderwidth" not in kwargs.keys():
             self.config(borderwidth=0)

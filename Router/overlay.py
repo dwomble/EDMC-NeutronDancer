@@ -492,7 +492,7 @@ class Overlay():
         nb.Label(ovrprefs, text=cnf["progress_display"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
         col += 1
         self.pv:tk.StringVar = tk.StringVar(value=self.progress_display.replace('\n', '\\n'))
-        tk.Entry(ovrprefs, width=80, textvariable=self.pv).grid(row=row, column=col, columnspan=8, padx=5, pady=0, sticky=tk.W)
+        nb.EntryMenu(ovrprefs, width=80, textvariable=self.pv).grid(row=row, column=col, columnspan=8, padx=5, pady=0, sticky=tk.W)
 
         return ovrprefs
 

@@ -19,11 +19,11 @@ class Pref:
     name:str
     desc:str
     var_type:type[tk.StringVar]|type[tk.BooleanVar]
-    entry_type:type[tk.Entry]|type[tk.Checkbutton]
+    entry_type:type[nb.EntryMenu]|type[nb.Checkbutton]
 
 PREFS = [
-    Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, tk.Entry),
-    Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, tk.Checkbutton),
+    Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, nb.EntryMenu),
+    Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, nb.Checkbutton),
     ]
 
 @singleton
@@ -36,7 +36,7 @@ class Prefs:
     def prefs_frame(self, parent:tk.Frame) -> nb.Frame:
         """ Return a TK Frame for adding to the EDMC settings dialog """
 
-        def select_folder(entry:tk.Entry, var:tk.StringVar):
+        def select_folder(entry:nb.EntryMenu, var:tk.StringVar):
             # Open the folder selection dialog
             fpath = filedialog.askdirectory(title="Select a Directory", initialdir=var.get())
             # Check if the user selected a folder or cancelled
@@ -73,13 +73,13 @@ class Prefs:
                 case 'str':
                     nb.Label(prefsfr, text=k.name).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
                     col += 1
-                    tk.Entry(prefsfr, textvariable=vars[k.name], width=25, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    nb.EntryMenu(prefsfr, textvariable=vars[k.name], width=25, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                 case 'dir':
                     dir = config.get(f"{Context.plugin_name}_{k.name}", str(Path(Context.plugin_dir) / ROUTE_DIR))
                     self.pref_vars[k.name] = tk.StringVar(value=dir)
                     nb.Label(prefsfr, text=k.desc).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
                     col += 1
-                    entry:tk.Entry = tk.Entry(prefsfr, textvariable=self.pref_vars[k.name], width=75)
+                    entry:nb.EntryMenu = nb.EntryMenu(prefsfr, textvariable=self.pref_vars[k.name], width=75)
                     entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     entry.bind("<Button-1>", lambda e, en=entry, v=self.pref_vars[k.name]: select_folder(en, v))
 

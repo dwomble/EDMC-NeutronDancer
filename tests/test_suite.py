@@ -36,7 +36,9 @@ from Router.plotters import PLOTTER_SPECS
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
+THREAD_TIMEOUT=66
 plotter_thread = None
+
 def capture_thread(*args, **kwargs):
     global plotter_thread
 
@@ -1257,7 +1259,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Neutron', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) >= 2
@@ -1293,7 +1295,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Galaxy', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert harness.plugin.router.route_params['Galaxy'] == params
@@ -1333,7 +1335,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('RtoR', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # bodyless Colonia dropped; one row per body
@@ -1376,7 +1378,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Ammonia', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 1
@@ -1416,7 +1418,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Exobiology', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         print(f"Route headers: {harness.plugin.route.hdrs} Route data: {harness.plugin.route.route}")
         assert harness.plugin.route is not None
@@ -1483,7 +1485,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Trade', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # 1 commodity in hop 1 + 2 commodities in hop 2
@@ -1556,7 +1558,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 2  # one row per stop, not per jump entry
@@ -1605,7 +1607,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=30)
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         names = [row[harness.plugin.route.hdrs.index("System Name")] for row in harness.plugin.route.route]
@@ -1637,7 +1639,7 @@ class TestPlotMethods:
 
                 # Join the plotter thread if captured
                 if plotter_thread:
-                    plotter_thread.join(timeout=120)
+                    plotter_thread.join(timeout=THREAD_TIMEOUT)
 
     def test_neutron_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
@@ -2353,7 +2355,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '4'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2374,7 +2376,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '6'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=22)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2433,7 +2435,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.router.src == 'Apurui'
             assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
@@ -2484,7 +2486,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=62)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == galaxy_params['source']
@@ -2504,7 +2506,7 @@ class TestPlotting:
                                                 'max_results': '20', 'avoid_thargoids': '1', 'loop': '1'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=66)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             # router.src reflects the queried source system; the route table itself only lists
@@ -2539,7 +2541,7 @@ class TestPlotting:
                                                 'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 240})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=250)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2562,7 +2564,7 @@ class TestPlotting:
                                                 'min_value': 100000, 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2589,7 +2591,7 @@ class TestPlotting:
                                                 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Shinrarta Dezhra'
@@ -2612,7 +2614,7 @@ class TestPlotting:
                                                 'range': '50', 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=70)
+            plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Sol'

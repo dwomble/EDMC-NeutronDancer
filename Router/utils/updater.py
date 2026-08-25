@@ -74,7 +74,7 @@ class Updater():
         r:requests.Response|None = None
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r = session.get(self.download_url, headers=_headers(self.gh_project))
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
@@ -108,7 +108,7 @@ class Updater():
             url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
             Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project))
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -190,7 +190,7 @@ class Notices():
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
             url:str = f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
-            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project))
             r.raise_for_status()
         except Exception as e:
             Debug.logger.error("Failed to fetch notices, exception info:", exc_info=e)

@@ -21,7 +21,7 @@ from tests.edmc import edmc_data
 
 from Router.utils.treeviewplus import TreeviewPlus
 from Router.utils import th
-from Router.utils.updater import Updater, read_version_file
+from Router.utils.updater import Updater, Notices, read_version_file
 
 # Setup path for imports
 plugin_dir:Path = Path(__file__).parent
@@ -56,6 +56,9 @@ def fake_systems_get(url, *args, **kwargs):
     resp.status_code = 200
     resp.content = json.dumps([q]).encode()
     return resp
+
+def _queue_notices(text:str) -> None:
+    mock_requests.queue_response("get", mock_requests.MockResponse(status_code=200, content=text))
 
 @pytest.fixture
 def harness(request) -> Generator:
@@ -209,6 +212,35 @@ class TestUpdater:
         """ CI's release.yml writes the tag via `echo`, which appends a newline. """
         (tmp_path / "version").write_text("1.2.3\n")
         assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
+
+class TestNotices:
+    """ Cursory integration check -- Notices' parsing and
+    dismissal logic is exhaustively covered by EDMC-PluginLib's
+    tests/test_notices.py; this just confirms fetch, parse, and
+    dismiss-then-newer-shows-again round-trip in this plugin's
+    own stack. TestUIFunctions.test_show_notice_displays_pending_
+    notice covers the displayed half, this plugin's own code. """
+
+    @pytest.fixture(autouse=True)
+    def _mock_network(self) -> Generator[None, None, None]:
+        """ Same leak as TestUpdater's own fixture. """
+        previous:bool = mock_requests.live_requests()
+        mock_requests.live_requests(False)
+        yield
+        mock_requests.live_requests(previous)
+
+    def test_fetch_parse_and_dismiss_round_trip(self) -> None:
+        _queue_notices("## 3\nFleet Carrier routes now track tritium separately from cargo.")
+        notices = Notices("dwomble", "EDMC-NeutronDancer")
+        notices._check_notices()
+        assert notices.pending_notice == "Fleet Carrier routes now track tritium separately from cargo."
+
+        notices.dismiss_notice()
+        assert notices.pending_notice is None
+
+        _queue_notices("## 4\nA newer notice.")
+        notices._check_notices()
+        assert notices.pending_notice == "A newer notice."
 
 class TestStateManagement:
     """Test router state management."""
@@ -2077,6 +2109,21 @@ class TestUIFunctions:
 
         assert not ui.notice.winfo_exists()
         assert harness.plugin.notices.pending_notice is None
+
+    def test_a_fetched_notice_is_displayed_in_the_ui(self, harness:TestHarness) -> None:
+        """ Above tests set notice_id/notice directly; this ties the real fetch/parse path to the real UI. """
+        previous:bool = mock_requests.live_requests()
+        mock_requests.live_requests(False)
+        try:
+            mock_requests.queue_response("get", mock_requests.MockResponse(
+                status_code=200, content="## 7\nA freshly fetched notice."))
+
+            harness.plugin.notices._check_notices()
+            harness.plugin.ui.show_notice()
+
+            assert "A freshly fetched notice." in harness.plugin.ui.notice.get("1.0", tk.END)
+        finally:
+            mock_requests.live_requests(previous)
 
 
 class TestRouteWindow:

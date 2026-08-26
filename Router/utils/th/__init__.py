@@ -182,7 +182,22 @@ class Text(tk.Text):
         tk.Text.__init__(self, master, **kw)
         theme.update(self)
 
-class RichScrolledText(_RichScrolledText):
+class _RichBgSync:
+    """ Re-renders set_html() output on bg change -- tags bake in the old bg otherwise. """
+    _last_html:str|None = None
+
+    def set_html(self, html:str, strip:bool = True) -> None:
+        self._last_html = html
+        super().set_html(html, strip=strip) # type: ignore
+
+    def configure(self, cnf=None, **kw) -> Any:
+        result = super().configure(cnf, **kw) # type: ignore
+        changed_bg:bool = (isinstance(cnf, dict) and 'background' in cnf) or 'background' in kw
+        if changed_bg and self._last_html is not None:
+            self.set_html(self._last_html)
+        return result
+
+class RichScrolledText(_RichBgSync, _RichScrolledText):
     """ A themed, scrollable HTML/markdown text box. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         _match_label_defaults(kw)
@@ -193,7 +208,7 @@ class RichScrolledText(_RichScrolledText):
         theme.register(self.frame)
         theme.update(self)
 
-class RichText(_RichText):
+class RichText(_RichBgSync, _RichText):
     """ RichScrolledText, minus its (always-hidden) scrollbar. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         _match_label_defaults(kw)
@@ -202,11 +217,11 @@ class RichText(_RichText):
         theme.register(self.frame)
         theme.update(self)
 
-class RichLabel(_RichLabel):
+class RichLabel(_RichBgSync, _RichLabel):
     """ Label version of RichText widget """
     def __init__(self, master:tk.Widget, **kw) -> None:
         _match_label_defaults(kw)
-        _RichText.__init__(self, master, **kw)
+        _RichLabel.__init__(self, master, **kw)
         self.frame.configure(background=kw['background'])
         theme.register(self.frame)
         theme.update(self)

@@ -231,7 +231,7 @@ class TestNotices:
 
     def test_fetch_parse_and_dismiss_round_trip(self) -> None:
         _queue_notices("## 3\nFleet Carrier routes now track tritium separately from cargo.")
-        notices = Notices("dwomble", "EDMC-NeutronDancer")
+        notices = Notices("dwomble", "EDMC-NeutronDancer-NoticesTest")
         notices._check_notices()
         assert notices.pending_notice == "Fleet Carrier routes now track tritium separately from cargo."
 

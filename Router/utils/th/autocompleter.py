@@ -1,3 +1,4 @@
+import concurrent.futures
 import queue
 import threading
 import tkinter as tk
@@ -20,6 +21,10 @@ class Autocompleter(Placeholder):
                             take a single string argument (the current input) and return a list of suggestions.
     """
     LOOKUP_TIMEOUT:float = 3
+
+    # Shared across every Autocompleter instance/window
+    _LOOKUP_EXECUTOR:concurrent.futures.ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=4, thread_name_prefix="Autocompleter")
 
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
@@ -112,8 +117,7 @@ class Autocompleter(Placeholder):
             self.hide_list()
             self.has_selected = False
         else:
-            t = threading.Thread(target=self.get_list, args=[value])
-            t.start()
+            Autocompleter._LOOKUP_EXECUTOR.submit(self.get_list, value)
 
     def selection(self, event=None) -> None:
         if not self.lb_up: return

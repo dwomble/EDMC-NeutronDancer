@@ -203,7 +203,10 @@ lbls:dict = {
     "next_refuel": "Refuel in {r}",
     "refuel_now": "Refuel now!",
     "overlays": "Overlays",
-    "router": "Router"
+    "router": "Router",
+    "boxel_name": "Boxel",
+    "start_num": "Start",
+    "end_num": "End"
 }
 
 # Tooltips
@@ -256,7 +259,10 @@ tts:dict = {
     "permit": "Allow systems that require a permit",
     "loop": "Prefer a route that loops back on itself rather than a straight line",
     "progress": "Progress",
-    "none": "None"
+    "none": "None",
+    "boxel_name": "Boxel name including its mass-code letter (e.g. 'Voqooe NR-C d'), right click for menu",
+    "start_num": "First sequence number to survey",
+    "end_num": "Last sequence number to survey"
 }
 
 # Button names
@@ -291,7 +297,8 @@ errs:dict = {
     "no_ship": "No ship selected",
     "ship_not_found": "Ship not found in shipyard",
     "no_system_id": "Could not resolve that system, please try again",
-    "format_error": "Error formatting progress display"
+    "format_error": "Error formatting progress display",
+    "invalid_boxel": "Enter a boxel name ending in its mass-code letter (e.g. 'd'), plus valid start/end numbers"
 }
 
 cnf:dict = {

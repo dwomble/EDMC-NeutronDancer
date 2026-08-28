@@ -19,8 +19,9 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, FLEET_CARRIER_STATS
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, FLEET_CARRIER_STATS
 from .context import Context
+from .route import Route
 from .ship import Ship
 
 WIDTH3:int = 9
@@ -959,6 +960,107 @@ class FleetCarrierPlotter(Plotter):
         Context.ui._show_busy_gui(True)
 
 
+_BOXEL_PREFIX_RE = re.compile(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-hA-H]\d*-?$")
+
+def _boxel_prefix(boxel_input:str) -> str|None:
+    """ Strips a trailing sequence number -- the user may type/pick a full example system name
+    (e.g. "Voqooe NR-C d12") rather than a bare boxel -- leaving the literal prefix to append
+    start/end numbers to. None if what's left doesn't end in a mass-code letter (a-h), meaning
+    the boxel name is incomplete (see marx's boxel guide: the mass code IS part of the boxel). """
+    prefix:str = re.sub(r"\d+$", "", boxel_input.strip())
+    return prefix if _BOXEL_PREFIX_RE.match(prefix) else None
+
+
+class BoxelPlotter(Plotter):
+    """ Surveys a boxel numerically -- no Spansh route call, since there's nothing to optimise:
+    just every candidate system name from start to end (see _boxel_prefix()). """
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the boxel plotter frame."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        row:int = 0; col:int = 0
+
+        params:dict = Context.router.route_params.get('Boxel', {})
+        self._plot_switcher(plot_fr, row, col)
+
+        row += 1; col = 0
+        fields_fr:th.Frame = th.Frame(plot_fr)
+        boxel_ac:th.Autocompleter = th.Autocompleter(fields_fr, lbls["boxel_name"], width=25,
+                                                       func=Context.ui.query_systems, name="boxel_ac")
+        th.Tooltip(boxel_ac, tts["boxel_name"])
+        Context.ui.set_entry(boxel_ac, params.get('boxel', ''))
+        boxel_ac.grid(row=0, column=0, padx=5, pady=5)
+
+        start_entry:th.Spinbox = th.Spinbox(fields_fr, placeholder=lbls['start_num'], from_=0, to=9999,
+                                             width=WIDTH3-2, justify=tk.CENTER, name="start_entry")
+        start_entry.set_text(str(params.get('start', '')), False)
+        th.Tooltip(start_entry, tts["start_num"])
+        start_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        end_entry:th.Spinbox = th.Spinbox(fields_fr, placeholder=lbls['end_num'], from_=0, to=9999,
+                                           width=WIDTH3-2, justify=tk.CENTER, name="end_entry")
+        end_entry.set_text(str(params.get('end', '')), False)
+        th.Tooltip(end_entry, tts["end_num"])
+        end_entry.grid(row=0, column=2, padx=5, pady=5)
+
+        fields_fr.grid(row=row, column=col, columnspan=5, sticky=tk.W)
+
+        row += 1; col = 0
+        self._create_buttons(plot_fr, row, col)
+
+        self.frame = plot_fr
+        return plot_fr
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """ Generate the local, numerically-ordered route and hand it straight to Context.route
+        -- mirrors the tail of route_manager.py's Spansh _plotter(), minus the Spansh call. """
+        if not self.frame:
+            return
+        Context.ui.hide_error()
+
+        boxel_ac = self.frame.nametowidget("boxel_ac")
+        start_entry = self.frame.nametowidget("start_entry")
+        end_entry = self.frame.nametowidget("end_entry")
+
+        boxel_input:str = boxel_ac.get().strip()
+        start_text:str = start_entry.get().strip()
+        end_text:str = end_entry.get().strip()
+
+        prefix:str|None = None
+        if boxel_input and re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-hA-H]\d*-?", boxel_input): # Strip trailing sequence number
+            prefix = re.sub(r"\d+$", "", boxel_input.strip())
+
+        valid_range:bool = bool(re.match(r"^\d+$", start_text)) and bool(re.match(r"^\d+$", end_text))
+
+        if prefix is None or not valid_range:
+            Debug.logger.info(f"Invalid boxel entry {boxel_input!r} ({start_text}-{end_text})")
+            Context.ui.show_error(errs['invalid_boxel'])
+            if prefix is None:
+                boxel_ac.set_error_style()
+            if not valid_range:
+                start_entry.set_error_style()
+                end_entry.set_error_style()
+            return
+
+        start, end = int(start_text), int(end_text)
+        if start > end:
+            start, end = end, start
+
+        Context.router.route_params['Boxel'] = {'boxel': boxel_input, 'start': start, 'end': end}
+
+        hdrs:list = ['System Name', 'Jumps']
+        rte:list = [[f"{prefix}{n}", 0 if i == 0 else 1] for i, n in enumerate(range(start, end + 1))]
+
+        Context.route = Route(hdrs, rte)
+        Context.route.offset = 0
+        if not Context.route.fleetcarrier:
+            Context.route.update_route(0, Context.router.system)
+        Context.ui.show_frame('Route')
+        Context.overlay.update_overlays()
+        Context.router.save()
+
+
 PLOTTER_SPECS:dict = {
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
@@ -989,6 +1091,9 @@ PLOTTER_SPECS:dict = {
     'FleetCarrier': PlotterSpec(
         label='Fleet Carrier Router', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
         src_key='source', dest_key='destination'
+    ),
+    'Boxel': PlotterSpec(
+        label='Boxel Surveying Plotter', plotter_class=BoxelPlotter, url=SPANSH_SYSTEMS, src_key='boxel'
     ),
     # 'EarthLike': PlotterSpec(
     #     label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

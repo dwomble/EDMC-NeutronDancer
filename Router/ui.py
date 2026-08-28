@@ -21,6 +21,7 @@ from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH
 from .ship import Ship
 from .route import Route
 from .context import Context
+from .route_manager import SESSION
 from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
 
@@ -609,8 +610,9 @@ class UI():
     @catch_exceptions
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
+        # Shared SESSION (per PLUGINS.md), not a bare requests.get() -- matches route_manager.py.
         try:
-            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         except:
             return [inp]
@@ -621,7 +623,7 @@ class UI():
     def query_station_names(self, inp:str) -> list:
         """ Function called by the Trade Planner's Autocompleter """
         try:
-            results:requests.Response = requests.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
+            results:requests.Response = SESSION.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
                                                       headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:

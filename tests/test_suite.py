@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator
 from unittest.mock import Mock, patch
+from contextlib import contextmanager
 import json
 import logging
 import tkinter as tk
@@ -59,6 +60,12 @@ def fake_systems_get(url, *args, **kwargs):
 
 def _queue_notices(text:str) -> None:
     mock_requests.queue_response("get", mock_requests.MockResponse(status_code=200, content=text))
+
+@contextmanager
+def mocked_session_get(side_effect):
+    """ Mocks SESSION.get for query_systems/query_station_names, matching plot_route()'s tests. """
+    with patch('Router.route_manager.SESSION.get', side_effect=side_effect):
+        yield
 
 @pytest.fixture
 def harness(request) -> Generator:
@@ -1682,7 +1689,7 @@ class TestPlotMethods:
         neutron_fr.nametowidget("dest_ac").set_text("Colonia", False)
         neutron_fr.nametowidget("range_entry").set_text("50", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['Neutron'].plot()
 
@@ -1708,7 +1715,7 @@ class TestPlotMethods:
         plotter._add_hop_row(-1)
         plotter.hop_rows[0]['ac'].set_text("Deciat", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 plotter.plot()
 
@@ -1724,7 +1731,7 @@ class TestPlotMethods:
         galaxy_fr.nametowidget("source_ac").set_text("Sol", False)
         galaxy_fr.nametowidget("dest_ac").set_text("Colonia", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['Galaxy'].plot()
 
@@ -1745,7 +1752,7 @@ class TestPlotMethods:
         rtor_fr.nametowidget("radius_entry").set_text("40", False)
         rtor_fr.nametowidget("max_results_entry").set_text("20", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['RtoR'].plot()
 
@@ -1770,7 +1777,7 @@ class TestPlotMethods:
         rtor_fr.nametowidget("max_results_entry").set_text("20", False)
         rtor_fr.nametowidget("dest_ac").put_placeholder()  # force the placeholder-shown state
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['RtoR'].plot()
 
@@ -1798,7 +1805,7 @@ class TestPlotMethods:
         fr.nametowidget("radius_entry").set_text("40", False)
         fr.nametowidget("max_results_entry").set_text("20", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters[route_type].plot()
 
@@ -1824,7 +1831,7 @@ class TestPlotMethods:
         fr.nametowidget("max_results_entry").set_text("10", False)
         fr.nametowidget("min_value_entry").set(5)  # 5 million credits
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['Exobiology'].plot()
 
@@ -1912,7 +1919,7 @@ class TestPlotMethods:
         plotter._add_hop_row(0)
         plotter.hop_rows[1]['ac'].set_text("Colonia", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 plotter.plot()
 
@@ -1936,7 +1943,7 @@ class TestPlotMethods:
         plotter._add_hop_row(-1)
         plotter.hop_rows[0]['ac'].set_text("Deciat", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 plotter.plot()
 
@@ -1957,7 +1964,7 @@ class TestPlotMethods:
         fr.nametowidget("dest_ac").set_text("Colonia", False)
         fr.nametowidget("range_entry").set_text("50", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 plotter.plot()
 
@@ -1982,7 +1989,7 @@ class TestPlotMethods:
         plotter.hop_rows[0]['ac'].set_text("Deciat", False)
         fr.nametowidget("capacity_used_entry").set_text("500", False)
 
-        with patch('requests.get', side_effect=fake_systems_get):
+        with mocked_session_get(fake_systems_get):
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 plotter.plot()
 
@@ -1998,6 +2005,56 @@ class TestPlotMethods:
         assert params['capacity_used'] == 500
         assert params['calculate_starting_fuel'] == "1"
 
+    def test_boxel_plotter_generates_local_numeric_route(self, harness:TestHarness) -> None:
+        """ BoxelPlotter.plot() must never call Context.router.plot_route() (there's nothing
+        for Spansh to optimise) -- it builds Context.route directly from a locally-generated,
+        numerically-ordered list of candidate system names. """
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Voqooe NR-C d", False)
+            fr.nametowidget("start_entry").set_text("12", False)
+            fr.nametowidget("end_entry").set_text("15", False)
+
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Boxel'].plot()
+
+        mock_plot_route.assert_not_called()
+        assert [row[0] for row in harness.plugin.route.route] == [
+            "Voqooe NR-C d12", "Voqooe NR-C d13", "Voqooe NR-C d14", "Voqooe NR-C d15",
+        ]
+
+    def test_boxel_plotter_accepts_a_full_example_name_and_strips_the_sequence(self, harness:TestHarness) -> None:
+        """ A real autocomplete suggestion is a full example system name (e.g. "...d12"), not a
+        bare boxel -- the trailing number must be stripped rather than rejected. """
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Eol Prou IT-S c4-201", False)
+            fr.nametowidget("start_entry").set_text("201", False)
+            fr.nametowidget("end_entry").set_text("202", False)
+            ui.plotters['Boxel'].plot()
+
+        assert [row[0] for row in harness.plugin.route.route] == ["Eol Prou IT-S c4-201", "Eol Prou IT-S c4-202"]
+
+    def test_boxel_plotter_rejects_a_boxel_missing_its_mass_code(self, harness:TestHarness) -> None:
+        """ "Voqooe NR-C" alone is ambiguous (real data: both a "b32" and a "d" mass code exist
+        under that one cube-ID) -- must reject rather than silently concatenating a malformed name."""
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Voqooe NR-C", False)
+            fr.nametowidget("start_entry").set_text("1", False)
+            fr.nametowidget("end_entry").set_text("5", False)
+
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Boxel'].plot()
+
+        mock_plot_route.assert_not_called()
+        assert harness.plugin.route.route == []
 
 
 class TestUIFunctions:
@@ -2025,7 +2082,7 @@ class TestUIFunctions:
             ]).encode()
             return resp
 
-        with patch('requests.get', side_effect=fake_get):
+        with mocked_session_get(fake_get):
             assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
 
     def test_switch_ship(self, harness:TestHarness) -> None:

@@ -149,7 +149,7 @@ class Overlay():
             rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
             rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
 
-            rs:str = lbls["next_refuel"].format(rd=rd) if rd != '-' else ""
+            rs:str = lbls["next_refuel"].format(r=rj) if rj != '-' else ""
 
             # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
             st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"

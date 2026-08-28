@@ -200,7 +200,7 @@ lbls:dict = {
     "refuel": "Refuel",
     "carrier_jumping": "Carrier Jump Scheduled",
     "carrier_cooldown": "Carrier Cooldown",
-    "next_refuel": "Refuel in {r}",
+    "next_refuel": "Refuel in {r} jumps",
     "refuel_now": "Refuel now!",
     "overlays": "Overlays",
     "router": "Router",
@@ -260,7 +260,7 @@ tts:dict = {
     "loop": "Prefer a route that loops back on itself rather than a straight line",
     "progress": "Progress",
     "none": "None",
-    "boxel_name": "Boxel name including its mass-code letter (e.g. 'Voqooe NR-C d'), right click for menu",
+    "boxel_name": "Boxel name including its mass-code letter, right click for menu",
     "start_num": "First sequence number to survey",
     "end_num": "Last sequence number to survey"
 }

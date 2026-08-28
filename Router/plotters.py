@@ -76,7 +76,7 @@ class Plotter(ABC):
     def _create_system_entry(self, parent:th.Frame, row:int, col:int, label:str, tooltip:str, *,
                               name:str = '', menu:dict|None = None, initial:str = '',
                               add_cmd=None, remove_cmd=None, pady:int = 5) -> th.Autocompleter:
-        """ An autocompleter system entry widget with optional name (source/dest), menu (right-click history), and -/+ buttons. """
+        """ An autocompleter system entry widget """
         kw:dict = {'width': 30, 'func': Context.ui.query_systems}
         if menu:
             kw['menu'] = menu
@@ -961,8 +961,7 @@ class FleetCarrierPlotter(Plotter):
 
 
 class BoxelPlotter(Plotter):
-    """ Surveys a boxel numerically -- no Spansh route call, since there's nothing to optimise:
-    just every candidate system name from start to end. """
+    """ Surveys a boxel numerically, every candidate system name from start to end. """
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the boxel plotter frame."""
@@ -974,8 +973,16 @@ class BoxelPlotter(Plotter):
 
         row += 1; col = 0
         fields_fr:th.Frame = th.Frame(plot_fr)
-        boxel_ac:th.Autocompleter = th.Autocompleter(fields_fr, lbls["boxel_name"], width=25,
-                                                       func=Context.ui.query_systems, name="boxel_ac")
+        sys:str = Context.router.system
+        menu:dict = {}
+        if sys and re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys):
+            menu[re.sub(r"[\-\d]+$", "", sys.strip())] = [Context.ui.menu_callback, 'boxel']
+        for sys in Context.router.history:
+            if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys):
+                menu[re.sub(r"[\-\d]+$", "", sys.strip())] = [Context.ui.menu_callback, 'boxel']
+
+        boxel_ac:th.Autocompleter = th.Autocompleter(fields_fr, lbls["boxel_name"], width=25, name="boxel_ac", menu=menu,
+                                                     func=Context.ui.query_boxels)
         th.Tooltip(boxel_ac, tts["boxel_name"])
         Context.ui.set_entry(boxel_ac, params.get('boxel', ''))
         boxel_ac.grid(row=0, column=0, padx=5, pady=5)

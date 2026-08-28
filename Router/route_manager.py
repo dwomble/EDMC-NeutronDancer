@@ -331,7 +331,8 @@ class Router():
             limit:int = int(params.get('max_time', 20))
             results:Response = SESSION.post(url, data=params,
                                              headers={'User-Agent': Context.plugin_useragent,
-                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                                                      timeout=SPANSH_TIMEOUT)
 
             if results.status_code != 202:
                 self.plot_error(which, params, results)
@@ -345,7 +346,7 @@ class Router():
                 job:str = response["job"]
 
                 results_url:str = f"{SPANSH_RESULTS}/{job}"
-                route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=5)
+                route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 if route_response.status_code != 202:
                     break
                 tries += 1
@@ -427,9 +428,11 @@ class Router():
         #    Debug.logger.info(f"Server response: {response.json()}")
         #    err = errs["plot_error"]
 
-        if response.status_code in [400, 500] and "error" in json.loads(response.content).keys():
-            Debug.logger.info(f"Server response: {response.json()}")
-            err = json.loads(response.content)["error"]
+        if response.status_code in [400, 500]:
+            err = str(response.status_code)
+            if response.content and "error" in json.loads(response.content).keys():
+                Debug.logger.info(f"Server response: {response.json()}")
+                err = json.loads(response.content)["error"]
 
         Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
         Context.ui.show_error(err)

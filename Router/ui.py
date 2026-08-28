@@ -58,6 +58,7 @@ class UI():
 
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        self.star:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "star.png"))
         self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
         self.blank_img:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
 
@@ -341,8 +342,8 @@ class UI():
         else:
             wp = str_truncate(wp, length=40)
 
-        # Set an icon if appropriate
-        image:tk.PhotoImage = self.blank_img
+        # Set an icon if appropriate, default to "regular" star
+        image:tk.PhotoImage = self.star
         if route.is_neutron() == True:
             image = self.neutron_img
 

@@ -80,11 +80,7 @@ class Route:
 
 
     def next_stop_display(self) -> str:
-        """ "<system> <body>" when this route has one --
-        Body's value can't be trusted to include the system
-        (opening the route window strips it -- see
-        route_window.py's _table()). next_stop() stays bare
-        -- pasted into the galaxy map, system-only. """
+        """ "<system> <body>" when this route has one """
         system:str = self.next_stop()
         body:str|None = self.next_stop_value('Body')
         if not body: return system
@@ -100,10 +96,7 @@ class Route:
 
 
     def bodies_at_next_stop(self) -> list[tuple[str, str]]:
-        """ (body, species) for every row at the next stop's
-        system -- self.nc must stay the system column (FSDJump
-        matches on it), so a multi-body system would otherwise
-        show just one repeated name. """
+        """ (body, species) for every row at the next stop's system """
         if self.route == [] or self.offset >= len(self.route)-1: return []
         bind:int|None = self.colind('Body')
         if bind is None or self.sc is None: return []
@@ -126,8 +119,7 @@ class Route:
 
 
     def route_value(self) -> tuple[str, str] | None:
-        """ (label, header) of this route's earned-value column, or None for route types that
-        don't track one (Neutron/Galaxy/Tourist/FleetCarrier). """
+        """ (label, header) of this route's earned-value column, or None for route types that don't track one  """
         if self.colind('Commodity') is not None:
             return (lbls['profit'], 'Profit')
 
@@ -207,8 +199,7 @@ class Route:
 
 
     def tracks_refuel_or_neutron(self) -> bool:
-        """ Whether this route has Refuel/Restock/Neutron columns -- column presence,
-        not route-type name, so CSV imports are handled correctly too. """
+        """ Whether this route has Refuel/Restock/Neutron columns """
         return (self.colind('Refuel') is not None or self.colind('Restock') is not None
                 or self.colind('Neutron') is not None or self.colind('Neutron Star') is not None)
 

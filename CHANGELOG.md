@@ -1,5 +1,16 @@
 # EDMC-NeutronDancer Changelog
 
+## v.2.1.0 ???-??-??
+
+### New Features
+
+* Added a Boxel explorer route type
+
+### Changes
+
+* Made session queries more responsive to Spansh delays
+* Added a default star icon on routes
+
 ## v2.0.0 2026-08-25
 
 ### New Features

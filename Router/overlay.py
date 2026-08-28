@@ -116,6 +116,13 @@ class Overlay():
 
             message.insert(0, {'progressbar': prog, 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
+        details:str = ""
+
+        # Default to show detail lines.
+        if Context.route.next_stop_details():
+            details = "\n".join(Context.route.next_stop_details())
+
+        # Use the template if appropriate.
         if Context.route.tracks_refuel_or_neutron():
             # The following variables are available for the progress display:
                 # Jumps completed {jc}
@@ -134,7 +141,6 @@ class Overlay():
                 # Refuel message {rs}
 
                 # Star type next stop {st}
-
             jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
             jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
             jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
@@ -155,23 +161,25 @@ class Overlay():
             st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
             try:
-                message.append({'size': "normal", 'text': self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)})
+                details = self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)
             except Exception as e:
                 Debug.logger.warning(f"Error formatting progress display: {e}")
-                message.append({'size': "normal", 'text': errs["format_error"]})
-        else:
-            # No refuel/neutron columns -- show detail lines instead of the template.
-            detail_lines:list = Context.route.next_stop_details()
-            if detail_lines:
-                message.append({'size': "normal", 'text': "\n".join(detail_lines)})
+                details = errs["format_error"]
+
+        if details:
+            message.append({'size': "normal", 'text': details})
 
         self.update_frame('Default', message, ttl=120)
 
         if Context.route.refuel() and not Context.route.fuel_full:
             self.display_alert(ovr["refuel"])
-        elif Context.route.is_neutron() == True:
+            return
+
+        if Context.route.is_neutron() == True:
             Context.overlay.display_alert(ovr["neutron"])
-        elif Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
+            return
+
+        if Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
             self.clear_frame("Alert")
 
 
@@ -295,11 +303,8 @@ class Overlay():
         for i, c in enumerate(content):
             if frame not in self.msgs: self.msgs[frame] = {}
             id:str = f"{Context.plugin_name}-{frame}-{i}"
-            args:dict = {
-                'x': 0,
-                'y': y,
-                'ttl': c.get('ttl', ttl) # @TODO: ttl needs to be a datetime
-            }
+            args:dict = {'x': 0, 'y': y, 'ttl': c.get('ttl', ttl)} # @TODO: ttl needs to be a datetime
+
             if 'progressbar' in c:
                 args['shapeid'] = id + "-a"
                 args['shape'] = 'rect'
@@ -322,16 +327,16 @@ class Overlay():
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
                 y += 20
-            else:
-                args['msgid'] = id
-                args['text'] = c.get('text', '')
-                args['color'] = c.get('colour', fr.text_colour)
-                args['size'] = c.get('size', 'normal')
-                #Debug.logger.debug(f"Overlay {frame} message {args} {fr.enabled} {fr.visible}")
-                if fr.visible == True and fr.enabled == True:
-                    overlay.send_message(**args)
-                self.msgs[frame][args['msgid']] = args
-                y += 25 if args['size'] == 'large' else 20
+                continue
+
+            args['msgid'] = id
+            args['text'] = c.get('text', '')
+            args['color'] = c.get('colour', fr.text_colour)
+            args['size'] = c.get('size', 'normal')
+            if fr.visible == True and fr.enabled == True:
+                overlay.send_message(**args)
+            self.msgs[frame][args['msgid']] = args
+            y += 25 if args['size'] == 'large' else 20
 
 
     def _timedelta_str(self, delta:timedelta) -> str:
@@ -513,11 +518,6 @@ class Overlay():
 
         Debug.logger.info(f"Saved frames to EDMC config")
         return True
-
-
-    @catch_exceptions
-    def _from_dict(self, name, data:dict) -> None:
-        self.ovfrs[name] = OvFrame(**data)
 
 
     @catch_exceptions

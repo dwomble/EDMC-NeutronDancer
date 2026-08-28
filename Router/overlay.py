@@ -1,7 +1,9 @@
+from email import message
 import json
 from dataclasses import dataclass, asdict
 from functools import partial
 from threading import Thread, Event
+from math import floor
 from datetime import datetime, timedelta
 from copy import deepcopy
 
@@ -10,7 +12,8 @@ from tkinter import font, colorchooser as tkColorChooser
 import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
-import edmc_data as ed # type: ignore
+#from edmc_data import GuiFocusNoFocus, FlagsInMainShip, GuiFocusGalaxyMap # type: ignore
+import edmc_data # type: ignore
 
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton, hfplus, str_truncate
@@ -25,6 +28,8 @@ except ImportError:
     edmcoverlay = None
     define_plugin_group = None
 
+#FLAGS = [edmc_data.FlagsDocked, edmc_data.FlagsLanded, edmc_data.FlagsLandingGearDown, edmc_data.FlagsShieldsUp, edmc_data.FlagsSupercruise,
+#         edmc_data.FlagsFlightAssistOff, edmc_data.FlagsHardpointsDeployed, edmc_data.FlagsInWing]
 @dataclass
 class OvFrame:
     """ Overlay frame details """
@@ -38,7 +43,10 @@ class OvFrame:
 
 @singleton
 class Overlay():
-    """ Overlay frame manager. """
+    """
+    Overlay frame manager.
+    """
+
     def __init__(self) -> None:
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
@@ -116,39 +124,44 @@ class Overlay():
 
         # Use the template if appropriate.
         if Context.route.tracks_refuel_or_neutron():
-            fields:dict = {
+            # The following variables are available for the progress display:
                 # Jumps completed {jc}
-                'jc': hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0'])),
                 # Jumps remaining {jr}
-                'jr': hfplus(tuple([Context.route.jumps_remaining(), 'int', '0'])),
                 # Jumps total {jt}
-                'jt': hfplus(tuple([Context.route.total_jumps(), 'int'])),
 
                 # Distance to next checkpoint. {dc}
-                'dc': hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0'])),
                 # Distance remaining {dr}
-                'dr': hfplus(tuple([Context.route.dist_remaining(), 'float', '0'])),
                 # Distance total {dt}
-                'dt': hfplus(tuple([Context.route.total_dist(), 'float', '0'])),
 
                 # Distance per hour {dh}
-                'dh': hfplus(tuple([Context.route.dist_per_hour(), 'float', '-'])),
                 # Jumps per hour {jh}
-                'jh': hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-'])),
 
                 # Refuel jumps {rj}
-                'rj': hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-'])),
                 # Distance (or jumps) to next refuel {rd}
-                'rd': hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-'])),
+                # Refuel message {rs}
 
-                # type of next star {st}: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
-                'st': "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
-            }
-            # Refuel message {rs}
-            fields['rs'] = lbls["next_refuel"].format(r=fields['rj']) if fields['rj'] != '-' else ""
+                # Star type next stop {st}
+            jc:str = hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0']))
+            jr:str = hfplus(tuple([Context.route.jumps_remaining(), 'int', '0']))
+            jt:str = hfplus(tuple([Context.route.total_jumps(), 'int']))
+
+            dc:str = hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0']))
+            dr:str = hfplus(tuple([Context.route.dist_remaining(), 'float', '0']))
+            dt:str = hfplus(tuple([Context.route.total_dist(), 'float', '0']))
+
+            dh:str = hfplus(tuple([Context.route.dist_per_hour(), 'float', '-']))
+            jh:str = hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-']))
+
+            rj:str = hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-']))
+            rd:str = hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-']))
+
+            rs:str = lbls["next_refuel"].format(r=rj) if rj != '-' else ""
+
+            # or: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
+            st:str = "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
 
             try:
-                details = self.progress_display.format(**fields)
+                details = self.progress_display.format(jc=jc, jr=jr, jt=jt, dc=dc, dr=dr, dt=dt, dh=dh, jh=jh, rj=rj, rd=rd, rs=rs, st=st)
             except Exception as e:
                 Debug.logger.warning(f"Error formatting progress display: {e}")
                 details = errs["format_error"]
@@ -384,26 +397,29 @@ class Overlay():
     @catch_exceptions
     def dashboard_entry(self, cmdr:str, is_beta:bool, entry:dict) -> None:
         """ ED UI state change, store the current state """
-        # Carrier frame, visible in ship main view only
-        if not bool(entry["Flags"] & ed.FlagsInMainShip) or entry.get("GuiFocus") != ed.GuiFocusNoFocus:
-            self.hide_frame('Carrier')
-        else:
-            self.show_frame('Carrier')
 
         # Default frame, visible in ship main view only
         # Galaxy Map frame, visible in galaxy map only
-        if not Context.route or not (bool(entry["Flags"] & ed.FlagsInMainShip)):
+        if not Context.route or not (bool(entry["Flags"] & edmc_data.FlagsInMainShip)):
             self.hide_frame('Default')
             self.hide_frame('Galaxy Map')
-        elif entry.get("GuiFocus") in (ed.GuiFocusNoFocus, ed.GuiFocusExternalPanel):
+        elif entry.get("GuiFocus") in (edmc_data.GuiFocusNoFocus, edmc_data.GuiFocusExternalPanel):
             self.show_frame('Default')
             self.hide_frame('Galaxy Map')
-        elif entry.get("GuiFocus") == ed.GuiFocusGalaxyMap:
+        elif entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
             self.hide_frame('Default')
             self.show_frame('Galaxy Map')
         else:
             self.hide_frame('Default')
             self.hide_frame('Galaxy Map')
+
+        # Carrier frame, visible in ship main view only
+        if not bool(entry["Flags"] & edmc_data.FlagsInMainShip) or \
+            entry.get("GuiFocus") != edmc_data.GuiFocusNoFocus:
+            self.hide_frame('Carrier')
+        else:
+            self.show_frame('Carrier')
+
 
     @catch_exceptions
     def prefs_display(self, parent:nb.Frame) -> nb.Frame:

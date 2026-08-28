@@ -1,3 +1,5 @@
+**Note:** If you're experiencing EDMC crashes on startup with v2.0.0 a fresh install of NeutronDancer will correct it.
+
 <!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
 ![Neutron Dancer Logo](https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597)
 

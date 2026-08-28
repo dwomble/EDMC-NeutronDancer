@@ -960,20 +960,9 @@ class FleetCarrierPlotter(Plotter):
         Context.ui._show_busy_gui(True)
 
 
-_BOXEL_PREFIX_RE = re.compile(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-hA-H]\d*-?$")
-
-def _boxel_prefix(boxel_input:str) -> str|None:
-    """ Strips a trailing sequence number -- the user may type/pick a full example system name
-    (e.g. "Voqooe NR-C d12") rather than a bare boxel -- leaving the literal prefix to append
-    start/end numbers to. None if what's left doesn't end in a mass-code letter (a-h), meaning
-    the boxel name is incomplete (see marx's boxel guide: the mass code IS part of the boxel). """
-    prefix:str = re.sub(r"\d+$", "", boxel_input.strip())
-    return prefix if _BOXEL_PREFIX_RE.match(prefix) else None
-
-
 class BoxelPlotter(Plotter):
     """ Surveys a boxel numerically -- no Spansh route call, since there's nothing to optimise:
-    just every candidate system name from start to end (see _boxel_prefix()). """
+    just every candidate system name from start to end. """
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
         """Create the boxel plotter frame."""
@@ -1028,7 +1017,7 @@ class BoxelPlotter(Plotter):
         end_text:str = end_entry.get().strip()
 
         prefix:str|None = None
-        if boxel_input and re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-hA-H]\d*-?", boxel_input): # Strip trailing sequence number
+        if boxel_input and re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", boxel_input):
             prefix = re.sub(r"\d+$", "", boxel_input.strip())
 
         valid_range:bool = bool(re.match(r"^\d+$", start_text)) and bool(re.match(r"^\d+$", end_text))
@@ -1048,6 +1037,7 @@ class BoxelPlotter(Plotter):
             start, end = end, start
 
         Context.router.route_params['Boxel'] = {'boxel': boxel_input, 'start': start, 'end': end}
+        Context.router.last_plot = 'Boxel'
 
         hdrs:list = ['System Name', 'Jumps']
         rte:list = [[f"{prefix}{n}", 0 if i == 0 else 1] for i, n in enumerate(range(start, end + 1))]

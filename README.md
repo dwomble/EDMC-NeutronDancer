@@ -1,9 +1,11 @@
+**Note:** If you're experiencing EDMC crashes on startup with v2.0.0 a fresh install of NeutronDancer will correct it.
+
 <!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
 ![Neutron Dancer Logo](https://github.com/user-attachments/assets/8d76f1ae-f59d-4063-8312-61eae76c1597)
 
 # Navl's Neutron Dancer
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+[![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://github.com/search?q=repo%3Adwomble%2FEDMC-NeutronDancer++language%3APython&type=code)
 [![CodeQL](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-NeutronDancer/actions/workflows/github-code-scanning/codeql)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
@@ -182,6 +184,8 @@ This code is based on the original [Spansh router](https://github.com/CMDR-Kiel4
 
 ## Suggestions
 
-Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a ⭐ and consider donating to [CMDR Spansh's patreon](https://www.patreon.com/cw/spansh).
+Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues). I can also be found on the Elite Dangerous Community Developers [edmc-plugins](https://discord.com/channels/164411426939600896/726419472772235306) discord channel.
+
+If you like Neutron Dancer I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a ⭐ and consider donating to [CMDR Spansh's patreon](https://www.patreon.com/cw/spansh).
 
 Fly dangerous! o7

@@ -2056,6 +2056,37 @@ class TestPlotMethods:
         mock_plot_route.assert_not_called()
         assert harness.plugin.route.route == []
 
+    def test_boxel_plotter_rejects_an_uppercase_mass_code(self, harness:TestHarness) -> None:
+        """ Real ED system names only ever use a lowercase mass-code letter (a-h); an uppercase
+        letter isn't a real boxel and must be rejected rather than silently accepted. """
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Bleae Thua IW-C A", False)
+            fr.nametowidget("start_entry").set_text("1", False)
+            fr.nametowidget("end_entry").set_text("5", False)
+
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Boxel'].plot()
+
+        mock_plot_route.assert_not_called()
+        assert harness.plugin.route.route == []
+
+    def test_boxel_plotter_updates_last_plot_so_returning_to_it_works(self, harness:TestHarness) -> None:
+        """ BoxelPlotter never calls plot_route() (which normally sets last_plot), so it must set
+        last_plot itself -- otherwise leaving the plot GUI and coming back defaults elsewhere. """
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Voqooe NR-C d", False)
+            fr.nametowidget("start_entry").set_text("1", False)
+            fr.nametowidget("end_entry").set_text("5", False)
+            ui.plotters['Boxel'].plot()
+
+        assert harness.plugin.router.last_plot == 'Boxel'
+
 
 class TestUIFunctions:
     """ Test UI functions """

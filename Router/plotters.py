@@ -1090,7 +1090,7 @@ PLOTTER_SPECS:dict = {
         src_key='source', dest_key='destination'
     ),
     'Boxel': PlotterSpec(
-        label='Boxel Surveying Plotter', plotter_class=BoxelPlotter, url=SPANSH_SYSTEMS, src_key='boxel'
+        label='Boxel Surveyor', plotter_class=BoxelPlotter, url=SPANSH_SYSTEMS, src_key='boxel'
     ),
     # 'EarthLike': PlotterSpec(
     #     label='Earth-like World Route', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

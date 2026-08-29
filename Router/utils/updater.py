@@ -158,9 +158,10 @@ class Updater():
         return True
 
 
-    def _check_update(self, version:Version) -> None:
+    def _check_update(self, version:Version|str) -> None:
         """ Compare the current version file with github version """
         try:
+            if isinstance(version, str): version = Version.coerce(version)
             Debug.logger.debug(f"Checking for update")
             if not self.get_release(): return
             Debug.logger.debug(f"Version: {version} response {self.update_version} ")
@@ -175,15 +176,14 @@ class Updater():
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
 
-    def check_for_update(self, version:Version, plugin_name:str, interval:int = CHECK_INTERVAL) -> None:
-        """ Start an update check thread. `interval` (seconds) throttles how often the check
-        actually runs -- defaults to once a day. """
-        last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
+    def check_for_update(self, version:Version|str, interval:int = CHECK_INTERVAL) -> None:
+        """ Start an update check thread. """
+        last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
         if last >= int(time.time()) - interval:
             return
 
-        config.set(f"{plugin_name}_last_update_check", int(time.time()))
-        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
+        config.set(f"{self.gh_project}_last_update_check", int(time.time()))
+        thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
         thread.start()
 
 class Notices():

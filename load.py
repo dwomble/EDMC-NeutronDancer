@@ -32,7 +32,7 @@ def plugin_start3(plugin_dir: str) -> str:
     VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
-    Context.updater.check_for_update(Context.plugin_version, Context.plugin_name)
+    Context.updater.check_for_update(Context.plugin_version)
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
@@ -50,7 +50,7 @@ def plugin_stop() -> None:
     Context.router.save()
     Context.overlay.stop_countdowns()
     if Context.updater.install_update:
-        Context.updater.install()
+        Context.updater.install(["data"])
 
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()

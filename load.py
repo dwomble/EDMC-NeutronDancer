@@ -50,7 +50,7 @@ def plugin_stop() -> None:
     Context.router.save()
     Context.overlay.stop_countdowns()
     if Context.updater.install_update:
-        Context.updater.install()
+        Context.updater.install(["data"])
 
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()

@@ -1,5 +1,13 @@
 # EDMC-NeutronDancer Changelog
 
+## V2.0.1 2026-08-28
+
+### Bug Fixes
+
+* Fixed bug in overlay processing that caused it to not show distances etc.
+* Fixed a timeout issue when Spansh is busy
+* Fixed issue where the autoupdate didn't clear out old files which could cause conflicts
+
 ## v2.0.0 2026-08-25
 
 ### New Features

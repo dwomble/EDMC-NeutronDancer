@@ -2,6 +2,7 @@ import json
 import os
 import re
 import requests
+import shutil
 import zipfile
 import time
 from threading import Thread
@@ -37,12 +38,12 @@ class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
+    Create the object with parameters plugin_dir, gh_owner, gh_project.
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
-      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
     Call check_for_update(version) at plugin startup. It's asynchronous.
-    Call install() to install the update when you choose (commonly on shutdown).
+    Call install(preserve) to install the update when you choose (commonly on shutdown).
+      preserve is a list of directories that shouldn't be deleted.
     """
 
     def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
@@ -66,7 +67,7 @@ class Updater():
         os.makedirs(self.zip_path, exist_ok=True)
 
         zip_file:str = os.path.join(self.zip_path, f"{self.gh_project}-{str(self.update_version)}.zip")
-        # Don't download again if we already have it. (Was os.remove(zip_file))
+        # Don't download again if we already have it.
         if os.path.exists(zip_file):
             self.zip_downloaded = zip_file
             return
@@ -74,7 +75,7 @@ class Updater():
         r:requests.Response|None = None
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r = session.get(self.download_url, headers=_headers(self.gh_project))
+            r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
@@ -88,10 +89,24 @@ class Updater():
         self.zip_downloaded = zip_file
 
 
-    def install(self) -> None:
+    def install(self, preserve:list[str] = []) -> None:
         """ Download the latest zip file and install it """
         if self.install_update != True or self.zip_downloaded == "":
             return
+        try:
+            backup_dir:str = os.path.join(self.plugin_dir, "updates", "backup")
+            if os.path.exists(backup_dir):
+                shutil.rmtree(backup_dir)
+            os.makedirs(backup_dir)
+
+            for name in os.listdir(self.plugin_dir):
+                if name == "updates" or name in preserve:
+                    continue
+                shutil.move(os.path.join(self.plugin_dir, name), os.path.join(backup_dir, name))
+        except Exception as e:
+            Debug.logger.error("Failed to backup existing files, exception info:", exc_info=e)
+            return
+
         try:
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
@@ -108,7 +123,7 @@ class Updater():
             url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
             Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(url, headers=_headers(self.gh_project))
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -190,7 +205,7 @@ class Notices():
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
             url:str = f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
-            r:requests.Response = session.get(url, headers=_headers(self.gh_project))
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except Exception as e:
             Debug.logger.error("Failed to fetch notices, exception info:", exc_info=e)

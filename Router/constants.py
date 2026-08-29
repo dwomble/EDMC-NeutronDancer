@@ -200,7 +200,7 @@ lbls:dict = {
     "refuel": "Refuel",
     "carrier_jumping": "Carrier Jump Scheduled",
     "carrier_cooldown": "Carrier Cooldown",
-    "next_refuel": "Refuel in {r}",
+    "next_refuel": "Refuel in {r} jumps",
     "refuel_now": "Refuel now!",
     "overlays": "Overlays",
     "router": "Router"

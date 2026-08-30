@@ -42,6 +42,7 @@ class Base:
         object.__setattr__(self, 'images', [])
         object.__setattr__(self, 'obj', obj)
         object.__setattr__(self, 'alt', alt)
+        object.__setattr__(self, '_last_gridopts', None)
 
         # Back-reference so th.resolve() can recover this wrapper from a nametowidget() lookup.
         setattr(obj, 'themed', self)
@@ -53,7 +54,15 @@ class Base:
             theme.register(alt)
 
     def grid(self, *args, **kw) -> Any:
-        """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
+        """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them.
+
+        EDMC's theme.register_alternate() only ever appends -- it never dedupes or replaces an
+        existing entry for the same widget pair. Every repeated .grid() call with the same
+        options (e.g. a hide/show toggle re-gridding with unchanged row/column) would otherwise
+        leak another permanent duplicate into EDMC's own widgets_pair list, which its theme.apply()
+        re-processes (grid_remove() + re-grid()) on every future theme refresh -- unbounded,
+        wasteful churn on the same widgets for the rest of the session. Only register when the
+        options actually changed since last time. """
         if self.alt is None:
             return self.obj.grid(*args, **kw)
 
@@ -64,10 +73,16 @@ class Base:
         if len(kw) > 0:
             gridopts.update(kw)
 
-        if len(gridopts) > 0:
+        if len(gridopts) > 0 and gridopts != self._last_gridopts:
             theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
+            object.__setattr__(self, '_last_gridopts', gridopts)
 
-        return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
+        # 'theme' (0=default, 1=dark, 2=transparent), not 'dark_mode' -- real EDMC's own
+        # theme.py has no 'dark_mode' config key at all, so that check always picked obj (light)
+        # here regardless of theme, until EDMC's own later theme.apply() pass corrected it via
+        # the widgets_pair registered above. A hide+reshow re-runs this before any apply() call
+        # follows, so the wrong (light) widget stuck around instead of getting corrected again.
+        return self.alt.grid(*args, **kw) if config.get_int('theme') != 0 else self.obj.grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
         """ Override configure to handle themed buttons. """
@@ -281,19 +296,6 @@ class Button(Base):
             if isinstance(w, tk.Button):
                 px:int = tkfont.Font(font=w.cget('font')).measure('0' * self._char_width)
                 w.configure(width=px)
-
-    def grid(self, *args, **kw) -> Any:
-        """ Override grid to handle themed buttons. """
-        gridopts:dict = {}
-
-        if len(args) > 0 and isinstance(args[0], dict):
-            gridopts.update(args[0])
-        if len(kw) > 0:
-            gridopts.update(kw)
-
-        theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
-
-        return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
 
 class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """

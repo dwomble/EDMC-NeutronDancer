@@ -9,6 +9,7 @@ There are several route plotting options.
 1. Trade Planner
 1. Tourist Route
 1. Fleet Carrier Route
+1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
@@ -123,6 +124,12 @@ The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrie
 Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
+
+## Boxel Surveyor
+
+This is a different type of router intended for surveying boxels. Enter a boxel including the masscode, a start number and an end and Neutron Dancer will treat that as a route.
+
+Note: It will validate the boxel entry but cannot validate the systems because they haven't been discovered yet.
 
 ## Importing Routes
 

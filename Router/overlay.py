@@ -1,9 +1,9 @@
-import json
 from dataclasses import dataclass, asdict
 from functools import partial
 from threading import Thread, Event
 from datetime import datetime, timedelta
 from copy import deepcopy
+import json
 
 import tkinter as tk
 from tkinter import font, colorchooser as tkColorChooser
@@ -42,9 +42,9 @@ class Overlay():
     def __init__(self) -> None:
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
         self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
-        self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900),
-                                         'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200),
-                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900),
+        self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900, ttl=300),
+                                         'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200, ttl=300),
+                                         'Carrier': OvFrame('Carrier', x = 1000, y = 900, ttl=300),
                                          'Alert': OvFrame('Alert', x = 640, y = 670, ttl=15)
                                          }
         self.stoppers:dict[str, Event] = {}
@@ -93,7 +93,7 @@ class Overlay():
         message:list = [{'size': 'large', 'text' : "Next: " + str(wp)}]
 
         # Galaxy map frame just shows next jump
-        self.update_frame('Galaxy Map', message, ttl=120)
+        self.update_frame('Galaxy Map', message)
 
         if Context.route.fleetcarrier:
             self.display_carrier('Idle', 120, destination=primary)
@@ -156,7 +156,7 @@ class Overlay():
         if details:
             message.append({'size': "normal", 'text': details})
 
-        self.update_frame('Default', message, ttl=120)
+        self.update_frame('Default', message)
 
         if Context.route.refuel() and not Context.route.fuel_full:
             self.display_alert(ovr["refuel"])
@@ -191,7 +191,7 @@ class Overlay():
     def display_alert(self, message:str = '') -> None:
         """ Display an alert message """
         self.show_frame('Alert')
-        self.update_frame('Alert', [{'size': 'large', 'text' : message}], ttl=5)
+        self.update_frame('Alert', [{'size': 'large', 'text' : message}])
 
 
     def redraw_frames(self) -> None:
@@ -276,7 +276,7 @@ class Overlay():
 
 
     @catch_exceptions
-    def update_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int = 120) -> None:
+    def update_frame(self, frame:str = "", content:str|list[dict] = "", size:str = "normal", ttl:int|None = None) -> None:
         """ Update a frame with a set of messages. If its visible the display it otherwise just store it for later. """
 
         overlay = self._get_overlay()
@@ -290,7 +290,7 @@ class Overlay():
         for i, c in enumerate(content):
             if frame not in self.msgs: self.msgs[frame] = {}
             id:str = f"{Context.plugin_name}-{frame}-{i}"
-            args:dict = {'x': 0, 'y': y, 'ttl': c.get('ttl', ttl)} # @TODO: ttl needs to be a datetime
+            args:dict = {'x': 0, 'y': y, 'ttl': c.get('ttl', fr.ttl)} # @TODO: ttl needs to be a datetime
 
             if 'progressbar' in c:
                 args['shapeid'] = id + "-a"
@@ -511,8 +511,8 @@ class Overlay():
         for name in self.ovfrs:
             conf:str|None = config.get(f"{Context.plugin_name}_{name}_overlay")
             if conf == None: continue
-            data:dict = json.loads(conf)
             try:
+                data:dict = json.loads(conf)
                 self.ovfrs[name] = OvFrame(**data)
             except:
                 pass

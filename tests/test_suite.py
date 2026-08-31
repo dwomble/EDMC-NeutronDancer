@@ -33,7 +33,7 @@ from Router.route_window import RouteWindow
 from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
-from Router.plotters import PLOTTER_SPECS
+from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -2086,6 +2086,65 @@ class TestPlotMethods:
             ui.plotters['Boxel'].plot()
 
         assert harness.plugin.router.last_plot == 'Boxel'
+
+    def test_boxel_plotter_rejects_a_boxel_position_impossible_for_its_mass_code(self, harness:TestHarness) -> None:
+        """ Mass code h only ever has one possible boxel per sector (AA-A) -- any other
+        letters, however plausible-looking, describe a position that can't exist for h. """
+        ui = harness.plugin.ui
+        fr = ui.plot_frames['Boxel']
+
+        with mocked_session_get(fake_systems_get):
+            fr.nametowidget("boxel_ac").set_text("Bleae Thua NI-B h", False)
+            fr.nametowidget("start_entry").set_text("1", False)
+            fr.nametowidget("end_entry").set_text("5", False)
+
+            with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
+                ui.plotters['Boxel'].plot()
+
+        mock_plot_route.assert_not_called()
+        assert harness.plugin.route.route == []
+
+
+class TestBoxelExistence:
+    """ _boxel_coords/_boxel_exists/_boxel_prefix -- verified against two real systems' actual
+    id64 values (Eol Prou RS-T d3-94, Vegnue WK-E d12-0, decoded via EDSM + the DISC Wiki's
+    ID64 bitfield spec) and ~10 live Spansh boxel lookups; see plotters.py's own docstrings. """
+
+    def test_coords_match_a_real_system_with_no_subnum(self) -> None:
+        """ Eol Prou RS-T d3-94 -- real id64 3238296097059 decodes to box coords [9, 4, 4]. """
+        assert _boxel_coords('R', 'S', 'T', 3) == (9, 4, 4)
+
+    def test_coords_match_a_real_system_with_a_multi_digit_subnum(self) -> None:
+        """ Vegnue WK-E d12-0 -- real id64 9303087083 decodes to box coords [10, 7, 13]. """
+        assert _boxel_coords('W', 'K', 'E', 12) == (10, 7, 13)
+
+    def test_h_mass_code_only_exists_at_the_origin(self) -> None:
+        """ h is the whole sector -- one boxel, "AA-A" -- confirmed both by Marx's community
+        guide and by a real EDSM lookup of an "AA-A h" system. """
+        assert _boxel_exists('A', 'A', 'A', 'h', 0) is True
+        assert _boxel_exists('B', 'A', 'A', 'h', 0) is False
+        assert _boxel_exists('A', 'B', 'A', 'h', 0) is False
+        assert _boxel_exists('A', 'A', 'B', 'h', 0) is False
+
+    def test_g_mass_code_matches_real_and_absent_spansh_boxels(self) -> None:
+        """ Live Spansh lookups found real systems at "AA-A g"/"BA-A g" only -- every other
+        letter combination tried (AB-A, BB-A, CA-A..JA-A, etc) came back empty. """
+        assert _boxel_exists('A', 'A', 'A', 'g', 0) is True
+        assert _boxel_exists('B', 'A', 'A', 'g', 0) is True
+        assert _boxel_exists('A', 'B', 'A', 'g', 0) is False
+        assert _boxel_exists('C', 'A', 'A', 'g', 0) is False
+
+    def test_same_letters_can_exist_for_a_small_mass_code_but_not_a_large_one(self) -> None:
+        """ Mass code a's 128-per-axis range comfortably fits "IW-C", but h's 1-per-axis range
+        does not -- the same letters describe a real boxel for one and not the other. """
+        assert _boxel_exists('I', 'W', 'C', 'a', 0) is True
+        assert _boxel_exists('I', 'W', 'C', 'h', 0) is False
+
+    def test_prefix_accepts_a_real_h_boxel(self) -> None:
+        assert _boxel_prefix("Vegnoae AA-A h") == "Vegnoae AA-A h"
+
+    def test_prefix_rejects_an_impossible_h_boxel(self) -> None:
+        assert _boxel_prefix("Bleae Thua NI-B h") is None
 
 
 class TestUIFunctions:

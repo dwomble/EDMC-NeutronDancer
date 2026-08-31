@@ -960,6 +960,31 @@ class FleetCarrierPlotter(Plotter):
         Context.ui._show_busy_gui(True)
 
 
+_BOXEL_RE = re.compile(r"^.+ (?P<prefix>[A-Za-z])(?P<centre>[A-Za-z])-(?P<suffix>[A-Za-z]) (?P<masscode>[a-h])(?:(?P<subnum>\d+)-)?\d*-?$")
+
+def _boxel_coords(prefix:str, centre:str, suffix:str, subnum:int) -> tuple[int, int, int]:
+    """ Determine the boxel's coordinates (column, stack, row) within its sector. """
+    offset:int = 17576 * subnum + 676 * (ord(suffix.upper()) - 65) + 26 * (ord(centre.upper()) - 65) + (ord(prefix.upper()) - 65)
+    row, rem = divmod(offset, 16384)
+    stack, column = divmod(rem, 128)
+    return column, stack, row
+
+def _boxel_exists(prefix:str, centre:str, suffix:str, masscode:str, subnum:int) -> bool:
+    """ Determine if a boxel with the given prefix, centre, suffix, mass code, and subnum can exist. """
+    limit:int = 1 << (ord('h') - ord(masscode.lower()))
+    return all(c < limit for c in _boxel_coords(prefix, centre, suffix, subnum))
+
+def _boxel_prefix(boxel_input:str) -> str|None:
+    """ The boxel's literal name prefix (ready to have a sequence number appended), or None if
+    boxel_input doesn't describe a boxel that can actually exist. """
+    m = _BOXEL_RE.match(boxel_input)
+    if not m:
+        return None
+    subnum:int = int(m.group('subnum')) if m.group('subnum') else 0
+    if not _boxel_exists(m.group('prefix'), m.group('centre'), m.group('suffix'), m.group('masscode'), subnum):
+        return None
+    return re.sub(r"\d+$", "", boxel_input.strip())
+
 class BoxelPlotter(Plotter):
     """ Surveys a boxel numerically, every candidate system name from start to end. """
 
@@ -1023,10 +1048,7 @@ class BoxelPlotter(Plotter):
         start_text:str = start_entry.get().strip()
         end_text:str = end_entry.get().strip()
 
-        prefix:str|None = None
-        if boxel_input and re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", boxel_input):
-            prefix = re.sub(r"\d+$", "", boxel_input.strip())
-
+        prefix:str|None = _boxel_prefix(boxel_input) if boxel_input else None
         valid_range:bool = bool(re.match(r"^\d+$", start_text)) and bool(re.match(r"^\d+$", end_text))
 
         if prefix is None or not valid_range:

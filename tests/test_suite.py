@@ -2103,6 +2103,7 @@ class TestPlotMethods:
 
         mock_plot_route.assert_not_called()
         assert harness.plugin.route.route == []
+        assert "mass code 'h'" in ui.error_lbl['text'] # names the specific mass code, not the generic message
 
 
 class TestBoxelExistence:

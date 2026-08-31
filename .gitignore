@@ -21,11 +21,17 @@ CLAUDE.md
 # Development garbage
 deploy.sh
 
-data/*
-routes/*
-updates/**
-tests/data/*
-tests/edmc/EDMarketConnector
-tests/logs/*
-tests/journal_folder/*
+# pycov
 .coverage
+.pytest_cache/
+
+
+data/
+updates/
+routes/
+tests/data/
+tests/edmc/EDMarketConnector
+tests/logs/
+tests/updates/
+tests/backups/
+tests/journal_folder/

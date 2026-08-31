@@ -298,7 +298,8 @@ errs:dict = {
     "ship_not_found": "Ship not found in shipyard",
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",
-    "invalid_boxel": "Invalid boxel entry"
+    "invalid_boxel": "Enter valid boxel and start/end numbers",
+    "boxel_impossible": "Invalid mass code"
 }
 
 cnf:dict = {

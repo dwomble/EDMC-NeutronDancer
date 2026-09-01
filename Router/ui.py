@@ -122,7 +122,7 @@ class UI():
         if not Context.notices or not Context.notices.pending_notice:
             return
         notice:str = Context.notices.pending_notice
-        w:int = max(len(l) for l in notice.split("\n"))
+        w:int = min(max(len(l) for l in notice.split("\n")), 60)
         h:int = len(notice.replace("\n\n", "\n").split("\n"))
         self.notice:th.RichText = th.RichText(self.frame, width=w, height=h, markdown=notice, relief=tk.FLAT)
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))

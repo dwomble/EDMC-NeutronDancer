@@ -2,12 +2,6 @@
 """
 Plotter classes for different route plotting strategies.
 
-This module provides a base Plotter class and specialized implementations for:
-- Neutron plotter
-- Galaxy plotter
-- Route-to-Route plotter
-- Trade route plotter
-
 Each plotter is responsible for creating its UI frame and handling its plotting logic.
 """
 

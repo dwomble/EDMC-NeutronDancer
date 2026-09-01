@@ -628,8 +628,8 @@ class UI():
             results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             for sys in json.loads(results.content):
-                if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\-\d]+$", "", sys.strip()) not in res:
-                    res.append(re.sub(r"[\-\d]+$", "", sys.strip()))
+                if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\d]+$", "", sys.strip()) not in res:
+                    res.append(re.sub(r"[\d]+$", "", sys.strip()))
         except:
             return [inp]
         return res

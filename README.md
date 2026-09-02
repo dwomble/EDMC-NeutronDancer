@@ -96,9 +96,13 @@ Tourist routes are also supported.
 
 ## Fleet Carrier Router
 
-This is the final supported route type.
+This is the final supported Spansh route type.
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
+
+## Boxel Surveyor
+
+This is a different type of router intended for surveying boxels.
 
 ### Following the Route
 

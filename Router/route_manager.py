@@ -603,7 +603,7 @@ class Router():
             self.route_params['Galaxy'] = dict.get('galaxy_params', {})
             self.save()
 
-        if isinstance(self.shiplist, list) and ships != {}:
+        if isinstance(self.shiplist, list):
             Debug.logger.info(f"Migrating save data to new structure")
             self.shiplist = {}
             for ship in ships.values(): self.shiplist[ship.id] = ship.name

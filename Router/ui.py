@@ -122,7 +122,7 @@ class UI():
         if not Context.notices or not Context.notices.pending_notice:
             return
         notice:str = Context.notices.pending_notice
-        w:int = max(len(l) for l in notice.split("\n"))
+        w:int = min(max(len(l) for l in notice.split("\n")), 60)
         h:int = len(notice.replace("\n\n", "\n").split("\n"))
         self.notice:th.RichText = th.RichText(self.frame, width=w, height=h, markdown=notice, relief=tk.FLAT)
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
@@ -628,8 +628,8 @@ class UI():
             results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             for sys in json.loads(results.content):
-                if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\-\d]+$", "", sys.strip()) not in res:
-                    res.append(re.sub(r"[\-\d]+$", "", sys.strip()))
+                if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\d]+$", "", sys.strip()) not in res:
+                    res.append(re.sub(r"[\d]+$", "", sys.strip()))
         except:
             return [inp]
         return res

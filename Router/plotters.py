@@ -2,12 +2,6 @@
 """
 Plotter classes for different route plotting strategies.
 
-This module provides a base Plotter class and specialized implementations for:
-- Neutron plotter
-- Galaxy plotter
-- Route-to-Route plotter
-- Trade route plotter
-
 Each plotter is responsible for creating its UI frame and handling its plotting logic.
 """
 
@@ -1053,7 +1047,11 @@ class BoxelPlotter(Plotter):
 
         if prefix is None or not valid_range:
             Debug.logger.info(f"Invalid boxel entry {boxel_input!r} ({start_text}-{end_text})")
-            Context.ui.show_error(errs['invalid_boxel'])
+            shape:re.Match|None = _BOXEL_RE.match(boxel_input) if prefix is None else None
+            if shape:
+                Context.ui.show_error(errs['boxel_impossible'].format(mass_code=shape.group('masscode')))
+            else:
+                Context.ui.show_error(errs['invalid_boxel'])
             if prefix is None:
                 boxel_ac.set_error_style()
             if not valid_range:

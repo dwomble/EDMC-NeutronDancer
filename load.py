@@ -76,7 +76,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if Context.route.route != [] and not Context.route.fleetcarrier:
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
-        case 'Commander': # Seems the only way to reliably get the ship loadout on startup is to read it from the monitor
+            if monitor.ship():
+                Context.router.add_loadout(monitor.ship())
+        case 'Commander' | 'LoadGame' if monitor.ship():
             Context.router.add_loadout(monitor.ship())
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)

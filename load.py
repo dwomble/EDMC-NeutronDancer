@@ -5,6 +5,7 @@ import tkinter as tk
 
 import myNotebook as nb  # type: ignore
 from config import user_agent # type: ignore
+from monitor import monitor # type: ignore
 import edmc_data # type: ignore
 
 from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, errs, CarrierStates
@@ -76,6 +77,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
             Context.router.add_state(state)
+            if monitor.ship():
+                Context.router.add_loadout(monitor.ship())
+        case 'Commander' | 'LoadGame' if monitor.ship():
+            Context.router.add_loadout(monitor.ship())
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':

@@ -2010,10 +2010,8 @@ class TestPlotMethods:
         assert params['capacity_used'] == 500
         assert params['calculate_starting_fuel'] == "1"
 
-    def test_boxel_plotter_generates_local_numeric_route(self, harness:TestHarness) -> None:
-        """ BoxelPlotter.plot() must never call Context.router.plot_route() (there's nothing
-        for Spansh to optimise) -- it builds Context.route directly from a locally-generated,
-        numerically-ordered list of candidate system names. """
+    def test_boxel_generates_numeric_route(self, harness:TestHarness) -> None:
+        """ A boxel route is built locally, with no Spansh call. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 
@@ -2030,9 +2028,8 @@ class TestPlotMethods:
             "Voqooe NR-C d12", "Voqooe NR-C d13", "Voqooe NR-C d14", "Voqooe NR-C d15",
         ]
 
-    def test_boxel_plotter_accepts_a_full_example_name_and_strips_the_sequence(self, harness:TestHarness) -> None:
-        """ A real autocomplete suggestion is a full example system name (e.g. "...d12"), not a
-        bare boxel -- the trailing number must be stripped rather than rejected. """
+    def test_boxel_strips_sequence_number(self, harness:TestHarness) -> None:
+        """ A full example name's trailing sequence number is stripped, not rejected. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 
@@ -2044,9 +2041,8 @@ class TestPlotMethods:
 
         assert [row[0] for row in harness.plugin.route.route] == ["Eol Prou IT-S c4-201", "Eol Prou IT-S c4-202"]
 
-    def test_boxel_plotter_rejects_a_boxel_missing_its_mass_code(self, harness:TestHarness) -> None:
-        """ "Voqooe NR-C" alone is ambiguous (real data: both a "b32" and a "d" mass code exist
-        under that one cube-ID) -- must reject rather than silently concatenating a malformed name."""
+    def test_boxel_rejects_missing_mass_code(self, harness:TestHarness) -> None:
+        """ A boxel missing its mass-code letter is rejected, not silently accepted. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 
@@ -2061,9 +2057,8 @@ class TestPlotMethods:
         mock_plot_route.assert_not_called()
         assert harness.plugin.route.route == []
 
-    def test_boxel_plotter_rejects_an_uppercase_mass_code(self, harness:TestHarness) -> None:
-        """ Real ED system names only ever use a lowercase mass-code letter (a-h); an uppercase
-        letter isn't a real boxel and must be rejected rather than silently accepted. """
+    def test_boxel_rejects_uppercase_mass_code(self, harness:TestHarness) -> None:
+        """ Mass-code letters should be lower case. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 
@@ -2078,9 +2073,8 @@ class TestPlotMethods:
         mock_plot_route.assert_not_called()
         assert harness.plugin.route.route == []
 
-    def test_boxel_plotter_updates_last_plot_so_returning_to_it_works(self, harness:TestHarness) -> None:
-        """ BoxelPlotter never calls plot_route() (which normally sets last_plot), so it must set
-        last_plot itself -- otherwise leaving the plot GUI and coming back defaults elsewhere. """
+    def test_boxel_updates_last_plot(self, harness:TestHarness) -> None:
+        """ Plotting a boxel updates last_plot. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 
@@ -2092,9 +2086,8 @@ class TestPlotMethods:
 
         assert harness.plugin.router.last_plot == 'Boxel'
 
-    def test_boxel_plotter_rejects_a_boxel_position_impossible_for_its_mass_code(self, harness:TestHarness) -> None:
-        """ Mass code h only ever has one possible boxel per sector (AA-A) -- any other
-        letters, however plausible-looking, describe a position that can't exist for h. """
+    def test_boxel_rejects_impossible_position(self, harness:TestHarness) -> None:
+        """ An impossible boxel position is rejected, not silently accepted. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Boxel']
 

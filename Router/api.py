@@ -20,11 +20,7 @@ def is_available() -> bool:
     return Context.router is not None
 
 def get_navroute() -> dict:
-    """Get the current navigation route, NavRoute.json-shaped.
-
-    A system EDSM hasn't returned data for yet (fetching runs in the background) comes back
-    with only StarSystem populated -- callers should treat a missing SystemAddress/StarPos/
-    StarClass as "not resolved yet" rather than an error. """
+    """Get the current navigation route, NavRoute.json-shaped. """
     if not is_available():
         raise RuntimeError("Router plugin is not available.")
 

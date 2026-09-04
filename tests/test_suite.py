@@ -2901,11 +2901,7 @@ class TestEventSequences:
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
 
 
-class TestEdsmEnrichment:
-    """ Router.edsm.EdsmData -- star-class mapping, fetch/cache mechanics -- and api.py's
-    get_navroute() consuming it. The `harness` fixture no-ops EdsmData.start_fetch by default
-    (see its own comment) so these are the only tests that deliberately re-enable/exercise it. """
-
+class TestEDSMEnrichment:
     def test_star_class_extracts_letter_from_main_sequence_types(self) -> None:
         from Router.edsm import _star_class
         assert _star_class("G (White-Yellow) Star") == "G"

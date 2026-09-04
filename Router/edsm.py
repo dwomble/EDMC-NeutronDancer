@@ -15,9 +15,7 @@ from .constants import DATA_DIR, EDSM_SYSTEMS, EDSM_BATCH_SIZE, EDSM_TIMEOUT
 from .context import Context
 from .route_manager import SESSION
 
-# EDSM's primaryStar.type is free text with no single consistent layout -- these cover the shapes
-# actually observed (main sequence/brown dwarf "G (White-Yellow) Star", white dwarfs
-# "White Dwarf (DA) Star", and a few fixed exotic strings with no letter code embedded at all).
+# EDSM's primaryStar.type is free text
 _STAR_CLASS_RE:re.Pattern = re.compile(r"^([A-Za-z]+) \(")
 _WHITE_DWARF_RE:re.Pattern = re.compile(r"^White Dwarf \(([A-Za-z0-9]+)\)")
 _EXOTIC_STAR_CLASSES:dict[str, str] = {
@@ -37,8 +35,7 @@ def _star_class(edsm_type:str) -> str:
 
 @singleton
 class EDSMData:
-    """ Retrieves and caches EDSM system data (StarSystem/SystemAddress/StarPos/StarClass)
-    for whichever systems are in the currently plotted route. """
+    """ Retrieves and caches EDSM system data for whichever systems are in the currently plotted route. """
 
     def __init__(self) -> None:
         self.cache:dict[str, dict] = {}
@@ -67,7 +64,7 @@ class EDSMData:
             Debug.logger.error("Failed to save EDSM cache", exc_info=e)
 
     def clear(self) -> None:
-        """ Called when the route is cleared -- the disk cache only lives as long as the route does. """
+        """ Called when the route is cleared """
         self.cache.clear()
         file:Path = self._cache_file()
         if file.exists():
@@ -78,7 +75,7 @@ class EDSMData:
         return self.cache.get(name)
 
     def _fetch(self, names:list[str]) -> None:
-        """ Background worker: batch-query EDSM for any of `names` not already cached. """
+        """ batch-query EDSM for any of `names` not already cached. """
         missing:list[str] = [n for n in dict.fromkeys(names) if n and n not in self.cache]
         if not missing: return
 
@@ -105,8 +102,5 @@ class EDSMData:
         self.save()
 
     def start_fetch(self, names:list[str]) -> None:
-        """ Bounded, not a raw Thread per call -- a replot storm (or many Route() constructions in
-        a test run) must not pile up unbounded concurrent EDSM connections (see Autocompleter's
-        own fix for the same class of issue -- unbounded threads under heavy concurrent TLS load
-        can SIGSEGV inside OpenSSL). """
+        """ Bounded, not a raw Thread per call """
         self.executor.submit(self._fetch, names)

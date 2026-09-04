@@ -55,6 +55,12 @@ class Route:
         self.nc = self.colind()
         self.dr = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
 
+        if self.sc is not None:
+            from .context import Context # deferred -- context.py imports Route at module level
+            if Context.edsm is not None:
+                Context.edsm.load()
+                Context.edsm.start_fetch([row[self.sc] for row in self.route])
+
 
     def source(self) -> str:
         if self.route == []: return ''

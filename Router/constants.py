@@ -30,6 +30,12 @@ SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, use
 SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 SPANSH_TIMEOUT:int = 30
 
+# EDSM URLs
+EDSM_API:str = "https://www.edsm.net/api-v1"
+EDSM_SYSTEMS:str = f"{EDSM_API}/systems"  # batch system lookup: coords/id64/primary star per systemName[]
+EDSM_BATCH_SIZE:int = 20  # systemName[] entries per request
+EDSM_TIMEOUT:int = 15
+
 # Directory we store our save data in
 DATA_DIR = 'data'
 SHIP_DIR = 'ships'

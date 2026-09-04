@@ -424,6 +424,8 @@ class Router():
     def clear_route(self) -> None:
         """ Clear the current route """
         Context.route = Route([], [], -1)
+        if Context.edsm is not None:
+            Context.edsm.clear()
         if Context.overlay:
             Context.overlay.update_overlays()
         self.save()

@@ -68,7 +68,7 @@ def mocked_session_get(side_effect):
         yield
 
 @pytest.fixture
-def harness(request) -> Generator:
+def harness(request, monkeypatch) -> Generator:
     """Provide a fresh test harness for each test."""
 
     # Clean route/ships each test, but keep module_data.json --
@@ -112,6 +112,11 @@ def harness(request) -> Generator:
     # ND-specific, this is our plugin object
     import Router.context
     test_harness.plugin = Router.context.Context
+
+    # Route(...) triggers a background EDSM fetch -- default it to a no-op so the many tests
+    # that just construct/load a route incidentally don't gain real network side effects.
+    # TestEdsmEnrichment overrides this itself for the tests that actually exercise it.
+    monkeypatch.setattr(test_harness.plugin.edsm, 'start_fetch', lambda names: None)
 
     # ND-specific, this is the journal handling function and the default journal params
     test_harness.load_events("journal_events.json")
@@ -2101,9 +2106,10 @@ class TestPlotMethods:
             with patch.object(harness.plugin.router, 'plot_route') as mock_plot_route:
                 ui.plotters['Boxel'].plot()
 
+        from Router.constants import errs
         mock_plot_route.assert_not_called()
         assert harness.plugin.route.route == []
-        assert "mass code 'h'" in ui.error_lbl['text'] # names the specific mass code, not the generic message
+        assert ui.error_lbl['text'] == errs['boxel_impossible'] # the specific message, not the generic one
 
 
 class TestBoxelExistence:
@@ -2893,3 +2899,97 @@ class TestEventSequences:
         assert harness.plugin.router.carrier_state == CarrierStates.Jumping
         harness.fire_event(events[1])
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
+
+
+class TestEdsmEnrichment:
+    """ Router.edsm.EdsmData -- star-class mapping, fetch/cache mechanics -- and api.py's
+    get_navroute() consuming it. The `harness` fixture no-ops EdsmData.start_fetch by default
+    (see its own comment) so these are the only tests that deliberately re-enable/exercise it. """
+
+    def test_star_class_extracts_letter_from_main_sequence_types(self) -> None:
+        from Router.edsm import _star_class
+        assert _star_class("G (White-Yellow) Star") == "G"
+        assert _star_class("M (Red dwarf) Star") == "M"
+        assert _star_class("L (Brown dwarf) Star") == "L"
+
+    def test_star_class_extracts_code_from_white_dwarf_types(self) -> None:
+        from Router.edsm import _star_class
+        assert _star_class("White Dwarf (DA) Star") == "DA"
+
+    def test_star_class_maps_known_exotic_types(self) -> None:
+        from Router.edsm import _star_class
+        assert _star_class("Neutron Star") == "N"
+        assert _star_class("Black Hole") == "H"
+        assert _star_class("Supermassive Black Hole") == "SupermassiveBlackHole"
+
+    def test_star_class_falls_back_to_the_raw_string_for_an_unknown_shape(self) -> None:
+        from Router.edsm import _star_class
+        assert _star_class("Something Unexpected") == "Something Unexpected"
+
+    def test_fetch_populates_the_cache_from_a_batch_response(self, harness:TestHarness) -> None:
+        def fake_get(url, *args, **kwargs):
+            resp = Mock()
+            resp.raise_for_status = lambda: None
+            resp.json = lambda: [{
+                "name": "Sol", "id64": 10477373803, "coords": {"x": 0, "y": 0, "z": 0},
+                "primaryStar": {"type": "G (White-Yellow) Star"},
+            }]
+            return resp
+
+        with mocked_session_get(fake_get):
+            harness.plugin.edsm._fetch(["Sol"])
+
+        assert harness.plugin.edsm.get("Sol") == {
+            "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
+        }
+
+    def test_fetch_skips_already_cached_names(self, harness:TestHarness) -> None:
+        harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
+
+        with patch('Router.route_manager.SESSION.get') as mock_get:
+            harness.plugin.edsm._fetch(["Sol"])
+
+        mock_get.assert_not_called()
+
+    def test_route_construction_triggers_a_background_fetch_for_its_systems(self, harness:TestHarness, monkeypatch) -> None:
+        seen:list = []
+        monkeypatch.setattr(harness.plugin.edsm, 'start_fetch', lambda names: seen.append(names))
+
+        Route(['System Name'], [['Sol'], ['Wolf 359']])
+
+        assert seen == [['Sol', 'Wolf 359']]
+
+    def test_get_navroute_uses_cached_edsm_data_when_available(self, harness:TestHarness) -> None:
+        import Router.api as api_module
+        harness.plugin.edsm.cache["Sol"] = {
+            "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
+        }
+
+        harness.plugin.route = Route(['System Name'], [['Sol']])
+        result:dict = api_module.get_navroute()
+
+        assert result == {"event": "NavRoute", "Route": [
+            {"StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G"},
+        ]}
+
+    def test_get_navroute_placeholders_a_system_not_yet_resolved(self, harness:TestHarness) -> None:
+        import Router.api as api_module
+
+        harness.plugin.route = Route(['System Name'], [['Somewhere Not Yet Cached']])
+        result:dict = api_module.get_navroute()
+
+        assert result == {"event": "NavRoute", "Route": [
+            {"StarSystem": "Somewhere Not Yet Cached", "SystemAddress": None, "StarPos": None, "StarClass": ""},
+        ]}
+
+    def test_get_navroute_returns_clear_event_for_an_empty_route(self, harness:TestHarness) -> None:
+        import Router.api as api_module
+        harness.plugin.route = Route([], [], -1)
+        assert api_module.get_navroute() == {"event": "NavRouteClear", "Route": []}
+
+    def test_clear_route_wipes_the_edsm_cache(self, harness:TestHarness) -> None:
+        harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
+
+        harness.plugin.router.clear_route()
+
+        assert harness.plugin.edsm.get("Sol") is None

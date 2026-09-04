@@ -2902,27 +2902,27 @@ class TestEventSequences:
 
 
 class TestEDSMEnrichment:
-    def test_star_class_extracts_letter_from_main_sequence_types(self) -> None:
+    def test_main_sequence_types(self) -> None:
         from Router.edsm import _star_class
         assert _star_class("G (White-Yellow) Star") == "G"
         assert _star_class("M (Red dwarf) Star") == "M"
         assert _star_class("L (Brown dwarf) Star") == "L"
 
-    def test_star_class_extracts_code_from_white_dwarf_types(self) -> None:
+    def test_white_dwarves(self) -> None:
         from Router.edsm import _star_class
         assert _star_class("White Dwarf (DA) Star") == "DA"
 
-    def test_star_class_maps_known_exotic_types(self) -> None:
+    def test_exotics(self) -> None:
         from Router.edsm import _star_class
         assert _star_class("Neutron Star") == "N"
         assert _star_class("Black Hole") == "H"
         assert _star_class("Supermassive Black Hole") == "SupermassiveBlackHole"
 
-    def test_star_class_falls_back_to_the_raw_string_for_an_unknown_shape(self) -> None:
+    def test_fallback(self) -> None:
         from Router.edsm import _star_class
         assert _star_class("Something Unexpected") == "Something Unexpected"
 
-    def test_fetch_populates_the_cache_from_a_batch_response(self, harness:TestHarness) -> None:
+    def test_from_batch_response(self, harness:TestHarness) -> None:
         def fake_get(url, *args, **kwargs):
             resp = Mock()
             resp.raise_for_status = lambda: None
@@ -2939,7 +2939,7 @@ class TestEDSMEnrichment:
             "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
         }
 
-    def test_fetch_skips_already_cached_names(self, harness:TestHarness) -> None:
+    def test_skip_cached(self, harness:TestHarness) -> None:
         harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
 
         with patch('Router.route_manager.SESSION.get') as mock_get:
@@ -2947,7 +2947,7 @@ class TestEDSMEnrichment:
 
         mock_get.assert_not_called()
 
-    def test_route_construction_triggers_a_background_fetch_for_its_systems(self, harness:TestHarness, monkeypatch) -> None:
+    def test_fetch_trigger(self, harness:TestHarness, monkeypatch) -> None:
         seen:list = []
         monkeypatch.setattr(harness.plugin.edsm, 'start_fetch', lambda names: seen.append(names))
 
@@ -2955,7 +2955,7 @@ class TestEDSMEnrichment:
 
         assert seen == [['Sol', 'Wolf 359']]
 
-    def test_get_navroute_uses_cached_edsm_data_when_available(self, harness:TestHarness) -> None:
+    def test_navroute_uses_cache(self, harness:TestHarness) -> None:
         import Router.api as api_module
         harness.plugin.edsm.cache["Sol"] = {
             "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
@@ -2968,7 +2968,7 @@ class TestEDSMEnrichment:
             {"StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G"},
         ]}
 
-    def test_get_navroute_placeholders_a_system_not_yet_resolved(self, harness:TestHarness) -> None:
+    def test_navroute_placeholder(self, harness:TestHarness) -> None:
         import Router.api as api_module
 
         harness.plugin.route = Route(['System Name'], [['Somewhere Not Yet Cached']])
@@ -2978,12 +2978,12 @@ class TestEDSMEnrichment:
             {"StarSystem": "Somewhere Not Yet Cached", "SystemAddress": None, "StarPos": None, "StarClass": ""},
         ]}
 
-    def test_get_navroute_returns_clear_event_for_an_empty_route(self, harness:TestHarness) -> None:
+    def test_navroute_clear(self, harness:TestHarness) -> None:
         import Router.api as api_module
         harness.plugin.route = Route([], [], -1)
         assert api_module.get_navroute() == {"event": "NavRouteClear", "Route": []}
 
-    def test_clear_route_wipes_the_edsm_cache(self, harness:TestHarness) -> None:
+    def test_clear_route(self, harness:TestHarness) -> None:
         harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
 
         harness.plugin.router.clear_route()

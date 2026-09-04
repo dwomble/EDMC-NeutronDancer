@@ -34,7 +34,7 @@ class OvFrame:
     x:int = 100
     y:int = 100
     text_colour:str = "#ffffff"
-    ttl:int = 0
+    ttl:int = 120
 
 @singleton
 class Overlay():

@@ -1016,6 +1016,14 @@ class TestOverlay:
         """Ensure overlay is not present when overlay mode is disabled."""
         assert harness.plugin.overlay._get_overlay() is not None
 
+    def test_saved_frame_defaults_ttl(self, harness:TestHarness) -> None:
+        key:str = f"{harness.plugin.plugin_name}_Default_overlay"
+        harness.config.set(key, json.dumps({"name": "Default", "x": 100, "y": 900}))
+
+        harness.plugin.overlay._load_prefs()
+
+        assert harness.plugin.overlay.ovfrs["Default"].ttl > 0
+
     def test_countdown_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure countdown starts the countdown thread."""
 

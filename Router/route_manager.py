@@ -13,7 +13,7 @@ from timeout_session import new_session # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, TRUE
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -381,7 +381,22 @@ class Router():
                     r.append(waypoint.get(c, ''))
                 rte.append(r)
 
-            Context.route = Route(hdrs, rte)
+            # SystemAddress/StarPos ride along in the route response for free; StarClass is a
+            # Neutron/Scoopable-flag guess, not a real spectral type, to avoid a per-system fetch.
+            navroute:dict[str, dict] = {}
+            for row in res:
+                name:str = row.get('system') or row.get('name') or ''
+                if not name: continue
+                has_xyz:bool = all(k in row for k in ('x', 'y', 'z'))
+                neutron:bool = row.get('has_neutron') in TRUE or row.get('neutron_star') in TRUE
+                scoopable:bool = row.get('is_scoopable') in TRUE
+                navroute[name] = {
+                    'SystemAddress': row.get('id64'),
+                    'StarPos': [row['x'], row['y'], row['z']] if has_xyz else None,
+                    'StarClass': 'N' if neutron else 'M' if scoopable else '',
+                }
+
+            Context.route = Route(hdrs, rte, navroute=navroute)
             Context.route.offset = 0
 
             if Context.route.fleetcarrier and self.carrier_location != '':
@@ -424,8 +439,8 @@ class Router():
     def clear_route(self) -> None:
         """ Clear the current route """
         Context.route = Route([], [], -1)
-        if Context.edsm is not None:
-            Context.edsm.clear()
+        if Context.spansh is not None:
+            Context.spansh.clear()
         if Context.overlay:
             Context.overlay.update_overlays()
         self.save()
@@ -576,9 +591,10 @@ class Router():
         """ Populate our data from a Dictionary that has been deserialized """
 
         [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        r = dict.get('route', ([], [], -1))
+        r = dict.get('route', ([], [], -1, {}))
         (hdrs, route, offset) = r[0:3]
-        Context.route = Route(hdrs, route, offset)
+        navroute:dict = r[3] if len(r) > 3 else {}
+        Context.route = Route(hdrs, route, offset, navroute)
         self.ship = Ship(dict.get('ship', {}))
         ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
 

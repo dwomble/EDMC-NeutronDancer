@@ -30,7 +30,10 @@ def get_navroute() -> dict:
     route:dict = {"event": "NavRoute", "Route": []}
     for waypoint in Context.route.route:
         name:str = waypoint[Context.route.sc]
-        cached:dict|None = Context.edsm.get(name) if Context.edsm is not None else None
-        route["Route"].append(cached or {"StarSystem": name, "SystemAddress": None, "StarPos": None, "StarClass": ""})
+        nav:dict = Context.route.navroute.get(name, {})
+        route["Route"].append({
+            "StarSystem": name, "SystemAddress": nav.get('SystemAddress'),
+            "StarPos": nav.get('StarPos'), "StarClass": nav.get('StarClass') or '',
+        })
 
     return route

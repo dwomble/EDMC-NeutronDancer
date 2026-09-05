@@ -10,13 +10,14 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1) -> None:
+    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1, navroute:dict|None = None) -> None:
         self.hdrs:list = hdrs
         self.route:list = route
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
         self.fuel_full = False
+        self.navroute:dict[str, dict] = navroute or {} # name -> SystemAddress/StarPos/StarClass
 
         self.sc:int|None = None # System column index
         self.nc:int|None = None # System / body column index
@@ -54,12 +55,6 @@ class Route:
         self.sc = self.colind(['System Name', 'system', 'name'])
         self.nc = self.colind()
         self.dr = self.colind('Distance Remaining' if 'Distance Remaining' in self.hdrs else 'Distance Rem')
-
-        if self.sc is not None:
-            from .context import Context # deferred -- context.py imports Route at module level
-            if Context.edsm is not None:
-                Context.edsm.load()
-                Context.edsm.start_fetch([row[self.sc] for row in self.route])
 
 
     def source(self) -> str:
@@ -413,4 +408,4 @@ class Route:
 
 
     def to_dict(self) -> list:
-        return [self.hdrs, self.route, self.offset]
+        return [self.hdrs, self.route, self.offset, self.navroute]

@@ -20,7 +20,7 @@ from Router.ui import UI
 from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
-from Router.edsm import EDSMData
+from Router.spansh_data import SpanshData
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir, True)
@@ -57,7 +57,7 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()
     Context.csv = CSV()
-    Context.edsm = EDSMData() # before Router(), which may load a saved route and trigger a fetch
+    Context.spansh = SpanshData() # before Router(), which may load a saved route and trigger a fetch
     Context.router = Router()
     Context.ui = UI(parent)
     Context.hotkeys = Hotkeys()

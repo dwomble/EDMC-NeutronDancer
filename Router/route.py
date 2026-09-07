@@ -407,5 +407,5 @@ class Route:
         return self.__repr__()
 
 
-    def to_dict(self) -> list:
+    def as_dict(self) -> list:
         return [self.hdrs, self.route, self.offset, self.navroute]

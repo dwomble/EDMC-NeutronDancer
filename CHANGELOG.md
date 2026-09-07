@@ -5,9 +5,11 @@
 ### New Features
 
 * Added a Boxel explorer route type
+* Added an api interface so in future plugins like Root Scoop can show Neutron routes
 
 ### Changes
 
+* Finally made it so current ship appears in Galaxy plotter on first login (famous last words)
 * Made session queries more responsive to Spansh delays
 * Added a default star icon on routes
 

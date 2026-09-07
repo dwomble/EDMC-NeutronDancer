@@ -584,24 +584,24 @@ class Router():
         save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
         save['ship'] = self.ship.as_dict() if self.ship else {}
         if Context.route != None:
-            save['route'] = Context.route.to_dict()
+            save['route'] = Context.route.as_dict()
         return save
 
-    def _from_dict(self, dict:dict) -> None:
+    def _from_dict(self, data:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
 
-        [setattr(self, k, dict.get(k, v)) for k, v in SAVE_VARS.items()]
-        r = dict.get('route', ([], [], -1, {}))
+        [setattr(self, k, data.get(k, v)) for k, v in SAVE_VARS.items()]
+        r = data.get('route', ([], [], -1, {}))
         (hdrs, route, offset) = r[0:3]
         navroute:dict = r[3] if len(r) > 3 else {}
         Context.route = Route(hdrs, route, offset, navroute)
-        self.ship = Ship(dict.get('ship', {}))
-        ships = {k: Ship(data) for k, data in dict.get('ships', {}).items()}
+        self.ship = Ship(data.get('ship', {}))
+        ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}
 
         # Migrate
-        if dict.get('neutron_params'):
-            self.route_params['Neutron'] = dict.get('neutron_params', {})
-            self.route_params['Galaxy'] = dict.get('galaxy_params', {})
+        if data.get('neutron_params'):
+            self.route_params['Neutron'] = data.get('neutron_params', {})
+            self.route_params['Galaxy'] = data.get('galaxy_params', {})
             self.save()
 
         if isinstance(self.shiplist, list) and ships != {}:

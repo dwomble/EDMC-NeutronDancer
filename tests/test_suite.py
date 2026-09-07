@@ -2910,24 +2910,23 @@ class TestSpanshEnrichment:
         navroute:dict = {"Wolf 359": {"SystemAddress": 1, "StarPos": [1, 1, 1], "StarClass": "N"}}
 
         harness.plugin.route = Route(['System Name'], [['Wolf 359']], navroute=navroute)
-        result:dict = api_module.get_navroute()
-
-        assert result["Route"][0]["StarClass"] == "N"
+        result:list|None = api_module.get_navroute()
+        assert result is not None
+        assert result[0]["StarClass"] == "N"
 
     def test_navroute_placeholder(self, harness:TestHarness) -> None:
         import Router.api as api_module
 
         harness.plugin.route = Route(['System Name'], [['Somewhere Not Yet Cached']])
-        result:dict = api_module.get_navroute()
+        result:list|None = api_module.get_navroute()
+        assert result is not None
 
-        assert result == {"event": "NavRoute", "Route": [
-            {"StarSystem": "Somewhere Not Yet Cached", "SystemAddress": None, "StarPos": None, "StarClass": ""},
-        ]}
+        assert result[0] == {"StarSystem": "Somewhere Not Yet Cached", "SystemAddress": None, "StarPos": None, "StarClass": ""}
 
     def test_navroute_clear(self, harness:TestHarness) -> None:
         import Router.api as api_module
         harness.plugin.route = Route([], [], -1)
-        assert api_module.get_navroute() == {"event": "NavRouteClear", "Route": []}
+        assert api_module.get_navroute() == None
 
     def test_clear_route(self, harness:TestHarness) -> None:
         harness.plugin.spansh.cache["Sol"] = "G"

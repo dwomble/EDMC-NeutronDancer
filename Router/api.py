@@ -19,18 +19,18 @@ def is_available() -> bool:
     """Check if the Router plugin is available."""
     return Context.router is not None
 
-def get_navroute() -> dict:
+def get_navroute() -> list|None:
     """Get the current navigation route, NavRoute.json-shaped. """
     if not is_available():
         raise RuntimeError("Router plugin is not available.")
 
     if Context.route is None or Context.route.route == [] or Context.route.sc is None:
-        return {"event": "NavRouteClear", "Route": []}
+        return None
 
-    route:dict = {"event": "NavRoute", "Route": []}
+    route:list = []
     for waypoint in Context.route.route:
         name:str = waypoint[Context.route.sc]
         cached:dict|None = Context.edsm.get(name) if Context.edsm is not None else None
-        route["Route"].append(cached or {"StarSystem": name, "SystemAddress": None, "StarPos": None, "StarClass": ""})
+        route.append(cached or {"StarSystem": name, "SystemAddress": None, "StarPos": None, "StarClass": ""})
 
     return route

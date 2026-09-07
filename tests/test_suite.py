@@ -50,8 +50,7 @@ def capture_thread(*args, **kwargs):
 
 
 def fake_systems_get(url, *args, **kwargs):
-    """ Stand-in for requests.get against the Spansh systems autocomplete endpoint.
-    Echoes back whatever was queried so system-name validation always succeeds without a real network call. """
+    """ Stand-in for the systems autocomplete endpoint -- echoes back whatever was queried. """
     q = kwargs.get('params', {}).get('q', '')
     resp = Mock()
     resp.status_code = 200
@@ -71,8 +70,7 @@ def mocked_session_get(side_effect):
 def harness(request, monkeypatch) -> Generator:
     """Provide a fresh test harness for each test."""
 
-    # Clean route/ships each test, but keep module_data.json --
-    # else every test forces a live Coriolis download, not one.
+    # Keep module_data.json, or every test forces a live Coriolis download, not just one.
     data_dir:Path = Path(__file__).parent / "data"
     (data_dir / "route.json").unlink(missing_ok=True)
     shutil.rmtree(data_dir / "ships", ignore_errors=True)
@@ -113,10 +111,8 @@ def harness(request, monkeypatch) -> Generator:
     import Router.context
     test_harness.plugin = Router.context.Context
 
-    # Route(...) triggers a background EDSM fetch -- default it to a no-op so the many tests
-    # that just construct/load a route incidentally don't gain real network side effects.
-    # TestEdsmEnrichment overrides this itself for the tests that actually exercise it.
-    monkeypatch.setattr(test_harness.plugin.edsm, 'start_fetch', lambda names: None)
+    # Default to a no-op so tests that just construct/load a route avoid real network calls.
+    monkeypatch.setattr(test_harness.plugin.spansh, 'start_fetch', lambda ids: None)
 
     # ND-specific, this is the journal handling function and the default journal params
     test_harness.load_events("journal_events.json")
@@ -127,10 +123,7 @@ def harness(request, monkeypatch) -> Generator:
 
     yield test_harness
 
-    # Cheap, per-test hygiene only -- stopping countdown threads is local and instant. The
-    # network-bound Autocompleter.join_all() (see plugin_stop()) runs once at session end
-    # instead (tests/conftest.py), since joining live lookup threads per-test multiplies
-    # real network round-trips across the whole suite.
+    # Only cheap, local teardown here -- network-bound lookups get joined once for the whole suite.
     test_harness.plugin.overlay.stop_countdowns()
     test_harness.assert_no_unhandled_exceptions()
     TestHarness.reset_instance()
@@ -180,15 +173,13 @@ class TestStartup:
 class TestUpdater:
     @pytest.fixture(autouse=True)
     def _mock_network(self) -> Generator[None, None, None]:
-        """ queue_response()/.calls need the shared mock --
-        _use_live is a global a prior harness-based test may
-        have left True -- it never resets on its own. """
+        """ Force mocked requests, since a prior test may have left the shared mock in live mode. """
         previous:bool = mock_requests.live_requests()
         mock_requests.live_requests(False)
         yield
         mock_requests.live_requests(previous)
 
-    def test_get_release_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+    def test_get_release_user_agent(self, tmp_path) -> None:
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
         mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
 
@@ -197,7 +188,7 @@ class TestUpdater:
         call = mock_requests._mock_requests.calls[-1]
         assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
 
-    def test_download_zip_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+    def test_download_zip_user_agent(self, tmp_path) -> None:
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer")
         updater.update_version = "1.2.3" # type: ignore -- str is fine, only used for a filename here
         updater.download_url = "https://example.invalid/release.zip"
@@ -208,14 +199,14 @@ class TestUpdater:
         call = mock_requests._mock_requests.calls[-1]
         assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
 
-    def test_reads_the_version_file_when_present(self, tmp_path) -> None:
+    def test_reads_version_file(self, tmp_path) -> None:
         (tmp_path / "version").write_text("1.2.3")
         assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
 
-    def test_falls_back_to_default_when_no_file_exists(self, tmp_path) -> None:
+    def test_default_when_file_missing(self, tmp_path) -> None:
         assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
 
-    def test_falls_back_to_default_when_the_file_is_unparseable(self, tmp_path) -> None:
+    def test_default_when_file_unparseable(self, tmp_path) -> None:
         """ e.g. a fresh git checkout with an empty/placeholder version file. """
         (tmp_path / "version").write_text("not-a-version!!")
         assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
@@ -226,22 +217,17 @@ class TestUpdater:
         assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
 
 class TestNotices:
-    """ Cursory integration check -- Notices' parsing and
-    dismissal logic is exhaustively covered by EDMC-PluginLib's
-    tests/test_notices.py; this just confirms fetch, parse, and
-    dismiss-then-newer-shows-again round-trip in this plugin's
-    own stack. TestUIFunctions.test_show_notice_displays_pending_
-    notice covers the displayed half, this plugin's own code. """
+    """ Cursory integration check for the fetch/parse/dismiss round-trip in this plugin's stack. """
 
     @pytest.fixture(autouse=True)
     def _mock_network(self) -> Generator[None, None, None]:
-        """ Same leak as TestUpdater's own fixture. """
+        """ Force mocked requests for the duration of each test, then restore the prior mode. """
         previous:bool = mock_requests.live_requests()
         mock_requests.live_requests(False)
         yield
         mock_requests.live_requests(previous)
 
-    def test_fetch_parse_and_dismiss_round_trip(self) -> None:
+    def test_fetch_and_dismiss_notice(self) -> None:
         _queue_notices("## 3\nFleet Carrier routes now track tritium separately from cargo.")
         notices = Notices("dwomble", "EDMC-NeutronDancer-NoticesTest")
         notices._check_notices()
@@ -338,9 +324,7 @@ class TestRouteMethods:
         assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
 
     def test_next_stop_riches(self, harness:TestHarness) -> None:
-        """ subtype/distance/scan value for a riches-shaped route. Header names ('Body',
-        'Body Type') match what _flatten_bodies_result()/HEADER_MAP actually produce -- see
-        test_plotter_success_creates_route_riches's `assert "Body" in ...hdrs`. """
+        """ Subtype/distance/scan value details for a riches-shaped route. """
         hdrs = ['System Name', 'Body', 'Body Type', 'Distance To Arrival', 'Estimated Scan Value', 'Jumps']
         route_data = [
             ['Colonia', 'Colonia 1', '', 0, 0, 0],
@@ -354,26 +338,21 @@ class TestRouteMethods:
         assert any('Scan' in l for l in lines)
         assert route.next_stop_display() == 'Colonia 2 a'
 
-    def test_next_stop_display_prepends_system_when_body_lacks_it(self, harness:TestHarness) -> None:
-        """ Body's own value can't be trusted to include the system name -- e.g. after the
-        route window strips it (route_window.py's _table()) -- so next_stop_display() must
-        add it itself rather than assuming Spansh always bakes it in. """
+    def test_display_adds_missing_system(self, harness:TestHarness) -> None:
+        """ A body's own value can't be trusted to include the system name, so this must add it itself. """
         hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route = Route(hdrs, [['Deciat', 'Deciat 1', '', 0], ['Deciat', '4 a', 'Bacterium Nypoxia', 1]], 0)
 
         assert route.next_stop_display() == 'Deciat 4 a'
 
-    def test_next_stop_display_falls_back_to_system_without_a_body_column(self, harness:TestHarness) -> None:
+    def test_display_without_body_column(self, harness:TestHarness) -> None:
         hdrs = ['System Name', 'Jumps']
         route = Route(hdrs, [['Sol', 0], ['Apurui', 10]], 0)
 
         assert route.next_stop_display() == route.next_stop() == 'Apurui'
 
     def test_next_stop_exobiology(self, harness:TestHarness) -> None:
-        """ next_stop() stays the system name (self.nc must
-        match FSDJump's StarSystem for position tracking) --
-        next_stop_display() carries the body instead;
-        next_stop_details() doesn't repeat it. """
+        """ next_stop() stays the system name; next_stop_display() carries the body instead. """
         hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route_data = [
             ['Deciat', 'Deciat 1', '', 0],
@@ -386,10 +365,8 @@ class TestRouteMethods:
         assert route.next_stop_display() == 'Deciat 4 a'
         assert any('Bacterium Nypoxia' in l for l in route.next_stop_details())
 
-    def test_next_stop_details_lists_extra_bodies_in_the_same_system(self, harness:TestHarness) -> None:
-        """ Riches/exobiology routes can list several bodies per system, all collapsed under
-        one displayed system name (next_stop() can't disambiguate by body -- see above) --
-        the detail lines must call out that there's more than just the immediate one. """
+    def test_details_lists_extra_bodies(self, harness:TestHarness) -> None:
+        """ Several bodies at one system must have the detail lines call out the extra ones. """
         hdrs = ['System Name', 'Body', 'Species', 'Jumps']
         route_data = [
             ['Deciat', 'Deciat 1', '', 0],
@@ -420,9 +397,7 @@ class TestRouteMethods:
         assert route.sum_value('Estimated Scan Value') == 52300
 
     def test_sum_value_and_route_value(self, harness:TestHarness) -> None:
-        """sum_value(through=...) sums an arbitrary prefix (route-window "so far"/"total" use
-        this); route_value() picks Profit/Landmark Value/Scan or Mapping Value by column
-        presence, or None for route types with no earned-value column."""
+        """ sum_value() sums an arbitrary prefix; route_value() picks the right earned-value column. """
         hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
         route_data = [
             ['Shinrarta Dezhra', 'Jameson Memorial', '', 0, 0, 0],
@@ -623,8 +598,7 @@ class TestRouteMethods:
 
 
 class TestRouteNavigation:
-    """Test moving along a route via real navigation events (FSDJump, !nd chat commands)
-    rather than calling Route.update_route() directly."""
+    """ Moving along a route via real navigation events, not by calling update_route() directly. """
 
     def _import(self, harness:TestHarness, filename:str) -> None:
         assert harness.plugin.router.import_route(str(Path(__file__).parent / "config" / filename)) == True
@@ -1024,6 +998,14 @@ class TestOverlay:
 
         assert harness.plugin.overlay.ovfrs["Default"].ttl > 0
 
+    def test_saved_zero_ttl_ignored(self, harness:TestHarness) -> None:
+        key:str = f"{harness.plugin.plugin_name}_Default_overlay"
+        harness.config.set(key, json.dumps({"name": "Default", "x": 100, "y": 900, "ttl": 0}))
+
+        harness.plugin.overlay._load_prefs()
+
+        assert harness.plugin.overlay.ovfrs["Default"].ttl > 0
+
     def test_countdown_starts_thread(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure countdown starts the countdown thread."""
 
@@ -1114,10 +1096,8 @@ class TestOverlay:
         assert harness.plugin.overlay.msgs["Default"]["NeutronDancer-Default-2"]["text"] == 'PD jc=15 jr=384 jt=399 dc=286 dr=16.2K dt=16.5K dh=- jh=- rj=- rd=- st=🌀'
 
     def test_overlay_trade_detail_not_template(self, harness:TestHarness, monkeypatch) -> None:
-        """For a route with no Refuel/Neutron columns (Trade here), the overlay must show the
-        route's own detail section (station/commodity/profit) instead of the customizable
-        progress_display template -- and the "Next:" line should include the station."""
-        # Short names so the "Next:" line's truncation (tested separately) doesn't interfere.
+        """ With no Refuel/Neutron columns, the overlay shows the route's own detail section. """
+        # Short names so the "Next:" line's truncation doesn't interfere.
         hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
         route_data = [
             ['Sol', 'Abraham Lincoln', '', 0, 0, 0],
@@ -1320,6 +1300,39 @@ class TestPlotMethods:
         assert harness.plugin.router.route_params['Neutron'] == params
         assert not hasattr(harness.plugin.router, 'neutron_params')
 
+    def test_plotter_derives_star_class(self, harness:TestHarness) -> None:
+        """ Neutron/Scoopable route flags become a guessed StarClass, with no Spansh fetch. """
+        global plotter_thread
+        plotter_thread = None
+
+        job_response = Mock()
+        job_response.status_code = 202
+        job_response.content = json.dumps({"job": "test-job-id"}).encode()
+
+        result_response = Mock()
+        result_response.status_code = 200
+        result_response.content = json.dumps({
+            "result": {
+                "jumps": [
+                    {"system": "System1", "distance": 20.5, "has_neutron": True},
+                    {"system": "System2", "distance": 19.3, "is_scoopable": True},
+                    {"system": "System3", "distance": 18.1},
+                ]
+            }
+        }).encode()
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('Router.route_manager.SESSION.post', return_value=job_response):
+                with patch('Router.route_manager.SESSION.get', return_value=result_response):
+                    harness.plugin.router.plot_route('Neutron', {'from': 'Start', 'to': 'End', 'max_time': 1})
+
+        assert plotter_thread is not None, "Plotter thread was not captured"
+        plotter_thread.join(timeout=THREAD_TIMEOUT)
+
+        assert harness.plugin.route.navroute['System1']['StarClass'] == 'N'
+        assert harness.plugin.route.navroute['System2']['StarClass'] == 'M'
+        assert harness.plugin.route.navroute['System3']['StarClass'] == ''
+
     def test_plotter_success_creates_route_galaxy(self, harness:TestHarness) -> None:
         """Test that _plotter persists Galaxy params into route_params (not a stray galaxy_params attribute)."""
         global plotter_thread
@@ -1354,9 +1367,7 @@ class TestPlotMethods:
         assert not hasattr(harness.plugin.router, 'galaxy_params')
 
     def test_plotter_success_creates_route_rtor(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Road-to-Riches response (systems with nested bodies) into one row per
-        body, dropping bodyless systems (e.g. the starting system) rather than emitting a placeholder row --
-        matching how a Spansh-exported riches CSV never includes a bodyless row (see riches-Apurui-M23.csv)."""
+        """ Flattens nested bodies into one row each, dropping bodyless systems entirely. """
         global plotter_thread
         plotter_thread = None
 
@@ -1364,8 +1375,7 @@ class TestPlotMethods:
         job_response.status_code = 202
         job_response.content = json.dumps({"job": "test-job-id"}).encode()
 
-        # Real shape captured from the live Spansh riches API: a bodyless system (start)
-        # followed by a system with two scannable bodies.
+        # Real shape: a bodyless system (start) followed by one with two scannable bodies.
         result_response = Mock()
         result_response.status_code = 200
         result_response.content = json.dumps({
@@ -1397,10 +1407,7 @@ class TestPlotMethods:
         assert harness.plugin.router.route_params['RtoR'] == params
 
     def test_plotter_success_creates_route_ammonia(self, harness:TestHarness) -> None:
-        """Regression: _plotter's riches-shape branch must trigger for body_types-filtered
-        variants too (Ammonia/Earth-like/Rocky-metal), not just literally 'RtoR' -- it used
-        to check `which == 'RtoR'`, so any other riches-family type fell into the flat
-        jumps/system_jumps branch and crashed calling .get() on a list."""
+        """ The riches-shape branch must trigger for body_types-filtered variants too, not just 'RtoR'. """
         if 'Ammonia' not in PLOTTER_SPECS:
             return
 
@@ -1484,11 +1491,7 @@ class TestPlotMethods:
         assert harness.plugin.router.route_params['Exobiology'] == params
 
     def test_plotter_success_creates_route_trade(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Trade response -- a FLAT list of hops (unlike the
-        riches family's nested systems/bodies shape), each of which may carry more than one
-        commodity at once. Each commodity-per-hop becomes its own row, keyed to the hop's
-        *destination* (not source), matching every other route type's "row = next place to
-        go" convention. Real shape captured from the live Spansh trade API."""
+        """ Each commodity-per-hop becomes its own row, keyed to the hop's destination, not source. """
         global plotter_thread
         plotter_thread = None
 
@@ -1545,10 +1548,7 @@ class TestPlotMethods:
         assert "Commodity" in harness.plugin.route.hdrs
         assert "Cumulative Profit" in harness.plugin.route.hdrs
 
-        # Row 0 is keyed to hop 0's DESTINATION, not its source -- the starting station never
-        # gets its own row, matching how every other route type's row 0 is the first waypoint
-        # *after* the start, not the start itself. route.source() reads the System Name column;
-        # the station itself is a separate column.
+        # Row 0 is keyed to hop 0's destination, not its source -- the starting station has no row.
         assert harness.plugin.route.source() == 'Puppis Sector TO-R b4-4'
         row0 = harness.plugin.route.route[0]
         assert row0[harness.plugin.route.hdrs.index("Station Name")] == 'Alvarado Beacon'
@@ -1565,10 +1565,7 @@ class TestPlotMethods:
         assert harness.plugin.router.route_params['Trade'] == params
 
     def test_plotter_success_creates_route_fleetcarrier(self, harness:TestHarness) -> None:
-        """Test that _plotter flattens a Fleet Carrier response -- each requested stop appears
-        twice (ending one leg, starting the next, with distance == 0), so only the
-        distance != 0 rows (the real jumps) should survive. Real shape captured from the
-        live Spansh fleet carrier API."""
+        """ Only distance != 0 rows survive -- leg-restart bookkeeping rows are dropped. """
         global plotter_thread
         plotter_thread = None
 
@@ -1620,11 +1617,8 @@ class TestPlotMethods:
         assert "Icy Ring" in harness.plugin.route.hdrs
         assert "Restock Tritium" in harness.plugin.route.hdrs
 
-    def test_plotter_fleetcarrier_single_leg_keeps_every_hop(self, harness:TestHarness) -> None:
-        """Regression: a direct route (no via-stops) with multiple intermediate hops must keep
-        every hop, not just the final arrival. distance_to_destination stays nonzero for every
-        row except the last in a single-leg route, so filtering on it (instead of on
-        distance != 0) collapsed the whole route down to one jump."""
+    def test_fc_keeps_every_hop(self, harness:TestHarness) -> None:
+        """ A single-leg route with several intermediate hops must keep every hop, not just the last. """
         global plotter_thread
         plotter_thread = None
 
@@ -1778,9 +1772,8 @@ class TestPlotMethods:
         assert params['max_results'] == '20'
         assert 'body_types' not in params  # plain Road to Riches has no body filter
 
-    def test_rtor_plotter_plot_untouched_dest_is_blank(self, harness:TestHarness) -> None:
-        """A dest_ac showing its placeholder text (not "") must still be treated as blank --
-        plot() must omit 'to' rather than sending the placeholder string as a destination."""
+    def test_rtor_placeholder_dest_blank(self, harness:TestHarness) -> None:
+        """ A dest field showing its placeholder text must still be treated as blank, not sent. """
         ui = harness.plugin.ui
         rtor_fr = ui.plot_frames['RtoR']
 
@@ -1803,9 +1796,8 @@ class TestPlotMethods:
         ('EarthLike', ['Earth-like world']),
         ('RockyMetal', ['Rocky body', 'High metal content world']),
     ])
-    def test_riches_body_filter_plotter_calls_plot_route(self, harness:TestHarness, route_type, expected_body_types) -> None:
-        """Regression: each body-type-filtered riches plotter (Ammonia/Earth-like/Rocky-metal)
-        must invoke plot_route with its own fixed body_types filter and min_value=1."""
+    def test_riches_filter_calls_plot(self, harness:TestHarness, route_type, expected_body_types) -> None:
+        """ Each body-type-filtered riches plotter invokes plot_route with its own fixed filter. """
         if route_type not in PLOTTER_SPECS:
             return
 
@@ -1831,9 +1823,7 @@ class TestPlotMethods:
         assert 'use_mapping_value' not in params  # these pages don't expose that option
 
     def test_exobiology_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """Regression: Exobiology has no body_types filter (unlike Ammonia/Earth-like/Rocky-metal)
-        -- its filtering criterion is a real "Minimum Landmark Value" slider (0-21, units of
-        millions of credits implied), which must be scaled by 1,000,000 before being sent."""
+        """ Exobiology's Minimum Landmark Value slider must be scaled by 1,000,000 before sending. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Exobiology']
 
@@ -1893,8 +1883,7 @@ class TestPlotMethods:
             assert params[flag] == 0  # none selected
 
     def test_tourist_add_remove_hop_rows(self, harness:TestHarness) -> None:
-        """Adding/removing stop rows should track the right systems. Unlike the old
-        destination-list design, an empty hop list is valid -- no forced minimum row."""
+        """ Adding/removing stop rows tracks the right systems; an empty hop list is valid. """
         ui = harness.plugin.ui
         plotter = ui.plotters['Tourist']
 
@@ -1917,8 +1906,7 @@ class TestPlotMethods:
         assert len(plotter.hop_rows) == 0
 
     def test_tourist_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """TouristPlotter.plot() must send source/destination(list)/range, and must omit
-        final_destination entirely (rather than sending literal "None") when left blank."""
+        """ A blank final_destination must be omitted entirely, not sent as literal "None". """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Tourist']
         plotter = ui.plotters['Tourist']
@@ -1964,11 +1952,8 @@ class TestPlotMethods:
         _, params = mock_plot_route.call_args[0]
         assert params['final_destination'] == 'Colonia'
 
-    def test_tourist_plotter_no_hops_does_not_letter_split_on_reopen(self, harness:TestHarness) -> None:
-        """Regression: with no via-stops, params['destination'] collapses to the plain
-        final-destination string (for Spansh) rather than a list. create_frame() must rebuild
-        hop rows from a separate destination_names list, or it iterates that string
-        character-by-character and creates one hop row per letter."""
+    def test_tourist_no_hops_reopen(self, harness:TestHarness) -> None:
+        """ With no via-stops, reopening must not iterate the destination string letter by letter. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['Tourist']
         plotter = ui.plotters['Tourist']
@@ -1990,8 +1975,7 @@ class TestPlotMethods:
         assert plotter.hop_rows == []
 
     def test_fleetcarrier_plotter_calls_plot_route(self, harness:TestHarness) -> None:
-        """FleetCarrierPlotter.plot() sends system names directly -- Spansh's fleetcarrier API
-        accepts names, no id64 resolution needed despite older docs suggesting otherwise."""
+        """ Sends system names directly -- no id64 resolution needed. """
         ui = harness.plugin.ui
         fr = ui.plot_frames['FleetCarrier']
         plotter = ui.plotters['FleetCarrier']
@@ -2114,44 +2098,39 @@ class TestPlotMethods:
 
 
 class TestBoxelExistence:
-    """ _boxel_coords/_boxel_exists/_boxel_prefix -- verified against two real systems' actual
-    id64 values (Eol Prou RS-T d3-94, Vegnue WK-E d12-0, decoded via EDSM + the DISC Wiki's
-    ID64 bitfield spec) and ~10 live Spansh boxel lookups; see plotters.py's own docstrings. """
+    """ Boxel coords/existence/prefix, verified against two real systems' actual id64 values. """
 
-    def test_coords_match_a_real_system_with_no_subnum(self) -> None:
+    def test_coords_match_real_system(self) -> None:
         """ Eol Prou RS-T d3-94 -- real id64 3238296097059 decodes to box coords [9, 4, 4]. """
         assert _boxel_coords('R', 'S', 'T', 3) == (9, 4, 4)
 
-    def test_coords_match_a_real_system_with_a_multi_digit_subnum(self) -> None:
+    def test_coords_match_multi_digit_subnum(self) -> None:
         """ Vegnue WK-E d12-0 -- real id64 9303087083 decodes to box coords [10, 7, 13]. """
         assert _boxel_coords('W', 'K', 'E', 12) == (10, 7, 13)
 
-    def test_h_mass_code_only_exists_at_the_origin(self) -> None:
-        """ h is the whole sector -- one boxel, "AA-A" -- confirmed both by Marx's community
-        guide and by a real EDSM lookup of an "AA-A h" system. """
+    def test_h_code_at_origin(self) -> None:
+        """ h is the whole sector -- one boxel, "AA-A", confirmed against a real system. """
         assert _boxel_exists('A', 'A', 'A', 'h', 0) is True
         assert _boxel_exists('B', 'A', 'A', 'h', 0) is False
         assert _boxel_exists('A', 'B', 'A', 'h', 0) is False
         assert _boxel_exists('A', 'A', 'B', 'h', 0) is False
 
-    def test_g_mass_code_matches_real_and_absent_spansh_boxels(self) -> None:
-        """ Live Spansh lookups found real systems at "AA-A g"/"BA-A g" only -- every other
-        letter combination tried (AB-A, BB-A, CA-A..JA-A, etc) came back empty. """
+    def test_g_code_matches_boxels(self) -> None:
+        """ Only "AA-A g"/"BA-A g" are real boxels -- every other letter combination is empty. """
         assert _boxel_exists('A', 'A', 'A', 'g', 0) is True
         assert _boxel_exists('B', 'A', 'A', 'g', 0) is True
         assert _boxel_exists('A', 'B', 'A', 'g', 0) is False
         assert _boxel_exists('C', 'A', 'A', 'g', 0) is False
 
-    def test_same_letters_can_exist_for_a_small_mass_code_but_not_a_large_one(self) -> None:
-        """ Mass code a's 128-per-axis range comfortably fits "IW-C", but h's 1-per-axis range
-        does not -- the same letters describe a real boxel for one and not the other. """
+    def test_boxel_range_depends_on_code(self) -> None:
+        """ The same letters can be a real boxel under one mass code and not another. """
         assert _boxel_exists('I', 'W', 'C', 'a', 0) is True
         assert _boxel_exists('I', 'W', 'C', 'h', 0) is False
 
-    def test_prefix_accepts_a_real_h_boxel(self) -> None:
+    def test_prefix_accepts_h_boxel(self) -> None:
         assert _boxel_prefix("Vegnoae AA-A h") == "Vegnoae AA-A h"
 
-    def test_prefix_rejects_an_impossible_h_boxel(self) -> None:
+    def test_prefix_rejects_impossible_boxel(self) -> None:
         assert _boxel_prefix("Bleae Thua NI-B h") is None
 
 
@@ -2164,12 +2143,7 @@ class TestUIFunctions:
         ui.set_entry(None, "ignored")
 
     def test_query_station_names(self, harness:TestHarness) -> None:
-        """query_station_names() hits Spansh's station name typeahead directly -- a single
-        field, matching Spansh's own "Source Station" combobox -- and formats each result as
-        "System / Station" so the Trade Planner's single combined input field can validate a
-        typed/selected value and split it back into system+station locally, with no separate
-        system-resolving roundtrip (Spansh's own /api/trade/route call errors out on a bad
-        system/station combo anyway, so there's nothing worth pre-verifying here)."""
+        """ Formats each typeahead result as "System / Station" for the combined input field. """
         ui = harness.plugin.ui
 
         def fake_get(url, *args, **kwargs):
@@ -2206,11 +2180,7 @@ class TestUIFunctions:
         assert harness.plugin.ui._progress() == 2
 
     def test_update_progress_trade_waypoint(self, harness:TestHarness) -> None:
-        """update_progress() must combine system + station on the button (truncated to fit,
-        jump-progress suffix always intact and untruncated), and build a tooltip with the
-        commodity/profit detail the button has no room for -- system/station aren't repeated
-        in the tooltip since they're already visible on the button face. Clicking the button
-        (not update_progress() itself) copies the plain system name to the clipboard."""
+        """ The button shows system + station truncated to fit; the tooltip carries commodity/profit. """
         ui = harness.plugin.ui
 
         hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Total Profit', 'Jumps']
@@ -2265,8 +2235,8 @@ class TestUIFunctions:
         assert not ui.notice.winfo_exists()
         assert harness.plugin.notices.pending_notice is None
 
-    def test_a_fetched_notice_is_displayed_in_the_ui(self, harness:TestHarness) -> None:
-        """ Above tests set notice_id/notice directly; this ties the real fetch/parse path to the real UI. """
+    def test_fetched_notice_displayed(self, harness:TestHarness) -> None:
+        """ Ties the real fetch/parse path to the real UI, not just a directly-set notice. """
         previous:bool = mock_requests.live_requests()
         mock_requests.live_requests(False)
         try:
@@ -2310,7 +2280,7 @@ class TestRouteWindow:
         window.show(route)
         assert window.window is None
 
-    def test_show_creates_window_for_populated_route(self, harness: TestHarness) -> None:
+    def test_show_creates_populated_window(self, harness: TestHarness) -> None:
         """show() should create a toplevel window for a populated route."""
         window: RouteWindow = harness.plugin.ui.window_route
 
@@ -2328,7 +2298,7 @@ class TestRouteWindow:
 
         self._cleanup_window(window)
 
-    def test_close_saves_geometry_and_destroys_window(self, harness: TestHarness) -> None:
+    def test_close_saves_window_geometry(self, harness: TestHarness) -> None:
         """close() should persist geometry and destroy the current window."""
         window: RouteWindow = harness.plugin.ui.window_route
         window.root.withdraw()  # Hide the main window to prevent test interference
@@ -2407,8 +2377,7 @@ class TestRouteWindow:
         self._cleanup_window(window)
 
     def test_value_section_trade(self, harness:TestHarness) -> None:
-        """show() adds a Profit block for Trade routes -- absent for Neutron/Galaxy/Tourist/
-        FleetCarrier routes, which have no earned-value column."""
+        """ A Profit block appears for Trade routes, absent for route types with no earned-value column. """
         window:RouteWindow = harness.plugin.ui.window_route
         hdrs = ['System Name', 'Station Name', 'Commodity', 'Amount', 'Profit', 'Jumps']
         route_data = [
@@ -2431,7 +2400,7 @@ class TestRouteWindow:
 
         self._cleanup_window(window)
 
-    def test_show_renders_table_columns_rows_and_selection(self, harness: TestHarness) -> None:
+    def test_show_renders_table_selection(self, harness: TestHarness) -> None:
         """show() should render table headings/rows and select the current route offset row."""
         window: RouteWindow = harness.plugin.ui.window_route
         filename: str = str(Path(__file__).parent / "config" / "neutron-Bleae-Smojue.csv")
@@ -2711,24 +2680,17 @@ class TestPlotting:
             plotter_thread.join(timeout=THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
-            # router.src reflects the queried source system; the route table itself only lists
-            # systems with scannable bodies, so its first row's source() is a body name, not 'Colonia'.
+            # The route table lists bodies, not the queried system, so source() isn't 'Colonia'.
             assert harness.plugin.router.src == 'Colonia'
             assert harness.plugin.route.source() != None
             assert "Body" in harness.plugin.route.hdrs
             assert "Est Scan Value" in harness.plugin.route.hdrs
-            # Don't assert an exact body/jump count: which bodies are still unscanned
-            # (and therefore appear in a riches route) changes over time in the live galaxy.
+            # Not an exact count: unscanned bodies here change over time in the live galaxy.
             assert len(harness.plugin.route.route) > 0
 
     @pytest.mark.slow
     def test_plot_ammonia_route(self, harness:TestHarness) -> None:
-        """ Perform a live Ammonia World plot -- representative of the body-type-filtered
-        riches variants (Ammonia/Earth-like/Rocky-metal), which all share the same
-        /api/riches/route pipeline already exercised by test_plot_rtor_route above.
-        Ammonia worlds are rare, and completion time depends on Spansh's shared job
-        queue as much as search size, so this allows several minutes rather than the
-        ~20s default used for plain (unfiltered) riches routes. """
+        """ A live Ammonia World plot -- rare enough that it's allowed several minutes, not ~20s. """
         if 'Ammonia' not in PLOTTER_SPECS:
             return
 
@@ -2752,9 +2714,7 @@ class TestPlotting:
 
     @pytest.mark.slow
     def test_plot_exobiology_route(self, harness:TestHarness) -> None:
-        """ Perform a live Exobiology (Expressway to Exomastery) plot. Unlike the plain
-        body-value riches routes, this checks for Species/Landmark Value columns, since
-        that's the whole point of this route type. """
+        """ A live Exobiology plot -- checks for Species/Landmark Value columns. """
         global plotter_thread
         plotter_thread = None
 
@@ -2776,8 +2736,7 @@ class TestPlotting:
 
     @pytest.mark.slow
     def test_plot_trade_route(self, harness:TestHarness) -> None:
-        """ Perform a live Trade Planner plot from a busy hub (Jameson Memorial), which needs
-        real time server-side to check commodity prices across many nearby stations. """
+        """ A live Trade Planner plot from a busy hub, checking commodity prices across stations. """
         global plotter_thread
         plotter_thread = None
 
@@ -2804,8 +2763,7 @@ class TestPlotting:
 
     @pytest.mark.slow
     def test_plot_tourist_route(self, harness:TestHarness) -> None:
-        """ Perform a live Tourist Route plot between a handful of systems close to Sol,
-        so the real route computation stays fast. """
+        """ A live Tourist Route plot between nearby systems, so it stays fast. """
         global plotter_thread
         plotter_thread = None
 
@@ -2902,72 +2860,59 @@ class TestEventSequences:
         assert harness.plugin.router.carrier_state == CarrierStates.Cooldown
 
 
-class TestEDSMEnrichment:
+class TestSpanshEnrichment:
     def test_main_sequence_types(self) -> None:
-        from Router.edsm import _star_class
+        from Router.spansh_data import _star_class
         assert _star_class("G (White-Yellow) Star") == "G"
         assert _star_class("M (Red dwarf) Star") == "M"
         assert _star_class("L (Brown dwarf) Star") == "L"
 
     def test_white_dwarves(self) -> None:
-        from Router.edsm import _star_class
+        from Router.spansh_data import _star_class
         assert _star_class("White Dwarf (DA) Star") == "DA"
 
     def test_exotics(self) -> None:
-        from Router.edsm import _star_class
+        from Router.spansh_data import _star_class
         assert _star_class("Neutron Star") == "N"
         assert _star_class("Black Hole") == "H"
         assert _star_class("Supermassive Black Hole") == "SupermassiveBlackHole"
 
     def test_fallback(self) -> None:
-        from Router.edsm import _star_class
+        from Router.spansh_data import _star_class
         assert _star_class("Something Unexpected") == "Something Unexpected"
 
-    def test_from_batch_response(self, harness:TestHarness) -> None:
+    def test_fetch_populates_cache(self, harness:TestHarness) -> None:
         def fake_get(url, *args, **kwargs):
             resp = Mock()
             resp.raise_for_status = lambda: None
-            resp.json = lambda: [{
-                "name": "Sol", "id64": 10477373803, "coords": {"x": 0, "y": 0, "z": 0},
-                "primaryStar": {"type": "G (White-Yellow) Star"},
-            }]
+            resp.json = lambda: {"record": {"bodies": [
+                {"is_main_star": True, "subtype": "G (White-Yellow) Star"},
+                {"is_main_star": None, "subtype": "Rocky body"},
+            ]}}
             return resp
 
         with mocked_session_get(fake_get):
-            harness.plugin.edsm._fetch(["Sol"])
+            harness.plugin.spansh._fetch({"Sol": 10477373803})
 
-        assert harness.plugin.edsm.get("Sol") == {
-            "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
-        }
+        assert harness.plugin.spansh.get("Sol") == "G"
 
     def test_skip_cached(self, harness:TestHarness) -> None:
-        harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
+        harness.plugin.spansh.cache["Sol"] = "G"
 
         with patch('Router.route_manager.SESSION.get') as mock_get:
-            harness.plugin.edsm._fetch(["Sol"])
+            harness.plugin.spansh._fetch({"Sol": 1})
 
         mock_get.assert_not_called()
 
-    def test_fetch_trigger(self, harness:TestHarness, monkeypatch) -> None:
-        seen:list = []
-        monkeypatch.setattr(harness.plugin.edsm, 'start_fetch', lambda names: seen.append(names))
-
-        Route(['System Name'], [['Sol'], ['Wolf 359']])
-
-        assert seen == [['Sol', 'Wolf 359']]
-
-    def test_navroute_uses_cache(self, harness:TestHarness) -> None:
+    def test_star_class_from_navroute(self, harness:TestHarness) -> None:
+        """ StarClass comes straight from the route's own navroute data, no fetch involved. """
         import Router.api as api_module
-        harness.plugin.edsm.cache["Sol"] = {
-            "StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G",
-        }
+        navroute:dict = {"Wolf 359": {"SystemAddress": 1, "StarPos": [1, 1, 1], "StarClass": "N"}}
 
-        harness.plugin.route = Route(['System Name'], [['Sol']])
+        harness.plugin.route = Route(['System Name'], [['Wolf 359']], navroute=navroute)
         result:dict = api_module.get_navroute()
 
-        assert result == {"event": "NavRoute", "Route": [
-            {"StarSystem": "Sol", "SystemAddress": 10477373803, "StarPos": [0, 0, 0], "StarClass": "G"},
-        ]}
+        assert result["Route"][0]["StarClass"] == "N"
 
     def test_navroute_placeholder(self, harness:TestHarness) -> None:
         import Router.api as api_module
@@ -2985,8 +2930,8 @@ class TestEDSMEnrichment:
         assert api_module.get_navroute() == {"event": "NavRouteClear", "Route": []}
 
     def test_clear_route(self, harness:TestHarness) -> None:
-        harness.plugin.edsm.cache["Sol"] = {"StarSystem": "Sol", "SystemAddress": 1, "StarPos": [0, 0, 0], "StarClass": "G"}
+        harness.plugin.spansh.cache["Sol"] = "G"
 
         harness.plugin.router.clear_route()
 
-        assert harness.plugin.edsm.get("Sol") is None
+        assert harness.plugin.spansh.get("Sol") is None

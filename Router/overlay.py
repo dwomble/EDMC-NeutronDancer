@@ -513,6 +513,7 @@ class Overlay():
             if conf == None: continue
             try:
                 data:dict = json.loads(conf)
+                if data.get('ttl', 1) <= 0: data.pop('ttl', None) # old configs saved a since-fixed ttl=0 default
                 self.ovfrs[name] = OvFrame(**data)
             except:
                 pass

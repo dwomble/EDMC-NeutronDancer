@@ -1,11 +1,11 @@
 # EDMC-NeutronDancer Changelog
 
-## v.2.1.0 ???-??-??
+## v2.1.0 2026-09-??
 
 ### New Features
 
-* Added a Boxel explorer route type
-* Added an api interface so in future plugins like Root Scoop can show Neutron routes
+* Added an experimental Boxel explorer route type
+* Added an api interface so plugins like Root Scoop will be able to show Neutron routes
 
 ### Changes
 
@@ -13,7 +13,7 @@
 * Made session queries more responsive to Spansh delays
 * Added a default star icon on routes
 
-## V2.0.1 2026-08-28
+## v2.0.1 2026-08-28
 
 ### Bug Fixes
 

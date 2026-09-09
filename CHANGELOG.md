@@ -4,7 +4,7 @@
 
 ### New Features
 
-* Added an experimental Boxel explorer route type
+* Added an experimental Boxel Surveyor route type
 * Added an api interface so plugins like Root Scoop will be able to show Neutron routes
 
 ### Changes

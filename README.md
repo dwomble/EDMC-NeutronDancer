@@ -57,6 +57,7 @@ Neutron Dancer supports direct route creation for:
 1. Trade Planner
 1. Tourist Route
 1. Fleet Carrier Route
+1. Boxel Surveyor (experimental)
 
 It also supports CSV file import for any of the above, or any other Spansh route export.
 
@@ -102,7 +103,7 @@ This is the final supported Spansh route type.
 
 ## Boxel Surveyor
 
-This is a different type of router intended for surveying boxels.
+This is a different type of router that generates a list of systems within a boxel.
 
 ### Following the Route
 

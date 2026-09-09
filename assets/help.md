@@ -127,7 +127,7 @@ Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, 
 
 ## Boxel Surveyor
 
-This is a different type of router intended for surveying boxels. Enter a boxel including the masscode, a start number and an end and Neutron Dancer will treat that as a route.
+This is a different type of router intended for surveying boxels. Enter a boxel including the masscode, a start number and an end and Neutron Dancer will generate a sequence of systems as a route.
 
 Note: It will validate the boxel entry but cannot validate the systems because they haven't been discovered yet.
 

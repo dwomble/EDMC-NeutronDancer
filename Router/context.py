@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .overlay import Overlay
     from .hotkeys import Hotkeys
     from .prefs import Prefs
+    from .spansh_data import SpanshData
 from .route import Route
 
 @dataclass
@@ -46,3 +47,4 @@ class Context:
     ui:'UI' = None
     updater:'Updater' = None
     notices:'Notices' = None
+    spansh:'SpanshData' = None

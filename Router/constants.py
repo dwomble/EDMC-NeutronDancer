@@ -55,7 +55,6 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
                     "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
                     "has_icy_ring": "Icy Ring", "is_system_pristine": "Pristine", "must_restock": "Restock Tritium",
-                    #"x": "", "y": "", "z": "", "id64": ""
                     }
 
 # Headers that we accept
@@ -203,7 +202,10 @@ lbls:dict = {
     "next_refuel": "Refuel in {r} jumps",
     "refuel_now": "Refuel now!",
     "overlays": "Overlays",
-    "router": "Router"
+    "router": "Router",
+    "boxel_name": "Boxel",
+    "start_num": "Start",
+    "end_num": "End"
 }
 
 # Tooltips
@@ -256,7 +258,10 @@ tts:dict = {
     "permit": "Allow systems that require a permit",
     "loop": "Prefer a route that loops back on itself rather than a straight line",
     "progress": "Progress",
-    "none": "None"
+    "none": "None",
+    "boxel_name": "Boxel name including its mass-code letter, right click for menu",
+    "start_num": "First sequence number to survey",
+    "end_num": "Last sequence number to survey"
 }
 
 # Button names
@@ -291,7 +296,9 @@ errs:dict = {
     "no_ship": "No ship selected",
     "ship_not_found": "Ship not found in shipyard",
     "no_system_id": "Could not resolve that system, please try again",
-    "format_error": "Error formatting progress display"
+    "format_error": "Error formatting progress display",
+    "invalid_boxel": "Enter valid boxel and start/end numbers",
+    "boxel_impossible": "Invalid mass code"
 }
 
 cnf:dict = {

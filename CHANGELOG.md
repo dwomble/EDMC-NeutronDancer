@@ -1,6 +1,19 @@
 # EDMC-NeutronDancer Changelog
 
-## V2.0.1 2026-08-28
+## v2.1.0 2026-09-??
+
+### New Features
+
+* Added an experimental Boxel Surveyor route type
+* Added an api interface so plugins like Root Scoop will be able to show Neutron routes
+
+### Changes
+
+* Finally made it so current ship appears in Galaxy plotter on first login (famous last words)
+* Made session queries more responsive to Spansh delays
+* Added a default star icon on routes
+
+## v2.0.1 2026-08-28
 
 ### Bug Fixes
 

@@ -20,6 +20,7 @@ from Router.ui import UI
 from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
+from Router.spansh_data import SpanshData
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir, True)
@@ -56,6 +57,7 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.prefs = Prefs()
     Context.csv = CSV()
+    Context.spansh = SpanshData() # before Router(), which may load a saved route and trigger a fetch
     Context.router = Router()
     Context.ui = UI(parent)
     Context.hotkeys = Hotkeys()
@@ -76,7 +78,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if Context.route.route != [] and not Context.route.fleetcarrier:
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
-            Context.router.add_state(state)
             if monitor.ship():
                 Context.router.add_loadout(monitor.ship())
         case 'Commander' | 'LoadGame' if monitor.ship():

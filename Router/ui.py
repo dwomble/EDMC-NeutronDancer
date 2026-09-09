@@ -21,6 +21,7 @@ from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH
 from .ship import Ship
 from .route import Route
 from .context import Context
+from .route_manager import SESSION
 from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
 
@@ -57,6 +58,7 @@ class UI():
 
         self.help_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "help.png"))
         self.fuel_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "fuel.png"))
+        self.star:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "star.png"))
         self.neutron_img:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron.png"))
         self.blank_img:tk.PhotoImage = tk.PhotoImage(width=16, height=16)
 
@@ -120,7 +122,7 @@ class UI():
         if not Context.notices or not Context.notices.pending_notice:
             return
         notice:str = Context.notices.pending_notice
-        w:int = max(len(l) for l in notice.split("\n"))
+        w:int = min(max(len(l) for l in notice.split("\n")), 60)
         h:int = len(notice.replace("\n\n", "\n").split("\n"))
         self.notice:th.RichText = th.RichText(self.frame, width=w, height=h, markdown=notice, relief=tk.FLAT)
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
@@ -340,8 +342,8 @@ class UI():
         else:
             wp = str_truncate(wp, length=40)
 
-        # Set an icon if appropriate
-        image:tk.PhotoImage = self.blank_img
+        # Set an icon if appropriate, default to "regular" star
+        image:tk.PhotoImage = self.star
         if route.is_neutron() == True:
             image = self.neutron_img
 
@@ -436,6 +438,8 @@ class UI():
                 self._update_item("all", "source_ac", param)
             case 'dest':
                 self._update_item("all", "dest_ac", param)
+            case 'boxel':
+                self._update_item("all", "boxel_ac", param)
             case _:
                 # Ship selection
                 galaxy_plotter = self.plotters.get('Galaxy')
@@ -610,18 +614,32 @@ class UI():
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
         try:
-            results:requests.Response = requests.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         except:
             return [inp]
         return json.loads(results.content)
+
+    @catch_exceptions
+    def query_boxels(self, inp:str) -> list:
+        """ Function called by Autocompleter """
+        res:list = []
+        try:
+            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+                                                     headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+            for sys in json.loads(results.content):
+                if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\d]+$", "", sys.strip()) not in res:
+                    res.append(re.sub(r"[\d]+$", "", sys.strip()))
+        except:
+            return [inp]
+        return res
 
 
     @catch_exceptions
     def query_station_names(self, inp:str) -> list:
         """ Function called by the Trade Planner's Autocompleter """
         try:
-            results:requests.Response = requests.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
+            results:requests.Response = SESSION.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
                                                       headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:

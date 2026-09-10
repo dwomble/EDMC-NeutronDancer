@@ -210,7 +210,7 @@ lbls:dict = {
 
 # Tooltips
 tts:dict = {
-    'route_type': "The router to plot",
+    'route_type': "The route type to plot",
     'neutron_plotter': "Spansh Neutron Plotter",
     'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
     'help': "Help and user guide",

@@ -13,6 +13,10 @@
 * Made session queries more responsive to Spansh delays
 * Added a default star icon on routes
 
+### Bug Fixes
+
+* Fixed carrier cooldown timing error
+
 ## v2.0.1 2026-08-28
 
 ### Bug Fixes

@@ -344,6 +344,7 @@ class Router():
                 results_url:str = f"{SPANSH_RESULTS}/{job}"
                 route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 if route_response.status_code != 202:
+                    Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
                     break
                 tries += 1
                 sleep(1)
@@ -369,8 +370,7 @@ class Router():
 
             if res == []:
                 Debug.logger.info(f"Spansh returned no results for {which}, {params}")
-                Context.ui.show_frame(which) # Return to the plot gui
-                Context.ui.show_error(errs["plot_error"])
+                self.plot_error(which, params, None)
                 return
 
             cols:list = []; hdrs:list = []; h:str
@@ -423,23 +423,20 @@ class Router():
 
         except Exception as e:
             Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
-            Context.ui.show_frame(which) # Return to the plot gui
-            Context.ui.show_error(errs["plot_error"])
+            self.plot_error(which, params, None)
 
 
     @catch_exceptions
-    def plot_error(self, which:str, params:dict, response:Response|None) -> None:
+    def plot_error(self, which:str, params:dict, response:Response|str|None) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        if response is None: return errs["no_response"]
-
         Debug.logger.info(f"Plot error: {which}, {params}\n{response}")
-        err:str = errs["no_response"]
-        #if response:
-        #    Debug.logger.info(f"Server response: {response.json()}")
-        #    err = errs["plot_error"]
-
-        if response.status_code in [400, 500]:
+        err = errs["plot_error"] # Generic error
+        if response is None:
+            err = errs["no_response"]
+        if isinstance(response, str):
+            err = errs[response]
+        if isinstance(response, Response) and response.status_code in [400, 500]:
             err = str(response.status_code)
             if response.content and "error" in json.loads(response.content).keys():
                 Debug.logger.info(f"Server response: {response.json()}")

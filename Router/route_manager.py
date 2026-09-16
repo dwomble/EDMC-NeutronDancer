@@ -94,11 +94,11 @@ class Router():
     def swap_ship(self, ship_id:str) -> None:
         """
         Called on a ship swap event to update our current ship information
-        On a ship swap we don't get the full loadout so we have torely on our shipyard and hope we've seen this ship before
+        On a ship swap we don't get the full loadout so we have to rely on our shipyard and hope we've seen this ship before
         """
         ship = self.load_ship(ship_id)
-        if not ship or not ship.id:
-            Debug.logger.info(f"ShipID {ship_id} not found in shipyard")
+        if not ship or not ship.id or ship.base_mass == 0.0:
+            Debug.logger.info(f"ShipID {ship_id} not found (or corrupt) in shipyard")
             self.ship_id = ""
             self.ship = None
             return
@@ -121,6 +121,9 @@ class Router():
     def add_loadout(self, entry:dict) -> None:
         """ Save ship details on loadout event and maybe update the UI """
         ship:Ship = Ship(entry)
+        if ship.base_mass == 0.0:
+            Debug.logger.error(f"Ship {ship.name} has no base mass, cannot add loadout")
+            return
         self._save_ship(ship)
 
         # If we always get a swap_ship() when switching this will be redundant.

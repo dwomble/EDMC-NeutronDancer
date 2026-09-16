@@ -2850,7 +2850,7 @@ class TestEventSequences:
     def test_carrier_jump_route(self, harness:TestHarness):
         """Test carrier jump with docking."""
         from Router.constants import CarrierStates
-        filename:str = str(Path(__file__).parent / "config" / "vc-Bleae-Voqooe.csv")
+        filename:str = str(Path(__file__).parent / "config" / "fc-Bleae-Voqooe.csv")
         harness.plugin.router.import_route(filename)
 
         events:list = harness.events.get('carrier_events', [])

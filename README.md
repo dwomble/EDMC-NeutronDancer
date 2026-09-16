@@ -8,7 +8,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galacy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It can work for almost any router by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galaxy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
 
 The original goal of this fork was support for the new 6x overcharge of the Caspian Explorer and a cleaner UI. It has grown beyond that into a significant rewrite.
 

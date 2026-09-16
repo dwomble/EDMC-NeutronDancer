@@ -21,7 +21,7 @@ from .plotters import PLOTTER_SPECS
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
-                  'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '', 'carrier_departure': None,
+                  'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '',
                   'window_geometries' : {}}
 
 SESSION:requests.Session = new_session(SPANSH_TIMEOUT) # shared, per PLUGINS.md
@@ -239,6 +239,7 @@ class Router():
     def cooldown_complete(self) -> None:
         """ Show an informational messagebox indicating a carrier cooldown has completed. """
         self.carrier_state = CarrierStates.Idle
+        self.carrier_departure = None
         Context.ui.cooldown_complete()
 
 
@@ -593,6 +594,7 @@ class Router():
 
         save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
         save['carrier_state'] = self.carrier_state.name # Need to convert to
+        save['self.carrier_departure'] = self.carrier_departure.isoformat() if self.carrier_departure else None
         save['ship'] = self.ship.as_dict() if self.ship else {}
         if Context.route != None:
             save['route'] = Context.route.as_dict()
@@ -603,6 +605,8 @@ class Router():
 
         if 'carrier_state' in data and isinstance(data['carrier_state'], str):
             data['carrier_state'] = CarrierStates[data['carrier_state']]
+        if 'carrier_departure' in data and isinstance(data['carrier_departure'], str):
+            data['carrier_departure'] = datetime.fromisoformat(data['carrier_departure'])
         [setattr(self, k, data.get(k, v)) for k, v in SAVE_VARS.items()]
 
         r = data.get('route', ([], [], -1, {}))

@@ -19,9 +19,9 @@ from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
 
-SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Neutron',
-                  'carrier_id': '', 'carrier_location': '', 'route_params': {},
-                  'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [],
+SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
+                  'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
+                  'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '', 'carrier_departure': None,
                   'window_geometries' : {}}
 
 SESSION:requests.Session = new_session(SPANSH_TIMEOUT) # shared, per PLUGINS.md
@@ -61,6 +61,7 @@ class Router():
         self.carrier_state:CarrierStates = CarrierStates.Idle
         self.carrier_location:str = ''
         self.carrier_destination:str = ''
+        self.carrier_departure:datetime|None = None
 
         self.window_geometries:dict = {}
 
@@ -163,6 +164,7 @@ class Router():
                 self.carrier_state = CarrierStates.Jumping
                 self.carrier_dest:str = entry.get('SystemName', '')
                 end:datetime = datetime.fromisoformat(entry.get("DepartureTime", ''))
+                self.carrier_departure = end
 
                 Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
@@ -174,14 +176,25 @@ class Router():
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
+                if self.carrier_departure == None: return
+
+                end:datetime =  self.carrier_departure
+                delta:timedelta = end - datetime.now(tz=end.tzinfo) + \
+                    (timedelta(minutes=1, seconds=300 - end.second) if end.second >= 30 else timedelta(seconds=300 - end.second))
+
                 self.carrier_location = entry.get('StarSystem', '')
                 if Context.route.fleetcarrier == True:
                     Context.route.update_route(0, self.carrier_location)
                     Context.route.record_jump(entry.get('StarSystem', self.carrier_location), Context.route.dist_to_prev())
                     Context.ui.update_progress()
+
+                if delta.total_seconds() < 0:
+                    self.carrier_state = CarrierStates.Idle
+                    return
+
                 self.carrier_state = CarrierStates.Cooldown
-                Context.ui.frame.after(300000, lambda: self.cooldown_complete())
-                Context.overlay.display_carrier('Cooldown', 300)
+                Context.ui.frame.after(delta.microseconds, lambda: self.cooldown_complete())
+                Context.overlay.display_carrier('Cooldown', delta.seconds)
 
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_location = entry.get('StarSystem', '')
@@ -331,6 +344,7 @@ class Router():
                 results_url:str = f"{SPANSH_RESULTS}/{job}"
                 route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 if route_response.status_code != 202:
+                    Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
                     break
                 tries += 1
                 sleep(1)
@@ -356,8 +370,7 @@ class Router():
 
             if res == []:
                 Debug.logger.info(f"Spansh returned no results for {which}, {params}")
-                Context.ui.show_frame(which) # Return to the plot gui
-                Context.ui.show_error(errs["plot_error"])
+                self.plot_error(which, params, None)
                 return
 
             cols:list = []; hdrs:list = []; h:str
@@ -410,23 +423,20 @@ class Router():
 
         except Exception as e:
             Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
-            Context.ui.show_frame(which) # Return to the plot gui
-            Context.ui.show_error(errs["plot_error"])
+            self.plot_error(which, params, None)
 
 
     @catch_exceptions
-    def plot_error(self, which:str, params:dict, response:Response|None) -> None:
+    def plot_error(self, which:str, params:dict, response:Response|str|None) -> None:
         """ Parse the response from Spansh on a failed route query """
 
-        if response is None: return errs["no_response"]
-
         Debug.logger.info(f"Plot error: {which}, {params}\n{response}")
-        err:str = errs["no_response"]
-        #if response:
-        #    Debug.logger.info(f"Server response: {response.json()}")
-        #    err = errs["plot_error"]
-
-        if response.status_code in [400, 500]:
+        err = errs["plot_error"] # Generic error
+        if response is None:
+            err = errs["no_response"]
+        if isinstance(response, str):
+            err = errs[response]
+        if isinstance(response, Response) and response.status_code in [400, 500]:
             err = str(response.status_code)
             if response.content and "error" in json.loads(response.content).keys():
                 Debug.logger.info(f"Server response: {response.json()}")
@@ -582,6 +592,7 @@ class Router():
         """ Return a Dictionary representation of our data, suitable for serializing """
 
         save:dict = {k: getattr(self, k, v) for k, v in SAVE_VARS.items()}
+        save['carrier_state'] = self.carrier_state.name # Need to convert to
         save['ship'] = self.ship.as_dict() if self.ship else {}
         if Context.route != None:
             save['route'] = Context.route.as_dict()
@@ -590,11 +601,15 @@ class Router():
     def _from_dict(self, data:dict) -> None:
         """ Populate our data from a Dictionary that has been deserialized """
 
+        if 'carrier_state' in data and isinstance(data['carrier_state'], str):
+            data['carrier_state'] = CarrierStates[data['carrier_state']]
         [setattr(self, k, data.get(k, v)) for k, v in SAVE_VARS.items()]
+
         r = data.get('route', ([], [], -1, {}))
         (hdrs, route, offset) = r[0:3]
         navroute:dict = r[3] if len(r) > 3 else {}
         Context.route = Route(hdrs, route, offset, navroute)
+
         self.ship = Ship(data.get('ship', {}))
         ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}
 

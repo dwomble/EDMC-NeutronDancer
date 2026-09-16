@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v2.1.0 2026-09-??
+## v2.1.0 2026-09-15
 
 ### New Features
 
@@ -12,6 +12,10 @@
 * Finally made it so current ship appears in Galaxy plotter on first login (famous last words)
 * Made session queries more responsive to Spansh delays
 * Added a default star icon on routes
+
+### Bug Fixes
+
+* Fixed carrier cooldown timing error
 
 ## v2.0.1 2026-08-28
 

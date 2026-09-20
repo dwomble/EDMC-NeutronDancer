@@ -79,8 +79,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
             if monitor.ship():
+                Debug(f"Startup: adding loadout for {monitor.ship()}")
                 Context.router.add_loadout(monitor.ship())
         case 'Commander' | 'LoadGame' if monitor.ship():
+            Debug(f"LoadGame: adding loadout for {monitor.ship()}")
             Context.router.add_loadout(monitor.ship())
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)

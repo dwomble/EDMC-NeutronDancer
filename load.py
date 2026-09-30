@@ -109,7 +109,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         if loadout:
             Context.router.add_loadout(loadout)
 
-
     Context.router.system = system
     cargo:int = sum(state.get('Cargo', {}).values())
     if cargo != Context.router.cargo:
@@ -127,11 +126,13 @@ def make_loadout(state:dict) -> dict:
 
     if not loadout and monitor.ship():
         Debug.logger.debug(f"Making loadout from monitor.ship() and state")
-        deets:dict = monitor.ship()
-        for f in ['UnladenMass', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ]:
-            if f not in deets:
-                deets[f] = state.get(f)
-        loadout = deets
+        loadout = monitor.ship()
+
+    # Add any missing values that we can
+    if loadout:
+        for f in ['UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ]:
+            if f not in loadout:
+                loadout[f] = state.get(f)
 
     if loadout:
         loadout['event'] = 'Loadout'

@@ -18,7 +18,7 @@ from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
-import api
+from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',

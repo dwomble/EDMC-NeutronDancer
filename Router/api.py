@@ -21,6 +21,12 @@ def is_available() -> bool:
     """ Check if the Router plugin is available. """
     return Context.router is not None
 
+def emit_event(carrier:bool = False) -> None:
+    """ Produce a NeutronDancer event for the given route type. """
+    if not Context.ui.parent:
+        return
+    Context.ui.parent.event_generate('<<NeutronDancerPlotCarrierRoute>>' if carrier else '<<NeutronDancerPlotRoute>>', when='tail')
+
 def get_navroute() -> list|None:
     """ Return the current route in a NavRoute style list. """
     if not is_available():

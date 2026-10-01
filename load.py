@@ -22,6 +22,7 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
+import Router.api as api
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir, True)
@@ -65,6 +66,9 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.overlay = Overlay()
     if Context.route.route != []:
         Context.overlay.show_frame('Default')
+
+    if Context.route.route:
+        parent.after_idle(api.emit_event, Context.route.fleetcarrier)
 
     parent.after(1000, Context.overlay.update_overlays)
     return Context.ui.frame

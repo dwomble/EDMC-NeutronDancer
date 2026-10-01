@@ -18,6 +18,7 @@ from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
+import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
@@ -424,6 +425,9 @@ class Router():
             Context.ui.show_frame('Route')
             Context.overlay.update_overlays()
             self.save()
+
+            # Signal API users that a route has been plotted
+            api.emit_event(which == "FleetCarrier")
 
         except Exception as e:
             Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)

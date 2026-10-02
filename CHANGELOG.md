@@ -1,5 +1,15 @@
 # EDMC-NeutronDancer Changelog
 
+## v2.1.2 2026-10-??
+
+### Changes
+
+* The API now emits a custom event when a route is plotted or changed.
+
+### Bug Fixes
+
+* Found an edge case where ships weren't being identified on startup.
+
 ## v2.1.1 2026-09-16
 
 ### Bug Fixes

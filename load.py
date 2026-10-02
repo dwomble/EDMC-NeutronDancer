@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from semantic_version import Version
+import json
 import tkinter as tk
 
 import myNotebook as nb  # type: ignore
@@ -21,6 +22,7 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
+import Router.api as api
 
 def plugin_start3(plugin_dir: str) -> str:
     Debug(plugin_dir, True)
@@ -65,6 +67,9 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     if Context.route.route != []:
         Context.overlay.show_frame('Default')
 
+    if Context.route.route:
+        parent.after_idle(api.emit_event, Context.route.fleetcarrier)
+
     parent.after(1000, Context.overlay.update_overlays)
     return Context.ui.frame
 
@@ -78,10 +83,6 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if Context.route.route != [] and not Context.route.fleetcarrier:
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
-            if monitor.ship():
-                Context.router.add_loadout(monitor.ship())
-        case 'Commander' | 'LoadGame' if monitor.ship():
-            Context.router.add_loadout(monitor.ship())
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
             Context.router.jumped(system, entry)
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':
@@ -105,12 +106,42 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             if Context.route.route != []: Context.route.jumps = []
             Context.router.save()
 
+    # EDMC is annoying. the ship() object doesn't include all the details of the ship so have to either parse
+    # the internal slef string or add elements from state.
+    if entry['event'] in ('Commander', 'LoadGame', 'StartUp'):
+        loadout:dict = make_loadout(state)
+        if loadout:
+            Context.router.add_loadout(loadout)
+
     Context.router.system = system
     cargo:int = sum(state.get('Cargo', {}).values())
     if cargo != Context.router.cargo:
         Context.router.cargo = cargo
         Context.ui.update_cargo(cargo)
 
+
+def make_loadout(state:dict) -> dict:
+    """ Build a loadout event to identify a ship """
+    loadout:dict = {}
+    if monitor.slef:
+        Debug.logger.debug(f"Making loadout from monitor.slef")
+        slef:list = json.loads(monitor.slef)
+        loadout = slef[0]['data']
+
+    if not loadout and monitor.ship():
+        Debug.logger.debug(f"Making loadout from monitor.ship() and state")
+        loadout = monitor.ship()
+
+    # Add any missing values that we can
+    if loadout:
+        for f in ['UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ]:
+            if f not in loadout:
+                loadout[f] = state.get(f)
+
+    if loadout:
+        loadout['event'] = 'Loadout'
+
+    return loadout
 
 @catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:

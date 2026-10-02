@@ -105,9 +105,9 @@ class Plotter(ABC):
     def _create_source(self, parent:th.Frame, row:int, col:int, add_cmd=None) -> None:
         """Create source system autocompleter widget."""
         srcmenu:dict = {}
-        if Context.router.system != '':
+        if Context.router.system:
             srcmenu[Context.router.system] = [Context.ui.menu_callback, 'src']
-        if Context.router.carrier_location != '':
+        if Context.router.carrier_location:
             srcmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'src']
         for sys in Context.router.history:
             if sys not in srcmenu:
@@ -119,7 +119,7 @@ class Plotter(ABC):
     def _create_dest(self, parent:th.Frame, row:int, col:int, placeholder:str = '') -> None:
         """Create destination system autocompleter widget."""
         destmenu:dict = {}
-        if Context.router.carrier_location != '':
+        if Context.router.carrier_location:
             destmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'dest']
         for sys in Context.router.history:
             if sys not in destmenu:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any
+from typing import Any, Callable
 
 import tkinter as tk
 from tkinter import ttk
@@ -14,10 +14,12 @@ from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
-           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve", "fit_height", "Collapsible"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
+GLYPH_HIDE:str = "\U0001F648" # see-no-evil monkey
+GLYPH_SHOW:str = "\U0001F441" # eye
 
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
@@ -34,6 +36,14 @@ def _match_label_defaults(kw:dict) -> None:
 def resolve(widget:Any) -> Any:
     """ Resolve the actual base object for a tk nametowidget() lookup. """
     return getattr(widget, 'themed', widget)
+
+def fit_height(widget:tk.Misc) -> None:
+    """ Refit the toplevel's height to its contents, keeping its width """
+    top:tk.Tk|tk.Toplevel = widget.winfo_toplevel()
+    top.update_idletasks()
+    if not top.winfo_ismapped() or top.winfo_height() == top.winfo_reqheight(): return
+
+    top.geometry(f"{top.winfo_width()}x{top.winfo_reqheight()}")
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
@@ -422,6 +432,44 @@ class Spinbox(PlaceholderMixin, Base):
         super().__init__(sb1, sb2)
 
         self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)
+
+class Collapsible:
+    """ Swaps between an expanded and a collapsed view of a plugin, refitting the window """
+    def __init__(self, parent:tk.Widget, hidden:bool = False, on_toggle:Callable[[bool], None]|None = None) -> None:
+        self.hidden:bool = hidden
+        self._on_toggle:Callable[[bool], None]|None = on_toggle
+        self.expanded:Frame = Frame(parent)
+        self.collapsed:Frame = Frame(parent)
+        self._show_current()
+
+    def hide_button(self, master:tk.Widget, tooltip:str = "", **kw) -> Button:
+        """ A button that collapses the view; the caller grids it """
+        return self._button(master, GLYPH_HIDE, tooltip, **kw)
+
+    def show_button(self, master:tk.Widget, tooltip:str = "", **kw) -> Button:
+        """ A button that expands the view; the caller grids it """
+        return self._button(master, GLYPH_SHOW, tooltip, **kw)
+
+    def _button(self, master:tk.Widget, glyph:str, tooltip:str, **kw) -> Button:
+        btn:Button = Button(master, text=glyph, width=3, command=self.toggle, **kw)
+        if tooltip: Tooltip(btn, text=tooltip)
+        return btn
+
+    def toggle(self, hidden:bool|None = None) -> None:
+        """ Swap views, run on_toggle, then refit so the window measures the final layout """
+        self.expanded.grid_forget()
+        self.collapsed.grid_forget()
+        self.hidden = not self.hidden if hidden is None else hidden
+        self._show_current()
+        if self._on_toggle: self._on_toggle(self.hidden)
+        fit_height(self.expanded)
+
+    def _show_current(self) -> None:
+        if self.hidden:
+            self.collapsed.grid(row=0, column=0, sticky=tk.EW)
+            return
+
+        self.expanded.grid(row=0, column=0, sticky=tk.NSEW)
 
 # Imported last: scrollableframe.py does `from . import Frame`, which needs Frame already
 # defined on this module before it runs.

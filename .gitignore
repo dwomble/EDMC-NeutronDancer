@@ -35,3 +35,6 @@ tests/logs/
 tests/updates/
 tests/backups/
 tests/journal_folder/
+
+# Written release
+/version

@@ -178,6 +178,10 @@ class Updater():
 
     def check_for_update(self, version:Version|str, interval:int = CHECK_INTERVAL) -> None:
         """ Start an update check thread. """
+        if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
+            Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")
+            return
+
         last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
         if last >= int(time.time()) - interval:
             return

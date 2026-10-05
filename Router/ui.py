@@ -24,7 +24,6 @@ from .context import Context
 from .route_manager import SESSION
 from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
-from . import api
 
 @singleton
 class UI():
@@ -548,7 +547,6 @@ class UI():
         """ Cancel the plot planning and return to the default frame """
         Context.router.cancel_plot = True
         Context.router.clear_route()
-        api.emit_event(False, clear=True)
         self.show_frame('Default')
 
     @catch_exceptions

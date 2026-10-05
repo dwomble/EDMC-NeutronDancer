@@ -4,7 +4,7 @@
 
 ### Changes
 
-* The API now emits a custom event when a route is plotted or changed.
+* The API now emits a  event when a route is plotted or cancelled.
 
 ### Bug Fixes
 

@@ -462,6 +462,7 @@ class Router():
             Context.spansh.clear()
         if Context.overlay:
             Context.overlay.update_overlays()
+        api.emit_event(False, clear=True)
         self.save()
 
     @catch_exceptions

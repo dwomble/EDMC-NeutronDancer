@@ -178,6 +178,7 @@ class Router():
                 self.carrier_state = CarrierStates.Cooldown
                 Context.overlay.display_carrier('Cooldown', 60)
                 Context.ui.frame.after(60000, lambda: self.cooldown_complete())
+                api.emit_event(carrier=True, clear=True)
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
                 if self.carrier_departure == None: return

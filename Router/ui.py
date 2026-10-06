@@ -215,12 +215,16 @@ class UI():
     def _create_busy_fr(self, parent:th.Frame) -> th.Frame:
         """ Spinner image for route plotting """
 
-        image:str = os.path.join(Context.plugin_dir, ASSET_DIR,
-                                 "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
         self.frameCnt:int = 44
         self.frameSpd:int = 50
 
-        self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
+        sheet:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "progress_sheet.png"))
+        w:int = sheet.width() // self.frameCnt
+        self.frames:list = []
+        for i in range(self.frameCnt):
+            frame:tk.PhotoImage = tk.PhotoImage()
+            frame.tk.call(frame, 'copy', sheet, '-from', i * w, 0, (i + 1) * w, sheet.height())
+            self.frames.append(frame)
         busy_fr:th.Frame = th.Frame(parent)
         busy_fr.grid_columnconfigure(0, weight=1)
         self.route_lbl:th.Label = th.Label(busy_fr, text=lbls["plotting"].format(s=Context.router.src, d=Context.router.dest),
@@ -595,11 +599,6 @@ class UI():
         self.show_spinner:bool = enable
         # Show the busy image
         if enable == True:
-            # In case the user has changed themes since loading, get the appropriate image
-            image:str = os.path.join(Context.plugin_dir, ASSET_DIR,
-                                     "progress_animation_light.gif" if config.get_int('theme') == 0 else "progress_animation_dark.gif")
-            self.frames:list = [tk.PhotoImage(file=image, format='gif -index %i' %(i)) for i in range(self.frameCnt)]
-
             self.sub_fr.grid_remove()
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)

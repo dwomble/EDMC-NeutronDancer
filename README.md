@@ -17,11 +17,11 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported.
+- **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported and a simple Boxel Surveyor.
 - Click the next destination button to copy it straight into your paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
-- Star name autocompletion
+- Star name auto-completion.
 - CSV import supports almost any route file, for any route type above or otherwise.
 - Route export makes it easy to save a route for later reuse.
 - Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications.
@@ -30,7 +30,8 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
   - [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display of routes and countdown timers.
   - Chat commands (`!nd next`, `!nd previous`, `!nd copy`)
   - [Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) for next waypoint, previous waypoint, and copy to clipboard operations.
-- Full EDMC theme support
+- Full EDMC theme support.
+- API for integration with other plugins.
 
 ## Installation
 
@@ -178,6 +179,10 @@ export EDMC_CLIPBOARD_CLI="/usr/local/random/xsel --clipboard --input"
 ```
 
 Note, if you're running Flatpak and still having problems even with the environment variable set, check that EDMC is allowed to run the command you're referencing and allowed to follow any symlinks.
+
+## Integrations
+
+Integrates with the [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin) plugin so that routes are displayed in it.
 
 ## Credits
 

@@ -1,5 +1,5 @@
 <!--img width="125" height="125" align="left" alt="neutrondancer_logo125" src="https://github.com/user-attachments/assets/53f26bf9-4db3-4199-a94e-4cebbe5ed081" -->
-![Neutron Dancer Logo](assets/logo_alpha.png)
+<img src="assets/logo_alpha.png" width="125" alt="Neutron Dancer Logo">
 
 # Navl's Neutron Dancer
 

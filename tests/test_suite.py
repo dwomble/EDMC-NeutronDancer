@@ -93,7 +93,8 @@ def harness(request, monkeypatch) -> Generator:
     TestHarness.reset_instance()
     reset_plugin_modules()
 
-    test_harness = TestHarness(live_requests=True, overlay=overlay, hotkeys=hotkeys)
+    live:bool = any(request.node.get_closest_marker(m) for m in ('live_requests', 'slow'))
+    test_harness = TestHarness(live_requests=live, overlay=overlay, hotkeys=hotkeys)
 
     # This is ND-specific. /assets is where the images are stored
     import Router.constants
@@ -123,8 +124,10 @@ def harness(request, monkeypatch) -> Generator:
 
     yield test_harness
 
-    # Only cheap, local teardown here -- network-bound lookups get joined once for the whole suite.
+    # Cheap, local teardown only; queued lookups are cancelled so they don't hold up interpreter exit.
     test_harness.plugin.overlay.stop_countdowns()
+    from Router.utils.th.autocompleter import Autocompleter
+    Autocompleter._LOOKUP_EXECUTOR.shutdown(wait=False, cancel_futures=True)
     test_harness.assert_no_unhandled_exceptions()
     TestHarness.reset_instance()
 
@@ -164,6 +167,7 @@ class TestStartup:
         harness.play_sequence('startup')
         assert harness.plugin.router.system == "Sol"
 
+    @pytest.mark.live_requests
     def test_module_import(self, harness:TestHarness) -> None:
         """Test retrieving module data from Coriolis """
         harness.plugin.modules = []
@@ -1291,7 +1295,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Neutron', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) >= 2
@@ -1327,7 +1331,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Neutron', {'from': 'Start', 'to': 'End', 'max_time': 1})
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route.navroute['System1']['StarClass'] == 'N'
         assert harness.plugin.route.navroute['System2']['StarClass'] == 'M'
@@ -1360,7 +1364,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Galaxy', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert harness.plugin.router.route_params['Galaxy'] == params
@@ -1397,7 +1401,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('RtoR', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # bodyless Colonia dropped; one row per body
@@ -1437,7 +1441,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Ammonia', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 1
@@ -1477,7 +1481,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Exobiology', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         print(f"Route headers: {harness.plugin.route.hdrs} Route data: {harness.plugin.route.route}")
         assert harness.plugin.route is not None
@@ -1540,7 +1544,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Trade', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # 1 commodity in hop 1 + 2 commodities in hop 2
@@ -1607,7 +1611,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 2  # one row per stop, not per jump entry
@@ -1653,7 +1657,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         names = [row[harness.plugin.route.hdrs.index("System Name")] for row in harness.plugin.route.route]
@@ -1685,7 +1689,18 @@ class TestPlotMethods:
 
                 # Join the plotter thread if captured
                 if plotter_thread:
-                    plotter_thread.join(timeout=THREAD_TIMEOUT)
+                    harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
+
+    def test_spinner_frames_built_lazily(self, harness:TestHarness) -> None:
+        """The spinner frames are only built when the busy view is first shown."""
+        ui = harness.plugin.ui
+        assert ui.frames == []
+
+        ui._show_busy_gui(True)
+        assert len(ui.frames) == ui.frameCnt
+
+        ui._show_busy_gui(False)
+        assert len(ui.frames) == ui.frameCnt
 
     def test_neutron_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
@@ -2526,7 +2541,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '4'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2547,7 +2562,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '6'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2606,7 +2621,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.router.src == 'Apurui'
             assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
@@ -2657,7 +2672,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == galaxy_params['source']
@@ -2677,7 +2692,7 @@ class TestPlotting:
                                                 'max_results': '20', 'avoid_thargoids': '1', 'loop': '1'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             # The route table lists bodies, not the queried system, so source() isn't 'Colonia'.
@@ -2705,7 +2720,7 @@ class TestPlotting:
                                                 'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 240})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2726,7 +2741,7 @@ class TestPlotting:
                                                 'min_value': 100000, 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2752,7 +2767,7 @@ class TestPlotting:
                                                 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Shinrarta Dezhra'
@@ -2774,7 +2789,7 @@ class TestPlotting:
                                                 'range': '50', 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Sol'

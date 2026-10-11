@@ -409,6 +409,26 @@ class TestHarness:
             state = {}  # Clear state after the first event
             sleep(delay)
 
+    def wait_for_thread(self, thread:threading.Thread, timeout_s:float = 30) -> bool:
+        """ Run Tk's main loop until the thread ends so its widget calls get serviced. False on timeout. """
+        if not thread.is_alive(): return True
+
+        scheduler:HarnessTkScheduler|None = getattr(self, '_tk_scheduler', None)
+        real_after:Callable = (scheduler._orig_after if scheduler else None) or tk.Misc.after
+        deadline:float = monotonic() + timeout_s
+
+        def check() -> None:
+            if scheduler: scheduler.drain_due_callbacks()
+            if thread.is_alive() and monotonic() < deadline:
+                real_after(self.root, 10, check)
+                return
+
+            self.root.quit()
+
+        real_after(self.root, 10, check)
+        self.root.mainloop()
+        return not thread.is_alive()
+
     def register_dashboard_handler(self, handler: Callable, commander:str|None = None, is_beta:bool|None = None) -> None:
         """ Register a dashboard event handler (simulates dashboard_entry callback). """
         self.dashboard_handlers.append(handler)
@@ -496,6 +516,8 @@ class TestHarness:
 
     def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
         """Record unhandled worker-thread exceptions so tests can fail deterministically."""
+        if args.exc_type is SystemExit: return
+
         exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
         thread_name = getattr(args.thread, 'name', '<unknown>')
         self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
@@ -521,7 +543,7 @@ class TestHarness:
             except tk.TclError:
                 return
 
-            pending = self._tk_scheduler.pending_count() if hasattr(self, '_tk_scheduler') else 0
+            pending = self._tk_scheduler.pending_count(timeout_s) if hasattr(self, '_tk_scheduler') else 0
             if pending == 0 and callbacks_ran == 0:
                 return
             if monotonic() >= end_time:

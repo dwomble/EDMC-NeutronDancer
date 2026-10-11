@@ -84,6 +84,9 @@ class TestHarness:
     __test__ = False
     _instance = None
 
+    # Lookup pools seen so far; resets unload their modules, so they're kept here until stop_lookups()
+    _lookup_pools:list = []
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -162,8 +165,24 @@ class TestHarness:
         self._initialized = True
 
     @classmethod
+    def _collect_pools(cls) -> None:
+        """ Remember the lookup pool of every autocompleter module currently loaded. """
+        for name, mod in list(sys.modules.items()):
+            if not name.endswith('.autocompleter'): continue
+
+            pool = getattr(getattr(mod, 'Autocompleter', None), '_LOOKUP_EXECUTOR', None)
+            if pool is not None and pool not in cls._lookup_pools: cls._lookup_pools.append(pool)
+
+    @classmethod
+    def stop_lookups(cls) -> None:
+        """ Cancel queued autocompleter lookups so the pools' workers can't hold up interpreter exit. """
+        cls._collect_pools()
+        for pool in cls._lookup_pools: pool.shutdown(wait=False, cancel_futures=True)
+
+    @classmethod
     def reset_instance(cls) -> None:
         """Dispose the singleton harness instance so the next test starts clean."""
+        cls._collect_pools()
         if cls._instance is None:
             return
 

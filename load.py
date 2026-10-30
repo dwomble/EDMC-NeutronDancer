@@ -84,10 +84,9 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
-            next:str = Context.route.next_system()
             Context.router.jumped(system, entry)
-            # If we jumped to the next sytem in our route copy the new next system to the clipboard
-            if entry['event'] == 'FSDJump' and system == next:
+            # If we jumped add the next system to the clipboard
+            if entry['event'] == 'FSDJump' and Context.ui.parent and Context.route.jumps_remaining():
                 copy_to_clipboard(Context.ui.parent, Context.route.next_system())
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':
             Context.router.carrier_event(entry)

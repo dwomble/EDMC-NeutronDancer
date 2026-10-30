@@ -52,7 +52,7 @@ class UI():
 
         self.frame:th.Frame = th.Frame(parent, borderwidth=2)
         self.frame.grid(sticky=tk.NSEW)
-        self.frame.grid_columnconfigure(0, minsize=self.frwidth)
+        self.frame.grid_columnconfigure(0, minsize=self.frwidth, weight=1)
 
         self.update:th.Label
 
@@ -75,6 +75,7 @@ class UI():
         view_fr.grid(row=2, column=0, sticky=tk.NSEW)
         view_fr.columnconfigure(0, weight=1)
         self.view:th.Collapsible = th.Collapsible(view_fr, hidden=True, movable=True, on_toggle=self._toggled)
+        self.view.expanded.grid_columnconfigure(0, minsize=self.frwidth)
         self._create_title(self.view.collapsed)
         self.busy_fr:th.Frame = self._create_busy_fr(self.view.expanded)
         self.route_fr:th.Frame = self._create_route_fr(self.view.expanded)

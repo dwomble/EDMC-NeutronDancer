@@ -43,6 +43,8 @@ class Collapsible:
         if tooltip is not None: tip.text = tooltip
         # Full options via grid(), not grid_configure(), so the theme's alternate widget is re-registered too
         if grid: btn.grid(**{**(getattr(btn, '_last_gridopts', None) or {}), **grid})
+        # Gridded in_ a container created later, the button would be stacked beneath it and hidden
+        if 'in_' in grid: btn.lift()
         return btn
 
     def _add(self, name:str, master:Frame, text:str, tooltip:str, command:Callable, column:int, sticky:str) -> None:

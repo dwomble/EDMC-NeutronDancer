@@ -227,9 +227,10 @@ class Plotter(ABC):
         return validated
 
     def _create_buttons(self, parent:th.Frame, row:int, col:int) -> None:
-        """Create standard plotting buttons (import, calculate, cancel)."""
-        btn_frame:th.Frame = th.Frame(parent)
-        btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
+        """Create standard plotting buttons (import, calculate); the UI places its collapse button as Cancel."""
+        self.btn_frame:th.Frame = th.Frame(parent)
+        self.btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
+        btn_frame:th.Frame = self.btn_frame
 
         row = 0; col = 0
         self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: Context.ui.import_route())
@@ -238,10 +239,6 @@ class Plotter(ABC):
         col += 1
         self.plot_route_btn:th.Button = th.Button(btn_frame, text=btns["calculate_route"], command=self.plot)
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
-
-        col += 1
-        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: Context.ui.cancel_plot())
-        self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
 
 
 class NeutronPlotter(Plotter):

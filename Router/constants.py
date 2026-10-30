@@ -210,6 +210,8 @@ lbls:dict = {
 
 # Tooltips
 tts:dict = {
+    'plot_route': "Open the route plotter",
+    'cancel': "Cancel and collapse",
     'route_type': "The route type to plot",
     'neutron_plotter': "Spansh Neutron Plotter",
     'galaxy_plotter': "Spansh Exact/Galaxy Plotter",

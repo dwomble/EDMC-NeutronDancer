@@ -14,7 +14,7 @@ from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
-           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve", "fit_window", "Collapsible"]
+           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve", "fit_window", "Collapsible", "PluginSlot"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -436,3 +436,4 @@ class Spinbox(PlaceholderMixin, Base):
 # (and Button, fit_window) already defined on this module before they run.
 from .scrollableframe import ScrollableFrame
 from .collapsible import Collapsible
+from .pluginslot import PluginSlot

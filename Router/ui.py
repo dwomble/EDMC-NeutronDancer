@@ -71,9 +71,13 @@ class UI():
 
         self.progbar:ttk.Progressbar # Overall progress bar
 
-        self.title_fr:th.Frame = self._create_title_fr(self.frame)
-        self.busy_fr:th.Frame = self._create_busy_fr(self.frame)
-        self.route_fr:th.Frame = self._create_route_fr(self.frame)
+        view_fr:th.Frame = th.Frame(self.frame)
+        view_fr.grid(row=2, column=0, sticky=tk.NSEW)
+        view_fr.columnconfigure(0, weight=1)
+        self.view:th.Collapsible = th.Collapsible(view_fr, hidden=True, movable=True, on_toggle=self._toggled)
+        self._create_title(self.view.collapsed)
+        self.busy_fr:th.Frame = self._create_busy_fr(self.view.expanded)
+        self.route_fr:th.Frame = self._create_route_fr(self.view.expanded)
 
         # Create plotter instances, one per entry in the PLOTTER_SPECS registry
         self.plotters:dict = {
@@ -84,10 +88,15 @@ class UI():
         # Create frames for all plotters
         self.plot_frames:dict[str, th.Frame] = {}
         for name, plotter in self.plotters.items():
-            self.plot_frames[name] = plotter.create_frame(self.frame)
+            self.plot_frames[name] = plotter.create_frame(self.view.expanded)
 
-        self.sub_fr:th.Frame = self.title_fr
-        self.show_frame('Route' if Context.route.route != [] else 'Default')
+        self.sub_fr:th.Frame|None = None
+        self.view.button("hide", text=btns["cancel"], tooltip=tts["cancel"])
+        self._place_cancel(Context.router.last_plot)
+        if Context.route.route != []:
+            self.show_frame('Route')
+        elif not self.view.hidden:
+            self.show_frame(Context.router.last_plot)
 
         # Wait a while before deciding if we should show the update text
         parent.after(30000, lambda: self.show_plugin_update())
@@ -166,12 +175,12 @@ class UI():
             return ""
 
     @catch_exceptions
-    def show_frame(self, which:str = 'Default', destroy:bool = False) -> None:
-        """ Display the chosen frame, recreating it if necessary """
+    def show_frame(self, which:str, destroy:bool = False) -> None:
+        """ Display the chosen frame, expanding or collapsing the view to match """
         self.hide_error()
         self._show_busy_gui(False)
         Context.router.cancel_plot = True # tell router to stop plotting if it's currently doing so
-        self.sub_fr.grid_remove()
+        if self.sub_fr: self.sub_fr.grid_remove()
 
         Context.router.route_params['Neutron']['range'] = f"{Context.router.ship.get_range(Context.router.cargo):.2f}" if Context.router.ship else "32.0"
         Context.router.route_params['Neutron']['supercharge_multiplier'] = Context.router.ship.supercharge_multiplier if Context.router.ship else 4
@@ -189,28 +198,40 @@ class UI():
                 self.update_progress()
 
             case 'Default':
-                self.sub_fr = self.title_fr
+                self.sub_fr = None
 
             case _:
                 self.sub_fr = self.plot_frames[which]
                 self.router.set(Context.router.route_types[which])
+                self._place_cancel(which)
 
-        self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
+        if self.sub_fr: self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
+        if self.view.hidden != (self.sub_fr is None): self.view.toggle(self.sub_fr is None)
         self.frame.after_idle(th.fit_window, self.frame)
 
 
-    def _create_title_fr(self, parent:th.Frame) -> th.Frame:
-        """ Create the base/title frame """
-        title_fr:th.Frame = th.Frame(parent)
-        col:int = 0; row:int = 0
-        self.lbl:th.Label = th.Label(title_fr, text=lbls["plot_title"], font=BOLD)
-        self.lbl.grid(row=row, column=col, padx=(0,5), pady=5)
-        col += 1
-        plot_gui_btn:th.Button = th.Button(title_fr, text=" "+btns["plot_route"]+" ",
-                                         command=lambda: self.show_frame(Context.router.last_plot))
-        plot_gui_btn.grid(row=row, column=col, padx=(5,0), pady=5)
+    def _toggled(self, hidden:bool) -> None:
+        """ Collapse is the plotters' Cancel; expand opens the last plotter """
+        if hidden:
+            Context.router.cancel_plot = True
+            Context.router.clear_route()
+            self.show_frame('Default')
+            return
 
-        return title_fr
+        if self.sub_fr is None: self.show_frame(Context.router.last_plot)
+
+
+    def _place_cancel(self, which:str) -> None:
+        """ The collapse button doubles as Cancel, so it moves into the visible plotter's button row """
+        self.view.button("hide", in_=self.plotters[which].btn_frame, row=0, column=2, padx=5, sticky=tk.W)
+
+
+    def _create_title(self, parent:th.Frame) -> None:
+        """ Create the collapsed view's title and expand button """
+        self.lbl:th.Label = th.Label(parent, text=lbls["plot_title"], font=BOLD)
+        self.lbl.grid(row=0, column=0, padx=(0,5), pady=5)
+        self.view.button("show", text=" "+btns["plot_route"]+" ", tooltip=tts["plot_route"], column=1, padx=(5,0), pady=5, sticky=tk.W)
+        parent.columnconfigure(2, weight=1) # pushes the up/down buttons to the far right
 
 
     def _create_busy_fr(self, parent:th.Frame) -> th.Frame:
@@ -542,12 +563,6 @@ class UI():
         Context.router.clear_route()
 
 
-    def cancel_plot(self) -> None:
-        """ Cancel the plot planning and return to the default frame """
-        Context.router.cancel_plot = True
-        Context.router.clear_route()
-        self.show_frame('Default')
-
     @catch_exceptions
     def import_route(self) -> None:
         if Context.router == None or Context.router.import_route() == False:
@@ -602,7 +617,7 @@ class UI():
                     frame.tk.call(frame, 'copy', sheet, '-from', i * w, 0, (i + 1) * w, sheet.height())
                     self.frames.append(frame)
 
-            self.sub_fr.grid_remove()
+            if self.sub_fr: self.sub_fr.grid_remove()
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)
             self.busy_fr.after(0, update, 0)
@@ -610,7 +625,7 @@ class UI():
             return
 
         self.busy_fr.grid_remove()
-        self.sub_fr.grid()
+        if self.sub_fr: self.sub_fr.grid()
 
 
     @catch_exceptions

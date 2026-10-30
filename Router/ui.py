@@ -196,7 +196,7 @@ class UI():
                 self.router.set(Context.router.route_types[which])
 
         self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
-        th.fit_window(self.frame)
+        self.frame.after_idle(th.fit_window, self.frame)
 
 
     def _create_title_fr(self, parent:th.Frame) -> th.Frame:
@@ -606,7 +606,7 @@ class UI():
             self.route_lbl['text'] = lbls["plotting"].format(s=Context.router.src, d=Context.router.dest)
             self.busy_fr.grid(row=2, column=0, padx=10, pady=10, sticky=tk.NSEW)
             self.busy_fr.after(0, update, 0)
-            th.fit_window(self.frame)
+            self.frame.after_idle(th.fit_window, self.frame)
             return
 
         self.busy_fr.grid_remove()

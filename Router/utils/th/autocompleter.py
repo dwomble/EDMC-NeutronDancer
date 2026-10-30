@@ -47,6 +47,8 @@ class Autocompleter(Placeholder):
         self.lb.pack(fill=tk.BOTH, expand=True)
         self.popup.withdraw()
         self.lb_up = False
+        # Something external (another plugin or Windows) can remap withdrawn toplevels on game start
+        self.popup.bind("<Map>", lambda e: self.lb_up or self.popup.withdraw())
         self.has_selected = False
         self.queue:queue.Queue = queue.Queue()
 
@@ -181,11 +183,11 @@ class Autocompleter(Placeholder):
             x:int = self.winfo_rootx()
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")
+            self.lb_up = True
             self.popup.deiconify() # Show the popup
             # Match EDMC's "Always on top" setting
             self.popup.attributes('-topmost', self.parent.winfo_toplevel().attributes('-topmost'))
             self.popup.lift()
-            self.lb_up = True
 
     def hide_list(self) -> None:
         if self.lb_up:

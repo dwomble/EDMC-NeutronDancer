@@ -36,7 +36,7 @@ def resolve(widget:Any) -> Any:
     return getattr(widget, 'themed', widget)
 
 def fit_window(widget:tk.Misc) -> None:
-    """ Refit the toplevel to its contents: height always, width only when it must grow """
+    """ Refit the EDMC window to its contents, ensuring it always fits the height and only grows in width when necessary """
     top:tk.Tk|tk.Toplevel = widget.winfo_toplevel()
     top.update_idletasks()
     width:int = max(top.winfo_width(), top.winfo_reqwidth())

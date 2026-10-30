@@ -10,6 +10,7 @@
 ### Bug Fixes
 
 * Fixed an autocompleter bug that was creating blank windows on game startup.
+* Fixed bug where EDMC window sometimes didn't grow to fit when form display changed.
 
 ## v2.1.2 2026-10-06
 

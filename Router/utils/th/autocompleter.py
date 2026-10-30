@@ -51,6 +51,7 @@ class Autocompleter(Placeholder):
         self.popup.bind("<Map>", lambda e: self.lb_up or self.popup.withdraw())
         self.has_selected = False
         self.queue:queue.Queue = queue.Queue()
+        self.pending:list[concurrent.futures.Future] = []
 
         self.bind("<Any-Key>", self.keypressed)
         self.lb.bind("<Any-Key>", self.keypressed)
@@ -64,7 +65,6 @@ class Autocompleter(Placeholder):
         self.bind("<Leave>", self.mouse_leave)
 
         self.last_value:str|None = None
-        self.update_me()
 
     def mouse_move(self, event):
         # Identify the listbox item index nearest to the cursor's Y coordinate
@@ -118,7 +118,8 @@ class Autocompleter(Placeholder):
             self.hide_list()
             self.has_selected = False
         else:
-            Autocompleter._LOOKUP_EXECUTOR.submit(self.get_list, value)
+            if not self.pending: self.after(100, self.update_me)
+            self.pending.append(Autocompleter._LOOKUP_EXECUTOR.submit(self.get_list, value))
 
     def selection(self, event=None) -> None:
         if not self.lb_up: return
@@ -214,6 +215,8 @@ class Autocompleter(Placeholder):
             self.queue.put(result)
 
     def update_me(self) -> None:
+        # Prune before draining so a lookup finishing in between still has its results shown
+        self.pending = [f for f in self.pending if not f.done()]
         try:
             while 1:
                 lista = self.queue.get_nowait()
@@ -221,7 +224,7 @@ class Autocompleter(Placeholder):
                 self.update_idletasks()
         except queue.Empty:
             pass
-        self.after(100, self.update_me)
+        if self.pending: self.after(100, self.update_me)
 
     def set_text(self, text, placeholder_style=True) -> None:
         try:

@@ -1,2 +1,0 @@
-requests
-semantic_version

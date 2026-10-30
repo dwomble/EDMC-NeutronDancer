@@ -1,11 +1,11 @@
-semantic-version ~= 2.10.0
-sentry-sdk ~= 2.50.0
-l10n ~= 0.1.0
-requests ~= 2.31.0
-psutil ~= 5.9.0
-pillow ~= 13.0
-pytest ~= 9.0.3
-pytest-cov ~= 3.0.0
-pytest-mock ~= 3.10.0
-pyright ~= 1.1.411
+requests
+semantic_version
+sentry-sdk
+l10n
+psutil
+pillow
+pytest
+pytest-cov
+pytest-mock
+pyright
 flake8

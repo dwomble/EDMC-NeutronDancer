@@ -34,7 +34,6 @@ class Autocompleter(Placeholder):
             del kw['func']
 
         Placeholder.__init__(self, parent, placeholder, **kw)
-        self.traceid:str = self.var.trace_add('write', self.changed)
 
         if 'menu' in kw:
             del kw['menu']

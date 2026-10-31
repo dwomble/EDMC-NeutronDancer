@@ -378,10 +378,8 @@ class UI():
 
     def _waypoint_tooltip(self, route:Route) -> str:
         """ Full next-waypoint detail for the waypoint button's tooltip """
-        lines:list = route.next_stop_details()
-        lines.append(tts['copy_to_clipboard'])
-
-        return "\n".join(lines)
+        ret:str = route.next_stop_details()
+        return ret + "\n" + tts['copy_to_clipboard'] if ret else tts['copy_to_clipboard']
 
 
     def _create_route_fr(self, parent:th.Frame) -> th.Frame:

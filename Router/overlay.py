@@ -15,7 +15,7 @@ import edmc_data as ed # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton, hfplus, str_truncate
 from .context import Context
-from .constants import OVERLAY_PROGRESS_DEFAULT, CarrierStates, lbls, ovr, cnf, errs
+from .constants import CarrierStates, lbls, ovr, cnf, errs
 
 try:
     from EDMCOverlay import edmcoverlay # type: ignore
@@ -41,7 +41,6 @@ class Overlay():
     """ Overlay frame manager. """
     def __init__(self) -> None:
         self.progress_bar:bool = config.get_bool(f"{Context.plugin_name}_progress_bar", True)
-        self.progress_display:str = config.get(f"{Context.plugin_name}_progress_display", OVERLAY_PROGRESS_DEFAULT)
         self.ovfrs:dict[str, OvFrame] = {'Default': OvFrame('Default', x = 100, y = 900, ttl=300),
                                          'Galaxy Map': OvFrame('Galaxy Map', x = 500, y = 200, ttl=300),
                                          'Carrier': OvFrame('Carrier', x = 1000, y = 900, ttl=300),
@@ -108,50 +107,7 @@ class Overlay():
 
             message.insert(0, {'progressbar': prog, 'width': 200,'colour': self.ovfrs['Default'].text_colour})
 
-        details:str = ""
-
-        # Default to show detail lines.
-        if Context.route.next_stop_details():
-            details = "\n".join(Context.route.next_stop_details())
-
-        # Use the template if appropriate.
-        if Context.route.tracks_refuel_or_neutron():
-            fields:dict = {
-                # Jumps completed {jc}
-                'jc': hfplus(tuple([Context.route.total_jumps() - Context.route.jumps_remaining(), 'int', '-' if Context.route.offset < 0 else '0'])),
-                # Jumps remaining {jr}
-                'jr': hfplus(tuple([Context.route.jumps_remaining(), 'int', '0'])),
-                # Jumps total {jt}
-                'jt': hfplus(tuple([Context.route.total_jumps(), 'int'])),
-
-                # Distance to next checkpoint. {dc}
-                'dc': hfplus(tuple([Context.route.total_dist() - Context.route.dist_remaining(), 'float', '0'])),
-                # Distance remaining {dr}
-                'dr': hfplus(tuple([Context.route.dist_remaining(), 'float', '0'])),
-                # Distance total {dt}
-                'dt': hfplus(tuple([Context.route.total_dist(), 'float', '0'])),
-
-                # Distance per hour {dh}
-                'dh': hfplus(tuple([Context.route.dist_per_hour(), 'float', '-'])),
-                # Jumps per hour {jh}
-                'jh': hfplus(tuple([Context.route.jumps_per_hour(), 'float', '-'])),
-
-                # Refuel jumps {rj}
-                'rj': hfplus(tuple([Context.route.jumps_to_refuel(), 'int', '-'])),
-                # Distance (or jumps) to next refuel {rd}
-                'rd': hfplus(tuple([Context.route.dist_to_refuel(), 'float', '-'])),
-
-                # type of next star {st}: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
-                'st': "⛽" if Context.route.jumps_to_refuel() == 0 else "🌀" if Context.route.is_neutron() else "✨"
-            }
-            # Refuel message {rs}
-            fields['rs'] = lbls["next_refuel"].format(r=fields['rj']) if fields['rj'] != '-' else ""
-
-            try:
-                details = self.progress_display.format(**fields)
-            except Exception as e:
-                Debug.logger.warning(f"Error formatting progress display: {e}")
-                details = errs["format_error"]
+        details:str = Context.route.next_stop_details()
 
         if details:
             message.append({'size': "normal", 'text': details})
@@ -447,7 +403,7 @@ class Overlay():
         row:int = 0; col:int = 0
         nb.Label(ovrprefs, text=cnf["overlays"], justify=tk.LEFT, font=bold).grid(row=row, column=0, padx=10, sticky=tk.NW); row += 1
 
-        row += 1; col = 1
+        row += 1; col = 0
         # Loop through the frames and create a preferences line for each
         vars:dict = {}; cbtns:dict = {}
         for name, fr in self.ovfrs.items():
@@ -470,18 +426,12 @@ class Overlay():
         nb.Label(ovrprefs, text=cnf["controller"], justify=tk.LEFT).grid(row=row, column=col, columnspan=9, padx=10, pady=5, sticky=tk.W)
 
         row += 1; col = 0
-        nb.Label(ovrprefs, text=cnf["default_overlay"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
+        nb.Label(ovrprefs, text=cnf["overlay_opts"], justify=tk.LEFT, font=bold).grid(row=row, column=col, padx=10, pady=5,sticky=tk.NW)
         row += 1; col = 0
         nb.Label(ovrprefs, text=cnf["progress_bar"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
         col += 1
         self.pb:tk.BooleanVar = tk.BooleanVar(value=self.progress_bar)
         nb.Checkbutton(ovrprefs, text="Enable", variable=self.pb).grid(row=row, column=col, padx=5, pady=0, sticky=tk.W)
-
-        row += 1; col = 0
-        nb.Label(ovrprefs, text=cnf["progress_display"], justify=tk.LEFT).grid(row=row, column=col, padx=10, sticky=tk.NW)
-        col += 1
-        self.pv:tk.StringVar = tk.StringVar(value=self.progress_display.replace('\n', '\\n'))
-        tk.Entry(ovrprefs, width=80, textvariable=self.pv).grid(row=row, column=col, columnspan=8, padx=5, pady=0, sticky=tk.W)
 
         return ovrprefs
 
@@ -494,8 +444,6 @@ class Overlay():
             config.set(f"{Context.plugin_name}_{name}_overlay", json.dumps(asdict(fr)))
         self.progress_bar = self.pb.get()
         config.set(f"{Context.plugin_name}_progress_bar", self.progress_bar)
-        self.progress_display = self.pv.get().replace('\\n', '\n')
-        config.set(f"{Context.plugin_name}_progress_display", self.progress_display)
 
         self.update_overlays()
         self.redraw_frames()

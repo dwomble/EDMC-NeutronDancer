@@ -10,7 +10,7 @@ from config import config # type: ignore
 from .utils.misc import singleton
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import ROUTE_DIR, cnf
+from .constants import ROUTE_DIR, PROGRESS_DEFAULT, cnf
 from .context import Context
 
 @dataclass
@@ -20,10 +20,12 @@ class Pref:
     desc:str
     var_type:type[tk.StringVar]|type[tk.BooleanVar]
     entry_type:type[nb.EntryMenu]|type[nb.Checkbutton]
+    default:str|bool|None = None
 
 PREFS = [
     Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, nb.EntryMenu),
     Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, nb.Checkbutton),
+    Pref('str', 'progress_display', cnf['progress_display'], tk.StringVar, nb.EntryMenu, PROGRESS_DEFAULT)
     ]
 
 @singleton
@@ -63,7 +65,7 @@ class Prefs:
         row:int = 0; col:int = 0
         nb.Label(prefsfr, text=cnf["options"], justify=tk.LEFT, font=bold).grid(row=row, column=col, padx=10, pady=5, sticky=tk.NW)
 
-        vars:dict = {}; cbtns:list = []; row += 1; col = 0
+        row += 1; col = 0
         # variable, label, variable type, object type
         for k in PREFS:
             match k.pref_type:
@@ -71,9 +73,10 @@ class Prefs:
                     self.pref_vars[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", False))
                     nb.Checkbutton(prefsfr, text=k.desc, variable=self.pref_vars[k.name]).grid(row=row,   column=col, padx=10, pady=0, sticky=tk.W)
                 case 'str':
-                    nb.Label(prefsfr, text=k.name).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
+                    self.pref_vars[k.name] = tk.StringVar(value=config.get(f"{Context.plugin_name}_{k.name}", k.default))
+                    nb.Label(prefsfr, text=k.desc).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
                     col += 1
-                    nb.EntryMenu(prefsfr, textvariable=vars[k.name], width=25, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
+                    nb.EntryMenu(prefsfr, textvariable=self.pref_vars[k.name], width=50, validate='all').grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                 case 'dir':
                     dir = config.get(f"{Context.plugin_name}_{k.name}", str(Path(Context.plugin_dir) / ROUTE_DIR))
                     self.pref_vars[k.name] = tk.StringVar(value=dir)
@@ -83,9 +86,10 @@ class Prefs:
                     entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
                     entry.bind("<Button-1>", lambda e, en=entry, v=self.pref_vars[k.name]: select_folder(en, v))
 
-            col = 0;row += 1
-        col = 0
-        ttk.Separator(frame).grid(row=row, columnspan=3, pady=5 * 2, sticky=tk.EW)
+            row += 1; col = 0
+
+        ttk.Separator(frame).grid(row=row, columnspan=99, pady=5 * 2, sticky=tk.EW)
+        row += 1
 
         Context.overlay.prefs_display(frame)
         return frame

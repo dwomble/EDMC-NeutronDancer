@@ -105,7 +105,7 @@ TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
 
 # Overlay progress display default
-OVERLAY_PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
+PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
 class CarrierStates(Enum):
     Idle = auto()
     Jumping = auto()
@@ -306,6 +306,7 @@ errs:dict = {
 cnf:dict = {
     "version": "Version",
     "overlays": "Overlays",
+    "overlay_opts": "Overlay Options",
     "enable": "Enable",
     "foreground": "Foreground",
     "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",

@@ -229,9 +229,10 @@ class UI():
 
     def _create_title(self, parent:th.Frame) -> None:
         """ Create the collapsed view's title and expand button """
-        self.lbl:th.Label = th.Label(parent, text=lbls["plot_title"], font=BOLD)
-        self.lbl.grid(row=0, column=0, padx=(0,5), pady=5)
-        self.view.button("show", text=" "+btns["plot_route"]+" ", tooltip=tts["plot_route"], column=1, padx=(5,0), pady=5, sticky=tk.W)
+        #self._icon:tk.PhotoImage = tk.PhotoImage(file=os.path.join(Context.plugin_dir, ASSET_DIR, "neutron_icon.png"))
+        #th.Label(parent, image=self._icon).grid(row=0, column=0, padx=0, pady=5)
+        th.Label(parent, text=lbls["plot_title"], font=BOLD).grid(row=0, column=0, padx=(0,5), pady=5)
+        self.view.button("show", text=" "+btns["plot_route"]+" ", tooltip=tts["plot_route"], column=2, padx=(5,0), pady=5, sticky=tk.W)
         parent.columnconfigure(2, weight=1) # pushes the up/down buttons to the far right
 
 

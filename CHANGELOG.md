@@ -6,6 +6,7 @@
 
 * Added workaround for galaxy map not creating a dashboard event on foot.
 * Added copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux.
+* Added plugin reordering from th library
 
 ### Bug Fixes
 

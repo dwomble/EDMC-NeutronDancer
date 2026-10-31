@@ -1,5 +1,6 @@
 """ Expanded and collapsed views of a plugin with default hide/show (and optional move) buttons. """
 import tkinter as tk
+from tkinter import ttk
 from pathlib import Path
 from typing import Callable
 
@@ -39,7 +40,11 @@ class Collapsible:
     def button(self, name:str, text:str|None = None, tooltip:str|None = None, **grid) -> Button:
         """ Change a default button's text, tooltip or grid placement """
         btn, tip = self._buttons[name]
-        if text is not None: btn.configure(text=text, width=0) # natural width; the default 3 only suits a glyph
+        if text is not None:
+            btn.configure(text=text)
+            # Drop the glyph width: ttk falls back to its style's minimum, as a plain th.Button would
+            btn.obj.configure(width='' if isinstance(btn.obj, ttk.Button) else 0)
+            btn.alt.configure(width=0)
         if tooltip is not None: tip.text = tooltip
         # Full options via grid(), not grid_configure(), so the theme's alternate widget is re-registered too
         if grid: btn.grid(**{**(getattr(btn, '_last_gridopts', None) or {}), **grid})

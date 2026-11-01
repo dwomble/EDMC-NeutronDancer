@@ -3,6 +3,7 @@ from tkinter import ttk, font
 from tkinter import filedialog
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Any, Optional
 import myNotebook as nb # type: ignore
 
 from config import config # type: ignore
@@ -20,10 +21,13 @@ class Pref:
     desc:str
     var_type:type[tk.StringVar]|type[tk.BooleanVar]
     entry_type:type[nb.EntryMenu]|type[nb.Checkbutton]
+    default_value:Optional[Any] = None
 
 PREFS = [
     Pref('dir', 'routes_directory', cnf['routes_directory'], tk.StringVar, nb.EntryMenu),
     Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, nb.Checkbutton),
+    Pref('bool', 'copy_on_jump', cnf['copy_on_jump'], tk.BooleanVar, nb.Checkbutton, default_value=True),
+    Pref('bool', 'copy_on_galmap', cnf['copy_on_galmap'], tk.BooleanVar, nb.Checkbutton, default_value=True),
     ]
 
 @singleton
@@ -68,7 +72,7 @@ class Prefs:
         for k in PREFS:
             match k.pref_type:
                 case 'bool':
-                    self.pref_vars[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", False))
+                    self.pref_vars[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", k.default_value or False))
                     nb.Checkbutton(prefsfr, text=k.desc, variable=self.pref_vars[k.name]).grid(row=row,   column=col, padx=10, pady=0, sticky=tk.W)
                 case 'str':
                     nb.Label(prefsfr, text=k.name).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)

@@ -158,9 +158,7 @@ def make_loadout(state:dict) -> dict:
 
 @catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
-    if Context.ui.parent and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap and \
-        getattr(Context.prefs, 'copy_on_galmap', False) and Context.route.jumps_remaining():
-        Debug.logger.info(f"GalMap, copying next waypoint: {Context.route.next_system()}")
+    if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
         copy_to_clipboard(Context.ui.parent, Context.route.next_system())
 
     if Context.overlay:

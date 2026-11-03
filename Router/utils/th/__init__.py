@@ -13,8 +13,11 @@ from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
-           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve", "fit_window", "Collapsible", "PluginSlot"]
+from ..debug import Debug
+
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Entry", "Button", "Radiobutton",
+           "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Separator", "ScrollableFrame", "Tooltip", "Autocompleter",
+           "Placeholder", "resolve", "fit_window", "Collapsible", "PluginSlot"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -36,7 +39,7 @@ def resolve(widget:Any) -> Any:
     return getattr(widget, 'themed', widget)
 
 def fit_window(widget:tk.Misc) -> None:
-    """ Refit the EDMC window to its contents, ensuring it always fits the height and only grows in width when necessary """
+    """ Refit the toplevel to its contents: height always, width only when it must grow """
     top:tk.Tk|tk.Toplevel = widget.winfo_toplevel()
     top.update_idletasks()
     width:int = max(top.winfo_width(), top.winfo_reqwidth())
@@ -64,14 +67,7 @@ class Base:
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them.
-
-        EDMC's theme.register_alternate() only ever appends -- it never dedupes or replaces an
-        existing entry for the same widget pair. Every repeated .grid() call with the same
-        options (e.g. a hide/show toggle re-gridding with unchanged row/column) would otherwise
-        leak another permanent duplicate into EDMC's own widgets_pair list, which its theme.apply()
-        re-processes (grid_remove() + re-grid()) on every future theme refresh -- unbounded,
-        wasteful churn on the same widgets for the rest of the session. Only register when the
-        options actually changed since last time. """
+        Only register when the options actually changed since last time. """
         if self.alt is None:
             return self.obj.grid(*args, **kw)
 
@@ -86,11 +82,7 @@ class Base:
             theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
             object.__setattr__(self, '_last_gridopts', gridopts)
 
-        # 'theme' (0=default, 1=dark, 2=transparent), not 'dark_mode' -- real EDMC's own
-        # theme.py has no 'dark_mode' config key at all, so that check always picked obj (light)
-        # here regardless of theme, until EDMC's own later theme.apply() pass corrected it via
-        # the widgets_pair registered above. A hide+reshow re-runs this before any apply() call
-        # follows, so the wrong (light) widget stuck around instead of getting corrected again.
+        # 'theme' (0=default, 1=dark, 2=transparent)
         return self.alt.grid(*args, **kw) if config.get_int('theme') != 0 else self.obj.grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
@@ -154,7 +146,7 @@ class TopLevel(tk.Toplevel):
     A plain themed toplevel window. Deliberately does NOT call theme.update()/register() on
     itself
     """
-    def __init__(self, master:tk.Widget, **kw) -> None:
+    def __init__(self, master:tk.Widget|None = None, **kw) -> None:
         tk.Toplevel.__init__(self, master, **kw)
 
 class Frame(tk.Frame):
@@ -197,6 +189,13 @@ class Label(tk.Label):
     """ A themed label that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Label.__init__(self, master, **kw)
+        theme.update(self)
+
+class Separator(tk.Frame):
+    """ A themed separator line, matching EDMC's own per-plugin one -- stretch it via grid(sticky=EW or NS) """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        kw.setdefault('highlightthickness', 1)
+        tk.Frame.__init__(self, master, **kw)
         theme.update(self)
 
 class Text(tk.Text):
@@ -250,45 +249,61 @@ class RichLabel(_RichBgSync, _RichLabel):
         theme.register(self.frame)
         theme.update(self)
 
-# class Progressbar(ttk.Progressbar):
-#     """ A themed progress bar, colored via ttk.Style (no fg/bg for
-#     theme.py to repaint). Call refresh_style() from your own
-#     prefs_changed() for a live theme change mid-session. """
-
-#     STYLE:str = "Th.Horizontal.TProgressbar"
-
-#     def __init__(self, master:tk.Widget, **kw) -> None:
-#         kw.setdefault('style', self.STYLE)
-#         Progressbar.refresh_style()
-#         ttk.Progressbar.__init__(self, master, **kw)
-#         theme.update(self)
-
-#     @classmethod
-#     def refresh_style(cls) -> None:
-#         """ Recolors every Progressbar using STYLE to match the theme. """
-#         Debug.logger.debug(f"Refreshing style {cls}")
-#         style:ttk.Style = ttk.Style()
-#         if config.get_int('theme', default=0) > 0:
-#             style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
-#             return
-
-#         # native colors, whatever this platform's ttk theme uses
-#         style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
-#                         background=style.lookup('TProgressbar', 'background'))
+class Entry(Base):
+    """ A themed entry that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        ent:ttk.Entry = ttk.Entry(master, **kw)
+        kw.setdefault('relief', tk.GROOVE)
+        alt:tk.Entry = tk.Entry(master, **_strip_name(kw))
+        super().__init__(ent, alt)
+        theme.update(self)
 
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        # EDMC's theme has a bug if the cursor is set on a ttk.Button with an image so we use a tk.Button
-        btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'cursor' in kw else ttk.Button(master, **kw)
+        object.__setattr__(self, '_ipad_x', 0)
+        object.__setattr__(self, '_ipad_y', 0)
+        # Requested padx/pady grid-pad both themes equally -- native padx/pady render a
+        # different, unpredictable amount wider on tk.Button vs ttk.Button for the same value.
+        object.__setattr__(self, '_pad_x', kw.get('padx') or 0)
+        object.__setattr__(self, '_pad_y', kw.get('pady') or 0)
+        alt_kw:dict = {k: v for k, v in kw.items() if k not in ('padx', 'pady')}
 
-        alt:tk.Button = tk.Button(master, **_strip_name(kw))
+        # EDMC's theme has a bug if the cursor is set on a ttk.Button with an image so we use a tk.Button
+        btn:ttk.Button|tk.Button = tk.Button(master, **alt_kw) if 'cursor' in kw else self._ttk_button(master, kw)
+
+        alt:tk.Button = tk.Button(master, **_strip_name(alt_kw))
 
         super().__init__(btn, alt)
 
         # ttk.Button width is characters. tk.Button width is pixels.
         w = kw.get('width')
         object.__setattr__(self, '_char_width', int(w) if w is not None else None)
+
+    def _ttk_button(self, master:tk.Widget, kw:dict) -> ttk.Button:
+        """ ttk ignores height, and only needs a pixel width fudge for icon buttons """
+        has_image:bool = 'image' in kw
+        target_w:int|None = kw.get('width') if has_image else None
+        target_h:int|None = kw.get('height')
+        ttk_kw:dict = {k: v for k, v in kw.items() if k not in ('height', 'padx', 'pady') and (k != 'width' or not has_image)}
+
+        btn:ttk.Button = ttk.Button(master, **ttk_kw)
+        btn.update_idletasks()
+        # Windows' native ttk theme adds its own chrome outside what reqwidth/reqheight report
+        if target_w is not None: target_w += 8
+        if target_h is not None: target_h += 8
+        Debug.logger.debug(f"Button size: {target_w} {btn.winfo_reqwidth()} by {target_h} {btn.winfo_reqheight()} ")
+        object.__setattr__(self, '_ipad_x', max(0, (target_w - btn.winfo_reqwidth()) // 2) if target_w is not None else 0)
+        object.__setattr__(self, '_ipad_y', max(0, (target_h - btn.winfo_reqheight()) // 2) if target_h is not None else 0)
+        return btn
+
+    def grid(self, *args, **kw) -> Any:
+        """ padx/pady apply in both themes; the width/height target-fit only applies to the ttk half """
+        target_ipad_x:int = self._ipad_x if config.get_int('theme') == 0 else 0
+        target_ipad_y:int = self._ipad_y if config.get_int('theme') == 0 else 0
+        kw.setdefault('ipadx', self._pad_x + target_ipad_x)
+        kw.setdefault('ipady', self._pad_y + target_ipad_y)
+        return super().grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
         """ Override configure to also counteract tk.Button's width-unit switch on image attach. """
@@ -374,10 +389,8 @@ class Listbox(Base):
     def __init__(self, master:tk.Widget, items:list, **kw) -> None:
         # @TODO: Switch the plain mode for a treeview?
         rows:int = min(len(items), 10)
-        if 'selectmode' not in kw:
-            kw['selectmode'] = tk.MULTIPLE
-        if 'exportselection' not in kw:
-            kw['exportselection'] = False
+        kw.setdefault('selectmode', tk.MULTIPLE)
+        kw.setdefault('exportselection', False)
 
         lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)

@@ -13,8 +13,9 @@ from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
-           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve", "fit_window", "Collapsible"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Entry", "Button", "Radiobutton",
+           "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Separator", "ScrollableFrame", "Tooltip", "Autocompleter",
+           "Placeholder", "resolve", "fit_window", "Collapsible", "PluginSlot"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -64,14 +65,7 @@ class Base:
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them.
-
-        EDMC's theme.register_alternate() only ever appends -- it never dedupes or replaces an
-        existing entry for the same widget pair. Every repeated .grid() call with the same
-        options (e.g. a hide/show toggle re-gridding with unchanged row/column) would otherwise
-        leak another permanent duplicate into EDMC's own widgets_pair list, which its theme.apply()
-        re-processes (grid_remove() + re-grid()) on every future theme refresh -- unbounded,
-        wasteful churn on the same widgets for the rest of the session. Only register when the
-        options actually changed since last time. """
+        Only register when the options actually changed since last time. """
         if self.alt is None:
             return self.obj.grid(*args, **kw)
 
@@ -86,11 +80,7 @@ class Base:
             theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
             object.__setattr__(self, '_last_gridopts', gridopts)
 
-        # 'theme' (0=default, 1=dark, 2=transparent), not 'dark_mode' -- real EDMC's own
-        # theme.py has no 'dark_mode' config key at all, so that check always picked obj (light)
-        # here regardless of theme, until EDMC's own later theme.apply() pass corrected it via
-        # the widgets_pair registered above. A hide+reshow re-runs this before any apply() call
-        # follows, so the wrong (light) widget stuck around instead of getting corrected again.
+        # 'theme' (0=default, 1=dark, 2=transparent)
         return self.alt.grid(*args, **kw) if config.get_int('theme') != 0 else self.obj.grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
@@ -154,7 +144,7 @@ class TopLevel(tk.Toplevel):
     A plain themed toplevel window. Deliberately does NOT call theme.update()/register() on
     itself
     """
-    def __init__(self, master:tk.Widget, **kw) -> None:
+    def __init__(self, master:tk.Widget|None = None, **kw) -> None:
         tk.Toplevel.__init__(self, master, **kw)
 
 class Frame(tk.Frame):
@@ -197,6 +187,13 @@ class Label(tk.Label):
     """ A themed label that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Label.__init__(self, master, **kw)
+        theme.update(self)
+
+class Separator(tk.Frame):
+    """ A themed separator line, matching EDMC's own per-plugin one -- stretch it via grid(sticky=EW or NS) """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        kw.setdefault('highlightthickness', 1)
+        tk.Frame.__init__(self, master, **kw)
         theme.update(self)
 
 class Text(tk.Text):
@@ -250,31 +247,14 @@ class RichLabel(_RichBgSync, _RichLabel):
         theme.register(self.frame)
         theme.update(self)
 
-# class Progressbar(ttk.Progressbar):
-#     """ A themed progress bar, colored via ttk.Style (no fg/bg for
-#     theme.py to repaint). Call refresh_style() from your own
-#     prefs_changed() for a live theme change mid-session. """
-
-#     STYLE:str = "Th.Horizontal.TProgressbar"
-
-#     def __init__(self, master:tk.Widget, **kw) -> None:
-#         kw.setdefault('style', self.STYLE)
-#         Progressbar.refresh_style()
-#         ttk.Progressbar.__init__(self, master, **kw)
-#         theme.update(self)
-
-#     @classmethod
-#     def refresh_style(cls) -> None:
-#         """ Recolors every Progressbar using STYLE to match the theme. """
-#         Debug.logger.debug(f"Refreshing style {cls}")
-#         style:ttk.Style = ttk.Style()
-#         if config.get_int('theme', default=0) > 0:
-#             style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
-#             return
-
-#         # native colors, whatever this platform's ttk theme uses
-#         style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
-#                         background=style.lookup('TProgressbar', 'background'))
+class Entry(Base):
+    """ A themed entry that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        ent:ttk.Entry = ttk.Entry(master, **kw)
+        kw.setdefault('relief', tk.GROOVE)
+        alt:tk.Entry = tk.Entry(master, **_strip_name(kw))
+        super().__init__(ent, alt)
+        theme.update(self)
 
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
@@ -374,10 +354,8 @@ class Listbox(Base):
     def __init__(self, master:tk.Widget, items:list, **kw) -> None:
         # @TODO: Switch the plain mode for a treeview?
         rows:int = min(len(items), 10)
-        if 'selectmode' not in kw:
-            kw['selectmode'] = tk.MULTIPLE
-        if 'exportselection' not in kw:
-            kw['exportselection'] = False
+        kw.setdefault('selectmode', tk.MULTIPLE)
+        kw.setdefault('exportselection', False)
 
         lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)
@@ -436,3 +414,4 @@ class Spinbox(PlaceholderMixin, Base):
 # (and Button, fit_window) already defined on this module before they run.
 from .scrollableframe import ScrollableFrame
 from .collapsible import Collapsible
+from .pluginslot import PluginSlot

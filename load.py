@@ -84,11 +84,17 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
                 Context.route.update_route(0, system)
                 Context.route.jumps = []
         case 'FSDJump' | 'Location' | 'SupercruiseExit' if entry.get('StarSystem', system) != Context.router.system:
+            at_next:bool = entry['event'] == 'FSDJump' and entry.get('StarSystem', system) == Context.route.next_system()
             Context.router.jumped(system, entry)
+            if (at_next and Context.route.jumps_remaining() and getattr(Context.prefs, 'copy_on_jump', False)):
+                Debug.logger.info(f"Jumped to {system}, copying next waypoint: {Context.route.next_system()}")
+                copy_to_clipboard(Context.ui.parent, Context.route.next_system())
         case 'CarrierJumpRequest' | 'CarrierLocation' | 'CarrierJumpCancelled' | 'CarrierStats':
             Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.add_loadout(entry)
+        case 'Music' if entry.get('MusicTrack', '') == 'GalaxyMap' and Context.ui.parent and Context.route.jumps_remaining():
+            copy_to_clipboard(Context.ui.parent, Context.route.next_system())
         case 'ShipyardSwap':
             Context.router.swap_ship(entry.get('ShipID', ''))
         case 'SendText':
@@ -113,7 +119,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         if loadout:
             Context.router.add_loadout(loadout)
 
-    Context.router.system = system
+    if system != Context.router.system:
+        Context.router.system = system
+        for p in Context.ui.plotters.values(): p.refresh_menus()
+
     cargo:int = sum(state.get('Cargo', {}).values())
     if cargo != Context.router.cargo:
         Context.router.cargo = cargo
@@ -145,7 +154,9 @@ def make_loadout(state:dict) -> dict:
 
 @catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
-    if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
+    if Context.ui.parent and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap and \
+        getattr(Context.prefs, 'copy_on_galmap', False) and Context.route.jumps_remaining():
+        Debug.logger.info(f"GalMap, copying next waypoint: {Context.route.next_system()}")
         copy_to_clipboard(Context.ui.parent, Context.route.next_system())
 
     if Context.overlay:

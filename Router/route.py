@@ -1,8 +1,12 @@
 from time import time
+
+from config import config # type: ignore
+
 from .utils.debug import Debug
 from .utils.misc import hfplus
-from .constants import HEADER_MAP, tts, lbls, TRUE
-from typing import Any, TYPE_CHECKING
+from .constants import HEADER_MAP, PROGRESS_DEFAULT, tts, lbls, errs, TRUE
+from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .context import Context
 
@@ -145,12 +149,61 @@ class Route:
         return ''
 
 
-    def next_stop_details(self) -> list[str]:
+    def _neutron_details(self) -> str:
         """ Extra per-route-type details for the next waypoint """
-        lines:list = []
+        # Use the template if appropriate.
+        fields:dict = {
+            # Jumps completed {jc}
+            'jc': hfplus(tuple([self.total_jumps() - self.jumps_remaining(), 'int', '-' if self.offset < 0 else '0'])),
+            # Jumps remaining {jr}
+            'jr': hfplus(tuple([self.jumps_remaining(), 'int', '0'])),
+            # Jumps total {jt}
+            'jt': hfplus(tuple([self.total_jumps(), 'int'])),
 
+            # Distance to next checkpoint. {dc}
+            'dc': hfplus(tuple([self.total_dist() - self.dist_remaining(), 'float', '0'])),
+            # Distance remaining {dr}
+            'dr': hfplus(tuple([self.dist_remaining(), 'float', '0'])),
+            # Distance total {dt}
+            'dt': hfplus(tuple([self.total_dist(), 'float', '0'])),
+
+            # Distance per hour {dh}
+            'dh': hfplus(tuple([self.dist_per_hour(), 'float', '-'])),
+            # Jumps per hour {jh}
+            'jh': hfplus(tuple([self.jumps_per_hour(), 'float', '-'])),
+
+            # Refuel jumps {rj}
+            'rj': hfplus(tuple([self.jumps_to_refuel(), 'int', '-'])),
+            # Distance (or jumps) to next refuel {rd}
+            'rd': hfplus(tuple([self.dist_to_refuel(), 'float', '-'])),
+
+            # type of next star {st}: ✨ ◄ ⭐ ► ◄ 𐫰 ► 🌀 ⚛
+            'st': "⛽" if self.jumps_to_refuel() == 0 else "🌀" if self.is_neutron() else "✨"
+        }
+        # Refuel message {rs}
+        fields['rs'] = lbls["next_refuel"].format(r=fields['rj']) if fields['rj'] != '-' else ""
+
+        try:
+            from .context import Context
+            progress_display:str = config.get(f"{Context.plugin_name}_progress_display", PROGRESS_DEFAULT)
+            details = progress_display.format(**fields)
+        except Exception as e:
+            Debug.logger.warning(f"Error formatting progress display: {e}")
+            details = errs["format_error"]
+
+        return details
+
+    def next_stop_details(self) -> str:
+        """ Extra per-route-type details for the next waypoint """
+
+        # If this route tracks refuel/restock or neutron, use the template
+        if self.tracks_refuel_or_neutron():
+            return self._neutron_details()
+
+        lines:list = []
         commodity = self.next_stop_value('Commodity')
         amount:str = hfplus(tuple([self.next_stop_value('Amount'), 'int', '', 't']))
+        Debug.logger.debug(f"Next stop details: {commodity} {amount}")
         if commodity:
             profit:str = hfplus(tuple([self.next_stop_value('Profit'), 'int', '', ' Cr/t']))
             lines.append(f"{amount + ' ' if amount else ''}{commodity} · {profit}")
@@ -159,13 +212,14 @@ class Route:
             perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', '', ' Cr/hr']))
             lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
 
-
         subtype = self.next_stop_value('Body Type')
+        Debug.logger.debug(f"Next stop details: {subtype}")
         if subtype:
             dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
             lines.append(" · ".join(p for p in [subtype, dist] if p))
 
         species = self.next_stop_value('Species')
+        Debug.logger.debug(f"Next stop details: {species}")
         if species:
             landmark:str = hfplus(tuple([self.next_stop_value('Landmark Value'), 'float', '', ' Cr']))
             lines.append(f"{species}{f' · {landmark}' if landmark else ''}")
@@ -180,13 +234,14 @@ class Route:
 
         scanval = self.next_stop_value('Estimated Scan Value')
         mapval = self.next_stop_value('Estimated Mapping Value')
+        Debug.logger.debug(f"Next stop details: {scanval} {mapval}")
         if not species and (scanval or mapval):
             scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
             lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
 
-            type:str = 'Scan'
             from .context import Context
+            type:str = 'Scan'
             if Context.router.last_plot in Context.router.route_params and \
                 Context.router.route_params[Context.router.last_plot].get('use_mapping_value', False):
                 type = 'Mapping'
@@ -196,7 +251,8 @@ class Route:
                 perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', '', ' Cr/hr']))
                 lines.append(f"{cum_scan} · {perhour}" if perhour != '' else f"{cum_scan}")
 
-        return lines
+        Debug.logger.debug(f"Next stop details: {lines}")
+        return "\n".join(lines)
 
 
     def tracks_refuel_or_neutron(self) -> bool:

@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta, UTC
 from time import sleep, monotonic
 import logging
 import tkinter as tk
+import _tkinter
 import threading
 from typing import Any, Literal
 from types import SimpleNamespace
@@ -83,6 +84,9 @@ class TestHarness:
     # Prevent pytest from trying to collect this helper class as a test class
     __test__ = False
     _instance = None
+
+    # Lookup pools seen so far; resets unload their modules, so they're kept here until stop_lookups()
+    _lookup_pools:list = []
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -162,8 +166,24 @@ class TestHarness:
         self._initialized = True
 
     @classmethod
+    def _collect_pools(cls) -> None:
+        """ Remember the lookup pool of every autocompleter module currently loaded. """
+        for name, mod in list(sys.modules.items()):
+            if not name.endswith('.autocompleter'): continue
+
+            pool = getattr(getattr(mod, 'Autocompleter', None), '_LOOKUP_EXECUTOR', None)
+            if pool is not None and pool not in cls._lookup_pools: cls._lookup_pools.append(pool)
+
+    @classmethod
+    def stop_lookups(cls) -> None:
+        """ Cancel queued autocompleter lookups so the pools' workers can't hold up interpreter exit. """
+        cls._collect_pools()
+        for pool in cls._lookup_pools: pool.shutdown(wait=False, cancel_futures=True)
+
+    @classmethod
     def reset_instance(cls) -> None:
         """Dispose the singleton harness instance so the next test starts clean."""
+        cls._collect_pools()
         if cls._instance is None:
             return
 
@@ -409,6 +429,26 @@ class TestHarness:
             state = {}  # Clear state after the first event
             sleep(delay)
 
+    def wait_for_thread(self, thread:threading.Thread, timeout_s:float = 30) -> bool:
+        """ Run Tk's main loop until the thread ends so its widget calls get serviced. False on timeout. """
+        if not thread.is_alive(): return True
+
+        scheduler:HarnessTkScheduler|None = getattr(self, '_tk_scheduler', None)
+        real_after:Callable = (scheduler._orig_after if scheduler else None) or tk.Misc.after
+        deadline:float = monotonic() + timeout_s
+
+        def check() -> None:
+            if scheduler: scheduler.drain_due_callbacks()
+            if thread.is_alive() and monotonic() < deadline:
+                real_after(self.root, 10, check)
+                return
+
+            self.root.quit()
+
+        real_after(self.root, 10, check)
+        self.root.mainloop()
+        return not thread.is_alive()
+
     def register_dashboard_handler(self, handler: Callable, commander:str|None = None, is_beta:bool|None = None) -> None:
         """ Register a dashboard event handler (simulates dashboard_entry callback). """
         self.dashboard_handlers.append(handler)
@@ -496,6 +536,8 @@ class TestHarness:
 
     def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
         """Record unhandled worker-thread exceptions so tests can fail deterministically."""
+        if args.exc_type is SystemExit: return
+
         exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
         thread_name = getattr(args.thread, 'name', '<unknown>')
         self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
@@ -517,11 +559,13 @@ class TestHarness:
 
             try:
                 self.root.update_idletasks()
-                self.root.update()
+                # Bounded, not update(): macOS Tk can livelock after a worker-thread error path in a reused process
+                for _ in range(1000):
+                    if not self.root.tk.dooneevent(_tkinter.DONT_WAIT): break
             except tk.TclError:
                 return
 
-            pending = self._tk_scheduler.pending_count() if hasattr(self, '_tk_scheduler') else 0
+            pending = self._tk_scheduler.pending_count(timeout_s) if hasattr(self, '_tk_scheduler') else 0
             if pending == 0 and callbacks_ran == 0:
                 return
             if monotonic() >= end_time:

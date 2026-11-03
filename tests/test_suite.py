@@ -28,7 +28,7 @@ from Router.utils.updater import Updater, Notices, read_version_file
 plugin_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(plugin_dir))
 
-from harness import TestHarness, reset_plugin_modules
+from harness import TestHarness
 from Router.route_window import RouteWindow
 from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
@@ -66,68 +66,6 @@ def mocked_session_get(side_effect):
     with patch('Router.route_manager.SESSION.get', side_effect=side_effect):
         yield
 
-@pytest.fixture
-def harness(request, monkeypatch) -> Generator:
-    """Provide a fresh test harness for each test."""
-
-    # Keep module_data.json, or every test forces a live Coriolis download, not just one.
-    data_dir:Path = Path(__file__).parent / "data"
-    (data_dir / "route.json").unlink(missing_ok=True)
-    shutil.rmtree(data_dir / "ships", ignore_errors=True)
-
-    param = getattr(request, 'param', ('route_init.json', 'ships'))
-    init_file, ships_dir = param if isinstance(param, tuple) else (param, None)
-    if init_file != 'None' or ships_dir:
-        data_dir.mkdir(exist_ok=True)
-        if init_file != 'None':
-            shutil.copy(Path(__file__).parent / "config" / init_file, data_dir / "route.json")
-        if ships_dir:
-            shutil.copytree(Path(__file__).parent / "config" / ships_dir, data_dir / "ships")
-
-    overlay = 'Modern'
-    if request.node.get_closest_marker('overlay'):
-        overlay = request.node.get_closest_marker('overlay').args[0]
-
-    hotkeys = request.node.get_closest_marker('hotkeys') or True
-
-    TestHarness.reset_instance()
-    reset_plugin_modules()
-
-    test_harness = TestHarness(live_requests=True, overlay=overlay, hotkeys=hotkeys)
-
-    # This is ND-specific. /assets is where the images are stored
-    import Router.constants
-    Router.constants.ASSET_DIR = "../assets"
-
-    from load import plugin_start3, plugin_app, journal_entry, dashboard_entry
-
-    # Avoid live update/notice threads hanging teardown.
-    with patch('load.Updater.check_for_update', return_value=None), \
-         patch('load.Notices.check_for_notices', return_value=None):
-        plugin_start3(str(test_harness.plugin_dir))
-    plugin_app(test_harness.parent)
-
-    # ND-specific, this is our plugin object
-    import Router.context
-    test_harness.plugin = Router.context.Context
-
-    # Default to a no-op so tests that just construct/load a route avoid real network calls.
-    monkeypatch.setattr(test_harness.plugin.spansh, 'start_fetch', lambda ids: None)
-
-    # ND-specific, this is the journal handling function and the default journal params
-    test_harness.load_events("journal_events.json")
-    test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', True)
-
-    # This is the dashboard handlling function
-    test_harness.register_dashboard_handler(dashboard_entry, 'Testy', True)
-
-    yield test_harness
-
-    # Only cheap, local teardown here -- network-bound lookups get joined once for the whole suite.
-    test_harness.plugin.overlay.stop_countdowns()
-    test_harness.assert_no_unhandled_exceptions()
-    TestHarness.reset_instance()
-
 class TestStartup:
     """Test plugin startup behavior."""
 
@@ -164,6 +102,7 @@ class TestStartup:
         harness.play_sequence('startup')
         assert harness.plugin.router.system == "Sol"
 
+    @pytest.mark.live_requests
     def test_module_import(self, harness:TestHarness) -> None:
         """Test retrieving module data from Coriolis """
         harness.plugin.modules = []
@@ -318,7 +257,7 @@ class TestRouteMethods:
         assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
         assert route.next_stop_value('Species') is None  # no such column on this route
         assert route.next_stop_station() == 'Alvarado Beacon'
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('Agronomic Treatment' in l for l in lines)
         assert any('Cr/t' in l for l in lines)
         assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
@@ -332,7 +271,7 @@ class TestRouteMethods:
         ]
         route = Route(hdrs, route_data, 0)
 
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
 
         assert any('High metal content world' in l for l in lines)
         assert any('Scan' in l for l in lines)
@@ -363,7 +302,7 @@ class TestRouteMethods:
         assert route.next_stop_station() == ''
         assert route.next_stop() == 'Deciat'
         assert route.next_stop_display() == 'Deciat 4 a'
-        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details())
+        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details().splitlines())
 
     def test_details_lists_extra_bodies(self, harness:TestHarness) -> None:
         """ Several bodies at one system must have the detail lines call out the extra ones. """
@@ -375,7 +314,7 @@ class TestRouteMethods:
         ]
         route = Route(hdrs, route_data, 0)
 
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
 
         assert any('Deciat 4 b' in l and 'Fonticulua Campestris' in l for l in lines)
 
@@ -424,7 +363,7 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 1)  # next stop is Deciat
 
         assert route.sum_value('Profit') == 15617
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('Silver' in l for l in lines)
         assert any('15.6K Cr' in l for l in lines)
 
@@ -439,7 +378,7 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
 
         assert route.sum_value('Estimated Scan Value') == 47300
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('47.3K Cr' in l for l in lines)
 
     def test_details_blank_no_extra_columns(self, harness:TestHarness) -> None:
@@ -448,7 +387,7 @@ class TestRouteMethods:
         route_data = [['Sol', 0], ['Apurui', 10]]
         route = Route(hdrs, route_data, 0)
 
-        assert route.next_stop_details() == []
+        assert route.next_stop_details() == ''
 
     def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
         """Test checks refuel or neutron for appropriate route types."""
@@ -1069,7 +1008,7 @@ class TestOverlay:
         """Ensure redraw_frames renders using the configured progress_display template."""
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -1089,7 +1028,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         overlay.update_overlays()
 
@@ -1107,7 +1046,7 @@ class TestOverlay:
         assert harness.plugin.route.tracks_refuel_or_neutron() == False
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc}"  # would be shown if this were misclassified
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc}")  # would be shown if this were misclassified
 
         overlay.update_overlays()
 
@@ -1128,7 +1067,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "invalid={unknown}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "invalid={unknown}")
 
         overlay.update_overlays()
 
@@ -1291,7 +1230,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Neutron', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) >= 2
@@ -1327,7 +1266,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Neutron', {'from': 'Start', 'to': 'End', 'max_time': 1})
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route.navroute['System1']['StarClass'] == 'N'
         assert harness.plugin.route.navroute['System2']['StarClass'] == 'M'
@@ -1360,7 +1299,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Galaxy', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert harness.plugin.router.route_params['Galaxy'] == params
@@ -1397,7 +1336,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('RtoR', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # bodyless Colonia dropped; one row per body
@@ -1437,7 +1376,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Ammonia', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 1
@@ -1477,7 +1416,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Exobiology', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         print(f"Route headers: {harness.plugin.route.hdrs} Route data: {harness.plugin.route.route}")
         assert harness.plugin.route is not None
@@ -1540,7 +1479,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('Trade', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 3  # 1 commodity in hop 1 + 2 commodities in hop 2
@@ -1607,7 +1546,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         assert len(harness.plugin.route.route) == 2  # one row per stop, not per jump entry
@@ -1653,7 +1592,7 @@ class TestPlotMethods:
                     harness.plugin.router.plot_route('FleetCarrier', params)
 
         assert plotter_thread is not None, "Plotter thread was not captured"
-        plotter_thread.join(timeout=THREAD_TIMEOUT)
+        harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
         assert harness.plugin.route is not None
         names = [row[harness.plugin.route.hdrs.index("System Name")] for row in harness.plugin.route.route]
@@ -1685,7 +1624,18 @@ class TestPlotMethods:
 
                 # Join the plotter thread if captured
                 if plotter_thread:
-                    plotter_thread.join(timeout=THREAD_TIMEOUT)
+                    harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
+
+    def test_spinner_frames_built_lazily(self, harness:TestHarness) -> None:
+        """The spinner frames are only built when the busy view is first shown."""
+        ui = harness.plugin.ui
+        assert ui.frames == []
+
+        ui._show_busy_gui(True)
+        assert len(ui.frames) == ui.frameCnt
+
+        ui._show_busy_gui(False)
+        assert len(ui.frames) == ui.frameCnt
 
     def test_neutron_plotter_calls_plot_route(self, harness:TestHarness) -> None:
         """Regression: NeutronPlotter.plot() must actually invoke Context.router.plot_route()."""
@@ -2142,6 +2092,26 @@ class TestUIFunctions:
         # Should not raise or change state
         ui.set_entry(None, "ignored")
 
+    def test_menu_has_current_system(self, harness:TestHarness) -> None:
+        """ Showing a plotter puts the current system first in its source menu. """
+        harness.plugin.router.system = 'Apurui'
+        harness.plugin.ui.show_frame('Neutron')
+
+        ac:th.Autocompleter|None = harness.plugin.ui.plotters['Neutron'].src_ac
+        assert ac is not None
+        assert ac.menu.entrycget(4, 'label') == 'Apurui' # after Cut, Copy, Paste and the separator
+
+    def test_jump_refreshes_source_menu(self, harness:TestHarness) -> None:
+        """ A system change while a plotter is showing moves the new system to the top of its source menu. """
+        harness.plugin.ui.show_frame('Neutron')
+        ac:th.Autocompleter|None = harness.plugin.ui.plotters['Neutron'].src_ac
+        assert ac is not None
+        assert ac.menu.entrycget(4, 'label') != 'Deciat'
+
+        harness.fire_event({"timestamp": "2026-11-03T00:00:00Z", "event": "FSDJump", "StarSystem": "Deciat"})
+
+        assert ac.menu.entrycget(4, 'label') == 'Deciat'
+
     def test_query_station_names(self, harness:TestHarness) -> None:
         """ Formats each typeahead result as "System / Station" for the combined input field. """
         ui = harness.plugin.ui
@@ -2526,7 +2496,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '4'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2547,7 +2517,7 @@ class TestPlotting:
                                                 'supercharge_multiplier': '6'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.route.source() == 'Apurui'
@@ -2606,7 +2576,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.router.src == 'Apurui'
             assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
@@ -2657,7 +2627,7 @@ class TestPlotting:
             assert res == True
 
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == galaxy_params['source']
@@ -2677,7 +2647,7 @@ class TestPlotting:
                                                 'max_results': '20', 'avoid_thargoids': '1', 'loop': '1'})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             # The route table lists bodies, not the queried system, so source() isn't 'Colonia'.
@@ -2705,7 +2675,7 @@ class TestPlotting:
                                                 'body_types': ['Ammonia world'], 'min_value': 1, 'max_time': 240})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2726,7 +2696,7 @@ class TestPlotting:
                                                 'min_value': 100000, 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Colonia'
@@ -2752,7 +2722,7 @@ class TestPlotting:
                                                 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Shinrarta Dezhra'
@@ -2774,7 +2744,7 @@ class TestPlotting:
                                                 'range': '50', 'max_time': 60})
             assert res == True
             assert plotter_thread is not None, "Plotter thread was not captured"
-            plotter_thread.join(timeout=THREAD_TIMEOUT)
+            harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
             assert harness.plugin.route is not None
             assert harness.plugin.router.src == 'Sol'
@@ -2797,7 +2767,7 @@ class TestEventSequences:
         assert res == True
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         # Follow the route
         for event in harness.events.get('full_route_scenario', []):

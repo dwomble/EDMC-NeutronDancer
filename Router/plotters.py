@@ -41,6 +41,8 @@ class Plotter(ABC):
     def __init__(self, route_type:str) -> None:
         """ Initialize the plotter. """
         self.frame:th.Frame|None = None
+        self.src_ac:th.Autocompleter|None = None
+        self.dest_ac:th.Autocompleter|None = None
         self.route_type = route_type
         self.options:list = PLOTTER_SPECS[route_type].options
 
@@ -102,32 +104,26 @@ class Plotter(ABC):
 
         return ac
 
+    def _sys_menu(self, field:str) -> dict:
+        """ Current system (source only), carrier location, then recent history """
+        systems:list = [Context.router.system if field == 'src' else '', Context.router.carrier_location, *Context.router.history]
+        return {s: [Context.ui.menu_callback, field] for s in dict.fromkeys(systems) if s}
+
+    def refresh_menus(self) -> None:
+        """ Rebuild the system menus, which go stale as the current system and history change """
+        if self.src_ac: self.src_ac.set_menu(self._sys_menu('src'))
+        if self.dest_ac: self.dest_ac.set_menu(self._sys_menu('dest'))
+
     def _create_source(self, parent:th.Frame, row:int, col:int, add_cmd=None) -> None:
         """Create source system autocompleter widget."""
-        srcmenu:dict = {}
-        if Context.router.system:
-            srcmenu[Context.router.system] = [Context.ui.menu_callback, 'src']
-        if Context.router.carrier_location:
-            srcmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'src']
-        for sys in Context.router.history:
-            if sys not in srcmenu:
-                srcmenu[sys] = [Context.ui.menu_callback, 'src']
-
-        self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
-                                   name="source_ac", menu=srcmenu, initial=Context.router.src, add_cmd=add_cmd)
+        self.src_ac = self._create_system_entry(parent, row, col, lbls["source_system"], tts["source_system"],
+                                                name="source_ac", menu=self._sys_menu('src'), initial=Context.router.src, add_cmd=add_cmd)
 
     def _create_dest(self, parent:th.Frame, row:int, col:int, placeholder:str = '') -> None:
         """Create destination system autocompleter widget."""
-        destmenu:dict = {}
-        if Context.router.carrier_location:
-            destmenu[Context.router.carrier_location] = [Context.ui.menu_callback, 'dest']
-        for sys in Context.router.history:
-            if sys not in destmenu:
-                destmenu[sys] = [Context.ui.menu_callback, 'dest']
-
         if placeholder == '': placeholder = lbls["dest_system"]
-        self._create_system_entry(parent, row, col, placeholder, tts["dest_system"],
-                                   name="dest_ac", menu=destmenu, initial=Context.router.dest)
+        self.dest_ac = self._create_system_entry(parent, row, col, placeholder, tts["dest_system"],
+                                                 name="dest_ac", menu=self._sys_menu('dest'), initial=Context.router.dest)
 
     def _create_options(self, parent:th.Frame, row:int, col:int, options:list, params:dict) -> None:
         """Create options listbox widget."""
@@ -227,9 +223,10 @@ class Plotter(ABC):
         return validated
 
     def _create_buttons(self, parent:th.Frame, row:int, col:int) -> None:
-        """Create standard plotting buttons (import, calculate, cancel)."""
-        btn_frame:th.Frame = th.Frame(parent)
-        btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
+        """Create standard plotting buttons (import, calculate); the UI places its collapse button as Cancel."""
+        self.btn_frame:th.Frame = th.Frame(parent)
+        self.btn_frame.grid(row=row, column=col, columnspan=5, sticky=tk.EW, pady=(5, 0))
+        btn_frame:th.Frame = self.btn_frame
 
         row = 0; col = 0
         self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: Context.ui.import_route())
@@ -238,10 +235,6 @@ class Plotter(ABC):
         col += 1
         self.plot_route_btn:th.Button = th.Button(btn_frame, text=btns["calculate_route"], command=self.plot)
         self.plot_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
-
-        col += 1
-        self.cancel_plot:th.Button = th.Button(btn_frame, text=btns["cancel"], command=lambda: Context.ui.cancel_plot())
-        self.cancel_plot.grid(row=row, column=col, padx=5, sticky=tk.W)
 
 
 class NeutronPlotter(Plotter):

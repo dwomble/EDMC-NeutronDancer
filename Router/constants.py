@@ -105,7 +105,7 @@ TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
 
 # Overlay progress display default
-OVERLAY_PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
+PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
 class CarrierStates(Enum):
     Idle = auto()
     Jumping = auto()
@@ -210,6 +210,8 @@ lbls:dict = {
 
 # Tooltips
 tts:dict = {
+    'plot_route': "Open the route plotter",
+    'cancel': "Cancel and collapse",
     'route_type': "The route type to plot",
     'neutron_plotter': "Spansh Neutron Plotter",
     'galaxy_plotter': "Spansh Exact/Galaxy Plotter",
@@ -304,6 +306,7 @@ errs:dict = {
 cnf:dict = {
     "version": "Version",
     "overlays": "Overlays",
+    "overlay_opts": "Overlay Options",
     "enable": "Enable",
     "foreground": "Foreground",
     "controller": "To change overlay frame positions, set backgrounds etc. use Modern Overlay's controller",
@@ -313,7 +316,9 @@ cnf:dict = {
     "options": "Neutron Dancer Options",
     "select": "Select",
     "show_carrier_cooldown": "Show Carrier Cooldown Popup",
-    "routes_directory": "Default Route File Directory"
+    "routes_directory": "Default Route File Directory",
+    "copy_on_jump": "Copy next waypoint system to clipboard after an FSD jump",
+    "copy_on_galmap": "Copy next waypoint system to clipboard after opening galaxy map"
 }
 
 ovr:dict = {

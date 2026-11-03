@@ -257,7 +257,7 @@ class TestRouteMethods:
         assert route.next_stop_value('System Name') == 'Puppis Sector TO-R b4-4'
         assert route.next_stop_value('Species') is None  # no such column on this route
         assert route.next_stop_station() == 'Alvarado Beacon'
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('Agronomic Treatment' in l for l in lines)
         assert any('Cr/t' in l for l in lines)
         assert any('Cr' in l and 'Cr/t' not in l for l in lines)  # the running-total line
@@ -271,7 +271,7 @@ class TestRouteMethods:
         ]
         route = Route(hdrs, route_data, 0)
 
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
 
         assert any('High metal content world' in l for l in lines)
         assert any('Scan' in l for l in lines)
@@ -302,7 +302,7 @@ class TestRouteMethods:
         assert route.next_stop_station() == ''
         assert route.next_stop() == 'Deciat'
         assert route.next_stop_display() == 'Deciat 4 a'
-        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details())
+        assert any('Bacterium Nypoxia' in l for l in route.next_stop_details().splitlines())
 
     def test_details_lists_extra_bodies(self, harness:TestHarness) -> None:
         """ Several bodies at one system must have the detail lines call out the extra ones. """
@@ -314,7 +314,7 @@ class TestRouteMethods:
         ]
         route = Route(hdrs, route_data, 0)
 
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
 
         assert any('Deciat 4 b' in l and 'Fonticulua Campestris' in l for l in lines)
 
@@ -363,7 +363,7 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 1)  # next stop is Deciat
 
         assert route.sum_value('Profit') == 15617
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('Silver' in l for l in lines)
         assert any('15.6K Cr' in l for l in lines)
 
@@ -378,7 +378,7 @@ class TestRouteMethods:
         route = Route(hdrs, route_data, 1)  # next stop is Colonia 3 a
 
         assert route.sum_value('Estimated Scan Value') == 47300
-        lines = route.next_stop_details()
+        lines = route.next_stop_details().splitlines()
         assert any('47.3K Cr' in l for l in lines)
 
     def test_details_blank_no_extra_columns(self, harness:TestHarness) -> None:
@@ -387,7 +387,7 @@ class TestRouteMethods:
         route_data = [['Sol', 0], ['Apurui', 10]]
         route = Route(hdrs, route_data, 0)
 
-        assert route.next_stop_details() == []
+        assert route.next_stop_details() == ''
 
     def test_tracks_refuel_or_neutron(self, harness:TestHarness) -> None:
         """Test checks refuel or neutron for appropriate route types."""
@@ -1008,7 +1008,7 @@ class TestOverlay:
         """Ensure redraw_frames renders using the configured progress_display template."""
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         filename:str = str(Path(__file__).parent / "config" / "neutron-Bleae-Voqooe.csv")
         res:bool = harness.plugin.router.import_route(filename)
@@ -1028,7 +1028,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         overlay.update_overlays()
 
@@ -1046,7 +1046,7 @@ class TestOverlay:
         assert harness.plugin.route.tracks_refuel_or_neutron() == False
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc}"  # would be shown if this were misclassified
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc}")  # would be shown if this were misclassified
 
         overlay.update_overlays()
 
@@ -1067,7 +1067,7 @@ class TestOverlay:
         harness.plugin.router.update_route(3)
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "invalid={unknown}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "invalid={unknown}")
 
         overlay.update_overlays()
 
@@ -2092,6 +2092,26 @@ class TestUIFunctions:
         # Should not raise or change state
         ui.set_entry(None, "ignored")
 
+    def test_menu_has_current_system(self, harness:TestHarness) -> None:
+        """ Showing a plotter puts the current system first in its source menu. """
+        harness.plugin.router.system = 'Apurui'
+        harness.plugin.ui.show_frame('Neutron')
+
+        ac:th.Autocompleter|None = harness.plugin.ui.plotters['Neutron'].src_ac
+        assert ac is not None
+        assert ac.menu.entrycget(4, 'label') == 'Apurui' # after Cut, Copy, Paste and the separator
+
+    def test_jump_refreshes_source_menu(self, harness:TestHarness) -> None:
+        """ A system change while a plotter is showing moves the new system to the top of its source menu. """
+        harness.plugin.ui.show_frame('Neutron')
+        ac:th.Autocompleter|None = harness.plugin.ui.plotters['Neutron'].src_ac
+        assert ac is not None
+        assert ac.menu.entrycget(4, 'label') != 'Deciat'
+
+        harness.fire_event({"timestamp": "2026-11-03T00:00:00Z", "event": "FSDJump", "StarSystem": "Deciat"})
+
+        assert ac.menu.entrycget(4, 'label') == 'Deciat'
+
     def test_query_station_names(self, harness:TestHarness) -> None:
         """ Formats each typeahead result as "System / Station" for the combined input field. """
         ui = harness.plugin.ui
@@ -2747,7 +2767,7 @@ class TestEventSequences:
         assert res == True
 
         overlay = harness.plugin.overlay
-        overlay.progress_display = "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}"
+        harness.config.set(f"{harness.plugin.plugin_name}_progress_display", "PD jc={jc} jr={jr} jt={jt} dc={dc} dr={dr} dt={dt} dh={dh} jh={jh} rj={rj} rd={rd} st={st}")
 
         # Follow the route
         for event in harness.events.get('full_route_scenario', []):

@@ -205,6 +205,7 @@ class UI():
                 self.sub_fr = self.plot_frames[which]
                 self.router.set(Context.router.route_types[which])
                 self._place_cancel(which)
+                self.plotters[which].refresh_menus()
 
         if self.sub_fr: self.sub_fr.grid(row=2, column=0, sticky=tk.NSEW)
         if self.view.hidden != (self.sub_fr is None): self.view.toggle(self.sub_fr is None)

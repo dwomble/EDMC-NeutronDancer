@@ -119,7 +119,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
         if loadout:
             Context.router.add_loadout(loadout)
 
-    Context.router.system = system
+    if system != Context.router.system:
+        Context.router.system = system
+        for p in Context.ui.plotters.values(): p.refresh_menus()
+
     cargo:int = sum(state.get('Cargo', {}).values())
     if cargo != Context.router.cargo:
         Context.router.cargo = cargo

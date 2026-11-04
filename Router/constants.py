@@ -30,7 +30,9 @@ SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, use
 SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 SPANSH_TIMEOUT:int = 30
 
-INDY_ROUTE:str = "https://neutron.indyhost.org/api/route"
+INDY_API:str = "https://neutron.indyhost.org/api"
+INDY_ROUTE:str = f"{INDY_API}/route"
+INDY_SEARCH:str = f"{INDY_API}/search"
 
 # Directory we store our save data in
 DATA_DIR = 'data'

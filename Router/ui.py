@@ -17,7 +17,7 @@ from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
 from .utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
+from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -634,6 +634,15 @@ class UI():
         except:
             return [inp]
         return json.loads(results.content)
+
+    def query_indy(self, inp:str) -> list:
+        """ Autocompleter lookup against Indy's own system database """
+        try:
+            results:requests.Response = SESSION.get(INDY_SEARCH, params={'q': inp.strip()},
+                                                     headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+            return [m['name'] for m in results.json().get('matches', [])]
+        except:
+            return [inp]
 
     @catch_exceptions
     def query_boxels(self, inp:str) -> list:

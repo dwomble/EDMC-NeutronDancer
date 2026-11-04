@@ -356,6 +356,8 @@ class IndyPlotter(Plotter):
         route_fr:th.Frame = th.Frame(plot_fr)
         self._create_source(route_fr, 0, 0)
         self._create_dest(route_fr, 1, 0)
+        for ac in (self.src_ac, self.dest_ac):
+            if ac: ac.func = Context.ui.query_indy
         route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
         col2_fr:th.Frame = th.Frame(plot_fr)
@@ -1132,7 +1134,7 @@ PLOTTER_SPECS:dict = {
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
     ),
     'Indy': PlotterSpec(
-        label='Indestinated Neutron Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
+        label='Indestinated\'s Neutron Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

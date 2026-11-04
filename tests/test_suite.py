@@ -1298,6 +1298,17 @@ class TestPlotMethods:
         assert [r[route.colind('Jumps')] for r in route.route] == [0, 7, 6]
         assert [route.navroute[s]['StarClass'] for s in ('Sol', 'PSR A', 'PSR B')] == ['', 'N', '']
 
+    def test_indy_autocomplete_uses_search(self, harness:TestHarness) -> None:
+        """ Indy's system entries look names up in Indy's own database. """
+        plotter = harness.plugin.ui.plotters['Indy']
+        assert plotter.src_ac.func == plotter.dest_ac.func == harness.plugin.ui.query_indy
+
+        response = Mock()
+        response.json.return_value = {'matches': [{'name': 'Sol', 'mainStar': 'G', 'neutron': False},
+                                                  {'name': 'Solati', 'mainStar': 'K', 'neutron': False}]}
+        with mocked_session_get([response]):
+            assert harness.plugin.ui.query_indy('Sol') == ['Sol', 'Solati']
+
     def test_plotter_success_creates_route_galaxy(self, harness:TestHarness) -> None:
         """Test that _plotter persists Galaxy params into route_params (not a stray galaxy_params attribute)."""
         global plotter_thread

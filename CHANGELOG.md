@@ -1,6 +1,6 @@
 # EDMC-NeutronDancer Changelog
 
-## v2.2.0 2026-11-??
+## v3.0.0 2026-11-??
 
 ### New Features
 
@@ -12,7 +12,7 @@
 
 ### Changes
 
-* Implemwented a workaround for galaxy map not creating a dashboard event on foot
+* Implemented a workaround for galaxy map not creating a dashboard event on foot
 
 ### Bug Fixes
 

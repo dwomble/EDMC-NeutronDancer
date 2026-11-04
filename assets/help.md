@@ -82,6 +82,8 @@ This is an alternative Neutron Plotter written by **Indestinated** and hosted at
 
 - *Supercharge Multiplier* is the effect of Neutron or White Dwarf boosting. For Neutron stars the range incresae is 6x or 4x depending on whether the ship has a MkII FSD. For White Dwarfs the multiplier is 3x or 2x. This will also be pre-filled for your current ship.
 
+**Note**: This router uses a copy of the Spansh data. Due to update lag some stars accessible vis Spansh may not be in this router.
+
 ## Road to Riches and Expressway to Exomastery
 
 **Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.

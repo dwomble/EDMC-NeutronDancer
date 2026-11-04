@@ -318,7 +318,8 @@ cnf:dict = {
     "show_carrier_cooldown": "Show Carrier Cooldown Popup",
     "routes_directory": "Default Route File Directory",
     "copy_on_jump": "Copy next waypoint system to clipboard after an FSD jump",
-    "copy_on_galmap": "Copy next waypoint system to clipboard after opening galaxy map"
+    "copy_on_galmap": "Copy next waypoint system to clipboard after opening galaxy map",
+    "install_prereleases": "Install pre-release versions of Neutron Dancer"
 }
 
 ovr:dict = {

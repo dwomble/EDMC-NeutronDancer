@@ -5,7 +5,7 @@ import json
 import tkinter as tk
 
 import myNotebook as nb  # type: ignore
-from config import user_agent # type: ignore
+from config import config, user_agent  # type: ignore
 from monitor import monitor # type: ignore
 import edmc_data # type: ignore
 
@@ -36,6 +36,7 @@ def plugin_start3(plugin_dir: str) -> str:
     VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
+    Context.updater.accept_prerelease = config.get_bool(f"{NAME}_install_prereleases", False)
     Context.updater.check_for_update(Context.plugin_version)
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)

@@ -62,9 +62,7 @@ If you don't select *exclude secondary stars* it's presumed you'll select this o
 
 ## Neutron Plotter
 
-This is the simple Spansh neutron route plotter. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
-
-Next click **Calculate** to query Spansh and plot your route.
+This is the simple Spansh neutron route plotter that supports multiple waypoints. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
 
 ![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
 
@@ -73,6 +71,16 @@ Next click **Calculate** to query Spansh and plot your route.
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
 - Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
+
+## Indestinated's (IndyHost) Neutron Plotter
+
+This is an alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Its key advantages are speed and White Dwarf boost support. Disadvantages are that it doesn't offer efficiency configuration and is only point to point.
+
+- *Neutron boosts* indicates if Neutron boosts should be used.
+
+- *White dwarf boosts* indicates if White Dwarf boosts should be used.
+
+- *Supercharge Multiplier* is the effect of Neutron or White Dwarf boosting. For Neutron stars the range incresae is 6x or 4x depending on whether the ship has a MkII FSD. For White Dwarfs the multiplier is 3x or 2x. This will also be pre-filled for your current ship.
 
 ## Road to Riches and Expressway to Exomastery
 

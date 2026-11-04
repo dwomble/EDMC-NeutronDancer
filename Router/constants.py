@@ -30,6 +30,8 @@ SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, use
 SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 SPANSH_TIMEOUT:int = 30
 
+INDY_ROUTE:str = "https://neutron.indyhost.org/api/route"
+
 # Directory we store our save data in
 DATA_DIR = 'data'
 SHIP_DIR = 'ships'
@@ -140,6 +142,8 @@ lbls:dict = {
     "supercharge_label": "Supercharge Multiplier",
     "standard_supercharge": "Standard (x4)",
     "overcharge_supercharge": "Overcharge (x6)",
+    "neutron_boost": "Neutron boosts",
+    "wd_boost": "White dwarf boosts",
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
@@ -221,7 +225,9 @@ tts:dict = {
     "range": "Ship jump range in light years, right click for menu",
     "efficiency": "Routing efficiency (%)",
     "standard_multiplier": "Standard range increase (4x), right click for menu",
-    "overcharge_multiplier": "Caspian range increase( 6x), right click for menu",
+    "overcharge_multiplier": "Caspian range increase (6x), right click for menu",
+    "neutron_boost": "Use neutron star supercharges",
+    "wd_boost": "Use white dwarf supercharges",
     "copy_to_clipboard": "Click to copy to clipboard",
     "jump": "{j} jumps {d}remaining.",
     "waypoints": "{j} waypoints {d}remaining.",

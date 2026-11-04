@@ -475,10 +475,8 @@ class UI():
                 self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
                 self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
 
-                # Update neutron plotter multiplier if it exists
-                neutron_plotter = self.plotters.get('Neutron')
-                if neutron_plotter and hasattr(neutron_plotter, 'multiplier'):
-                    neutron_plotter.multiplier.set(ship.supercharge_multiplier)
+                for p in self.plotters.values():
+                    if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
                 return
 
 
@@ -504,10 +502,8 @@ class UI():
         # Update all plotters with new range and multiplier
         self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
 
-        # Update neutron plotter multiplier if it exists
-        neutron_plotter = self.plotters.get('Neutron')
-        if neutron_plotter and hasattr(neutron_plotter, 'multiplier'):
-            neutron_plotter.multiplier.set(ship.supercharge_multiplier)
+        for p in self.plotters.values():
+            if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
 
         Context.router.route_params['Neutron']['supercharge_multiplier'] = ship.supercharge_multiplier
         Context.router.route_params['Neutron']['range'] = ship.range

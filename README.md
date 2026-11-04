@@ -17,7 +17,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- **Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported and a simple Boxel Surveyor.
+- **Spansh Neutron Plotter**, **IndyHost Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported and a simple Boxel Surveyor.
 - Click the next destination button to copy it straight into your paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
@@ -35,7 +35,7 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 
 ## Installation
 
-- Download and unzip the latest `EDMC-NeutronDancer.zip` from [here](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest).
+- Download and unzip the latest `EDMC-NeutronDancer.zip` from [GitHub](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest).
 - Open your EDMC plugins folder (in EDMC settings, select "Plugins" tab, click the "Open" button).
 - Create a folder inside the plugins folder and call it whatever you want, **EDMC-NeutronDancer** for instance.
 - Copy the unzipped files into this folder.

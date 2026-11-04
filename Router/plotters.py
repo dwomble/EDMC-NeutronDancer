@@ -13,7 +13,7 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, FLEET_CARRIER_STATS
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, FLEET_CARRIER_STATS
 from .context import Context
 from .route import Route
 from .ship import Ship
@@ -142,6 +142,18 @@ class Plotter(ABC):
         range_entry.grid(row=row, column=col, padx=5, pady=5)
 
         th.Tooltip(range_entry, tts["range"])
+
+    def _create_multiplier(self, parent:th.Frame, row:int, value:int) -> None:
+        """ Supercharge multiplier radio buttons """
+        self.multiplier:tk.IntVar = tk.IntVar(value=value)
+        th.Label(parent, text=lbls["supercharge_label"]).grid(row=row, column=0, padx=5, pady=5)
+
+        for col, (v, lbl, tt) in enumerate(((4, 'standard_supercharge', 'standard_multiplier'),
+                                            (6, 'overcharge_supercharge', 'overcharge_multiplier')), 1):
+            rb:th.Radiobutton = th.Radiobutton(parent, text=lbls[lbl], variable=self.multiplier, value=v)
+            rb.bind('<Button-3>', lambda e: Context.ui.show_menu(e, self.route_type))
+            th.Tooltip(rb, tts[tt])
+            rb.grid(row=row, column=col, columnspan=1 if col == 1 else 4, padx=5, pady=5)
 
     # Shared hop-list widget: a caller-placed "+" beside the source field starts the list
     # (_add_hop_row(-1)); each row then gets its own "-"/"+" to remove itself or insert below.
@@ -274,25 +286,8 @@ class NeutronPlotter(Plotter):
         self.efficiency_slider.set(params.get('efficiency', 60))
         col2_fr.grid(row=row, column=4, sticky=tk.NW)
 
-        # Supercharge multiplier
-        row += 1; col = 0
-        self.multiplier = tk.IntVar()
-        self.multiplier.set(params.get('supercharge_multiplier', 4))
-
-        l1:th.Label = th.Label(plot_fr, text=lbls["supercharge_label"])
-        l1.grid(row=row, column=col, padx=5, pady=5)
-
-        col += 1
-        r1:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["standard_supercharge"], variable=self.multiplier, value=4)
-        r1.bind('<Button-3>', lambda e: Context.ui.show_menu(e, 'Neutron'))
-        th.Tooltip(r1, tts['standard_multiplier'])
-        r1.grid(row=row, column=col, padx=5, pady=5)
-
-        col += 1
-        r2:th.Radiobutton = th.Radiobutton(plot_fr, text=lbls["overcharge_supercharge"], variable=self.multiplier, value=6)
-        th.Tooltip(r2, tts['overcharge_multiplier'])
-        r2.bind('<Button-3>', lambda e: Context.ui.show_menu(e, 'Neutron'))
-        r2.grid(row=row, column=col, columnspan=4, padx=5, pady=5)
+        row += 1
+        self._create_multiplier(plot_fr, row, params.get('supercharge_multiplier', 4))
 
         # Buttons
         row += 1; col = 0
@@ -343,6 +338,64 @@ class NeutronPlotter(Plotter):
         params['via'] = [v for hop in self.hop_rows if (v := self._row_value(hop['ac'])) != '']
 
         Context.router.plot_route('Neutron', params)
+        Context.ui._show_busy_gui(True)
+
+
+class IndyPlotter(Plotter):
+    """Plotter for neutron.indyhost.org neutron and white dwarf routes."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the Indy neutron plotter frame."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        row:int = 0; col:int = 0
+
+        params:dict = Context.router.route_params.get('Indy', {})
+        self._plot_switcher(plot_fr, row, col)
+
+        row += 1
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0)
+        self._create_dest(route_fr, 1, 0)
+        for ac in (self.src_ac, self.dest_ac):
+            if ac: ac.func = Context.ui.query_indy
+        route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
+
+        col2_fr:th.Frame = th.Frame(plot_fr)
+        self._create_range(col2_fr, 0, 0, str(params.get('laden', "32.0")), 13)
+
+        self.boosts:dict = {k: tk.IntVar(value=params.get(k, d)) for k, d in (('neutron', 1), ('wd', 0))}
+        for i, (k, lbl) in enumerate((('neutron', 'neutron_boost'), ('wd', 'wd_boost')), 1):
+            cb:th.Checkbutton = th.Checkbutton(col2_fr, text=lbls[lbl], variable=self.boosts[k])
+            th.Tooltip(cb, tts[lbl])
+            cb.grid(row=i, column=0, padx=5, sticky=tk.W)
+        col2_fr.grid(row=row, column=4, sticky=tk.NW)
+
+        row += 1
+        self._create_multiplier(plot_fr, row, 6 if params.get('caspian') else 4)
+
+        row += 1
+        self._create_buttons(plot_fr, row, col)
+        self.frame = plot_fr
+        return plot_fr
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Perform Indy neutron route plotting."""
+        if not self.frame: return
+
+        Context.ui.hide_error()
+        range_entry = self.frame.nametowidget("range_entry")
+        params:dict = {'start': self.frame.nametowidget("source_ac").get().strip(),
+                       'dest': self.frame.nametowidget("dest_ac").get().strip(),
+                       'laden': range_entry.var.get(), **{k: v.get() for k, v in self.boosts.items()},
+                       'caspian': int(self.multiplier.get() == 6)}
+
+        if not re.match(r"^\d+(\.\d+)?$", params['laden']):
+            Debug.logger.info(f"Invalid range entry {params['laden']}")
+            range_entry.set_error_style()
+            return
+
+        Context.router.plot_route('Indy', params)
         Context.ui._show_busy_gui(True)
 
 
@@ -1079,6 +1132,9 @@ PLOTTER_SPECS:dict = {
     ),
     'Neutron': PlotterSpec(
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
+    ),
+    'Indy': PlotterSpec(
+        label='Indestinated\'s Neutron Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

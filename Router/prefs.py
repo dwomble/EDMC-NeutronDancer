@@ -28,6 +28,7 @@ PREFS = [
     Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, nb.Checkbutton),
     Pref('bool', 'copy_on_jump', cnf['copy_on_jump'], tk.BooleanVar, nb.Checkbutton, default=True),
     Pref('bool', 'copy_on_galmap', cnf['copy_on_galmap'], tk.BooleanVar, nb.Checkbutton, default=True),
+    Pref('bool', 'install_prereleases', cnf['install_prereleases'], tk.BooleanVar, nb.Checkbutton, default=False),
     ]
 
 @singleton

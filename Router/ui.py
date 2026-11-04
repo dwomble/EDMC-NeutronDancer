@@ -17,7 +17,7 @@ from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
 from .utils.tkrichtext import RichScrolledText
 
-from .constants import NAME, SPANSH_SYSTEMS, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
+from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
 from .route import Route
 from .context import Context
@@ -475,10 +475,8 @@ class UI():
                 self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
                 self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
 
-                # Update neutron plotter multiplier if it exists
-                neutron_plotter = self.plotters.get('Neutron')
-                if neutron_plotter and hasattr(neutron_plotter, 'multiplier'):
-                    neutron_plotter.multiplier.set(ship.supercharge_multiplier)
+                for p in self.plotters.values():
+                    if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
                 return
 
 
@@ -504,10 +502,8 @@ class UI():
         # Update all plotters with new range and multiplier
         self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
 
-        # Update neutron plotter multiplier if it exists
-        neutron_plotter = self.plotters.get('Neutron')
-        if neutron_plotter and hasattr(neutron_plotter, 'multiplier'):
-            neutron_plotter.multiplier.set(ship.supercharge_multiplier)
+        for p in self.plotters.values():
+            if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
 
         Context.router.route_params['Neutron']['supercharge_multiplier'] = ship.supercharge_multiplier
         Context.router.route_params['Neutron']['range'] = ship.range
@@ -638,6 +634,15 @@ class UI():
         except:
             return [inp]
         return json.loads(results.content)
+
+    def query_indy(self, inp:str) -> list:
+        """ Autocompleter lookup against Indy's own system database """
+        try:
+            results:requests.Response = SESSION.get(INDY_SEARCH, params={'q': inp.strip()},
+                                                     headers={'User-Agent': Context.plugin_useragent}, timeout=3)
+            return [m['name'] for m in results.json().get('matches', [])]
+        except:
+            return [inp]
 
     @catch_exceptions
     def query_boxels(self, inp:str) -> list:

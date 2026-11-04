@@ -13,7 +13,7 @@ from timeout_session import new_session # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, TRUE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, INDY_ROUTE, TRUE
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -330,52 +330,25 @@ class Router():
 
         self.cancel_plot = False
         try:
-            limit:int = int(params.get('max_time', 20))
-            results:Response = SESSION.post(url, data=params,
-                                             headers={'User-Agent': Context.plugin_useragent,
-                                                      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-                                                      timeout=SPANSH_TIMEOUT)
+            if url == INDY_ROUTE:
+                resp:Response = SESSION.get(url, params=params, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+                data:dict = resp.json() if resp.status_code == 200 else {}
+                if self.cancel_plot: return
+                if not data.get('found'):
+                    self.plot_error(which, params, data.get('error') or resp)
+                    return
 
-            if results.status_code != 202:
-                self.plot_error(which, params, results)
-                return
-
-            tries = 0
-            route_response:Response|None = None
-            while tries < limit+1:
-                if config.shutting_down or self.cancel_plot: return # Quit
-                response:dict = json.loads(results.content)
-                job:str = response["job"]
-
-                results_url:str = f"{SPANSH_RESULTS}/{job}"
-                route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
-                if route_response.status_code != 202:
-                    Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
-                    break
-                tries += 1
-                sleep(1)
-
-            if not route_response or route_response.status_code != 200 or self.cancel_plot:
-                self.plot_error(which, params, route_response)
-                return
-
-            raw_result = json.loads(route_response.content)["result"]
-            if url in (SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE):
-                # Every "systems containing bodies" route (Road to Riches and its body_types-filtered
-                # variants, plus Exobiology) returns this same nested shape.
-                res:list = self._flatten_bodies_result(raw_result)
-            elif url == SPANSH_TRADE_ROUTE:
-                res:list = self._flatten_trade_result(raw_result)
-            elif url == SPANSH_FLEETCARRIER_ROUTE:
-                # distance == 0 marks bookkeeping rows -- the initial source, and each
-                # requested stop's leg-restart duplicate -- not real jumps. Every other row,
-                # including every intermediate hop of a long single-leg route, is a real jump.
-                res:list = [j for j in raw_result.get('jumps', []) if j.get('distance', 0) != 0]
+                hops:list = data.get('hops', [])
+                res:list = [{'system': h['name'], 'distance_jumped': h['jumpDist'], 'distance_left': h['remainingDist'],
+                             'jumps': h['plainJumps'], 'neutron_star': i + 1 < len(hops) and hops[i + 1]['boosted']}
+                            for i, h in enumerate(hops)]
             else:
-                res:list = raw_result.get('jumps', raw_result.get('system_jumps', []))
+                spansh:list|None = self._spansh_result(which, url, params)
+                if spansh is None: return
+                res = spansh
 
             if res == []:
-                Debug.logger.info(f"Spansh returned no results for {which}, {params}")
+                Debug.logger.info(f"No results for {which}, {params}")
                 self.plot_error(which, params, None)
                 return
 
@@ -435,6 +408,51 @@ class Router():
             self.plot_error(which, params, None)
 
 
+    def _spansh_result(self, which:str, url:str, params:dict) -> list|None:
+        """ Submit a Spansh job, poll it and flatten the result; None on failure or cancel """
+        limit:int = int(params.get('max_time', 20))
+        results:Response = SESSION.post(url, data=params,
+                                         headers={'User-Agent': Context.plugin_useragent,
+                                                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                                                  timeout=SPANSH_TIMEOUT)
+
+        if results.status_code != 202:
+            self.plot_error(which, params, results)
+            return None
+
+        tries = 0
+        route_response:Response|None = None
+        while tries < limit+1:
+            if config.shutting_down or self.cancel_plot: return None # Quit
+            response:dict = json.loads(results.content)
+            job:str = response["job"]
+
+            results_url:str = f"{SPANSH_RESULTS}/{job}"
+            route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+            if route_response.status_code != 202:
+                Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
+                break
+            tries += 1
+            sleep(1)
+
+        if not route_response or route_response.status_code != 200 or self.cancel_plot:
+            self.plot_error(which, params, route_response)
+            return None
+
+        raw_result = json.loads(route_response.content)["result"]
+        if url in (SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE):
+            # Every "systems containing bodies" route (Road to Riches and its body_types-filtered
+            # variants, plus Exobiology) returns this same nested shape.
+            return self._flatten_bodies_result(raw_result)
+        if url == SPANSH_TRADE_ROUTE:
+            return self._flatten_trade_result(raw_result)
+        if url == SPANSH_FLEETCARRIER_ROUTE:
+            # distance == 0 marks bookkeeping rows -- the initial source, and each
+            # requested stop's leg-restart duplicate -- not real jumps. Every other row,
+            # including every intermediate hop of a long single-leg route, is a real jump.
+            return [j for j in raw_result.get('jumps', []) if j.get('distance', 0) != 0]
+        return raw_result.get('jumps', raw_result.get('system_jumps', []))
+
     @catch_exceptions
     def plot_error(self, which:str, params:dict, response:Response|str|None) -> None:
         """ Parse the response from Spansh on a failed route query """
@@ -444,7 +462,7 @@ class Router():
         if response is None:
             err = errs["no_response"]
         if isinstance(response, str):
-            err = errs[response]
+            err = errs.get(response, response)
         if isinstance(response, Response) and response.status_code in [400, 500]:
             err = str(response.status_code)
             if response.content and "error" in json.loads(response.content).keys():

@@ -1,20 +1,25 @@
 # EDMC-NeutronDancer Changelog
 
-## v2.2.0 2026-11-??
+## v3.0.0 2026-11-??
+
+### New Features
+
+* Added Indestinated's IndyHost Neutron Plotter
+* Copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux (thanks dmarcuse)
+* Options to enable/disable copying to clipboard on FSD Jump and/or on Galaxy Map (thanks dmarcuse)
+* Option to automatically install pre-release versions (disabled by default)
+* Plugin reordering from th library
 
 ### Changes
 
-* Added workaround for galaxy map not creating a dashboard event on foot.
-* Added copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux (thanks dmarcuse).
-* Added option to enable/disabled copying to clipboard on FSD Jump and on Galaxy Map (thanks dmarcuse).
-* Added plugin reordering from th library
+* Implemented a workaround for galaxy map not creating a dashboard event on foot
 
 ### Bug Fixes
 
-* Fixed an autocompleter bug that was creating blank windows on game startup.
-* Fixed bug where EDMC window sometimes didn't grow to fit when form display changed.
-* Fixed missing next jump tooltip details.
-* Fixed bug where current system wasn't always added to the top of the source systems menu.
+* Fixed an autocompleter bug that was creating blank windows on game startup in some situations
+* Fixed bug where EDMC window sometimes didn't grow to fit when form display changed
+* Fixed missing next jump tooltip details
+* Fixed bug where current system wasn't always added to the top of the source systems menu
 
 ## v2.1.2 2026-10-06
 

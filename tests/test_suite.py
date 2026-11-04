@@ -1272,6 +1272,43 @@ class TestPlotMethods:
         assert harness.plugin.route.navroute['System2']['StarClass'] == 'M'
         assert harness.plugin.route.navroute['System3']['StarClass'] == ''
 
+    def test_indy_plot_creates_route(self, harness:TestHarness) -> None:
+        """ Indy hops become route rows; a hop is a neutron when the jump after it is boosted. """
+        global plotter_thread
+        plotter_thread = None
+
+        hop:dict = {'boosted': False, 'boostSource': '', 'mainStar': 'Neutron Star'}
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = {'found': True, 'hops': [
+            {**hop, 'name': 'Sol', 'jumpDist': 0, 'plainJumps': 0, 'remainingDist': 941.5, 'mainStar': 'G'},
+            {**hop, 'name': 'PSR A', 'jumpDist': 407.4, 'plainJumps': 7, 'remainingDist': 534.1},
+            {**hop, 'name': 'PSR B', 'jumpDist': 534.1, 'plainJumps': 6, 'remainingDist': 0, 'boosted': True}]}
+
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('Router.route_manager.SESSION.get', return_value=response) as get:
+                params:dict = {'start': 'Sol', 'dest': 'PSR B', 'laden': '60', 'neutron': 1, 'wd': 0, 'caspian': 0}
+                harness.plugin.router.plot_route('Indy', params)
+                assert plotter_thread is not None
+                harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
+
+        assert get.call_args.kwargs['params'] == params
+        route = harness.plugin.route
+        assert [r[route.colind('System Name')] for r in route.route] == ['Sol', 'PSR A', 'PSR B']
+        assert [r[route.colind('Jumps')] for r in route.route] == [0, 7, 6]
+        assert [route.navroute[s]['StarClass'] for s in ('Sol', 'PSR A', 'PSR B')] == ['', 'N', '']
+
+    def test_indy_autocomplete_uses_search(self, harness:TestHarness) -> None:
+        """ Indy's system entries look names up in Indy's own database. """
+        plotter = harness.plugin.ui.plotters['Indy']
+        assert plotter.src_ac.func == plotter.dest_ac.func == harness.plugin.ui.query_indy
+
+        response = Mock()
+        response.json.return_value = {'matches': [{'name': 'Sol', 'mainStar': 'G', 'neutron': False},
+                                                  {'name': 'Solati', 'mainStar': 'K', 'neutron': False}]}
+        with mocked_session_get([response]):
+            assert harness.plugin.ui.query_indy('Sol') == ['Sol', 'Solati']
+
     def test_plotter_success_creates_route_galaxy(self, harness:TestHarness) -> None:
         """Test that _plotter persists Galaxy params into route_params (not a stray galaxy_params attribute)."""
         global plotter_thread

@@ -8,9 +8,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by letting you plot a [Spansh](https://www.spansh.co.uk/plotter) Neutron or Galaxy route directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
-
-The original goal of this fork was support for the new 6x overcharge of the Caspian Explorer and a cleaner UI. It has grown beyond that into a significant rewrite.
+Neutron Dancer makes neutron jumping easier by letting you plot any of a variety of [Spansh](https://www.spansh.co.uk/plotter) routes, including the Galaxy route, directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
 
 ![Route View](https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984)
 
@@ -26,11 +24,11 @@ The original goal of this fork was support for the new 6x overcharge of the Casp
 - Route export makes it easy to save a route for later reuse.
 - Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications.
 - Tracks and reports statistics including jumps and distance per hour.
-- Single screen and VR support via
+- Support for:
   - [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display of routes and countdown timers.
   - Chat commands (`!nd next`, `!nd previous`, `!nd copy`)
   - [Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) for next waypoint, previous waypoint, and copy to clipboard operations.
-- Full EDMC theme support.
+- Fully EDMC theme compliant.
 - API for integration with other plugins.
 
 ## Installation
@@ -72,35 +70,41 @@ When you complete a route Neutron Dancer saves the source, destination, and ship
 
 ### Neutron Plotting
 
-This works like the Galaxy plotter but is simpler and produces less efficient routes.
+This works like the Galaxy plotter, is simpler and produces less efficient routes, but supports multi-hop routes.
 
-![Neutron Plotter](https://github.com/user-attachments/assets/fdc5f3f6-a904-476a-a6c6-1b7b8364ccd2)
+![Neutron Plotter](https://github.com/user-attachments/assets/c87533f8-6880-4f83-86a3-ca7cd9f2b3d9)
 
-## Road to Riches and Expressway to Exomastery
+### Indestinated's (IndyHost) Neutron Plotter
+
+An alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Blazingly fast, with White Dwarf support, but database can be less up to date.
+
+![Indeztinated's Neutron Plotter](https://github.com/user-attachments/assets/2c1273e2-c6d0-44e8-98aa-cedb5185db6c)
+
+### Road to Riches and Expressway to Exomastery
 
 **Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way.
 
 ![Expressway to Exomastery](https://github.com/user-attachments/assets/a577dce7-f8dd-4557-b479-ed68c02ccf00)
 
-## Trade Planner
+### Trade Planner
 
 Trade routes are fully available.
 
 ![Trade Planner](https://github.com/user-attachments/assets/d99e0ae4-bbc9-444b-859a-6997fdf8a604)
 
-## Tourist Route
+### Tourist Route
 
 Tourist routes are also supported.
 
 ![Touriste Route](https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3)
 
-## Fleet Carrier Router
+### Fleet Carrier Router
 
 This is the final supported Spansh route type.
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
 
-## Boxel Surveyor
+### Boxel Surveyor
 
 This is a different type of router that generates a list of systems within a boxel.
 

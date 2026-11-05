@@ -8,7 +8,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by letting you plot any of a variety of [Spansh](https://www.spansh.co.uk/plotter) routes, including the Galaxy route, directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by letting you plot any of a variety of [Spansh](https://www.spansh.co.uk/plotter) (and some non-Spansh) routes, including the Galaxy route, directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
 
 ![Route View](https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984)
 
@@ -49,6 +49,7 @@ Neutron Dancer supports direct route creation for:
 
 1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
+1. Indestinated's (IndyHost) Neutron Plotter
 1. Road to Riches
 1. Expressway to Exomastery
 1. Trade Planner

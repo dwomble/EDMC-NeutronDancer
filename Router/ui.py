@@ -105,10 +105,14 @@ class UI():
 
 
     @catch_exceptions
-    def show_plugin_update(self) -> None:
-        """ Display the update text if appropriate"""
-        if Context.updater.update_available == False or Context.updater.install_update == False or Context.updater.zip_downloaded == "":
-            return
+    def show_plugin_update(self, tries:int = 0) -> None:
+        """ Display the update text once the update zip has downloaded """
+        ready:bool = Context.updater.update_available and Context.updater.install_update and Context.updater.zip_downloaded != ""
+
+        # The check and download run in the background, so keep checking for a couple of minutes
+        if not ready and tries < 12:
+            self.frame.after(10000, self.show_plugin_update, tries + 1)
+        if not ready: return
 
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
         self.update = th.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')
@@ -127,17 +131,11 @@ class UI():
 
 
     @catch_exceptions
-    def show_notice(self, tries:int = 0) -> None:
-        """ Display a pending NOTICES.md entry, else the update message """
-        notice:str = (Context.notices.pending_notice if Context.notices else None) or ""
-        self.notice_update:bool = not notice and Context.updater.update_message != ""
-        if self.notice_update: notice = Context.updater.update_message
-
-        # Notice fetch and update download are async, so keep checking for a couple of minutes
-        if not notice and tries < 12:
-            self.frame.after(10000, self.show_notice, tries + 1)
-        if not notice: return
-
+    def show_notice(self) -> None:
+        """ Display pending NOTICES.md entry, if any """
+        if not Context.notices or not Context.notices.pending_notice:
+            return
+        notice:str = Context.notices.pending_notice
         w:int = min(max(len(l) for l in notice.split("\n")), 60)
         h:int = len(notice.replace("\n\n", "\n").split("\n"))
         self.notice:th.RichText = th.RichText(self.frame, width=w, height=h, markdown=notice, relief=tk.FLAT)
@@ -147,13 +145,10 @@ class UI():
     @catch_exceptions
     def dismiss_notice(self, tkEvent = None) -> None:
         """ Hide the notice on click and never show it again """
+        Context.notices.dismiss_notice()
         self.notice.grid_remove()
         self.notice.destroy()
         self.frame.update_idletasks()
-        if self.notice_update: return
-
-        Context.notices.dismiss_notice()
-        self.show_notice()
 
     def _update_item(self, which:str, type:str, value:str = "") -> None:
         """ Update items of the given type from which source to all other plot types """

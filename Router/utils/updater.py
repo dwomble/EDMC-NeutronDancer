@@ -53,7 +53,6 @@ class Updater():
         self.accept_prerelease:bool = False # Should pre-release versions be accepted?
 
         self.update_available:bool = False # Is there an update available?
-        self.update_message:str = "" # The update message
         self.install_update:bool = False # Should it be installed?
         self.update_version:Version = Version("0.0.0") # The update version number
         self.releasenotes:str = "" # The update release notes
@@ -177,8 +176,6 @@ class Updater():
             self.update_available = True
             self.install_update = True
             self.download_zip()
-            if self.zip_downloaded:
-                self.update_message = f"Version {self.update_version} will be installed on shutdown"
 
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)

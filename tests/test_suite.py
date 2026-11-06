@@ -2242,21 +2242,19 @@ class TestUIFunctions:
         assert not ui.notice.winfo_exists()
         assert harness.plugin.notices.pending_notice is None
 
-    def test_update_notice_after_standard(self, harness:TestHarness) -> None:
-        """ A standard notice shows first; the update message follows once it's dismissed. """
+    def test_update_label_waits_for_zip(self, harness:TestHarness) -> None:
+        """ The update label only appears once the update zip has downloaded. """
         ui = harness.plugin.ui
-        harness.plugin.notices.notice_id = 1
-        harness.plugin.notices.notice = "test notice body"
-        harness.plugin.updater.update_message = "Version 9.9.9 will be installed on shutdown"
+        updater = harness.plugin.updater
+        updater.update_available = True
+        updater.install_update = True
 
-        ui.show_notice()
-        assert "test notice body" in ui.notice.get("1.0", tk.END)
+        ui.show_plugin_update()
+        assert not hasattr(ui, "update")
 
-        ui.dismiss_notice()
-        assert "Version 9.9.9" in ui.notice.get("1.0", tk.END)
-
-        ui.dismiss_notice()
-        assert not ui.notice.winfo_exists()
+        updater.zip_downloaded = "update.zip"
+        ui.show_plugin_update(1)
+        assert ui.update.grid_info()
 
     def test_fetched_notice_displayed(self, harness:TestHarness) -> None:
         """ Ties the real fetch/parse path to the real UI, not just a directly-set notice. """

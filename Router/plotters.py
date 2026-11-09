@@ -139,7 +139,7 @@ class Plotter(ABC):
         """Create range entry widget."""
         range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
-        range_entry.grid(row=row, column=col, padx=5, pady=5)
+        range_entry.grid(row=row, column=col, padx=5, pady=(15,5), sticky=tk.W)
 
         th.Tooltip(range_entry, tts["range"])
 
@@ -361,6 +361,7 @@ class IndyPlotter(Plotter):
         route_fr.grid(row=row, column=col, columnspan=4, sticky=tk.W)
 
         col2_fr:th.Frame = th.Frame(plot_fr)
+
         self._create_range(col2_fr, 0, 0, str(params.get('laden', "32.0")), 13)
 
         self.boosts:dict = {k: tk.IntVar(value=params.get(k, d)) for k, d in (('neutron', 1), ('wd', 0))}

@@ -31,7 +31,7 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_title = TITLE
     Context.plugin_dir = Path(plugin_dir).resolve()
 
-    version:Version = read_version_file(str(Context.plugin_dir), "0.0.0")
+    version:Version = read_version_file(str(Context.plugin_dir), "0.0.0-dev")
     Context.plugin_version = version
     VERSION:str = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'

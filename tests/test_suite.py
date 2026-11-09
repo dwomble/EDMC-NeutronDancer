@@ -2242,6 +2242,20 @@ class TestUIFunctions:
         assert not ui.notice.winfo_exists()
         assert harness.plugin.notices.pending_notice is None
 
+    def test_update_label_waits_for_zip(self, harness:TestHarness) -> None:
+        """ The update label only appears once the update zip has downloaded. """
+        ui = harness.plugin.ui
+        updater = harness.plugin.updater
+        updater.update_available = True
+        updater.install_update = True
+
+        ui.show_plugin_update()
+        assert not hasattr(ui, "update")
+
+        updater.zip_downloaded = "update.zip"
+        ui.show_plugin_update(1)
+        assert ui.update.grid_info()
+
     def test_fetched_notice_displayed(self, harness:TestHarness) -> None:
         """ Ties the real fetch/parse path to the real UI, not just a directly-set notice. """
         previous:bool = mock_requests.live_requests()

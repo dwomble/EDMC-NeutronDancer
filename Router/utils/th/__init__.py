@@ -263,7 +263,6 @@ class Button(Base):
         btn:ttk.Button|tk.Button = tk.Button(master, **kw) if 'cursor' in kw else ttk.Button(master, **kw)
 
         alt:tk.Button = tk.Button(master, **_strip_name(kw))
-
         super().__init__(btn, alt)
 
         # ttk.Button width is characters. tk.Button width is pixels.
@@ -382,7 +381,10 @@ class Listbox(Base):
 class Checkbutton(Base):
     """ A themed checkbutton that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
-        super().__init__(tk.Checkbutton(master, **kw), tk.Checkbutton(master, **_strip_name(kw)))
+        tkcb:tk.Checkbutton = tk.Checkbutton(master, **_strip_name(kw))
+        tkcb.configure(foreground=config.get_str('dark_text'), highlightthickness=0, activebackground='black', highlightbackground='black',
+                       selectcolor='black', border=0, borderwidth=0)
+        super().__init__(ttk.Checkbutton(master, **kw), tkcb)
 
 class Scale(Base):
     """ A themed scale that can switch between light and dark mode. """
@@ -405,6 +407,7 @@ class Spinbox(PlaceholderMixin, Base):
         sb1:ttk.Spinbox = ttk.Spinbox(master, **kw, background=background, foreground='black')
         sb2:tk.Spinbox = tk.Spinbox(master, **_strip_name(kw), border=0, borderwidth=1, highlightthickness=0)
         sb2.configure(background='black', foreground=config.get_str('dark_text'), highlightbackground='black',
+                      activebackground='black', selectbackground='gray25', selectforeground=config.get_str('dark_text'),
                       buttonbackground='black', fg=config.get_str('dark_text'), insertbackground=config.get_str('dark_text'))
         super().__init__(sb1, sb2)
 

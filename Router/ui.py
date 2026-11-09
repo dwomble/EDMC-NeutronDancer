@@ -105,10 +105,14 @@ class UI():
 
 
     @catch_exceptions
-    def show_plugin_update(self) -> None:
-        """ Display the update text if appropriate"""
-        if Context.updater.update_available == False or Context.updater.install_update == False or Context.updater.zip_downloaded == "":
-            return
+    def show_plugin_update(self, tries:int = 0) -> None:
+        """ Display the update text once the update zip has downloaded """
+        ready:bool = Context.updater.update_available and Context.updater.install_update and Context.updater.zip_downloaded != ""
+
+        # The check and download run in the background, so keep checking for a couple of minutes
+        if not ready and tries < 12:
+            self.frame.after(10000, self.show_plugin_update, tries + 1)
+        if not ready: return
 
         text:str = lbls['update_available'].format(v=str(Context.updater.update_version))
         self.update = th.Label(self.frame, text=text, anchor=tk.NW, justify=tk.LEFT, foreground='blue', font=FONT, cursor='hand2')

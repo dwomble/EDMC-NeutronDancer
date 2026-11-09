@@ -24,7 +24,10 @@ from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
 import Router.api as api
 
+VERSION:str = "0.0.0-dev" # For the plugin browser
+
 def plugin_start3(plugin_dir: str) -> str:
+    global VERSION
     Debug(plugin_dir, True)
 
     Context.plugin_name = NAME
@@ -33,7 +36,7 @@ def plugin_start3(plugin_dir: str) -> str:
 
     version:Version = read_version_file(str(Context.plugin_dir), "0.0.0-dev")
     Context.plugin_version = version
-    VERSION:str = version.__str__() # For the plugin browser
+    VERSION = version.__str__() # For the plugin browser
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
     Context.updater.accept_prerelease = config.get_bool(f"{NAME}_install_prereleases", False)

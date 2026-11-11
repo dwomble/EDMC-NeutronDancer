@@ -13,6 +13,8 @@ class Step:
     dist:float
     fuel:float      # fuel left after landing, and after any refuel
     refuel:bool = False
+    pos:tuple = ()
+    scoop:bool = False
 
 class Stuck(Exception):
     """The fill-in cannot continue from here."""
@@ -68,7 +70,7 @@ def fill(ship:Ship, neu:Index, sc:Index, path:list, src:tuple, dest:tuple, fuel:
         # Scooping takes time, so only stop to refuel once the tank is below half, then fill it
         topped:bool = scoopable and fuel < ship.tank_size / 2
         if topped: fuel = ship.tank_size
-        steps.append(Step(nm, kind, dist, fuel, topped))
+        steps.append(Step(nm, kind, dist, fuel, topped, q, scoopable))
         here = q
 
     try:

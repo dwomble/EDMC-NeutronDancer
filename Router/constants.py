@@ -30,6 +30,8 @@ SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, use
 SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 SPANSH_TIMEOUT:int = 30
 
+LOCAL_ROUTE:str = "local"  # route type plotted from the data folder's indexes instead of a web API
+
 INDY_API:str = "https://neutron.indyhost.org/api"
 INDY_ROUTE:str = f"{INDY_API}/route"
 INDY_SEARCH:str = f"{INDY_API}/search"
@@ -304,6 +306,7 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
+    "no_local_data": "Local route data not found in the data folder",
     "ship_not_found": "Ship not found in shipyard",
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",

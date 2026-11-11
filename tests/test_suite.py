@@ -884,6 +884,17 @@ class TestChatCommands:
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == ''
 
+def _synthetic_dump(folder:Path) -> Path:
+    """ A gzipped Spansh-style dump: neutrons every 200 Ly along z, with K stars beside them every 40 Ly. """
+    import gzip
+    rows:list = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
+    rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
+    dump:Path = folder / 'systems.json.gz'
+    with gzip.open(dump, 'wt') as f:
+        f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in rows) + '\n]\n')
+    return dump
+
+
 class TestLocalRouting:
     """ Offline neutron routing with fuel. """
 
@@ -901,14 +912,7 @@ class TestLocalRouting:
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_route_refuels_on_way(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Builds, saves and loads both indexes, then plots and fills a route that must stop to scoop. """
-        import gzip
-        rows:list = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
-        rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
-        dump:Path = tmp_path / 'systems.json.gz'
-        with gzip.open(dump, 'wt') as f:
-            f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in rows) + '\n]\n')
-
-        for kind, idx in build(dump).items(): idx.save(tmp_path / kind)
+        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / kind)
         neu:Index = Index.load(tmp_path / 'neutron')
         sc:Index = Index.load(tmp_path / 'kgbfoam')
         assert (len(neu), len(sc)) == (16, 76)
@@ -922,6 +926,32 @@ class TestLocalRouting:
         assert not [s for s in steps if s.kind == 'fail']
         assert steps[-1].name == '<dest>'
         assert any(s.refuel for s in steps)
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
+        """ The Local route type looks up the destination on Spansh and plots from the data folder's indexes. """
+        global plotter_thread
+        plotter_thread = None
+        monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
+        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / 'data' / kind)
+
+        harness.play_sequence('loadout')
+        router = harness.plugin.router
+        router.system, router.star_pos, router.local = 'Sol', (0.0, 0.0, 0.0), None
+
+        lookup = Mock(status_code=200)
+        lookup.json.return_value = {'results': [{'name': 'Far Away', 'x': 0, 'y': 0, 'z': 3000}]}
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            with patch('Router.route_manager.SESSION.get', return_value=lookup):
+                router.plot_route('Local', {'from': 'Sol', 'to': 'far away'})
+                assert plotter_thread is not None
+                harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
+
+        route = harness.plugin.route
+        names:list = [r[route.colind('System Name')] for r in route.route]
+        assert (names[0], names[-1]) == ('Sol', 'Far Away')
+        assert route.colind('Neutron') is not None
+        assert any(r[route.colind('Refuel')] for r in route.route)
 
     @pytest.mark.manual_only
     @pytest.mark.slow
@@ -958,6 +988,21 @@ class TestLocalRouting:
                   f"{time.time() - t:.1f}s {fails}")
             for s in steps[-4:] if fails else []: print(f"    {s.kind:5} {s.dist:6.1f} Ly fuel {s.fuel:5.1f}  {s.name}")
             assert not fails
+
+        # The same plot through the Local route type, with Spansh's live lookup for the destination
+        global plotter_thread
+        plotter_thread = None
+        router = harness.plugin.router
+        router.system, router.star_pos, router.local = 'Sol', (0.0, 0.0, 0.0), (planner, sc)
+        t = time.time()
+        with patch('Router.route_manager.Thread', side_effect=capture_thread):
+            router.plot_route('Local', {'from': 'Sol', 'to': 'colonia'})
+            assert plotter_thread is not None
+            harness.wait_for_thread(plotter_thread, 120)
+
+        route = harness.plugin.route
+        print(f"Local route type: {len(route.route)} rows, {route.total_jumps()} jumps, headers {route.hdrs}, {time.time() - t:.1f}s")
+        assert route.route[-1][route.colind('System Name')] == 'Colonia'
 
 
 class TestShipyardSwap:

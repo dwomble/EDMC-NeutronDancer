@@ -80,6 +80,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 @catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     if Context.router == None: return
+    if state.get('StarPos'): Context.router.star_pos = tuple(state['StarPos'])
 
     match entry['event']:
         case 'Startup' | 'StartUp':

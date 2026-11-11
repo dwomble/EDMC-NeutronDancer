@@ -13,7 +13,7 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, FLEET_CARRIER_STATS
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
 from .context import Context
 from .route import Route
 from .ship import Ship
@@ -397,6 +397,38 @@ class IndyPlotter(Plotter):
             return
 
         Context.router.plot_route('Indy', params)
+        Context.ui._show_busy_gui(True)
+
+
+class LocalPlotter(Plotter):
+    """Plotter for offline neutron routes from the data folder's indexes, using the current ship."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the local plotter frame: range, tank and fuel all come from the current ship."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        self._plot_switcher(plot_fr, 0, 0)
+
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0)
+        self._create_dest(route_fr, 1, 0)
+        route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
+
+        self._create_buttons(plot_fr, 2, 0)
+        self.frame = plot_fr
+        return plot_fr
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Perform local neutron route plotting."""
+        if not self.frame or not self.src_ac or not self.dest_ac: return
+
+        Context.ui.hide_error()
+        params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac)}
+        for ac, v in ((self.src_ac, params['from']), (self.dest_ac, params['to'])):
+            if not v: ac.set_error_style()
+        if not params['from'] or not params['to']: return
+
+        Context.router.plot_route('Local', params)
         Context.ui._show_busy_gui(True)
 
 
@@ -1136,6 +1168,9 @@ PLOTTER_SPECS:dict = {
     ),
     'Indy': PlotterSpec(
         label='Indestinate\'s Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
+    ),
+    'Local': PlotterSpec(
+        label='Local Neutron Plotter', plotter_class=LocalPlotter, url=LOCAL_ROUTE
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

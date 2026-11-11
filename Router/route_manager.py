@@ -1,4 +1,5 @@
 import json
+import math
 import re
 import requests
 from requests import Response
@@ -13,11 +14,14 @@ from timeout_session import new_session # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, INDY_ROUTE, TRUE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE
 from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
+from .local.index import Index
+from .local.search import Planner
+from .local.fill import fill
 from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
@@ -37,6 +41,7 @@ class Router():
 
         # Current location data and settings
         self.system:str = ""
+        self.star_pos:tuple|None = None # current system's coordinates, from EDMC's journal state
         self.src:str = ''
         self.dest:str = ''
 
@@ -44,6 +49,9 @@ class Router():
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
+
+        # Local routing indexes as (Planner, kgbfoam Index), loaded on first use since they're large
+        self.local:tuple|None = None
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -342,6 +350,10 @@ class Router():
                 res:list = [{'system': h['name'], 'distance_jumped': h['jumpDist'], 'distance_left': h['remainingDist'],
                              'jumps': h['plainJumps'], 'neutron_star': i + 1 < len(hops) and hops[i + 1]['boosted']}
                             for i, h in enumerate(hops)]
+            elif url == LOCAL_ROUTE:
+                local:list|None = self._local_result(which, params)
+                if local is None: return
+                res = local
             else:
                 spansh:list|None = self._spansh_result(which, url, params)
                 if spansh is None: return
@@ -406,6 +418,57 @@ class Router():
         except Exception as e:
             Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
             self.plot_error(which, params, None)
+
+
+    def _coords(self, name:str) -> tuple|None:
+        """ Spansh's exact name and coordinates for a system, or None if it isn't found """
+        if name.casefold() == self.system.casefold() and self.star_pos: return self.system, self.star_pos
+        resp:Response = SESSION.get(SPANSH_SEARCH_SYSTEMS, params={'q': name}, headers={'User-Agent': Context.plugin_useragent},
+                                    timeout=SPANSH_TIMEOUT)
+        hits:list = resp.json().get('results', []) if resp.status_code == 200 else []
+        hit:dict|None = next((h for h in hits if h.get('name', '').casefold() == name.casefold()), None)
+        return (hit['name'], (hit['x'], hit['y'], hit['z'])) if hit else None
+
+
+    def _local_result(self, which:str, params:dict) -> list|None:
+        """ Plot from the local indexes with the current ship, as Spansh-style rows; None once an error is shown """
+        if self.ship is None:
+            self.plot_error(which, params, 'no_ship')
+            return None
+
+        if self.local is None:
+            folder:Path = Path(Context.plugin_dir) / DATA_DIR
+            if not all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam')):
+                self.plot_error(which, params, 'no_local_data')
+                return None
+            self.local = (Planner(Index.load(folder / 'neutron')), Index.load(folder / 'kgbfoam'))
+        planner, kgb = self.local
+
+        src:tuple|None = self._coords(params['from'])
+        dest:tuple|None = self._coords(params['to'])
+        if src is None or dest is None:
+            self.plot_error(which, params, 'no_system_id')
+            return None
+        if self.cancel_plot: return None
+
+        # Plan at a full tank, the heaviest the ship gets, so the planned range is never too optimistic
+        ship:Ship = self.ship
+        path, _ = planner.route(src[1], dest[1], ship.jump_range(ship.tank_size, self.cargo), ship.supercharge_multiplier)
+        steps:list = fill(ship, planner.neu, kgb, path, src[1], dest[1], ship.tank_size, self.cargo)
+        if steps and steps[-1].kind == 'fail':
+            self.plot_error(which, params, f"Local route stopped after {len(steps) - 1} jumps: {steps[-1].name}")
+            return None
+
+        # Spansh flags a neutron on the system you boost from, which is the one before each boosted jump
+        rows:list = [{'system': src[0], 'distance_jumped': 0, 'jumps': 0, 'distance_left': round(math.dist(src[1], dest[1]), 2),
+                      'neutron_star': bool(steps) and steps[0].kind == 'boost', 'is_scoopable': False, 'must_refuel': False,
+                      'fuel_in_tank': round(ship.tank_size, 2)}]
+        for i, s in enumerate(steps):
+            rows.append({'system': dest[0] if s.name == '<dest>' else s.name, 'distance_jumped': round(s.dist, 2), 'jumps': 1,
+                         'distance_left': round(math.dist(s.pos, dest[1]), 2),
+                         'neutron_star': i + 1 < len(steps) and steps[i + 1].kind == 'boost',
+                         'is_scoopable': s.scoop, 'must_refuel': s.refuel, 'fuel_in_tank': round(s.fuel, 2)})
+        return rows
 
 
     def _spansh_result(self, which:str, url:str, params:dict) -> list|None:

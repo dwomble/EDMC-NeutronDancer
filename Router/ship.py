@@ -94,12 +94,28 @@ class Ship:
     def get_range(self, cargo:int = 0) -> float:
         """ Return the range of this ship with a given quantity of cargo """
         try:
-            return round((self.optimal_mass / (self.base_mass + self.tank_size + cargo)) * \
-                                (self.max_fuel_per_jump / self.fuel_multiplier) ** \
-                                (1 / self.fuel_power) + \
-                                self.range_boost, 2)
+            return round(self.jump_range(self.tank_size, cargo), 2)
         except Exception:
             return 32.0
+
+
+    def jump_range(self, fuel:float, cargo:float = 0) -> float:
+        """ Longest unboosted jump with this much fuel and cargo aboard """
+        mass:float = self.base_mass + fuel + cargo
+        return self.optimal_mass / mass * (self.max_fuel_per_jump / self.fuel_multiplier) ** (1 / self.fuel_power) + self.range_boost
+
+
+    def fuel_cost(self, dist:float, fuel:float, cargo:float = 0, charged:bool = False) -> float:
+        """ Fuel used by one jump, or infinity if it's out of reach """
+        reach:float = dist / self.supercharge_multiplier if charged else dist
+        top:float = self.jump_range(fuel, cargo)
+        if reach > top: return float('inf')
+
+        # A Guardian booster's fixed range shrinks the distance the fuel equation sees
+        scale:float = 1 - self.range_boost / top if self.range_boost else 1.0
+        mass:float = self.base_mass + fuel + cargo
+        used:float = min(self.max_fuel_per_jump, self.fuel_multiplier * (reach * mass * scale / self.optimal_mass) ** self.fuel_power)
+        return used if used <= fuel else float('inf')
 
 
     def __repr__(self) -> str:

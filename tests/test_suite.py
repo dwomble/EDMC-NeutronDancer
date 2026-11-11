@@ -34,6 +34,9 @@ from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
 from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
+from Router.local.index import Index, build
+from Router.local.search import Planner
+from Router.local.fill import fill
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -880,6 +883,82 @@ class TestChatCommands:
         harness.fire_event(events[3])
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == ''
+
+class TestLocalRouting:
+    """ Offline neutron routing with fuel. """
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_fuel_matches_journal(self, harness:TestHarness) -> None:
+        """ Range reproduces the journal's MaxJumpRange; boosted fuel is distance over the multiplier. """
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        full:float = ship.max_fuel_per_jump - ship.internal_tank_size
+
+        assert abs(ship.jump_range(full) - ship.loadout['MaxJumpRange']) < 0.01
+        assert ship.fuel_cost(ship.jump_range(20) * 0.999, 20) == pytest.approx(ship.max_fuel_per_jump, rel=0.01)
+        assert ship.fuel_cost(200, 20, charged=True) == ship.fuel_cost(200 / ship.supercharge_multiplier, 20)
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_route_refuels_on_way(self, harness:TestHarness, tmp_path:Path) -> None:
+        """ Builds, saves and loads both indexes, then plots and fills a route that must stop to scoop. """
+        import gzip
+        rows:list = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
+        rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
+        dump:Path = tmp_path / 'systems.json.gz'
+        with gzip.open(dump, 'wt') as f:
+            f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in rows) + '\n]\n')
+
+        for kind, idx in build(dump).items(): idx.save(tmp_path / kind)
+        neu:Index = Index.load(tmp_path / 'neutron')
+        sc:Index = Index.load(tmp_path / 'kgbfoam')
+        assert (len(neu), len(sc)) == (16, 76)
+
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        src, dest = (0.0, 0.0, 0.0), (0.0, 0.0, 3000.0)
+        path, _ = Planner(neu).route(src, dest, ship.jump_range(ship.tank_size))
+        steps:list = fill(ship, neu, sc, path, src, dest, ship.tank_size)
+
+        assert not [s for s in steps if s.kind == 'fail']
+        assert steps[-1].name == '<dest>'
+        assert any(s.refuel for s in steps)
+
+    @pytest.mark.manual_only
+    @pytest.mark.slow
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_real_data_routes(self, harness:TestHarness) -> None:
+        """ Plots three long routes from the indexes in $ND_LOCAL_DATA or data, building them from a dump if missing. """
+        import time
+        folder:Path = Path(os.environ.get('ND_LOCAL_DATA', Path(__file__).parent.parent / 'data'))
+        if not (folder / 'kgbfoam' / 'meta.json').exists() and not (folder / 'systems.json.gz').exists():
+            pytest.skip(f'no indexes or systems.json.gz in {folder}')
+
+        if not (folder / 'kgbfoam' / 'meta.json').exists():
+            t:float = time.time()
+            for kind, idx in build(folder / 'systems.json.gz').items(): idx.save(folder / kind)
+            print(f"\nbuilt indexes in {time.time() - t:.0f}s")
+
+        neu:Index = Index.load(folder / 'neutron')
+        sc:Index = Index.load(folder / 'kgbfoam')
+        planner:Planner = Planner(neu)
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        rng:float = ship.jump_range(ship.tank_size)
+        print(f"\n{len(neu):,} neutrons, {len(sc):,} scoopable; {ship.name} {rng:.2f} Ly, tank {ship.tank_size} t")
+
+        dests:dict = {'Colonia': (-9530.5, -910.28125, 19808.125), 'Sagittarius A*': (25.21875, -20.90625, 25899.96875),
+                      'Beagle Point': (-1111.5625, -134.21875, 65269.75)}
+        for dest, pos in dests.items():
+            t = time.time()
+            path, est = planner.route((0.0, 0.0, 0.0), pos, rng, ship.supercharge_multiplier)
+            steps:list = fill(ship, neu, sc, path, (0.0, 0.0, 0.0), pos, ship.tank_size)
+            fails:list = [s.name for s in steps if s.kind == 'fail']
+            print(f"{dest:15} est {est}, real {len(steps) - len(fails)} jumps, {sum(s.kind == 'boost' for s in steps)} boosted, "
+                  f"{sum(s.refuel for s in steps)} refuels, min fuel {min(s.fuel for s in steps):.1f} t, "
+                  f"{time.time() - t:.1f}s {fails}")
+            for s in steps[-4:] if fails else []: print(f"    {s.kind:5} {s.dist:6.1f} Ly fuel {s.fuel:5.1f}  {s.name}")
+            assert not fails
+
 
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""

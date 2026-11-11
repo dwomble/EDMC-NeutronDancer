@@ -1135,7 +1135,7 @@ PLOTTER_SPECS:dict = {
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
     ),
     'Indy': PlotterSpec(
-        label='Indestinated\'s Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
+        label='Indestinate\'s Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

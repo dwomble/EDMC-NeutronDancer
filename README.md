@@ -49,7 +49,7 @@ Neutron Dancer supports direct route creation for:
 
 1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
-1. Indestinated's (IndyHost) Neutron Plotter
+1. Indestinate's (IndyHost) Neutron Plotter
 1. Road to Riches
 1. Expressway to Exomastery
 1. Trade Planner
@@ -75,9 +75,9 @@ This works like the Galaxy plotter, is simpler and produces less efficient route
 
 ![Neutron Plotter](https://github.com/user-attachments/assets/c87533f8-6880-4f83-86a3-ca7cd9f2b3d9)
 
-### Indestinated's (IndyHost) Neutron Plotter
+### Indestinate's (IndyHost) Neutron Plotter
 
-An alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Blazingly fast, with White Dwarf support, but database can be less up to date.
+An alternative Neutron Plotter written by **Indestinate** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Blazingly fast, with White Dwarf support, but database can be less up to date.
 
 ![Indeztinated's Neutron Plotter](https://github.com/user-attachments/assets/2c1273e2-c6d0-44e8-98aa-cedb5185db6c)
 

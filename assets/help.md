@@ -72,11 +72,11 @@ This is the simple Spansh neutron route plotter that supports multiple waypoints
 
 - Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
 
-## Indestinated's (IndyHost) Neutron Plotter
+## Indestinate's (IndyHost) Neutron Plotter
 
-This is an alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Its key advantages are speed and White Dwarf boost support. Disadvantages are that it doesn't offer efficiency configuration and is only point to point.
+This is an alternative Neutron Plotter written by **Indestinate** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Its key advantages are speed and White Dwarf boost support. Disadvantages are that it doesn't offer efficiency configuration and is only point to point.
 
-![Indestinated's Neutron Plotter](https://github.com/user-attachments/assets/80e2a9ad-350d-4c89-b8e2-5792264114a4)
+![Indestinate's Neutron Plotter](https://github.com/user-attachments/assets/80e2a9ad-350d-4c89-b8e2-5792264114a4)
 
 - *Neutron boosts* indicates if Neutron boosts should be used.
 

@@ -4,7 +4,7 @@
 
 ### New Features
 
-* Added Indestinated's IndyHost Neutron Plotter
+* Added Indestinate's IndyHost Neutron Plotter
 * Copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux (thanks dmarcuse)
 * Options to enable/disable copying to clipboard on FSD Jump and/or on Galaxy Map (thanks dmarcuse)
 * Option to automatically install pre-release versions (disabled by default)

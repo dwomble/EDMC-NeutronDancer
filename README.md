@@ -193,6 +193,8 @@ Integrates with the [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
+Also thank you to Indestinate for his superfast [Neutron Plotter](https://neutron.indyhost.org/).
+
 This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.
 
 ## Suggestions

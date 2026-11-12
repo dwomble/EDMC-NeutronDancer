@@ -154,7 +154,7 @@ def make_loadout(state:dict) -> dict:
 
     # Add any missing values that we can
     if loadout:
-        for f in ['UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ]:
+        for f in ('UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ):
             if f not in loadout:
                 loadout[f] = state.get(f)
 

@@ -1,5 +1,6 @@
 import heapq, math
 from dataclasses import dataclass
+from operator import itemgetter
 
 from ..ship import Ship
 from .index import Index, Combined
@@ -127,7 +128,7 @@ class Planner:
 
             near:list = [h for h in self.sc.near(self.here, self.plain) if h[1] > 1]
             if not near: continue
-            s:int = min(near, key=lambda h: h[1])[0]
+            s:int = min(near, key=itemgetter(1))[0]
             try:
                 self._jump_to(self.sc.pos(s), self.sc.name(s), self.sc.id64(s), 'plain', False, True, True)
                 return True
@@ -163,7 +164,7 @@ class Planner:
                 res = self._search(WEIGHTS[-1] * 2, 0, dense)
             if res: found.append(res)
 
-        path, self.found = min(found, key=lambda r: r[1])
+        path, self.found = min(found, key=itemgetter(1))
         return path
 
     def _search(self, w:float, limit:int, dense:bool) -> tuple|None:

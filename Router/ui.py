@@ -103,8 +103,8 @@ class UI():
             self.show_frame(Context.router.last_plot)
 
         # Wait a while before deciding if we should show the update text
-        parent.after(30000, lambda: self.show_plugin_update())
-        parent.after(15000, lambda: self.show_notice())
+        parent.after(30000, self.show_plugin_update)
+        parent.after(15000, self.show_notice)
 
 
     @catch_exceptions
@@ -296,7 +296,6 @@ class UI():
         """ On close save our geometry """
         Context.router.window_geometries['help'] = self.help.winfo_geometry()
         self.help.destroy()
-        return
 
     @catch_exceptions
     def show_menu(self, e, which:str='Neutron') -> str:
@@ -441,7 +440,7 @@ class UI():
         fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
-        self.export_route_btn:th.Button = th.Button(fr2, text=btns["export_route"], command=lambda: self._export_route())
+        self.export_route_btn:th.Button = th.Button(fr2, text=btns["export_route"], command=self._export_route)
         self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -450,7 +449,7 @@ class UI():
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=lambda: self.clear_route())
+        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=self.clear_route)
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         return route_fr
@@ -488,7 +487,6 @@ class UI():
 
                 for p in self.plotters.values():
                     if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
-                return
 
 
     @catch_exceptions

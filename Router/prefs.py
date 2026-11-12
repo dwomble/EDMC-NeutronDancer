@@ -117,7 +117,6 @@ class Prefs:
             size:int = Context.router.data.size()
             if size and messagebox.askyesno(cnf['options'], cnf['local_delete'].format(s=size / 1e9), parent=self.plugin_frame):
                 Context.router.data.delete()
-        return
 
 
     def _load_prefs(self) -> None:

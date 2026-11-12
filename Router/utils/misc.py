@@ -45,7 +45,7 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
     if parent == None: return
 
     # Non-linux is easy.
-    if sys.platform not in ['linux', 'linux2']:
+    if sys.platform not in ('linux', 'linux2'):
         # Use the native clipboard method
         parent.clipboard_clear()
         parent.clipboard_append(text)
@@ -120,13 +120,13 @@ def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
         value:int|float|str|bool = val
         if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
         if isinstance(value, bool): type = 'bool'
-        if isinstance(value, int) or isinstance(value, float): type = 'num'
+        if isinstance(value, int | float): type = 'num'
 
     # Fixed is left entirely alone
     if type == 'fixed': return str(value) + units
 
     # Empty, zero or false we return the default so the display isn't full of "No" and "0" etc.
-    if value in [None, False, 'False', 'false', 'NO', 'No', 'no', 0, '0', '', ' ', 'Null', 'null']: return default
+    if value in (None, False, 'False', 'false', 'NO', 'No', 'no', 0, '0', '', ' ', 'Null', 'null'): return default
 
     ret:str = ""
     match type:

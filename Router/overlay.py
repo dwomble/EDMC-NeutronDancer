@@ -256,7 +256,7 @@ class Overlay():
                 args['fill'] = '#00000000'
                 args['w'] = c.get('width', 100)
                 args['h'] = c.get('height', 12)
-                if fr.visible == True and fr.enabled == True:
+                if fr.visible == fr.enabled == True:
                     overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
 
@@ -267,7 +267,7 @@ class Overlay():
                 argsb['fill'] = c.get('colour', fr.text_colour)
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
                 argsb['h'] = c.get('height', 12)
-                if fr.visible == True and fr.enabled == True:
+                if fr.visible == fr.enabled == True:
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
                 y += 20
@@ -277,7 +277,7 @@ class Overlay():
             args['text'] = c.get('text', '')
             args['color'] = c.get('colour', fr.text_colour)
             args['size'] = c.get('size', 'normal')
-            if fr.visible == True and fr.enabled == True:
+            if fr.visible == fr.enabled == True:
                 overlay.send_message(**args)
             self.msgs[frame][args['msgid']] = args
             y += 25 if args['size'] == 'large' else 20

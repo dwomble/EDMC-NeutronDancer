@@ -188,12 +188,12 @@ class Router():
 
                 Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
-                Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
+                Context.ui.frame.after((rem.seconds + 2) * 1000, self.jump_complete)
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
                 Context.overlay.display_carrier('Cooldown', 60)
-                Context.ui.frame.after(60000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(60000, self.cooldown_complete)
                 api.emit_event(carrier=True, clear=True)
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
@@ -214,7 +214,7 @@ class Router():
                     return
 
                 self.carrier_state = CarrierStates.Cooldown
-                Context.ui.frame.after(delta.microseconds, lambda: self.cooldown_complete())
+                Context.ui.frame.after(delta.microseconds, self.cooldown_complete)
                 Context.overlay.display_carrier('Cooldown', delta.seconds)
 
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
@@ -249,7 +249,7 @@ class Router():
             Context.route.update_route(0, self.carrier_location)
             Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
-        Context.ui.frame.after(300000, lambda: self.cooldown_complete())
+        Context.ui.frame.after(300000, self.cooldown_complete)
         Context.overlay.display_carrier('Cooldown', 300)
 
 
@@ -377,7 +377,7 @@ class Router():
                         cols.append(k)
 
             rte:list = []
-            for i, waypoint in enumerate(res):
+            for waypoint in res:
                 r:list = []
                 for c in cols:
                     if re.match(r"^(\d+)$", str(waypoint.get(c, ''))):
@@ -550,7 +550,7 @@ class Router():
             err = errs["no_response"]
         if isinstance(response, str):
             err = errs.get(response, response)
-        if isinstance(response, Response) and response.status_code in [400, 500]:
+        if isinstance(response, Response) and response.status_code in (400, 500):
             err = str(response.status_code)
             if response.content and "error" in json.loads(response.content).keys():
                 Debug.logger.info(f"Server response: {response.json()}")
@@ -558,7 +558,6 @@ class Router():
 
         Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
         Context.ui.show_error(err)
-        return
 
     def clear_route(self) -> None:
         """ Clear the current route """

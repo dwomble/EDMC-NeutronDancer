@@ -81,7 +81,7 @@ class CSV:
                     if row in (None, "", []): continue
                     for col in hdrs:
                         if col not in row: continue
-                        if col in ["body_name", "body_subtype"]:
+                        if col in ("body_name", "body_subtype"):
                             r.append(ast.literal_eval(row[col]))
                             continue
                         if re.match(r"^(\d+)$", str(row[col])):

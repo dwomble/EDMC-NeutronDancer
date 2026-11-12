@@ -97,7 +97,7 @@ class Plotter(ABC):
             th.Tooltip(rb, tts['remove_hop'])
             rb.grid(row=row, column=col+4, padx=2, pady=2)
 
-        if add_cmd is None and remove_cmd is None: # blank space to maintain alignment
+        if add_cmd is remove_cmd is None: # blank space to maintain alignment
             sp:th.Frame = th.Frame(parent, width=spwidth, height=1)
             sp.grid_propagate(False)
             sp.grid(row=row, column=col+4, padx=2, pady=2)
@@ -224,7 +224,7 @@ class Plotter(ABC):
         self.routedd.grid(row=0, column=1, padx=5, pady=5)
 
         #r3:th.Button = th.Button(sfr, image=Context.ui.help_img, cursor="hand2", command=lambda: Context.ui._show_help())
-        r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=lambda: Context.ui._show_help())
+        r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=Context.ui._show_help)
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
@@ -245,7 +245,7 @@ class Plotter(ABC):
         btn_frame:th.Frame = self.btn_frame
 
         row = 0; col = 0
-        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: Context.ui.import_route())
+        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=Context.ui.import_route)
         self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -858,9 +858,9 @@ class TradePlotter(Plotter):
         # /api/trade/route call will error out on a bad system/station combo regardless.
         params["system"], _, params["station"] = station.partition(" / ")
 
-        for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
+        for entry_name, param_name in (("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
                                         ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),
-                                        ("max_distance_entry", "max_system_distance")]:
+                                        ("max_distance_entry", "max_system_distance")):
             entry = self.frame.nametowidget(entry_name)
             value:str = entry.get().strip()
             if not re.match(r"^\d+(\.\d+)?$", value):

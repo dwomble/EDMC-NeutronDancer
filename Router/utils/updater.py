@@ -78,7 +78,7 @@ class Updater():
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
             r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
-            Debug.logger.debug(f"{r}")
+            Debug.logger.debug(str(r))
             r.raise_for_status()
         except Exception:
             Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")

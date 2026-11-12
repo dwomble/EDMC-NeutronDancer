@@ -87,7 +87,7 @@ class Router():
 
     def shipnames(self) -> list:
         """ Return a list of shipnames """
-        names:list = list(self.shiplist.values())
+        names:list = list(dict.fromkeys(self.shiplist.values()))
         names.reverse()
         return names
 

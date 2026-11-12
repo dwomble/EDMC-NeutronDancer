@@ -107,6 +107,8 @@ class Plotter(ABC):
     def _sys_menu(self, field:str) -> dict:
         """ Current system (source only), carrier location, then recent history """
         systems:list = [Context.router.system if field == 'src' else '', Context.router.carrier_location, *Context.router.history]
+        if lbls["source_system"] in systems: systems.remove(lbls["source_system"])
+        if lbls["dest_system"] in systems: systems.remove(lbls["dest_system"])
         return {s: [Context.ui.menu_callback, field] for s in dict.fromkeys(systems) if s}
 
     def refresh_menus(self) -> None:

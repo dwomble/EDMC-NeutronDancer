@@ -1,14 +1,39 @@
-"""Coarse neutron-boosted route search over a neutron index."""
+"""Neutron route planning over local star indexes, flown as real jumps with fuel, replanning from each fuel star."""
 import heapq, math
+from dataclasses import dataclass
 
+from ..ship import Ship
 from .index import Index
 
 COARSE:int = 10      # 100 Ly cells per density-map cell edge
 STEP:float = 250.0   # sampling step along the line to the destination
 WEIGHTS:tuple = (1.15, 1.3, 1.6, 2.0)
+HORIZON:float = 2500.0  # how far ahead a replan from a fuel star reaches before rejoining the route
+
+@dataclass
+class Step:
+    """One jump of a filled-in route."""
+    name:str
+    kind:str        # 'boost', 'plain' or 'fail'
+    dist:float
+    fuel:float      # fuel left after landing, and after any refuel
+    refuel:bool = False
+    pos:tuple = ()
+    scoop:bool = False
+
+class Stuck(Exception):
+    """The route cannot continue from here."""
 
 class Planner:
-    """Fewest-jump neutron routes, guided by a coarse map of neutron density."""
+    """Fewest-jump neutron routes, guided by a coarse map of neutron density, flown with fuel and scoop stops."""
+
+    def __init__(self, neu:Index, sc:Index) -> None:
+        self.neu:Index = neu
+        self.sc:Index = sc
+        self.counts:dict = {}
+        for j, k in enumerate(neu.ukeys):
+            c:tuple = (((k >> 22) - 1024) // COARSE, (((k >> 11) & 2047) - 1024) // COARSE, ((k & 2047) - 1024) // COARSE)
+            self.counts[c] = self.counts.get(c, 0) + neu.starts[j + 1] - neu.starts[j]
 
     @staticmethod
     def jumps(dist:float, rng:float, mult:float, boosted:bool) -> int:
@@ -16,51 +41,140 @@ class Planner:
         if not boosted: return math.ceil(dist / rng)
         return 1 + math.ceil(max(0.0, dist - mult * rng) / rng)
 
-    def __init__(self, neu:Index) -> None:
-        self.neu:Index = neu
-        self.counts:dict = {}
-        for j, k in enumerate(neu.ukeys):
-            c:tuple = (((k >> 22) - 1024) // COARSE, (((k >> 11) & 2047) - 1024) // COARSE, ((k & 2047) - 1024) // COARSE)
-            self.counts[c] = self.counts.get(c, 0) + neu.starts[j + 1] - neu.starts[j]
+    def plot(self, ship:Ship, src:tuple, dest:tuple, fuel:float, cargo:float = 0, reserve:float = 0) -> list[Step]:
+        """Real jumps from src to dest for this ship and starting fuel, refuelling on scoopable stars."""
+        # Settings for this plot, shared by the searches, their estimates and the jumps
+        self.ship, self.cargo, self.dest = ship, cargo, dest
+        self.rng:float = ship.jump_range(ship.tank_size, cargo)  # full-tank range: the heaviest, so always reachable
+        self.plain:float = self.rng * 0.999  # 0.999 keeps a jump exactly at the limit from failing on rounding
+        self.mult:float = ship.supercharge_multiplier
+        self.boost:float = self.mult * self.rng  # longest supercharged jump
 
-    def route(self, src:tuple, dest:tuple, rng:float, mult:float = 4.0, budget:int = 3000) -> tuple:
-        """Shorter of the flat and density-guided routes, as (path of neutron indices, jumps)."""
+        # Refuel below one full jump, or the reserve if larger; a full jump left can usually reach a scoopable star
+        self.low:float = max(ship.max_fuel_per_jump, reserve)
+
+        # Turn each density cell's neutron count into jumps per Ly at this range.
+        # n neutrons spread evenly through a 1000 Ly cube sit about gap = cube root of (volume / n) apart.
+        # One boosted jump covers min(gap, boost) at best; any gap beyond boost has to be crossed in plain jumps.
+        self.rates:dict = {}
+        for c, n in self.counts.items():
+            gap:float = (1e9 / n) ** (1 / 3)
+            self.rates[c] = (1 + max(0.0, gap - self.boost) / self.rng) / max(gap, self.boost)
+
+        # Plan the whole route once; each refuel replans only to a horizon ahead on it, then rejoins it
+        self.here:tuple = src
+        self.fuel:float = fuel
+        self.steps:list[Step] = []
+        self.path:list = self._route(src, dest)
+        self.k:int = 0
+        self.saved:list = []
+        self.tried:set = set()
+
+        while self.k < len(self.path) - 1:
+            # Each leg's starting state is saved so a failure can rewind to it
+            self.saved.append((len(self.steps), self.here, self.fuel, self.start, self.path, self.k))
+            self.refuelled:bool = False
+            try:
+                self._fly_leg(self.path[self.k], self.path[self.k + 1])
+            except Stuck as e:
+                if not self._rewind():
+                    # Nowhere left to refuel: keep the jumps so far, so the caller can show where it got stuck
+                    self.steps.append(Step(str(e), 'fail', 0.0, self.fuel))
+                    return self.steps
+
+            if not self.refuelled:
+                self.k += 1
+                continue
+            self._replan()
+
+        return self.steps
+
+    def _replan(self) -> None:
+        """Just refuelled, maybe off the planned line: plan afresh to the first node a horizon away, then rejoin."""
+        ahead:list = self.path[self.k + 1:]
+        here:tuple = self.here
+        w:int = next((i for i, n in enumerate(ahead) if math.dist(here, self._node_pos(n)) >= HORIZON), len(ahead) - 1)
+        m:int = ahead[w]
+        old:list = [self._node_pos(n) for n in ahead[:w + 1]]
+        new:list = self._route(here, old[-1])
+        self.goal, self.k = self.dest, 0
+
+        # The planner is approximate, so only switch when its plan beats carrying on, both counted the same way
+        legs:list = [(here, old[0], False)] + [(p, q, a >= 0) for p, q, a in zip(old, old[1:], ahead)]
+        stay:int = sum(self.jumps(math.dist(p, q), self.rng, self.mult, boosted) for p, q, boosted in legs)
+        joins:bool = m >= 0 and new[-2] == m
+        if self.found - joins >= stay:
+            self.path = [-1] + ahead
+            return
+
+        # The new plan ends at m's position as its own destination; swap that for m itself and the old route beyond
+        self.path = new if m == -2 else new[:-1] + (ahead[w + 1:] if joins else ahead[w:])
+
+    def _rewind(self) -> bool:
+        """Back up to an earlier leg start, at most four, and land on the nearest scoopable star from there."""
+        for _ in range(4):
+            if not self.saved: return False
+            n, self.here, self.fuel, self.start, self.path, self.k = self.saved.pop()
+            self.goal = self.dest
+            del self.steps[n:]
+
+            # Each place gets one detour, so a hopeless region can't loop
+            spot:tuple = tuple(round(v) for v in self.here)
+            if spot in self.tried: continue
+            self.tried.add(spot)
+
+            near:list = [h for h in self.sc.near(self.here, self.plain) if h[1] > 1]
+            if not near: continue
+            s:int = min(near, key=lambda h: h[1])[0]
+            try:
+                self._jump_to(self.sc.pos(s), self.sc.name(s), 'plain', False, True, True)
+                return True
+            except Stuck:
+                continue
+        return False
+
+    def _node_pos(self, n:int) -> tuple:
+        """Coordinates of a path node: a neutron index, or -1 for the plan's start and -2 for its goal."""
+        return self.start if n == -1 else self.goal if n == -2 else self.neu.pos(n)
+
+    def _route(self, start:tuple, goal:tuple) -> list:
+        """Shorter of the flat and density-guided neutron paths from start to goal; sets found to its jumps."""
+        self.start, self.goal = start, goal
+        self.memo:dict = {}
+
+        # The final leg must start at a neutron, and the closest one to the goal is `nearest` Ly out.
+        # Probe outward from the goal, doubling the radius, until a neutron turns up.
+        probe:float = self.boost
+        while not (ring := self.neu.near(goal, probe)) and probe < 8000: probe *= 2
+        self.nearest:float = min((dm for _, dm in ring), default=0.0)
+
+        # No route can finish in fewer jumps than that final leg, so it seeds every estimate
+        self.final_jumps:int = self.jumps(self.nearest, self.rng, self.mult, True) if ring else 0
+
+        # Each estimate tries the most careful weight that finishes within budget
         found:list = []
         for dense in (False, True):
             for w in WEIGHTS:
-                res:tuple|None = self._plot(src, dest, rng, mult, w, budget, dense)
+                res:tuple|None = self._search(w, 3000, dense)
                 if res: break
             else:
-                res = self._plot(src, dest, rng, mult, WEIGHTS[-1] * 2, 0, dense)
+                res = self._search(WEIGHTS[-1] * 2, 0, dense)
             if res: found.append(res)
-        return min(found, key=lambda r: r[1])
 
-    def _plot(self, src:tuple, dest:tuple, rng:float, mult:float, w:float, limit:int, dense:bool) -> tuple|None:
-        """Weighted A* from src to dest; None if it expands more than limit nodes."""
-        # Nodes are neutron indexes, plus -1 for the source and -2 for the destination, neither of which is in the index
+        path, self.found = min(found, key=lambda r: r[1])
+        return path
+
+    def _search(self, w:float, limit:int, dense:bool) -> tuple|None:
+        """Weighted A* from start to goal as (path, jumps); None if it expands more than limit nodes."""
         neu:Index = self.neu
-        pos = lambda n: src if n == -1 else dest if n == -2 else neu.pos(n)
-        boost:float = mult * rng  # longest supercharged jump
-
-        # The final leg must start at a neutron, and the closest one to the destination is `nearest` Ly out.
-        # Probe outward from the destination, doubling the radius, until a neutron turns up.
-        probe:float = boost
-        while not (ring := neu.near(dest, probe)) and probe < 8000: probe *= 2
-        nearest:float = min((dm for _, dm in ring), default=0.0)
-
-        # No route can finish in fewer jumps than that final leg, so it seeds every estimate
-        final_jumps:int = self.jumps(nearest, rng, mult, True) if ring else 0
-
-        # The flat estimate assumes every jump left is a full boost; the density one knows where neutrons are sparse
-        flat = lambda p, left: final_jumps + max(0.0, left - nearest) / boost
-        est = self._estimator(dest, rng, mult, nearest, final_jumps) if dense else flat
+        goal:tuple = self.goal
 
         # g: fewest jumps found to each node; prev: the node it came from, to rebuild the path
         g:dict = {-1: 0}
         prev:dict = {}
 
         # Queue entries are (priority, distance left, node); distance left breaks ties toward nodes nearer the goal
-        openq:list = [(0.0, math.dist(src, dest), -1)]
+        openq:list = [(0.0, math.dist(self.start, goal), -1)]
         done:set = set()
 
         while openq:
@@ -71,18 +185,18 @@ class Planner:
             if n == -2: break
             done.add(n)
 
-            # Over budget means this weight is too careful for the region; route() retries with a greedier one
+            # Over budget means this weight is too careful for the region; _route() retries with a greedier one
             if limit and len(done) > limit: return None
 
-            # Only a jump leaving a neutron is supercharged, so the source's first leg is plain jumps only
-            p:tuple = pos(n)
-            here:float = math.dist(p, dest)
+            # Only a jump leaving a neutron is supercharged, so the start's first leg is plain jumps only
+            p:tuple = self._node_pos(n)
+            here:float = math.dist(p, goal)
             boosted:bool = n >= 0
 
             # Start by looking one boosted jump plus one plain jump out, and only at neutrons that get closer
-            rad:float = boost + rng if boosted else max(boost, 2 * rng)
+            rad:float = self.boost + self.rng if boosted else max(self.boost, 2 * self.rng)
             ahead = lambda rr: [(m, dm, left) for m, dm in neu.near(p, rr)
-                                if m not in done and (left := math.dist(neu.pos(m), dest)) < here]
+                                if m not in done and (left := math.dist(neu.pos(m), goal)) < here]
 
             # Sparse regions need a wider net, or the search dead-ends without trying a longer plain-jump leg
             cands:list = ahead(rad)
@@ -91,65 +205,129 @@ class Planner:
                 cands = ahead(rad)
 
             # Dense regions offer thousands; keep the 40 that cover the most distance per jump
-            cands = heapq.nlargest(40, cands, key=lambda c: (here - c[2]) / self.jumps(c[1], rng, mult, boosted))
+            cands = heapq.nlargest(40, cands, key=lambda c: (here - c[2]) / self.jumps(c[1], self.rng, self.mult, boosted))
 
-            # Always offer flying straight to the destination, so a route exists even with no neutrons ahead
+            # Always offer flying straight to the goal, so a route exists even with no neutrons ahead
             cands.append((-2, here, 0.0))
 
             for m, dm, left in cands:
-                cost:int = g[n] + self.jumps(dm, rng, mult, boosted)
+                cost:int = g[n] + self.jumps(dm, self.rng, self.mult, boosted)
                 if cost >= g.get(m, 1 << 30): continue
                 g[m] = cost
                 prev[m] = n
 
-                # Priority is jumps so far plus w times the estimate; w > 1 trades a few jumps for a much faster search
-                heapq.heappush(openq, (cost + (w * est(pos(m), left) if m != -2 else 0), left, m))
+                # Priority is jumps so far plus w times the estimated jumps still to go; w > 1 searches faster
+                rest:float = 0.0 if m == -2 else self._density_estimate(self._node_pos(m), left) if dense else self._flat_estimate(left)
+                heapq.heappush(openq, (cost + w * rest, left, m))
 
         if -2 not in prev: return None
         path:list = [-2]
         while path[-1] != -1: path.append(prev[path[-1]])
         return path[::-1], g[-2]
 
-    def _estimator(self, dest:tuple, rng:float, mult:float, nearest:float, final_jumps:int):
-        """Jumps-to-go estimate: per-cell jump rates integrated along the line to dest, plus the final leg."""
-        boost:float = mult * rng  # longest supercharged jump
-        size:float = 100.0 * COARSE  # density cell edge in Ly
-        rates:dict = {}
+    def _flat_estimate(self, left:float) -> float:
+        """Jumps-to-go estimate assuming every jump left is a full boost."""
+        return self.final_jumps + max(0.0, left - self.nearest) / self.boost
 
-        # Turn each density cell's neutron count into jumps per Ly at this range.
-        # n neutrons spread evenly through a 1000 Ly cube sit about gap = cube root of (volume / n) apart.
-        # One boosted jump covers min(gap, boost) at best; any gap beyond boost has to be crossed in plain jumps.
-        for c, n in self.counts.items():
-            gap:float = (1e9 / n) ** (1 / 3)
-            rates[c] = (1 + max(0.0, gap - boost) / rng) / max(gap, boost)
+    def _cell_rate(self, p:tuple) -> float:
+        """Jumps per Ly in p's density cell; a cell with no neutrons means plain jumps all the way through it."""
+        size:float = 100.0 * COARSE
+        return self.rates.get((int(p[0] // size), int(p[1] // size), int(p[2] // size)), 1 / self.rng)
 
-        # A cell with no neutrons at all means plain jumps all the way through it
-        rate = lambda p: rates.get((int(p[0] // size), int(p[1] // size), int(p[2] // size)), 1 / rng)
-        memo:dict = {}
+    def _density_estimate(self, p:tuple, left:float) -> float:
+        """Jumps-to-go estimate from per-cell jump rates along the line to the goal, plus the final leg."""
+        # Already inside the final leg's radius: only that leg remains
+        if left <= self.nearest: return float(self.final_jumps)
 
-        def line(p:tuple, left:float) -> float:
-            """Jumps to cross from p to the start of the final leg, sampling cell rates along the straight line."""
-            span:float = left - nearest
-            steps:int = max(1, math.ceil(span / STEP))
-            d:tuple = tuple((dest[i] - p[i]) / left * span / steps for i in range(3))
+        # Integrating the line is the costly part, and the search asks for it on every queued node.
+        # Nodes in the same STEP-sized block share one integral, taken from the block's centre.
+        q:tuple = (int(p[0] // STEP), int(p[1] // STEP), int(p[2] // STEP))
+        if q not in self.memo:
+            c:tuple = tuple((v + 0.5) * STEP for v in q)
+            cl:float = math.dist(c, self.goal)
+            self.memo[q] = (self._line_jumps(c, cl) if cl > self.nearest else 0.0, cl)
+        base, cl = self.memo[q]
 
-            # Each sample is the midpoint of its step, so a step that straddles two cells isn't biased to either
-            return sum(rate(tuple(p[i] + d[i] * (s + 0.5) for i in range(3))) for s in range(steps)) * span / steps
+        # Blocks share a cached estimate, so correct for where p sits or every node in a block ties
+        return self.final_jumps + max(0.0, base + (left - cl) * self._cell_rate(p))
 
-        def est(p:tuple, left:float) -> float:
-            # Already inside the final leg's radius: only that leg remains
-            if left <= nearest: return float(final_jumps)
+    def _line_jumps(self, p:tuple, left:float) -> float:
+        """Jumps to cross from p to the start of the final leg, sampling cell rates along the straight line."""
+        span:float = left - self.nearest
+        steps:int = max(1, math.ceil(span / STEP))
+        d:tuple = tuple((self.goal[i] - p[i]) / left * span / steps for i in range(3))
 
-            # Integrating the line is the costly part, and the search asks for it on every queued node.
-            # Nodes in the same STEP-sized block share one integral, taken from the block's centre.
-            q:tuple = (int(p[0] // STEP), int(p[1] // STEP), int(p[2] // STEP))
-            if q not in memo:
-                c:tuple = tuple((v + 0.5) * STEP for v in q)
-                cl:float = math.dist(c, dest)
-                memo[q] = (line(c, cl) if cl > nearest else 0.0, cl)
-            base, cl = memo[q]
+        # Each sample is the midpoint of its step, so a step that straddles two cells isn't biased to either
+        return sum(self._cell_rate(tuple(p[i] + d[i] * (s + 0.5) for i in range(3))) for s in range(steps)) * span / steps
 
-            # Blocks share a cached estimate, so correct for where p sits or every node in a block ties
-            return final_jumps + max(0.0, base + (left - cl) * rate(p))
+    def _fly_leg(self, a:int, b:int) -> None:
+        """Jumps from path node a toward b, stopping early at a refuel so the route can be replanned."""
+        ship, sc, goal = self.ship, self.sc, self._node_pos(b)
+        name:str = '<dest>' if b == -2 else self.neu.name(b)
 
-        return est
+        # From a neutron: boost straight to the next one, or land short on a scoop star when fuel is tight
+        if a >= 0:
+            boost:float = self.mult * ship.jump_range(self.fuel, self.cargo) * 0.999
+            gap:float = math.dist(self.here, goal)
+
+            # Neutrons can't be scooped, so only boost straight in if enough is left to move on from it
+            if gap <= boost and self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True) >= self.low:
+                self._jump_to(goal, name, 'boost', True, False)
+                return
+
+            # Otherwise boost onto a scoopable star instead: the one nearest the next neutron
+            hits:list = [(math.dist(sc.pos(i), goal), i) for i, _ in sc.near(self.here, boost)]
+            if not hits: raise Stuck('no scoopable star in boost reach')
+            s:int = min(hits)[1]
+            self._jump_to(sc.pos(s), sc.name(s), 'boost', True, True)
+            if self.refuelled: return
+
+        # Plain jumps for the rest of the leg, via scoopable stars
+        if self.here == goal: return
+        for i in self._scoop_hops(goal):
+            self._jump_to(sc.pos(i), sc.name(i), 'plain', False, True)
+            if self.refuelled: return
+        self._jump_to(goal, name, 'plain', False, False)
+
+    def _jump_to(self, q:tuple, name:str, kind:str, charged:bool, scoopable:bool, force:bool = False) -> None:
+        """Jump to q, spending fuel for the current mass, and refuel to full if it's scoopable and low or forced."""
+        dist:float = math.dist(self.here, q)
+        used:float = self.ship.fuel_cost(dist, self.fuel, self.cargo, charged)
+        if used == math.inf: raise Stuck(f'out of fuel before {name}')
+        self.fuel -= used
+
+        topped:bool = scoopable and (force or self.fuel < self.low)
+        if topped: self.fuel, self.refuelled = self.ship.tank_size, True
+        self.steps.append(Step(name, kind, dist, self.fuel, topped, q, scoopable))
+        self.here = q
+
+    def _scoop_hops(self, goal:tuple) -> list:
+        """Fewest scoopable stops, each a plain jump apart, until goal is one jump away."""
+        # A small A* over scoopable stars only; greedy "closest to goal" stalls where stars sit off the direct line
+        sc, r, here = self.sc, self.plain, self.here
+        at = lambda i: here if i == -1 else sc.pos(i)
+        g:dict = {-1: 0}
+        prev:dict = {}
+        openq:list = [(0.0, math.dist(here, goal), -1)]
+        done:set = set()
+
+        # The cap stops a hopeless gap from searching the whole arm; Stuck reports it instead
+        while openq and len(done) < 5000:
+            _, left, i = heapq.heappop(openq)
+            if i in done: continue
+            done.add(i)
+
+            # Close enough to jump straight onto the goal: walk prev back to here for the stops in between
+            if left <= r:
+                path:list = []
+                while i != -1: path.append(i); i = prev[i]
+                return path[::-1]
+
+            # Every hop is one jump; the 1.2 weight leans toward the goal so dense regions finish quickly
+            for j, _ in sc.near(at(i), r):
+                if j in done or g[i] + 1 >= g.get(j, math.inf): continue
+                g[j] = g[i] + 1
+                prev[j] = i
+                d:float = math.dist(sc.pos(j), goal)
+                heapq.heappush(openq, (g[j] + 1.2 * d / r, d, j))
+        raise Stuck('no scoopable path to next waypoint')

@@ -1,5 +1,11 @@
 # EDMC-NeutronDancer Changelog
 
+## v4.0.0 2026-11-??
+
+### New Features
+
+* An entirely new, local plotter that uses Spansh data dumps to plot routes
+
 ## v3.0.0 2026-11-09
 
 ### New Features

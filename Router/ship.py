@@ -22,6 +22,9 @@ class Ship:
         self.supercharge_multiplier:int = 4
         self.injection_multiplier:int = 2
 
+        # Last known fuel across all main tanks, saved with the ship since only the current ship's is live
+        self.fuel:float|None = entry.get('FuelLevel')
+
         # The journal loadout entry
         self.loadout:dict = {}
 
@@ -37,7 +40,7 @@ class Ship:
             Debug.logger.error(f"Modules not loaded, cannot initialize ship.")
             return
 
-        self.loadout = entry
+        self.loadout = {k: v for k, v in entry.items() if k != 'FuelLevel'}
 
         # Create Standard Loadout Exchange Format (SLEF)
         self.slef:list = [{
@@ -118,6 +121,12 @@ class Ship:
         return used if used <= fuel else float('inf')
 
 
+    @property
+    def fuel_full(self) -> bool:
+        """ Whether the main tanks, including any additional fuel tanks, are full """
+        return self.fuel is not None and self.fuel >= self.tank_size
+
+
     def __repr__(self) -> str:
         return f"ID {self.id}, name {self.name}, type {self.type}, unladen range {self.range:.2f}ly)"
 
@@ -125,4 +134,4 @@ class Ship:
         return self.__repr__()
 
     def as_dict(self) -> dict:
-        return self.loadout
+        return self.loadout if self.fuel is None else {**self.loadout, 'FuelLevel': self.fuel}

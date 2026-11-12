@@ -114,7 +114,8 @@ class Overlay():
 
         self.update_frame('Default', message)
 
-        if Context.route.refuel() and not Context.route.fuel_full:
+        full:bool = Context.router.ship is not None and Context.router.ship.fuel_full
+        if Context.route.refuel(full):
             self.display_alert(ovr["refuel"])
             return
 
@@ -122,7 +123,7 @@ class Overlay():
             Context.overlay.display_alert(ovr["neutron"])
             return
 
-        if Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
+        if Context.route.refuel(full) and full and not Context.route.is_neutron():
             self.clear_frame("Alert")
 
 

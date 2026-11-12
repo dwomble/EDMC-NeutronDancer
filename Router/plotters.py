@@ -401,16 +401,38 @@ class IndyPlotter(Plotter):
 
 
 class LocalPlotter(Plotter):
-    """Plotter for offline neutron routes from the data folder's indexes, using the current ship."""
+    """Plotter for offline neutron routes from the data folder's indexes."""
 
     def create_frame(self, parent:th.Frame) -> th.Frame:
-        """Create the local plotter frame: range, tank and fuel all come from the current ship."""
+        """Create the local plotter frame: range, tank and fuel all come from the selected ship."""
         plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         self._plot_switcher(plot_fr, 0, 0)
 
         route_fr:th.Frame = th.Frame(plot_fr)
         self._create_source(route_fr, 0, 0)
+
+        if Context.router.shiplist == {}:
+            Context.ui.show_error(errs["no_ships"])
+
+        names:list = Context.router.shipnames()
+        self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=names[0] if names else '')
+        self.shipvar.trace_add("write", Context.ui.ship_selected)
+        self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
+        th.Tooltip(self.shipdd, tts["select_ship"])
+        self.shipdd.grid(row=0, column=5, padx=5, pady=5)
+
         self._create_dest(route_fr, 1, 0)
+        cargo_entry:th.Spinbox = th.Spinbox(route_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2,
+                                            justify=tk.CENTER, name="cargo_entry")
+        Context.ui.set_entry(cargo_entry, str(Context.router.cargo))
+        cargo_entry.grid(row=1, column=5, padx=5, pady=5)
+        th.Tooltip(cargo_entry, tts["cargo"])
+
+        reserve:float = Context.router.route_params.get('Local', {}).get('reserve_size', 0)
+        self.fuel_res:th.Spinbox = th.Spinbox(route_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
+        if reserve != 0: Context.ui.set_entry(self.fuel_res, str(reserve))
+        th.Tooltip(self.fuel_res, tts["fuel_reserve"])
+        self.fuel_res.grid(row=2, column=5, padx=5, pady=5)
         route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
 
         self._create_buttons(plot_fr, 2, 0)
@@ -423,7 +445,27 @@ class LocalPlotter(Plotter):
         if not self.frame or not self.src_ac or not self.dest_ac: return
 
         Context.ui.hide_error()
-        params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac)}
+        ship_id:str = Context.router.shipid(self.shipvar.get())
+        if ship_id == '':
+            Context.ui.show_frame('Local')
+            Context.ui.show_error(errs['no_ship'])
+            return
+        ship:Ship|None = Context.router.load_ship(ship_id)
+        if not ship:
+            Context.ui.show_frame('Local')
+            Context.ui.show_error(errs['ship_not_found'])
+            return
+
+        cargo:str = self.frame.nametowidget("cargo_entry").get().strip()
+        reserve:str = self.fuel_res.get().strip()
+        params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac), 'ship': ship_id,
+                       'cargo': int(cargo) if re.match(r"^\d+$", cargo) else 0,
+                       'reserve_size': float(reserve) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
+
+        # The ship you're in only has its live fuel where you are now; another ship's saved fuel is where it's parked
+        known:bool = ship.id != Context.router.ship_id or params['from'].casefold() == Context.router.system.casefold()
+        params['fuel'] = min(ship.fuel, ship.tank_size) if known and ship.fuel is not None else ship.tank_size
+
         for ac, v in ((self.src_ac, params['from']), (self.dest_ac, params['to'])):
             if not v: ac.set_error_style()
         if not params['from'] or not params['to']: return

@@ -374,7 +374,7 @@ class UI():
         if route.is_neutron() == True:
             image = self.neutron_img
 
-        if route.refuel() == True and not Context.route.fuel_full:
+        if route.refuel(Context.router.ship is not None and Context.router.ship.fuel_full) == True:
             image = self.fuel_img
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
@@ -486,11 +486,10 @@ class UI():
 
     @catch_exceptions
     def ship_selected(self, *args) -> None:
-        """ Update the galaxy plotter when the ship dropdown changes """
-        galaxy_plotter = self.plotters.get('Galaxy')
-        if not galaxy_plotter or not hasattr(galaxy_plotter, 'shipvar'):
-            return
-        ship_name:str = galaxy_plotter.shipvar.get()
+        """ Sync every ship dropdown to the one that changed, then update cargo and range """
+        ship_name:str = self.parent.getvar(args[0]) if self.parent and args else ''
+        for p in self.plotters.values():
+            if hasattr(p, 'shipvar') and p.shipvar.get() != ship_name: p.shipvar.set(ship_name)
         self.menu_callback('ship', ship_name)
 
 
@@ -522,11 +521,10 @@ class UI():
             except Exception as e:
                 pass
 
-        # Update galaxy plotter ship dropdown if it exists
-        galaxy_plotter = self.plotters.get('Galaxy')
-        if galaxy_plotter and hasattr(galaxy_plotter, 'shipvar') and hasattr(galaxy_plotter, 'shipdd'):
-            galaxy_plotter.shipvar.set(ship.name)
-            galaxy_plotter.shipdd.set_menu(Context.router.shipnames())
+        for p in self.plotters.values():
+            if not hasattr(p, 'shipvar') or not hasattr(p, 'shipdd'): continue
+            p.shipvar.set(ship.name)
+            p.shipdd.set_menu(Context.router.shipnames())
 
     def update_cargo(self, cargo:int) -> None:
         """ Update the cargo entry when the cargo changes """

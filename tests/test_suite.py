@@ -36,7 +36,6 @@ from Router.ship import Ship
 from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
 from Router.local.index import Index, build
 from Router.local.search import Planner
-from Router.local.fill import fill
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -884,11 +883,12 @@ class TestChatCommands:
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == ''
 
-def _synthetic_dump(folder:Path) -> Path:
-    """ A gzipped Spansh-style dump: neutrons every 200 Ly along z, with K stars beside them every 40 Ly. """
+def _synthetic_dump(folder:Path, rows:list|None = None) -> Path:
+    """ A gzipped Spansh-style dump: by default neutrons every 200 Ly along z, with K stars beside them every 40 Ly. """
     import gzip
-    rows:list = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
-    rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
+    if rows is None:
+        rows = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
+        rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
     dump:Path = folder / 'systems.json.gz'
     with gzip.open(dump, 'wt') as f:
         f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in rows) + '\n]\n')
@@ -920,12 +920,33 @@ class TestLocalRouting:
         harness.play_sequence('loadout')
         ship:Ship = harness.plugin.router.ship
         src, dest = (0.0, 0.0, 0.0), (0.0, 0.0, 3000.0)
-        path, _ = Planner(neu).route(src, dest, ship.jump_range(ship.tank_size))
-        steps:list = fill(ship, neu, sc, path, src, dest, ship.tank_size)
+        planner:Planner = Planner(neu, sc)
+        steps:list = planner.plot(ship, src, dest, ship.tank_size)
 
         assert not [s for s in steps if s.kind == 'fail']
         assert steps[-1].name == '<dest>'
         assert any(s.refuel for s in steps)
+
+        # A reserve raises the point at which it refuels, so there are at least as many stops
+        steps = planner.plot(ship, src, dest, ship.tank_size, 0, ship.tank_size * 0.75)
+        assert steps[-1].name == '<dest>'
+        assert sum(s.refuel for s in steps) >= sum(s.refuel for s in planner.plot(ship, src, dest, ship.tank_size))
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_detours_to_refuel(self, harness:TestHarness, tmp_path:Path) -> None:
+        """ Too little fuel to boost on: rewind to the neutron, scoop next door, replan back through it and boost. """
+        star:dict = {'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': 0}}
+        rows:list = [{'name': 'N0', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 0}}, {'name': 'S0', **star},
+                     {'name': 'N1', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 250}}]
+        idx:dict = build(_synthetic_dump(tmp_path, rows))
+
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        planner:Planner = Planner(idx['neutron'], idx['kgbfoam'])
+        steps:list = planner.plot(ship, (0.0, 0.0, -10.0), (0.0, 0.0, 260.0), ship.max_fuel_per_jump + 0.5)
+
+        assert [(s.name, s.kind) for s in steps] == [('N0', 'plain'), ('S0', 'plain'), ('N0', 'plain'), ('<dest>', 'boost')]
+        assert steps[1].refuel
 
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
@@ -943,7 +964,8 @@ class TestLocalRouting:
         lookup.json.return_value = {'results': [{'name': 'Far Away', 'x': 0, 'y': 0, 'z': 3000}]}
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
             with patch('Router.route_manager.SESSION.get', return_value=lookup):
-                router.plot_route('Local', {'from': 'Sol', 'to': 'far away'})
+                router.plot_route('Local', {'from': 'Sol', 'to': 'far away', 'ship': router.ship_id, 'cargo': 0, 'reserve_size': 0,
+                                            'fuel': router.ship.tank_size})
                 assert plotter_thread is not None
                 harness.wait_for_thread(plotter_thread, THREAD_TIMEOUT)
 
@@ -952,6 +974,22 @@ class TestLocalRouting:
         assert (names[0], names[-1]) == ('Sol', 'Far Away')
         assert route.colind('Neutron') is not None
         assert any(r[route.colind('Refuel')] for r in route.route)
+
+    def test_local_ship_follows_galaxy(self, harness:TestHarness) -> None:
+        """ Local's ship dropdown stays in step with Galaxy's and sets cargo the same way. """
+        harness.play_sequence('loadout')
+        ui, router = harness.plugin.ui, harness.plugin.router
+        router.cargo = 12
+
+        ui.switch_ship(router.ship)
+        assert ui.plotters['Local'].shipvar.get() == router.ship.name
+        assert ui.get_item('Local', 'cargo_entry') == '12'
+
+        other:str = next((n for n in router.shipnames() if n != router.ship.name), '')
+        if not other: pytest.skip('only one ship loaded')
+        ui.plotters['Local'].shipvar.set(other)
+        assert ui.plotters['Galaxy'].shipvar.get() == other
+        assert ui.get_item('Local', 'cargo_entry') == ui.get_item('Galaxy', 'cargo_entry') == '0'
 
     @pytest.mark.manual_only
     @pytest.mark.slow
@@ -970,7 +1008,7 @@ class TestLocalRouting:
 
         neu:Index = Index.load(folder / 'neutron')
         sc:Index = Index.load(folder / 'kgbfoam')
-        planner:Planner = Planner(neu)
+        planner:Planner = Planner(neu, sc)
         harness.play_sequence('loadout')
         ship:Ship = harness.plugin.router.ship
         rng:float = ship.jump_range(ship.tank_size)
@@ -980,11 +1018,12 @@ class TestLocalRouting:
                       'Beagle Point': (-1111.5625, -134.21875, 65269.75)}
         for dest, pos in dests.items():
             t = time.time()
-            path, est = planner.route((0.0, 0.0, 0.0), pos, rng, ship.supercharge_multiplier)
-            steps:list = fill(ship, neu, sc, path, (0.0, 0.0, 0.0), pos, ship.tank_size)
+            steps:list = planner.plot(ship, (0.0, 0.0, 0.0), pos, ship.tank_size)
             fails:list = [s.name for s in steps if s.kind == 'fail']
-            print(f"{dest:15} est {est}, real {len(steps) - len(fails)} jumps, {sum(s.kind == 'boost' for s in steps)} boosted, "
-                  f"{sum(s.refuel for s in steps)} refuels, min fuel {min(s.fuel for s in steps):.1f} t, "
+            print(f"{dest:15} {len(steps) - len(fails)} jumps, {sum(s.kind == 'boost' for s in steps)} boosted, "
+                  f"{sum(s.refuel for s in steps)} refuels, "
+                  f"{sum(a.name == c.name and b.refuel for a, b, c in zip(steps, steps[1:], steps[2:]))} detours, "
+                  f"min fuel {min(s.fuel for s in steps):.1f} t, "
                   f"{time.time() - t:.1f}s {fails}")
             for s in steps[-4:] if fails else []: print(f"    {s.kind:5} {s.dist:6.1f} Ly fuel {s.fuel:5.1f}  {s.name}")
             assert not fails
@@ -993,10 +1032,11 @@ class TestLocalRouting:
         global plotter_thread
         plotter_thread = None
         router = harness.plugin.router
-        router.system, router.star_pos, router.local = 'Sol', (0.0, 0.0, 0.0), (planner, sc)
+        router.system, router.star_pos, router.local = 'Sol', (0.0, 0.0, 0.0), planner
         t = time.time()
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
-            router.plot_route('Local', {'from': 'Sol', 'to': 'colonia'})
+            router.plot_route('Local', {'from': 'Sol', 'to': 'colonia', 'ship': router.ship_id, 'cargo': 0, 'reserve_size': 0,
+                                        'fuel': router.ship.tank_size})
             assert plotter_thread is not None
             harness.wait_for_thread(plotter_thread, 120)
 
@@ -1014,6 +1054,19 @@ class TestShipyardSwap:
         ship:Ship = Ship(entry)
 
         assert ship.loadout == {}
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_ship_keeps_fuel(self, harness:TestHarness):
+        """ Dashboard fuel lands on the current ship, survives a save and reload, and isn't part of the loadout. """
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        harness.fire_dashboard_event({'Fuel': {'FuelMain': ship.tank_size - 3, 'FuelReservoir': 0.5}})
+        assert ship.fuel == ship.tank_size - 3 and not ship.fuel_full
+
+        saved:Ship = type(ship)(ship.as_dict())  # the plugin's own Ship class, which sees its loaded modules
+        assert saved.fuel == ship.tank_size - 3 and 'FuelLevel' not in saved.loadout
+        saved.fuel = saved.tank_size
+        assert saved.fuel_full
 
     @pytest.mark.parametrize('harness', ['None', 'route_init.json'], indirect=True)
     def test_ship_repr(self, harness:TestHarness):

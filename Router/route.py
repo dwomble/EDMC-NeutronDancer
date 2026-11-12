@@ -20,7 +20,6 @@ class Route:
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
-        self.fuel_full = False
         self.navroute:dict[str, dict] = navroute or {} # name -> SystemAddress/StarPos/StarClass
 
         self.sc:int|None = None # System column index
@@ -284,9 +283,9 @@ class Route:
         return self.route[self.offset][self.dr] - self.route[self.offset+refind][self.dr] if refind is not None else None
 
 
-    def refuel(self) -> bool:
-        """ Return whether we need to refuel at this waypoint """
-        if self.fuel_full == True: return False
+    def refuel(self, full:bool = False) -> bool:
+        """ Return whether we need to refuel at this waypoint, given whether the tanks are already full """
+        if full: return False
         ind:int|None = self.colind('Refuel') or self.colind('Restock')
         if ind == None: return False
         return self.route[self.offset][ind] in TRUE

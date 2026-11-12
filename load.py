@@ -159,6 +159,9 @@ def make_loadout(state:dict) -> dict:
 
 @catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
+    if Context.router and Context.router.ship and 'FuelMain' in entry.get('Fuel', {}):
+        Context.router.ship.fuel = entry['Fuel']['FuelMain']
+
     if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
         copy_to_clipboard(Context.ui.parent, Context.route.next_system())
 

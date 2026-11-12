@@ -21,7 +21,6 @@ from .route import Route
 from .plotters import PLOTTER_SPECS
 from .local.index import Index
 from .local.search import Planner
-from .local.fill import fill
 from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
@@ -50,8 +49,8 @@ class Router():
         self.cargo:int = 0
         self.ship:Ship|None = None
 
-        # Local routing indexes as (Planner, kgbfoam Index), loaded on first use since they're large
-        self.local:tuple|None = None
+        # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
+        self.local:Planner|None = None
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -105,6 +104,9 @@ class Router():
         Called on a ship swap event to update our current ship information
         On a ship swap we don't get the full loadout so we have to rely on our shipyard and hope we've seen this ship before
         """
+        # Keep the outgoing ship's fuel level for plotting from it later
+        if self.ship: self._save_ship(self.ship)
+
         ship = self.load_ship(ship_id)
         if not ship or not ship.id or ship.base_mass == 0.0:
             Debug.logger.info(f"ShipID {ship_id} not found (or corrupt) in shipyard")
@@ -133,6 +135,7 @@ class Router():
         if ship.base_mass == 0.0:
             Debug.logger.error(f"Ship {ship.name} has no base mass, cannot add loadout")
             return
+        if self.ship and ship.id == self.ship.id: ship.fuel = self.ship.fuel
         self._save_ship(ship)
 
         # If we always get a swap_ship() when switching this will be redundant.
@@ -144,7 +147,7 @@ class Router():
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a jump in order to update the route, the UI etc."""
 
-        Context.route.fuel_full = False # We just jumped so we can't be full anymore
+        if self.ship and 'FuelLevel' in entry: self.ship.fuel = entry['FuelLevel']
         if Context.route.route == [] or Context.route.fleetcarrier == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
@@ -221,14 +224,10 @@ class Router():
 
     @catch_exceptions
     def fuel_event(self, state:dict) -> None:
-        """ Set fuel_full to true or false """
-
-        fuel:float = -1
+        """ Read the refuelled fuel level from Status.json, which may not have reached dashboard_entry yet """
+        if self.ship is None: return
         with open(Path(config.get_str("journaldir") / "Status.json"), 'r') as file:
-            status:dict = json.load(file)
-            fuel = status.get('Fuel', {}).get('FuelMain', 0.0)
-
-        Context.route.fuel_full = (fuel >= float(state.get('FuelCapacity', 0.0)))
+            self.ship.fuel = json.load(file).get('Fuel', {}).get('FuelMain', 0.0)
 
         # Update the UI as we may need to hide the refuel notification
         if Context.route.jumps_remaining() > 0:
@@ -431,9 +430,10 @@ class Router():
 
 
     def _local_result(self, which:str, params:dict) -> list|None:
-        """ Plot from the local indexes with the current ship, as Spansh-style rows; None once an error is shown """
-        if self.ship is None:
-            self.plot_error(which, params, 'no_ship')
+        """ Plot from the local indexes with the selected ship, as Spansh-style rows; None once an error is shown """
+        ship:Ship|None = self.load_ship(params.get('ship', ''))
+        if ship is None:
+            self.plot_error(which, params, 'ship_not_found')
             return None
 
         if self.local is None:
@@ -441,8 +441,7 @@ class Router():
             if not all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam')):
                 self.plot_error(which, params, 'no_local_data')
                 return None
-            self.local = (Planner(Index.load(folder / 'neutron')), Index.load(folder / 'kgbfoam'))
-        planner, kgb = self.local
+            self.local = Planner(Index.load(folder / 'neutron'), Index.load(folder / 'kgbfoam'))
 
         src:tuple|None = self._coords(params['from'])
         dest:tuple|None = self._coords(params['to'])
@@ -451,10 +450,7 @@ class Router():
             return None
         if self.cancel_plot: return None
 
-        # Plan at a full tank, the heaviest the ship gets, so the planned range is never too optimistic
-        ship:Ship = self.ship
-        path, _ = planner.route(src[1], dest[1], ship.jump_range(ship.tank_size, self.cargo), ship.supercharge_multiplier)
-        steps:list = fill(ship, planner.neu, kgb, path, src[1], dest[1], ship.tank_size, self.cargo)
+        steps:list = self.local.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'])
         if steps and steps[-1].kind == 'fail':
             self.plot_error(which, params, f"Local route stopped after {len(steps) - 1} jumps: {steps[-1].name}")
             return None
@@ -462,7 +458,7 @@ class Router():
         # Spansh flags a neutron on the system you boost from, which is the one before each boosted jump
         rows:list = [{'system': src[0], 'distance_jumped': 0, 'jumps': 0, 'distance_left': round(math.dist(src[1], dest[1]), 2),
                       'neutron_star': bool(steps) and steps[0].kind == 'boost', 'is_scoopable': False, 'must_refuel': False,
-                      'fuel_in_tank': round(ship.tank_size, 2)}]
+                      'fuel_in_tank': round(params['fuel'], 2)}]
         for i, s in enumerate(steps):
             rows.append({'system': dest[0] if s.name == '<dest>' else s.name, 'distance_jumped': round(s.dist, 2), 'jumps': 1,
                          'distance_left': round(math.dist(s.pos, dest[1]), 2),
@@ -671,6 +667,7 @@ class Router():
     @catch_exceptions
     def save(self) -> None:
         """ Save state to file """
+        if self.ship: self._save_ship(self.ship)
 
         dir:Path = Path(Context.plugin_dir) / DATA_DIR
         dir.mkdir(parents=True, exist_ok=True)

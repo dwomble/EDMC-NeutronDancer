@@ -492,7 +492,7 @@ class UI():
     @catch_exceptions
     def ship_selected(self, *args) -> None:
         """ Sync every ship dropdown to the one that changed, then update cargo and range """
-        ship_name:str = self.parent.getvar(args[0]) if self.parent and args else ''
+        ship_name:str = self.parent.getvar(args[0]) if self.parent and len(args) else ''
         for p in self.plotters.values():
             if hasattr(p, 'shipvar') and p.shipvar.get() != ship_name: p.shipvar.set(ship_name)
         self.menu_callback('ship', ship_name)

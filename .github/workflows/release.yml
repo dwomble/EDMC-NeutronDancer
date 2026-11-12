@@ -10,6 +10,8 @@ permissions:
 
 jobs:
   build:
+    # star-data releases hold route data, not a plugin build
+    if: ${{ !startsWith(github.event.release.tag_name, 'star-data') }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

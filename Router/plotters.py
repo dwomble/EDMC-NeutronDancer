@@ -209,17 +209,19 @@ class Plotter(ABC):
 
         @catch_exceptions
         def on_combo_change(e):
-            which:str = next((k for k, v in routers.items() if v == routedd.get()), '')
+            which:str = next((k for k, v in routers.items() if v == self.routedd.get()), '')
             Context.ui.show_frame(which)
 
         sfr:th.Frame = th.Frame(fr, width=Context.ui.frwidth)
 
         th.Label(sfr, text=lbls['route'], justify=tk.LEFT).grid(row=0, column=0, padx=5, pady=5)
 
-        routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=list(routers.values()), width=25)
-        routedd.bind("<<ComboboxSelected>>", on_combo_change)
-        th.Tooltip(routedd, tts["route_type"])
-        routedd.grid(row=0, column=1, padx=5, pady=5)
+        # Local only appears while the local router is enabled and its data is downloaded
+        types:list = [v for k, v in routers.items() if k != 'Local' or Context.router.local_ready()]
+        self.routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=types, width=25)
+        self.routedd.bind("<<ComboboxSelected>>", on_combo_change)
+        th.Tooltip(self.routedd, tts["route_type"])
+        self.routedd.grid(row=0, column=1, padx=5, pady=5)
 
         #r3:th.Button = th.Button(sfr, image=Context.ui.help_img, cursor="hand2", command=lambda: Context.ui._show_help())
         r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=lambda: Context.ui._show_help())
@@ -472,8 +474,10 @@ class LocalPlotter(Plotter):
             if not v: ac.set_error_style()
         if not params['from'] or not params['to']: return
 
-        Context.router.plot_route('Local', params)
+        # Busy first, so it's drawn before the worker starts loading or searching; its label needs the systems now
+        Context.router.src, Context.router.dest = params['from'], params['to']
         Context.ui._show_busy_gui(True)
+        Context.router.plot_route('Local', params)
 
 
 class GalaxyPlotter(Plotter):

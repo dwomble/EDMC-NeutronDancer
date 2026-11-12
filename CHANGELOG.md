@@ -6,6 +6,10 @@
 
 * An entirely new, local plotter that uses Spansh data dumps to plot routes
 
+## Bug Fixes
+
+* Stopped duplicate entries and placeholders from appearing in dropdown menus
+
 ## v3.0.0 2026-11-09
 
 ### New Features

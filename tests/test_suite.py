@@ -16,6 +16,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 import threading
+import time
 
 import tests.edmc.requests as mock_requests
 from tests.edmc import edmc_data
@@ -36,6 +37,8 @@ from Router.ship import Ship
 from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
 from Router.local.index import Index, build
 from Router.local.search import Planner
+from Router.local.index import Combined
+from Router.local.data import LocalData
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -139,6 +142,18 @@ class TestUpdater:
 
         call = mock_requests._mock_requests.calls[-1]
         assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-NeutronDancer-Updater"
+
+    def test_extra_check_in_git_checkout(self, tmp_path) -> None:
+        """ The extra (data) check runs on the update schedule even where a git checkout skips the plugin update. """
+        (tmp_path / ".git").mkdir()
+        updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer-ExtraTest")
+        extra = Mock()
+        with patch.object(updater, 'get_release') as release:
+            updater.check_for_update("1.0.0", interval=-1, extra=extra)
+            for _ in range(50):
+                if extra.called: break
+                time.sleep(0.02)
+        assert extra.called and not release.called
 
     def test_reads_version_file(self, tmp_path) -> None:
         (tmp_path / "version").write_text("1.2.3")
@@ -887,8 +902,9 @@ def _synthetic_dump(folder:Path, rows:list|None = None) -> Path:
     """ A gzipped Spansh-style dump: by default neutrons every 200 Ly along z, with K stars beside them every 40 Ly. """
     import gzip
     if rows is None:
-        rows = [{'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
-        rows += [{'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}} for i in range(76)]
+        rows = [{'id64': i, 'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
+        rows += [{'id64': 100 + i, 'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}}
+                 for i in range(76)]
     dump:Path = folder / 'systems.json.gz'
     with gzip.open(dump, 'wt') as f:
         f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in rows) + '\n]\n')
@@ -936,8 +952,9 @@ class TestLocalRouting:
     def test_detours_to_refuel(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Too little fuel to boost on: rewind to the neutron, scoop next door, replan back through it and boost. """
         star:dict = {'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': 0}}
-        rows:list = [{'name': 'N0', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 0}}, {'name': 'S0', **star},
-                     {'name': 'N1', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 250}}]
+        rows:list = [{'id64': 1, 'name': 'N0', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 0}},
+                     {'id64': 2, 'name': 'S0', **star},
+                     {'id64': 3, 'name': 'N1', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 250}}]
         idx:dict = build(_synthetic_dump(tmp_path, rows))
 
         harness.play_sequence('loadout')
@@ -948,6 +965,47 @@ class TestLocalRouting:
         assert [(s.name, s.kind) for s in steps] == [('N0', 'plain'), ('S0', 'plain'), ('N0', 'plain'), ('<dest>', 'boost')]
         assert steps[1].refuel
 
+    def test_local_data_installs(self, tmp_path:Path) -> None:
+        """ Downloads, checks and unpacks each index in the manifest, skips unchanged ones and drops retired ones. """
+        import hashlib, io, zipfile
+        idx:dict = build(_synthetic_dump(tmp_path))
+        assets:dict = {}
+        files:dict = {}
+        for kind in ('neutron', 'kgbfoam', 'kgbfoam_add'):
+            idx['kgbfoam' if kind == 'kgbfoam_add' else kind].save(tmp_path / 'built' / kind)
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
+                for f in (tmp_path / 'built' / kind).iterdir(): z.write(f, arcname=f.name)
+            assets[f'{kind}.zip'] = buf.getvalue()
+            files[kind] = {'asset': f'{kind}.zip', 'sha256': hashlib.sha256(buf.getvalue()).hexdigest(), 'size': len(buf.getvalue())}
+
+        def get(url, **kw):
+            name:str = url.rsplit('/', 1)[1]
+            r = Mock()
+            r.json.return_value = {'files': files}
+            r.iter_content.return_value = [assets.get(name, b'')]
+            r.__enter__ = Mock(return_value=r); r.__exit__ = Mock(return_value=False)
+            return r
+
+        data:LocalData = LocalData(tmp_path / 'data', Mock(get=get), 'test')
+        outcome:list = []
+        for _ in range(2):
+            data._update(lambda s: None, outcome.append)
+        assert outcome == [True, False]
+        assert all((tmp_path / 'data' / k / 'meta.json').exists() for k in files)
+
+        # The add-on and the base search as one, with the add-on's stars numbered after the base's
+        both:Combined = Combined(Index.load(tmp_path / 'data' / 'kgbfoam'), Index.load(tmp_path / 'data' / 'kgbfoam_add'))
+        assert len(both) == 2 * len(idx['kgbfoam']) and len(both.near((5.0, 0.0, 0.0), 1)) == 2
+
+        del files['kgbfoam_add']
+        data._update(lambda s: None, outcome.append)
+        assert outcome[-1] is True and not (tmp_path / 'data' / 'kgbfoam_add').exists()
+
+        files['neutron']['sha256'] = 'bad'
+        data._update(lambda s: None, outcome.append)
+        assert outcome[-1] is None
+
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
         """ The Local route type looks up the destination on Spansh and plots from the data folder's indexes. """
@@ -955,13 +1013,24 @@ class TestLocalRouting:
         plotter_thread = None
         monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
         for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / 'data' / kind)
+        assert not harness.plugin.router.local_ready()  # data present, but the local router is still off
+        harness.config.set(f"{harness.plugin.plugin_name}_local_router", True)
+        assert harness.plugin.router.local_ready()
+
+        # Opening the Local plotter loads the indexes in the background, ready for the first plot
+        harness.plugin.router.local = None
+        harness.plugin.ui.show_frame('Local')
+        for _ in range(250):
+            if harness.plugin.router.local is not None: break
+            time.sleep(0.02)
+        assert harness.plugin.router.local is not None
 
         harness.play_sequence('loadout')
         router = harness.plugin.router
-        router.system, router.star_pos, router.local = 'Sol', (0.0, 0.0, 0.0), None
+        router.system, router.star_pos, router.address, router.local = 'Sol', (0.0, 0.0, 0.0), 10477373803, None
 
         lookup = Mock(status_code=200)
-        lookup.json.return_value = {'results': [{'name': 'Far Away', 'x': 0, 'y': 0, 'z': 3000}]}
+        lookup.json.return_value = {'results': [{'name': 'Far Away', 'x': 0, 'y': 0, 'z': 3000, 'id64': 999}]}
         with patch('Router.route_manager.Thread', side_effect=capture_thread):
             with patch('Router.route_manager.SESSION.get', return_value=lookup):
                 router.plot_route('Local', {'from': 'Sol', 'to': 'far away', 'ship': router.ship_id, 'cargo': 0, 'reserve_size': 0,
@@ -972,6 +1041,9 @@ class TestLocalRouting:
         route = harness.plugin.route
         names:list = [r[route.colind('System Name')] for r in route.route]
         assert (names[0], names[-1]) == ('Sol', 'Far Away')
+        assert route.navroute['Sol']['StarPos'] == [0.0, 0.0, 0.0] and route.navroute['Far Away']['StarPos'] == [0, 0, 3000]
+        assert all(v['StarPos'] and v['SystemAddress'] is not None for v in route.navroute.values())
+        assert (route.navroute['Sol']['SystemAddress'], route.navroute['Far Away']['SystemAddress']) == (10477373803, 999)
         assert route.colind('Neutron') is not None
         assert any(r[route.colind('Refuel')] for r in route.route)
 

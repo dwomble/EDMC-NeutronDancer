@@ -6,7 +6,7 @@ from requests import Response
 from pathlib import Path
 from time import time, sleep
 from datetime import UTC, datetime, timedelta
-from threading import Thread
+from threading import Lock, Thread
 
 from config import config # type: ignore
 from timeout_session import new_session # type: ignore
@@ -21,6 +21,8 @@ from .route import Route
 from .plotters import PLOTTER_SPECS
 from .local.index import Index
 from .local.search import Planner
+from .local.index import Combined
+from .local.data import LocalData
 from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
@@ -41,6 +43,7 @@ class Router():
         # Current location data and settings
         self.system:str = ""
         self.star_pos:tuple|None = None # current system's coordinates, from EDMC's journal state
+        self.address:int|None = None # current system's id64, from EDMC's journal state
         self.src:str = ''
         self.dest:str = ''
 
@@ -51,6 +54,8 @@ class Router():
 
         # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
         self.local:Planner|None = None
+        self.local_lock:Lock = Lock() # a preload and a plot can both try to load the indexes
+        self.data:LocalData = LocalData(Path(Context.plugin_dir) / DATA_DIR, SESSION, Context.plugin_useragent)
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -420,13 +425,34 @@ class Router():
 
 
     def _coords(self, name:str) -> tuple|None:
-        """ Spansh's exact name and coordinates for a system, or None if it isn't found """
-        if name.casefold() == self.system.casefold() and self.star_pos: return self.system, self.star_pos
+        """ Spansh's exact name, coordinates and id64 for a system, or None if it isn't found """
+        if name.casefold() == self.system.casefold() and self.star_pos: return self.system, self.star_pos, self.address
         resp:Response = SESSION.get(SPANSH_SEARCH_SYSTEMS, params={'q': name}, headers={'User-Agent': Context.plugin_useragent},
                                     timeout=SPANSH_TIMEOUT)
         hits:list = resp.json().get('results', []) if resp.status_code == 200 else []
         hit:dict|None = next((h for h in hits if h.get('name', '').casefold() == name.casefold()), None)
-        return (hit['name'], (hit['x'], hit['y'], hit['z'])) if hit else None
+        return (hit['name'], (hit['x'], hit['y'], hit['z']), hit.get('id64')) if hit else None
+
+
+    @catch_exceptions
+    def load_local(self) -> Planner|None:
+        """ Load the local indexes once, whether for a preload or a plot; None if they aren't available """
+        with self.local_lock:
+            if self.local is not None or not self.local_ready(): return self.local
+
+            # A weekly add-on carries fuel stars found since the last full rebuild
+            folder:Path = Path(Context.plugin_dir) / DATA_DIR
+            sc:Index|Combined = Index.load(folder / 'kgbfoam')
+            if (folder / 'kgbfoam_add' / 'meta.json').exists(): sc = Combined(sc, Index.load(folder / 'kgbfoam_add'))
+            self.local = Planner(Index.load(folder / 'neutron'), sc)
+            return self.local
+
+
+    def local_ready(self) -> bool:
+        """ Whether the local router is enabled and both of its indexes are on disk """
+        folder:Path = Path(Context.plugin_dir) / DATA_DIR
+        return bool(config.get_bool(f"{Context.plugin_name}_local_router")) and \
+            all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam'))
 
 
     def _local_result(self, which:str, params:dict) -> list|None:
@@ -436,12 +462,10 @@ class Router():
             self.plot_error(which, params, 'ship_not_found')
             return None
 
-        if self.local is None:
-            folder:Path = Path(Context.plugin_dir) / DATA_DIR
-            if not all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam')):
-                self.plot_error(which, params, 'no_local_data')
-                return None
-            self.local = Planner(Index.load(folder / 'neutron'), Index.load(folder / 'kgbfoam'))
+        planner:Planner|None = self.load_local()
+        if planner is None:
+            self.plot_error(which, params, 'no_local_data')
+            return None
 
         src:tuple|None = self._coords(params['from'])
         dest:tuple|None = self._coords(params['to'])
@@ -450,20 +474,24 @@ class Router():
             return None
         if self.cancel_plot: return None
 
-        steps:list = self.local.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'])
+        steps:list = planner.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'])
         if steps and steps[-1].kind == 'fail':
             self.plot_error(which, params, f"Local route stopped after {len(steps) - 1} jumps: {steps[-1].name}")
             return None
 
-        # Spansh flags a neutron on the system you boost from, which is the one before each boosted jump
+        # Spansh flags a neutron on the system you boost from, which is the one before each boosted jump.
+        # x, y, z and id64 give each star's StarPos and SystemAddress to API users, as Spansh's own rows do.
+        x, y, z = src[1]
         rows:list = [{'system': src[0], 'distance_jumped': 0, 'jumps': 0, 'distance_left': round(math.dist(src[1], dest[1]), 2),
                       'neutron_star': bool(steps) and steps[0].kind == 'boost', 'is_scoopable': False, 'must_refuel': False,
-                      'fuel_in_tank': round(params['fuel'], 2)}]
+                      'fuel_in_tank': round(params['fuel'], 2), 'x': x, 'y': y, 'z': z, 'id64': src[2]}]
         for i, s in enumerate(steps):
+            x, y, z = s.pos
             rows.append({'system': dest[0] if s.name == '<dest>' else s.name, 'distance_jumped': round(s.dist, 2), 'jumps': 1,
                          'distance_left': round(math.dist(s.pos, dest[1]), 2),
                          'neutron_star': i + 1 < len(steps) and steps[i + 1].kind == 'boost',
-                         'is_scoopable': s.scoop, 'must_refuel': s.refuel, 'fuel_in_tank': round(s.fuel, 2)})
+                         'is_scoopable': s.scoop, 'must_refuel': s.refuel, 'fuel_in_tank': round(s.fuel, 2), 'x': x, 'y': y, 'z': z,
+                         'id64': dest[2] if s.name == '<dest>' else s.id64})
         return rows
 
 

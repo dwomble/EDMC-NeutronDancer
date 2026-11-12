@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, font
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -30,6 +30,7 @@ PREFS = [
     Pref('bool', 'copy_on_jump', cnf['copy_on_jump'], tk.BooleanVar, nb.Checkbutton, default=True),
     Pref('bool', 'copy_on_galmap', cnf['copy_on_galmap'], tk.BooleanVar, nb.Checkbutton, default=True),
     Pref('bool', 'install_prereleases', cnf['install_prereleases'], tk.BooleanVar, nb.Checkbutton, default=False),
+    Pref('bool', 'local_router', cnf['local_router'], tk.BooleanVar, nb.Checkbutton, default=False),
     ]
 
 @singleton
@@ -100,11 +101,22 @@ class Prefs:
 
 
     def save_prefs(self) -> None:
+        was:bool = bool(config.get_bool(f"{Context.plugin_name}_local_router"))
         for k in PREFS:
             var:tk.Variable|None = self.pref_vars.get(k.name)
             config.set(f"{Context.plugin_name}_{k.name}", var.get() if var else getattr(self, k.name))
             setattr(self, k.name, config.get(f"{Context.plugin_name}_{k.name}"))
         Context.overlay.save_prefs()
+
+        # Turning the local router on fetches its data; turning it off frees the memory and offers to free the disk
+        now:bool = bool(config.get_bool(f"{Context.plugin_name}_local_router"))
+        if now and not was: Context.ui.check_local_data()
+        if was and not now:
+            Context.router.local = None
+            Context.ui.refresh_route_types()
+            size:int = Context.router.data.size()
+            if size and messagebox.askyesno(cnf['options'], cnf['local_delete'].format(s=size / 1e9), parent=self.plugin_frame):
+                Context.router.data.delete()
         return
 
 

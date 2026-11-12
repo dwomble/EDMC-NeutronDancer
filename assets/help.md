@@ -86,6 +86,16 @@ This is an alternative Neutron Plotter written by **Indestinate** and hosted at 
 
 **Note**: This router uses a copy of the Spansh data. Due to update lag some stars accessible vis Spansh may not be in this router.
 
+## Local Neutron Plotter
+
+This is an entirely new, local plotter that uses Spansh data dumps to plot routes.
+
+**Pros**: It's very fast, produces good routes, handles refueling, and is not dependent on any external servers or services.
+**Cons**: It downloads about 2G of data and significantly increases EDMC's memory footprint.
+
+Due to the resource usage it can be enabled/disabled in the preferences.
+
+
 ## Road to Riches and Expressway to Exomastery
 
 **Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way. Enter your source system, and optionally a destination — leave the destination blank to plot a circular tour that returns to your source. Set your ship's jump range, a search radius (how far off the direct line to look), and the maximum number of systems to include, then click **Calculate**.

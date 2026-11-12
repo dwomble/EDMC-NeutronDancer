@@ -40,7 +40,9 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
     Context.updater.accept_prerelease = config.get_bool(f"{NAME}_install_prereleases", False)
-    Context.updater.check_for_update(Context.plugin_version)
+
+    # The daily check also refreshes the local router's data, once the UI exists to show its progress
+    Context.updater.check_for_update(Context.plugin_version, extra=lambda: Context.ui and Context.ui.check_local_data())
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
@@ -66,6 +68,9 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.spansh = SpanshData() # before Router(), which may load a saved route and trigger a fetch
     Context.router = Router()
     Context.ui = UI(parent)
+
+    # A missing or unfinished local data download starts straight away rather than waiting for the daily check
+    if not Context.router.local_ready(): Context.ui.check_local_data()
     Context.hotkeys = Hotkeys()
     Context.overlay = Overlay()
     if Context.route.route != []:
@@ -81,6 +86,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     if Context.router == None: return
     if state.get('StarPos'): Context.router.star_pos = tuple(state['StarPos'])
+    if state.get('SystemAddress'): Context.router.address = state['SystemAddress']
 
     match entry['event']:
         case 'Startup' | 'StartUp':

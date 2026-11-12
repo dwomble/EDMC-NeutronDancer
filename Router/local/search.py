@@ -2,7 +2,7 @@ import heapq, math
 from dataclasses import dataclass
 
 from ..ship import Ship
-from .index import Index
+from .index import Index, Combined
 
 COARSE:int = 10      # 100 Ly cells per density-map cell edge
 STEP:float = 250.0   # sampling step along the line to the destination
@@ -19,6 +19,7 @@ class Step:
     refuel:bool = False
     pos:tuple = ()
     scoop:bool = False
+    id64:int|None = None  # system address; None for the destination, which the caller knows
 
 class Stuck(Exception):
     """The route cannot continue from here."""
@@ -28,9 +29,9 @@ class Planner:
     Fewest-jump neutron routes using local star data, guided by a coarse map of neutron density, flown with fuel and scoop stops.
     """
 
-    def __init__(self, neu:Index, sc:Index) -> None:
+    def __init__(self, neu:Index, sc:Index|Combined) -> None:
         self.neu:Index = neu
-        self.sc:Index = sc
+        self.sc:Index|Combined = sc
         self.counts:dict = {}
         for j, k in enumerate(neu.ukeys):
             c:tuple = (((k >> 22) - 1024) // COARSE, (((k >> 11) & 2047) - 1024) // COARSE, ((k & 2047) - 1024) // COARSE)
@@ -128,7 +129,7 @@ class Planner:
             if not near: continue
             s:int = min(near, key=lambda h: h[1])[0]
             try:
-                self._jump_to(self.sc.pos(s), self.sc.name(s), 'plain', False, True, True)
+                self._jump_to(self.sc.pos(s), self.sc.name(s), self.sc.id64(s), 'plain', False, True, True)
                 return True
             except Stuck:
                 continue
@@ -265,6 +266,7 @@ class Planner:
         """Jumps from path node a toward b, stopping early at a refuel so the route can be replanned."""
         ship, sc, goal = self.ship, self.sc, self._node_pos(b)
         name:str = '<dest>' if b == -2 else self.neu.name(b)
+        addr:int|None = None if b == -2 else self.neu.id64(b)
 
         # From a neutron: boost straight to the next one, or land short on a scoop star when fuel is tight
         if a >= 0:
@@ -273,24 +275,24 @@ class Planner:
 
             # Neutrons can't be scooped, so only boost straight in if enough is left to move on from it
             if gap <= boost and self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True) >= self.low:
-                self._jump_to(goal, name, 'boost', True, False)
+                self._jump_to(goal, name, addr, 'boost', True, False)
                 return
 
             # Otherwise boost onto a scoopable star instead: the one nearest the next neutron
             hits:list = [(math.dist(sc.pos(i), goal), i) for i, _ in sc.near(self.here, boost)]
             if not hits: raise Stuck('no scoopable star in boost reach')
             s:int = min(hits)[1]
-            self._jump_to(sc.pos(s), sc.name(s), 'boost', True, True)
+            self._jump_to(sc.pos(s), sc.name(s), sc.id64(s), 'boost', True, True)
             if self.refuelled: return
 
         # Plain jumps for the rest of the leg, via scoopable stars
         if self.here == goal: return
         for i in self._scoop_hops(goal):
-            self._jump_to(sc.pos(i), sc.name(i), 'plain', False, True)
+            self._jump_to(sc.pos(i), sc.name(i), sc.id64(i), 'plain', False, True)
             if self.refuelled: return
-        self._jump_to(goal, name, 'plain', False, False)
+        self._jump_to(goal, name, addr, 'plain', False, False)
 
-    def _jump_to(self, q:tuple, name:str, kind:str, charged:bool, scoopable:bool, force:bool = False) -> None:
+    def _jump_to(self, q:tuple, name:str, addr:int|None, kind:str, charged:bool, scoopable:bool, force:bool = False) -> None:
         """Jump to q, spending fuel for the current mass, and refuel to full if it's scoopable and low or forced."""
         dist:float = math.dist(self.here, q)
         used:float = self.ship.fuel_cost(dist, self.fuel, self.cargo, charged)
@@ -299,7 +301,7 @@ class Planner:
 
         topped:bool = scoopable and (force or self.fuel < self.low)
         if topped: self.fuel, self.refuelled = self.ship.tank_size, True
-        self.steps.append(Step(name, kind, dist, self.fuel, topped, q, scoopable))
+        self.steps.append(Step(name, kind, dist, self.fuel, topped, q, scoopable, addr))
         self.here = q
 
     def _scoop_hops(self, goal:tuple) -> list:

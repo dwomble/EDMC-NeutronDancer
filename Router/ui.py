@@ -4,6 +4,7 @@ from tkinter import ttk, font
 import tkinter.messagebox as confirmDialog
 from functools import partial
 from pathlib import Path
+from threading import Thread
 import re
 import requests
 import json
@@ -65,6 +66,8 @@ class UI():
         self.error_lbl:th.Label = th.Label(self.frame, text="", foreground='red', justify=tk.CENTER)
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
         self.hide_error()
+
+        self.local_lbl:th.Label = th.Label(self.frame, text="", justify=tk.LEFT)
 
         self.router:tk.StringVar = tk.StringVar()
         self.router.set('Galaxy Plotter')  # Set default value
@@ -208,6 +211,10 @@ class UI():
             case _:
                 self.sub_fr = self.plot_frames[which]
                 self.router.set(Context.router.route_types[which])
+
+                # Load the local indexes while the route is being entered, so the first plot doesn't wait for them
+                if which == 'Local' and Context.router.local is None:
+                    Thread(target=Context.router.load_local, daemon=True, name="Neutron Dancer local index loader").start()
                 self._place_cancel(which)
                 self.plotters[which].refresh_menus()
 
@@ -582,6 +589,40 @@ class UI():
     def galaxy_plot(self) -> None:
         """ Perform a galaxy plotter plot """
         self.plotters['Galaxy'].plot()
+
+
+    @catch_exceptions
+    def check_local_data(self) -> None:
+        """ Download or update the local router's data if it's enabled """
+        if not config.get_bool(f"{Context.plugin_name}_local_router"): return
+        Context.router.data.update(self.local_status, self._local_done)
+
+
+    def local_status(self, text:str|None) -> None:
+        """ Show local data download progress, or hide it with None """
+        if text is None:
+            self.local_lbl.grid_remove()
+            return
+        self.local_lbl['text'] = lbls['local_download'].format(s=text)
+        self.local_lbl.grid(row=11, column=0, columnspan=2, padx=5, sticky=tk.W)
+
+
+    def _local_done(self, changed:bool|None) -> None:
+        """ Reload the indexes on the next plot if they changed, and offer the Local route type once they're there """
+        if changed is None: self.show_error(lbls['local_failed'])
+        if not changed: return
+        Context.router.local = None
+        self.refresh_route_types()
+
+
+    def refresh_route_types(self) -> None:
+        """ Rebuild every route type menu, since Local only appears while it's enabled and its data is there """
+        types:list = [v for k, v in Context.router.route_types.items() if k != 'Local' or Context.router.local_ready()]
+        current:str = self.router.get()  # set_menu resets the shared selection to the first entry
+        for p in self.plotters.values():
+            if hasattr(p, 'routedd'): p.routedd.set_menu(types)
+        self.router.set(current)
+        if self.sub_fr is self.plot_frames.get('Local') and not Context.router.local_ready(): self.show_frame('Default')
 
 
     def show_error(self, error:str|None = None) -> None:

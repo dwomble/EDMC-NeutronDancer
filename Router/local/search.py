@@ -1,4 +1,3 @@
-"""Neutron route planning over local star indexes, flown as real jumps with fuel, replanning from each fuel star."""
 import heapq, math
 from dataclasses import dataclass
 
@@ -25,7 +24,9 @@ class Stuck(Exception):
     """The route cannot continue from here."""
 
 class Planner:
-    """Fewest-jump neutron routes, guided by a coarse map of neutron density, flown with fuel and scoop stops."""
+    """
+    Fewest-jump neutron routes using local star data, guided by a coarse map of neutron density, flown with fuel and scoop stops.
+    """
 
     def __init__(self, neu:Index, sc:Index) -> None:
         self.neu:Index = neu

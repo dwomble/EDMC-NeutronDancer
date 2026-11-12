@@ -1,4 +1,3 @@
-"""Compact, cell-sorted star indexes built from Spansh system dumps."""
 import gzip, json, math, sys
 from array import array
 from bisect import bisect_left, bisect_right
@@ -13,7 +12,9 @@ TYPES:dict = {'xs': 'f', 'ys': 'f', 'zs': 'f', 'ukeys': 'q', 'starts': 'q', 'off
 VERSION:int = 1
 
 class Index:
-    """Stars sorted by grid cell, as flat coordinate arrays plus a name blob."""
+    """
+    Generate compact, cell-sorted star indexes from Spansh system dumps.
+    """
 
     @staticmethod
     def _cell(x:float, y:float, z:float) -> tuple:

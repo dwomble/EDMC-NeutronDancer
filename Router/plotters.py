@@ -217,7 +217,7 @@ class Plotter(ABC):
         th.Label(sfr, text=lbls['route'], justify=tk.LEFT).grid(row=0, column=0, padx=5, pady=5)
 
         # Local only appears while the local router is enabled and its data is downloaded
-        types:list = [v for k, v in routers.items() if k != 'Local' or Context.router.local_ready()]
+        types:list = [v for k, v in routers.items() if k != 'Local' or Context.localdata.ready()]
         self.routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=types, width=25)
         self.routedd.bind("<<ComboboxSelected>>", on_combo_change)
         th.Tooltip(self.routedd, tts["route_type"])

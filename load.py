@@ -9,7 +9,7 @@ from config import config, user_agent  # type: ignore
 from monitor import monitor # type: ignore
 import edmc_data # type: ignore
 
-from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, errs, CarrierStates
+from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, DATA_DIR, errs, CarrierStates
 from Router.utils.debug import Debug, catch_exceptions
 from Router.utils.updater import Notices, Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
@@ -22,6 +22,7 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
+from Router.local.data import LocalData
 import Router.api as api
 
 VERSION:str = "0.0.0-dev" # For the plugin browser
@@ -41,8 +42,10 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
     Context.updater.accept_prerelease = config.get_bool(f"{NAME}_install_prereleases", False)
 
+    Context.localdata = LocalData(Path(Context.plugin_dir) / DATA_DIR, Path(Context.plugin_dir) / 'updates' / 'star-data')
+
     # The daily check also refreshes the local router's data, once the UI exists to show its progress
-    Context.updater.check_for_update(Context.plugin_version, extra=lambda: Context.ui and Context.ui.check_local_data())
+    Context.updater.check_for_update(Context.plugin_version, extra=lambda: Context.ui and Context.localdata.check_local_data())
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
@@ -70,7 +73,7 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.ui = UI(parent)
 
     # A missing or unfinished local data download starts straight away rather than waiting for the daily check
-    if not Context.router.local_ready(): Context.ui.check_local_data()
+    if not (Context.localdata.ready() and Context.localdata.installed()): Context.localdata.check_local_data()
     Context.hotkeys = Hotkeys()
     Context.overlay = Overlay()
     if Context.route.route != []:

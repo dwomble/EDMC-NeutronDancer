@@ -1,13 +1,15 @@
 """Download and install the local routing indexes published on the repository's star-data releases."""
-import hashlib, json, shutil, zipfile
+import requests
+import hashlib, json, shutil, time, zipfile
 from pathlib import Path
-from threading import Thread
+from threading import Lock, Thread
 from typing import Callable
 
-import requests
+from config import config # type: ignore
 
-from ..constants import GH_USER, GH_PROJECT, LOCAL_TAG
-from ..utils.debug import Debug
+from ..constants import GH_USER, GH_PROJECT, LOCAL_TAG, DATA_DIR,lbls
+from ..context import Context
+from ..utils.debug import Debug, catch_exceptions
 from .index import VERSION
 
 # Each index format has its own release, so older plugin versions keep data they can read
@@ -16,73 +18,74 @@ URL:str = f"https://github.com/{GH_USER}/{GH_PROJECT}/releases/download/{LOCAL_T
 class LocalData:
     """The index folders under the plugin's data folder, kept in step with the release's manifest."""
 
-    def __init__(self, folder:Path, session:requests.Session, agent:str) -> None:
+    def __init__(self, folder:Path, backup:Path) -> None:
         self.folder:Path = folder
-        self.session:requests.Session = session
-        self.agent:str = agent
-        self.busy:bool = False
+        self.backup:Path = backup
+        self.lock:Lock = Lock()
 
     def installed(self) -> dict:
         """Manifest entries for the indexes on disk, as of their download."""
-        path:Path = self.folder / 'local.json'
+        path:Path = self.folder / 'star-data.json'
         return json.loads(path.read_text()) if path.exists() else {}
 
-    def update(self, status:Callable[[str|None], None], done:Callable[[bool|None], None]) -> None:
-        """Bring the indexes up to date in the background; done gets whether anything changed, or None on failure."""
-        if self.busy: return
-        self.busy = True
-        Thread(target=self._update, args=(status, done), daemon=True, name="Neutron Dancer local data").start()
+    def ready(self) -> bool:
+        """ Whether the local router is enabled and both of its indexes are on disk """
+        folder:Path = Path(Context.plugin_dir) / DATA_DIR
+        return bool(config.get_bool(f"{Context.plugin_name}_local_router")) and \
+            all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam'))
 
-    def delete(self) -> None:
-        """Remove every downloaded index."""
-        for kind in self.installed(): shutil.rmtree(self.folder / kind, ignore_errors=True)
-        (self.folder / 'local.json').unlink(missing_ok=True)
+    def update(self, status:Callable[[str], None]) -> bool:
+        """Bring the indexes in line with the release's manifest; True if anything changed."""
+        if self.lock.locked(): return False
 
-    def size(self) -> int:
-        """Bytes the downloaded indexes take on disk."""
-        return sum(f.stat().st_size for k in self.installed() for f in (self.folder / k).glob('*') if f.is_file())
-
-    def _update(self, status:Callable[[str|None], None], done:Callable[[bool|None], None]) -> None:
-        changed:bool = False
-        try:
-            resp:requests.Response = self.session.get(f"{URL}/manifest.json", headers={'User-Agent': self.agent}, timeout=30)
+        with self.lock:
+            Debug.logger.info(f"Checking star data at {URL}")
+            resp:requests.Response = Context.session.get(f"{URL}/manifest.json", headers={'User-Agent': Context.plugin_useragent}, timeout=30)
             resp.raise_for_status()
             files:dict = resp.json()['files']
             have:dict = self.installed()
+            stale:list = [k for k, e in files.items()
+                          if have.get(k, {}).get('sha256') != e['sha256'] or not (self.folder / k / 'meta.json').exists()]
+            gone:list = [k for k in have if k not in files]
 
-            # Fetch whatever is new or changed, recording each as it lands so an interrupted run resumes from there
-            for kind, entry in files.items():
-                if have.get(kind, {}).get('sha256') == entry['sha256'] and (self.folder / kind / 'meta.json').exists(): continue
-                self._fetch(kind, entry, status)
-                have[kind] = entry
-                (self.folder / 'local.json').write_text(json.dumps(have, indent=2))
-                changed = True
+            # Record each index as it lands so an interrupted run resumes from there
+            for kind in stale:
+                self._fetch(kind, files[kind], status)
+                have[kind] = files[kind]
+                (self.folder / 'star-data.json').write_text(json.dumps(have, indent=2))
 
             # An add-on is dropped from the manifest once a full rebuild absorbs it
-            for kind in [k for k in have if k not in files]:
+            for kind in gone:
+                Debug.logger.info(f"Removing retired star data {kind}")
                 shutil.rmtree(self.folder / kind, ignore_errors=True)
                 del have[kind]
-                (self.folder / 'local.json').write_text(json.dumps(have, indent=2))
-                changed = True
+            if gone: (self.folder / 'star-data.json').write_text(json.dumps(have, indent=2))
 
-            status(None)
-            done(changed)
-        except Exception as e:
-            Debug.logger.error("Local route data update failed, exception info:", exc_info=e)
-            status(None)
-            done(None)
-        finally:
-            self.busy = False
+            if not stale and not gone: Debug.logger.info("Star data is up to date")
+            return bool(stale or gone)
 
-    def _fetch(self, kind:str, entry:dict, status:Callable[[str|None], None]) -> None:
-        """Download one packaged index, check its hash, unpack it beside the old one and swap it in."""
+    def delete(self) -> None:
+        """Remove every downloaded index and its backup."""
+        for kind in self.installed(): shutil.rmtree(self.folder / kind, ignore_errors=True)
+        (self.folder / 'star-data.json').unlink(missing_ok=True)
+        shutil.rmtree(self.backup, ignore_errors=True)
+
+    def size(self) -> int:
+        """Bytes the downloaded indexes and their backup take on disk."""
+        dirs:list = [self.folder / k for k in self.installed()] + [self.backup]
+        return sum(f.stat().st_size for d in dirs for f in d.rglob('*') if f.is_file())
+
+    def _fetch(self, kind:str, entry:dict, status:Callable[[str], None]) -> None:
+        """Download one packaged index, check its hash and swap it in, keeping the previous copy as the backup."""
+        Debug.logger.info(f"Downloading star data {entry['asset']}, {entry['size'] / 2 ** 20:.0f} MiB")
+        start:float = time.monotonic()
         part:Path = self.folder / f"{kind}.zip.part"
         sha = hashlib.sha256()
         got:int = 0
         shown:int = -1
         self.folder.mkdir(parents=True, exist_ok=True)
 
-        with self.session.get(f"{URL}/{entry['asset']}", headers={'User-Agent': self.agent}, stream=True, timeout=60) as r:
+        with Context.session.get(f"{URL}/{entry['asset']}", headers={'User-Agent': Context.plugin_useragent}, stream=True, timeout=60) as r:
             r.raise_for_status()
             with open(part, 'wb') as f:
                 for chunk in r.iter_content(1 << 20):
@@ -98,12 +101,35 @@ class LocalData:
 
         # zipfile strips absolute paths and '..' from entry names and never creates links, so nothing lands outside new
         new:Path = self.folder / f"{kind}.new"
-        old:Path = self.folder / f"{kind}.old"
         shutil.rmtree(new, ignore_errors=True)
         with zipfile.ZipFile(part) as z: z.extractall(new)
         part.unlink()
 
+        old:Path = self.backup / kind
         shutil.rmtree(old, ignore_errors=True)
+        self.backup.mkdir(parents=True, exist_ok=True)
         if (self.folder / kind).exists(): (self.folder / kind).rename(old)
         new.rename(self.folder / kind)
-        shutil.rmtree(old, ignore_errors=True)
+        Debug.logger.info(f"Installed star data {kind} in {time.monotonic() - start:.0f}s")
+
+    @catch_exceptions
+    def check_local_data(self) -> None:
+        """ Download or update the local router's data if it's enabled """
+        if not config.get_bool(f"{Context.plugin_name}_local_router"): return
+        Thread(target=self._sync_local, daemon=True, name="Neutron Dancer star data").start()
+
+
+    def _sync_local(self) -> None:
+        """ Sync the star data, then reload the indexes on the next plot and offer the Local route type if it changed """
+        try:
+            changed:bool = self.update(Context.ui.local_status)
+        except Exception as e:
+            Debug.logger.error("Star data update failed, exception info:", exc_info=e)
+            Context.ui.local_status(None)
+            Context.ui.show_error(lbls['local_failed'])
+            return
+
+        Context.ui.local_status(None)
+        if not changed: return
+        Context.router.local = None
+        Context.ui.refresh_route_types()

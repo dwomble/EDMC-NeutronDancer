@@ -1,7 +1,6 @@
 import json
 import math
 import re
-import requests
 from requests import Response
 from pathlib import Path
 from time import time, sleep
@@ -30,8 +29,6 @@ SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'r
                   'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '',
                   'window_geometries' : {}}
 
-SESSION:requests.Session = new_session(SPANSH_TIMEOUT) # shared, per PLUGINS.md
-
 @singleton
 class Router():
     """
@@ -55,7 +52,6 @@ class Router():
         # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
         self.local:Planner|None = None
         self.local_lock:Lock = Lock() # a preload and a plot can both try to load the indexes
-        self.data:LocalData = LocalData(Path(Context.plugin_dir) / DATA_DIR, SESSION, Context.plugin_useragent)
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -343,7 +339,7 @@ class Router():
         self.cancel_plot = False
         try:
             if url == INDY_ROUTE:
-                resp:Response = SESSION.get(url, params=params, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+                resp:Response = Context.session.get(url, params=params, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 data:dict = resp.json() if resp.status_code == 200 else {}
                 if self.cancel_plot: return
                 if not data.get('found'):
@@ -427,7 +423,7 @@ class Router():
     def _coords(self, name:str) -> tuple|None:
         """ Spansh's exact name, coordinates and id64 for a system, or None if it isn't found """
         if name.casefold() == self.system.casefold() and self.star_pos: return self.system, self.star_pos, self.address
-        resp:Response = SESSION.get(SPANSH_SEARCH_SYSTEMS, params={'q': name}, headers={'User-Agent': Context.plugin_useragent},
+        resp:Response = Context.session.get(SPANSH_SEARCH_SYSTEMS, params={'q': name}, headers={'User-Agent': Context.plugin_useragent},
                                     timeout=SPANSH_TIMEOUT)
         hits:list = resp.json().get('results', []) if resp.status_code == 200 else []
         hit:dict|None = next((h for h in hits if h.get('name', '').casefold() == name.casefold()), None)
@@ -438,7 +434,7 @@ class Router():
     def load_local(self) -> Planner|None:
         """ Load the local indexes once, whether for a preload or a plot; None if they aren't available """
         with self.local_lock:
-            if self.local is not None or not self.local_ready(): return self.local
+            if self.local is not None or not Context.localdata.ready(): return self.local
 
             # A weekly add-on carries fuel stars found since the last full rebuild
             folder:Path = Path(Context.plugin_dir) / DATA_DIR
@@ -446,13 +442,6 @@ class Router():
             if (folder / 'kgbfoam_add' / 'meta.json').exists(): sc = Combined(sc, Index.load(folder / 'kgbfoam_add'))
             self.local = Planner(Index.load(folder / 'neutron'), sc)
             return self.local
-
-
-    def local_ready(self) -> bool:
-        """ Whether the local router is enabled and both of its indexes are on disk """
-        folder:Path = Path(Context.plugin_dir) / DATA_DIR
-        return bool(config.get_bool(f"{Context.plugin_name}_local_router")) and \
-            all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam'))
 
 
     def _local_result(self, which:str, params:dict) -> list|None:
@@ -498,7 +487,7 @@ class Router():
     def _spansh_result(self, which:str, url:str, params:dict) -> list|None:
         """ Submit a Spansh job, poll it and flatten the result; None on failure or cancel """
         limit:int = int(params.get('max_time', 20))
-        results:Response = SESSION.post(url, data=params,
+        results:Response = Context.session.post(url, data=params,
                                          headers={'User-Agent': Context.plugin_useragent,
                                                   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
                                                   timeout=SPANSH_TIMEOUT)
@@ -515,7 +504,7 @@ class Router():
             job:str = response["job"]
 
             results_url:str = f"{SPANSH_RESULTS}/{job}"
-            route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+            route_response = Context.session.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
             if route_response.status_code != 202:
                 Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
                 break
@@ -616,7 +605,7 @@ class Router():
             for key, url  in {"fsd": f"{GH_MODULES}/standard/frame_shift_drive.json",
                               "gfsb": f"{GH_MODULES}/internal/guardian_fsd_booster.json",
                               "ft": f"{GH_MODULES}/standard/fuel_tank.json"}.items():
-                r:Response = SESSION.get(url, headers={'User-Agent': Context.plugin_useragent}, timeout=10)
+                r:Response = Context.session.get(url, headers={'User-Agent': Context.plugin_useragent}, timeout=10)
                 if r.status_code != 200:
                     Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")
                     return

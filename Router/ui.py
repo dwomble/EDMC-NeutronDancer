@@ -22,7 +22,6 @@ from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, 
 from .ship import Ship
 from .route import Route
 from .context import Context
-from .route_manager import SESSION
 from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
 
@@ -589,13 +588,6 @@ class UI():
         self.plotters['Galaxy'].plot()
 
 
-    @catch_exceptions
-    def check_local_data(self) -> None:
-        """ Download or update the local router's data if it's enabled """
-        if not config.get_bool(f"{Context.plugin_name}_local_router"): return
-        Context.router.data.update(self.local_status, self._local_done)
-
-
     def local_status(self, text:str|None) -> None:
         """ Show local data download progress, or hide it with None """
         if text is None:
@@ -605,22 +597,14 @@ class UI():
         self.local_lbl.grid(row=11, column=0, columnspan=2, padx=5, sticky=tk.W)
 
 
-    def _local_done(self, changed:bool|None) -> None:
-        """ Reload the indexes on the next plot if they changed, and offer the Local route type once they're there """
-        if changed is None: self.show_error(lbls['local_failed'])
-        if not changed: return
-        Context.router.local = None
-        self.refresh_route_types()
-
-
     def refresh_route_types(self) -> None:
         """ Rebuild every route type menu, since Local only appears while it's enabled and its data is there """
-        types:list = [v for k, v in Context.router.route_types.items() if k != 'Local' or Context.router.local_ready()]
+        types:list = [v for k, v in Context.router.route_types.items() if k != 'Local' or Context.localdata.ready()]
         current:str = self.router.get()  # set_menu resets the shared selection to the first entry
         for p in self.plotters.values():
             if hasattr(p, 'routedd'): p.routedd.set_menu(types)
         self.router.set(current)
-        if self.sub_fr is self.plot_frames.get('Local') and not Context.router.local_ready(): self.show_frame('Default')
+        if self.sub_fr is self.plot_frames.get('Local') and not Context.localdata.ready(): self.show_frame('Default')
 
 
     def show_error(self, error:str|None = None) -> None:
@@ -670,7 +654,7 @@ class UI():
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
         try:
-            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         except:
             return [inp]
@@ -679,7 +663,7 @@ class UI():
     def query_indy(self, inp:str) -> list:
         """ Autocompleter lookup against Indy's own system database """
         try:
-            results:requests.Response = SESSION.get(INDY_SEARCH, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(INDY_SEARCH, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [m['name'] for m in results.json().get('matches', [])]
         except:
@@ -690,7 +674,7 @@ class UI():
         """ Function called by Autocompleter """
         res:list = []
         try:
-            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             for sys in json.loads(results.content):
                 if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\d]+$", "", sys.strip()) not in res:
@@ -704,7 +688,7 @@ class UI():
     def query_station_names(self, inp:str) -> list:
         """ Function called by the Trade Planner's Autocompleter """
         try:
-            results:requests.Response = SESSION.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
                                                       headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:

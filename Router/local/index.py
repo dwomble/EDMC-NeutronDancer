@@ -1,4 +1,4 @@
-import gzip, json, math, mmap, re, sys
+import gzip, json, math, mmap, sys
 from array import array
 from bisect import bisect_left, bisect_right
 from pathlib import Path
@@ -8,16 +8,16 @@ SUB:float = 33.34
 LO:tuple = (-45000.0, -6000.0, -25000.0)
 DIM:tuple = (int(90000 / SUB) + 1, int(12000 / SUB) + 1, int(95000 / SUB) + 1)
 SCOOP:tuple = tuple(f'{c} (' for c in 'OBAFGKM')
+KINDS:dict = {'neutron': ('"mainStar":"Neutron Star"',), 'kgbfoam': tuple(f'"mainStar":"{c}' for c in SCOOP)}
 NEAR_LS:float = 50.0         # a scoopable star this close to a main-star neutron makes it a fuel stop
 SECONDARY_LS:float = 250.0   # furthest a secondary neutron can be from arrival and still be worth the supercruise
-HEAD:re.Pattern = re.compile(r'\s*\{"id64":(\d+),"name":("(?:[^"\\]|\\.)*"),"coords":\{"x":([^,]+),"y":([^,]+),"z":([^}]+)\}')
 TYPES:dict = {'xs': 'f', 'ys': 'f', 'zs': 'f', 'ids': 'Q', 'fuel': 'B', 'ukeys': 'q', 'starts': 'q', 'offs': 'Q'}
 VERSION:int = 3
 CHUNK:int = 1 << 26  # bytes read per call when loading, so other threads get the GIL between reads
 
 class Index:
     """
-    Generate compact, cell-sorted star indexes from Spansh galaxy dumps.
+    Generate compact, cell-sorted star indexes from Spansh dumps.
     """
 
     @staticmethod
@@ -33,7 +33,8 @@ class Index:
     def __init__(self, arrs:dict, blob:bytes|mmap.mmap) -> None:
         # Built indexes hold arrays; loaded ones hold typed views over the bytes read from disk, which index the same way
         self.xs:array|memoryview = arrs['xs']; self.ys:array|memoryview = arrs['ys']; self.zs:array|memoryview = arrs['zs']
-        self.ids:array|memoryview = arrs['ids']; self.fuel_stops:array|memoryview = arrs['fuel']; self.ukeys:array|memoryview = arrs['ukeys']
+        self.ids:array|memoryview = arrs['ids']; self.fuel_stops:array|memoryview = arrs['fuel']
+        self.ukeys:array|memoryview = arrs['ukeys']
         self.starts:array|memoryview = arrs['starts']; self.offs:array|memoryview = arrs['offs']
         self.blob:bytes|mmap.mmap = blob
 
@@ -125,29 +126,46 @@ def occupancy(idx:Index) -> bytearray:
         if bit is not None: seen[bit >> 3] |= 1 << (bit & 7)
     return seen
 
-def _kinds(line:str) -> dict:
-    """The index kinds a galaxy dump line belongs to, each with whether it's a fuel stop."""
-    # Only neutron systems need their bodies parsed; for the rest a string search finds the main star's type
-    if '"subType":"Neutron Star"' not in line:
-        j:int = line.find('"mainStar":true')
-        k:int = line.rfind('"subType":"', 0, j) + 11
-        return {'kgbfoam': False} if j > 0 and k > 10 and line.startswith(SCOOP, k) else {}
+def galaxy_extras(src) -> dict:
+    """Fuel-stop and nearby secondary neutrons in a galaxy dump, as id64: (fuel, secondary, x, y, z, name)."""
+    extras:dict = {}
+    with gzip.open(src, 'rt', encoding='utf-8') as f:
+        for line in f:
+            # Star distances are all the systems dump lacks, and only systems with a neutron need them
+            if '"subType":"Neutron Star"' not in line: continue
+            r:dict = json.loads(line.strip().rstrip(','))
+            stars:list = [b for b in r['bodies'] if b.get('type') == 'Star']
+            at = lambda b: b.get('distanceToArrival') or 0.0
+            main:dict = next((b for b in stars if b.get('mainStar')), None) or min(stars, key=at)
+            where:tuple = (r['coords']['x'], r['coords']['y'], r['coords']['z'], r['name'])
 
-    stars:list = [b for b in json.loads(line.strip().rstrip(','))['bodies'] if b.get('type') == 'Star']
-    at = lambda b: b.get('distanceToArrival') or 0.0
-    main:dict = next((b for b in stars if b.get('mainStar')), None) or min(stars, key=at)
-    scoop:bool = main.get('subType', '').startswith(SCOOP)
-    out:dict = {'kgbfoam': False} if scoop else {}
+            # A main-star neutron refuels if a scoopable star is close; a secondary one if it arrives at one
+            if main.get('subType') == 'Neutron Star':
+                if any(at(b) <= NEAR_LS for b in stars if b.get('subType', '').startswith(SCOOP)): extras[r['id64']] = (True, False, *where)
+                continue
+            if min(at(b) for b in stars if b.get('subType') == 'Neutron Star') <= SECONDARY_LS:
+                extras[r['id64']] = (main.get('subType', '').startswith(SCOOP), True, *where)
+    return extras
 
-    # A main-star neutron refuels if a scoopable star is close; a secondary one only if arrival is at a scoopable star
-    if main.get('subType') == 'Neutron Star':
-        out['neutron'] = any(at(b) <= NEAR_LS for b in stars if b.get('subType', '').startswith(SCOOP))
-    elif min(at(b) for b in stars if b.get('subType') == 'Neutron Star') <= SECONDARY_LS:
-        out['neutron'] = scoop
-    return out
+def _add(c:dict, id64:int, x:float, y:float, z:float, name:str, fuel:bool) -> None:
+    """Append a star to a kind's columns unless its sub-cube already has one."""
+    # Thin dense regions: one bit per sub-cube records whether this kind already has a star there.
+    # A bit array over a fixed box costs about 330 MB; a set of tens of millions of tuples would not fit.
+    # Stars outside the box (bad coordinates, outliers) are always kept; fuel stops are too useful to drop.
+    bit:int|None = _bit(x, y, z)
+    if bit is not None:
+        if not fuel and c['seen'][bit >> 3] & (1 << (bit & 7)): return
+        c['seen'][bit >> 3] |= 1 << (bit & 7)
 
-def build(src, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None, skip:set|None = None) -> dict:
-    """One pass over a gzipped galaxy dump, path or stream, keeping a star per kind per sub-cube not in seen."""
+    c['xs'].append(x); c['ys'].append(y); c['zs'].append(z); c['ids'].append(id64); c['fuel'].append(fuel)
+    c['keys'].append(Index._key(*Index._cell(x, y, z)))
+    c['blob'] += name.encode('utf-8')
+    c['offs'].append(len(c['blob']))
+
+def build(src, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None, skip:set|None = None, extras:dict|None = None) -> dict:
+    """One pass over a gzipped systems dump, keeping a star per kind per sub-cube not in seen, flagged from extras."""
+    extras = extras or {}
+    skip = skip or set()
 
     # Collect each kind in arrival order first; sorting by cell needs every star, so it happens after the pass.
     # Names go into one byte blob with an offset per star, since millions of Python strings would cost gigabytes.
@@ -157,31 +175,20 @@ def build(src, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None, skip
 
     with gzip.open(src, 'rt', encoding='utf-8') as f:
         for line in f:
-            found:dict = {k: v for k, v in _kinds(line).items() if k in kinds}
-            if not found: continue
+            # Spansh writes one compact system per line, so a substring test skips most rows without parsing JSON
+            kind:str|None = next((k for k in kinds if any(m in line for m in KINDS[k])), None)
+            if kind is None: continue
 
-            # The header holds everything the indexes keep, so the rest of a long line is never parsed
-            h:re.Match|None = HEAD.match(line)
-            if not h: continue
-            id64:int = int(h[1])
-            x, y, z = float(h[3]), float(h[4]), float(h[5])
-            if skip and id64 in skip: continue
+            # Lines carry the array's trailing comma, which json.loads won't accept
+            r:dict = json.loads(line.strip().rstrip(','))
+            if r['id64'] in skip: continue
+            fuel:bool = kind == 'neutron' and r['id64'] in extras and extras[r['id64']][0]
+            _add(cols[kind], r['id64'], r['coords']['x'], r['coords']['y'], r['coords']['z'], r['name'], fuel)
 
-            for kind, fuel in found.items():
-                c:dict = cols[kind]
-
-                # Thin dense regions: one bit per sub-cube records whether this kind already has a star there.
-                # A bit array over a fixed box costs about 330 MB; a set of tens of millions of tuples would not fit.
-                # Stars outside the box (bad coordinates, outliers) are always kept; fuel stops are too useful to drop.
-                bit:int|None = _bit(x, y, z)
-                if bit is not None:
-                    if not fuel and c['seen'][bit >> 3] & (1 << (bit & 7)): continue
-                    c['seen'][bit >> 3] |= 1 << (bit & 7)
-
-                c['xs'].append(x); c['ys'].append(y); c['zs'].append(z); c['ids'].append(id64); c['fuel'].append(fuel)
-                c['keys'].append(Index._key(*Index._cell(x, y, z)))
-                c['blob'] += json.loads(h[2]).encode('utf-8')
-                c['offs'].append(len(c['blob']))
+    # Secondary neutrons aren't main stars, so the systems dump never lists them as neutrons
+    if 'neutron' in kinds:
+        for id64, (fuel, secondary, x, y, z, name) in extras.items():
+            if secondary and id64 not in skip: _add(cols['neutron'], id64, x, y, z, name, fuel)
 
     out:dict = {}
     for kind, c in cols.items():

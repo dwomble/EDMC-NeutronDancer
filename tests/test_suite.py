@@ -34,7 +34,7 @@ from Router.constants import SPANSH_ROUTE, NAME, lbls
 from Router.route import Route
 from Router.ship import Ship
 from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
-from Router.local.index import Index, build
+from Router.local.index import Index, build, galaxy_extras, VERSION
 from Router.local.search import Planner
 from Router.local.index import Combined
 from Router.local.data import LocalData, URL
@@ -777,22 +777,24 @@ class TestChatCommands:
         assert harness.plugin.ui.parent is not None
         assert harness.plugin.ui.parent.clipboard_get() == ''
 
-def _synthetic_dump(folder:Path, rows:list|None = None) -> Path:
-    """ A gzipped Spansh galaxy dump: by default neutrons every 200 Ly along z, K stars beside them every 40 Ly. """
+def _synthetic_build(folder:Path, rows:list|None = None) -> dict:
+    """ Indexes from synthetic dumps: by default neutrons every 200 Ly along z, with K stars every 40 Ly. """
     import gzip
     if rows is None:
         rows = [{'id64': i, 'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 200}} for i in range(16)]
         rows += [{'id64': 100 + i, 'name': f'S{i}', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': i * 40}}
                  for i in range(76)]
 
-    # Each row's main star, and any (type, distance) others, become bodies as Spansh writes them
+    # The galaxy dump lists each row's main star, and any (type, distance) others, as bodies; an unscanned row has none
     star = lambda kind, ls, main: {'type': 'Star', 'subType': kind, 'distanceToArrival': ls, 'mainStar': main}
-    lines:list = [{'id64': r['id64'], 'name': r['name'], 'coords': r['coords'],
-                   'bodies': [star(r['mainStar'], 0.0, True)] + [star(k, ls, False) for k, ls in r.get('stars', [])]} for r in rows]
-    dump:Path = folder / 'galaxy.json.gz'
-    with gzip.open(dump, 'wt') as f:
-        f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in lines) + '\n]\n')
-    return dump
+    systems:list = [{'id64': r['id64'], 'name': r['name'], 'mainStar': r['mainStar'], 'coords': r['coords']} for r in rows]
+    galaxy:list = [{'id64': r['id64'], 'name': r['name'], 'coords': r['coords'],
+                    'bodies': [] if r.get('unscanned') else [star(r['mainStar'], 0.0, True)] + [star(k, ls, False) for k, ls in r.get('stars', [])]}
+                   for r in rows]
+    for name, lines in (('systems', systems), ('galaxy', galaxy)):
+        with gzip.open(folder / f'{name}.json.gz', 'wt') as f:
+            f.write('[\n' + ',\n'.join(json.dumps(r, separators=(',', ':')) for r in lines) + '\n]\n')
+    return build(folder / 'systems.json.gz', extras=galaxy_extras(folder / 'galaxy.json.gz'))
 
 class TestShipyardSwap:
     """Test ship swapping from shipyard."""
@@ -1828,7 +1830,7 @@ class TestLocalRouting:
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_route_refuels_on_way(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Builds, saves and loads both indexes, then plots and fills a route that must stop to scoop. """
-        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / kind)
+        for kind, idx in _synthetic_build(tmp_path).items(): idx.save(tmp_path / kind)
         neu:Index = Index.load(tmp_path / 'neutron')
         sc:Index = Index.load(tmp_path / 'kgbfoam')
         assert (len(neu), len(sc)) == (16, 76)
@@ -1855,7 +1857,7 @@ class TestLocalRouting:
         rows:list = [{'id64': 1, 'name': 'N0', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 0}},
                      {'id64': 2, 'name': 'S0', **star},
                      {'id64': 3, 'name': 'N1', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': 250}}]
-        idx:dict = build(_synthetic_dump(tmp_path, rows))
+        idx:dict = _synthetic_build(tmp_path, rows)
 
         harness.play_sequence('loadout')
         ship:Ship = harness.plugin.router.ship
@@ -1866,16 +1868,18 @@ class TestLocalRouting:
         assert steps[1].refuel
 
     def test_build_flags_fuel_stops(self, tmp_path:Path) -> None:
-        """ Neutrons near a scoopable star are fuel stops; secondary neutrons count only within a short supercruise. """
+        """ Neutrons near scoopable stars are fuel stops; secondaries count if close; unscanned ones stay. """
         at = lambda i: {'x': i * 100, 'y': 0, 'z': 0}
         rows:list = [{'id64': 1, 'name': 'Near', 'mainStar': 'Neutron Star', 'coords': at(1), 'stars': [('K (Yellow-Orange) Star', 30.0)]},
                      {'id64': 2, 'name': 'Far', 'mainStar': 'Neutron Star', 'coords': at(2), 'stars': [('K (Yellow-Orange) Star', 80.0)]},
                      {'id64': 3, 'name': 'Close', 'mainStar': 'B (Blue-White) Star', 'coords': at(3), 'stars': [('Neutron Star', 200.0)]},
                      {'id64': 4, 'name': 'Long', 'mainStar': 'M (Red dwarf) Star', 'coords': at(4), 'stars': [('Neutron Star', 400.0)]},
-                     {'id64': 5, 'name': 'Hole', 'mainStar': 'Black Hole', 'coords': at(5), 'stars': [('Neutron Star', 100.0)]}]
-        idx:dict = build(_synthetic_dump(tmp_path, rows))
+                     {'id64': 5, 'name': 'Hole', 'mainStar': 'Black Hole', 'coords': at(5), 'stars': [('Neutron Star', 100.0)]},
+                     {'id64': 6, 'name': 'Bare', 'mainStar': 'Neutron Star', 'coords': at(6), 'unscanned': True}]
+        idx:dict = _synthetic_build(tmp_path, rows)
         neu:Index = idx['neutron']
-        assert {neu.name(i): neu.fuel(i) for i in range(len(neu))} == {'Near': True, 'Far': False, 'Close': True, 'Hole': False}
+        flags:dict = {neu.name(i): neu.fuel(i) for i in range(len(neu))}
+        assert flags == {'Near': True, 'Far': False, 'Close': True, 'Hole': False, 'Bare': False}
         assert sorted(idx['kgbfoam'].name(i) for i in range(len(idx['kgbfoam']))) == ['Close', 'Long']
 
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
@@ -1883,7 +1887,7 @@ class TestLocalRouting:
         """ With no other scoopable star about, a neutron with one beside it is where the route refuels. """
         rows:list = [{'id64': i, 'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 150}} for i in range(6)]
         rows[1]['stars'] = [('K (Yellow-Orange) Star', 10.0)]
-        idx:dict = build(_synthetic_dump(tmp_path, rows))
+        idx:dict = _synthetic_build(tmp_path, rows)
 
         harness.play_sequence('loadout')
         ship:Ship = harness.plugin.router.ship
@@ -1895,7 +1899,7 @@ class TestLocalRouting:
     def test_local_data_installs(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Downloads, checks and unpacks each index in the manifest, skips unchanged ones, drops retired ones, keeps a backup. """
         import hashlib, io, zipfile
-        idx:dict = build(_synthetic_dump(tmp_path))
+        idx:dict = _synthetic_build(tmp_path)
         assets:dict = {}
         files:dict = {}
         for kind in ('neutron', 'kgbfoam', 'kgbfoam_add'):
@@ -1937,7 +1941,7 @@ class TestLocalRouting:
     def test_old_index_not_ready(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
         """ Indexes in an older format aren't ready, so the startup check downloads the current ones. """
         monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
-        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / 'data' / kind)
+        for kind, idx in _synthetic_build(tmp_path).items(): idx.save(tmp_path / 'data' / kind)
         harness.config.set(f"{harness.plugin.plugin_name}_local_router", True)
         assert harness.plugin.localdata.ready()
 
@@ -1949,7 +1953,7 @@ class TestLocalRouting:
     def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
         """ The Local route type looks up the destination on Spansh and plots from the data folder's indexes. """
         monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
-        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / 'data' / kind)
+        for kind, idx in _synthetic_build(tmp_path).items(): idx.save(tmp_path / 'data' / kind)
         assert not harness.plugin.localdata.ready()  # data present, but the local router is still off
         harness.config.set(f"{harness.plugin.plugin_name}_local_router", True)
         assert harness.plugin.localdata.ready()
@@ -2003,12 +2007,15 @@ class TestLocalRouting:
         """ Plots three long routes from the indexes in $ND_LOCAL_DATA or data, building them from a dump if missing. """
         import time
         folder:Path = Path(os.environ.get('ND_LOCAL_DATA', Path(__file__).parent.parent / 'data'))
-        if not (folder / 'kgbfoam' / 'meta.json').exists() and not (folder / 'galaxy.json.gz').exists():
-            pytest.skip(f'no indexes or galaxy.json.gz in {folder}')
+        metas:list = [folder / k / 'meta.json' for k in ('neutron', 'kgbfoam')]
+        current:bool = all(m.exists() and json.loads(m.read_text()).get('version') == VERSION for m in metas)
+        dumps:list = [folder / f'{d}.json.gz' for d in ('systems', 'galaxy')]
+        if not current and not all(d.exists() for d in dumps):
+            pytest.skip(f'no v{VERSION} indexes or systems and galaxy dumps in {folder}; download the star-data-v{VERSION} release there')
 
-        if not (folder / 'kgbfoam' / 'meta.json').exists():
+        if not current:
             t:float = time.time()
-            for kind, idx in build(folder / 'galaxy.json.gz').items(): idx.save(folder / kind)
+            for kind, idx in build(dumps[0], extras=galaxy_extras(dumps[1])).items(): idx.save(folder / kind)
             print(f"\nbuilt indexes in {time.time() - t:.0f}s")
 
         neu:Index = Index.load(folder / 'neutron')

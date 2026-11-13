@@ -73,7 +73,6 @@ class TestStartup:
         assert harness.plugin.router is not None
         assert isinstance(harness.plugin.router.shiplist, dict)
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_harness_initialization_loads_ships_directory(self, harness:TestHarness) -> None:
         """ v2.0 ships/ load without a migration rewrite. """
         assert harness.plugin.router.shiplist == {"1": "Shipping Delay", "2": "Perviy"}
@@ -580,7 +579,6 @@ class TestShipLoadout:
         assert harness.plugin.router.route_params['Neutron']['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.route_params['Neutron']['range'] == harness.plugin.router.ship.range
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_loadout_without_id_skipped(self, harness:TestHarness) -> None:
         """ A loadout built before the ship's id is known isn't saved as a ship called "None". """
         harness.play_sequence('loadout')
@@ -806,7 +804,6 @@ class TestShipyardSwap:
 
         assert ship.loadout == {}
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_ship_keeps_fuel(self, harness:TestHarness):
         """ Dashboard fuel lands on the current ship, survives a save and reload, and isn't part of the loadout. """
         harness.play_sequence('loadout')
@@ -1816,7 +1813,6 @@ class TestPlotMethods:
 class TestLocalRouting:
     """ Offline neutron routing with fuel. """
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_fuel_matches_journal(self, harness:TestHarness) -> None:
         """ Range reproduces the journal's MaxJumpRange; boosted fuel is distance over the multiplier. """
         harness.play_sequence('loadout')
@@ -1827,7 +1823,6 @@ class TestLocalRouting:
         assert ship.fuel_cost(ship.jump_range(20) * 0.999, 20) == pytest.approx(ship.max_fuel_per_jump, rel=0.01)
         assert ship.fuel_cost(200, 20, charged=True) == ship.fuel_cost(200 / ship.supercharge_multiplier, 20)
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_route_refuels_on_way(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Builds, saves and loads both indexes, then plots and fills a route that must stop to scoop. """
         for kind, idx in _synthetic_build(tmp_path).items(): idx.save(tmp_path / kind)
@@ -1850,7 +1845,6 @@ class TestLocalRouting:
         assert steps[-1].name == '<dest>'
         assert sum(s.refuel for s in steps) >= sum(s.refuel for s in planner.plot(ship, src, dest, ship.tank_size))
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_detours_to_refuel(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Too little fuel to boost on: rewind to the neutron, scoop next door, replan back through it and boost. """
         star:dict = {'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 5, 'y': 0, 'z': 0}}
@@ -1882,7 +1876,6 @@ class TestLocalRouting:
         assert flags == {'Near': True, 'Far': False, 'Close': True, 'Hole': False, 'Bare': False}
         assert sorted(idx['kgbfoam'].name(i) for i in range(len(idx['kgbfoam']))) == ['Close', 'Long']
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_refuels_at_fuel_stop(self, harness:TestHarness, tmp_path:Path) -> None:
         """ With no other scoopable star about, a neutron with one beside it is where the route refuels. """
         rows:list = [{'id64': i, 'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 150}} for i in range(6)]
@@ -1949,7 +1942,6 @@ class TestLocalRouting:
         meta.write_text(json.dumps({**json.loads(meta.read_text()), 'version': 2}))
         assert not harness.plugin.localdata.ready()
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
         """ The Local route type looks up the destination on Spansh and plots from the data folder's indexes. """
         monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
@@ -2002,7 +1994,6 @@ class TestLocalRouting:
 
     @pytest.mark.manual_only
     @pytest.mark.slow
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_real_data_routes(self, harness:TestHarness) -> None:
         """ Plots three long routes from the indexes in $ND_LOCAL_DATA or data, building them from a dump if missing. """
         import time
@@ -2119,7 +2110,6 @@ class TestUIFunctions:
         _respond('get', 200, [{"system": "Shinrarta Dezhra", "name": "Jameson Memorial"}])
         assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
 
-    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_ship_menu_syncs_plotters(self, harness:TestHarness) -> None:
         """ Picking a ship from a dropdown, as Tk does it, moves the other plotters to that ship. """
         harness.play_sequence('loadout')

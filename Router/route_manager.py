@@ -21,7 +21,6 @@ from .plotters import PLOTTER_SPECS
 from .local.index import Index
 from .local.search import Planner
 from .local.index import Combined
-from .local.data import LocalData
 from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
@@ -267,23 +266,23 @@ class Router():
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
 
-    def plot_route(self, which:str, params:dict) -> bool:
+    def plot_route(self, type:str, params:dict) -> bool:
         """ Initiate Spansh route plotting """
 
-        spec = PLOTTER_SPECS.get(which)
+        spec = PLOTTER_SPECS.get(type)
         if spec is None:
-            Debug.logger.error(f"Unknown route type {which}")
+            Debug.logger.error(f"Unknown route type {type}")
             return False
 
         self.src = params[spec.src_key]
         self.dest = params.get(spec.dest_key, '')
-        self.route_params[which] = params
+        self.route_params[type] = params
 
-        self.last_plot = which
+        self.last_plot = type
         self._store_history()
 
-        Debug.logger.info(f"Plotting route {which} {spec.url} {params}")
-        Thread(target=self._plotter, args=(which, spec.url, params), daemon=True,
+        Debug.logger.info(f"Plotting route {type} {spec.url} {params}")
+        Thread(target=self._plotter, args=(type, spec.url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
         return True
 
@@ -333,7 +332,7 @@ class Router():
                 })
         return rows
 
-    def _plotter(self, which:str, url:str, params:dict) -> None:
+    def _plotter(self, type:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
 
         self.cancel_plot = False
@@ -343,7 +342,7 @@ class Router():
                 data:dict = resp.json() if resp.status_code == 200 else {}
                 if self.cancel_plot: return
                 if not data.get('found'):
-                    self.plot_error(which, params, data.get('error') or resp)
+                    self.plot_error(type, params, data.get('error') or resp)
                     return
 
                 hops:list = data.get('hops', [])
@@ -351,17 +350,17 @@ class Router():
                              'jumps': h['plainJumps'], 'neutron_star': i + 1 < len(hops) and hops[i + 1]['boosted']}
                             for i, h in enumerate(hops)]
             elif url == LOCAL_ROUTE:
-                local:list|None = self._local_result(which, params)
+                local:list|None = self._local_result(type, params)
                 if local is None: return
                 res = local
             else:
-                spansh:list|None = self._spansh_result(which, url, params)
+                spansh:list|None = self._spansh_result(type, url, params)
                 if spansh is None: return
                 res = spansh
 
             if res == []:
-                Debug.logger.info(f"No results for {which}, {params}")
-                self.plot_error(which, params, None)
+                Debug.logger.info(f"No results for {type}, {params}")
+                self.plot_error(type, params, None)
                 return
 
             cols:list = []; hdrs:list = []; h:str
@@ -400,7 +399,9 @@ class Router():
                     'StarClass': 'N' if neutron else 'M' if scoopable else '',
                 }
 
-            Context.route = Route(hdrs, rte, navroute=navroute)
+
+
+            Context.route = Route(hdrs, rte, navroute=navroute, type=type, shipname=self.ship.name if self.ship else "")
             Context.route.offset = 0
 
             if Context.route.fleetcarrier and self.carrier_location != '':
@@ -413,11 +414,11 @@ class Router():
             self.save()
 
             # Signal API users that a route has been plotted
-            api.emit_event(which == "FleetCarrier")
+            api.emit_event(type == "FleetCarrier")
 
         except Exception as e:
-            Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
-            self.plot_error(which, params, None)
+            Debug.logger.error(f"Failed to plot route {type}, {params}\nexception info:", exc_info=e)
+            self.plot_error(type, params, None)
 
 
     def _coords(self, name:str) -> tuple|None:
@@ -568,7 +569,7 @@ class Router():
                 Context.ui.show_error(errs['no_filename'] if not Context.csv else Context.csv.error)
                 return False
 
-            Context.route = Route(Context.csv.headers, Context.csv.route)
+            Context.route = Route(Context.csv.headers, Context.csv.route, navroute=Context.csv.navroute)
             self.src = Context.route.source()
             self.dest = Context.route.destination()
 
@@ -587,7 +588,7 @@ class Router():
     def export_route(self) -> bool:
         """ Save a route to a CSV file """
         try:
-            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
+            if Context.csv == None or Context.csv.write(Context.route) == False:
                 Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False
@@ -715,7 +716,9 @@ class Router():
         r = data.get('route', ([], [], -1, {}))
         (hdrs, route, offset) = r[0:3]
         navroute:dict = r[3] if len(r) > 3 else {}
-        Context.route = Route(hdrs, route, offset, navroute)
+        type:str = r[4] if len(r) > 4 else "Unknown"
+        shipname:str = r[5] if len(r) > 5 else ""
+        Context.route = Route(hdrs, route, offset, navroute, type, shipname)
 
         self.ship = Ship(data.get('ship', {}))
         ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}

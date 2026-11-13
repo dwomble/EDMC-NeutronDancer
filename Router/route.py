@@ -14,13 +14,15 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1, navroute:dict|None = None) -> None:
+    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1, navroute:dict|None = None, type:str = "Unknown", shipname:str = "") -> None:
         self.hdrs:list = hdrs
         self.route:list = route
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
         self.navroute:dict[str, dict] = navroute or {} # name -> SystemAddress/StarPos/StarClass
+        self.type:str = type
+        self.shipname:str = shipname
 
         self.sc:int|None = None # System column index
         self.nc:int|None = None # System / body column index
@@ -463,4 +465,4 @@ class Route:
 
 
     def as_dict(self) -> list:
-        return [self.hdrs, self.route, self.offset, self.navroute]
+        return [self.hdrs, self.route, self.offset, self.navroute, self.type, self.shipname]

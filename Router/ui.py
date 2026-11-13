@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from tkinter import ttk, font
 import tkinter.messagebox as confirmDialog
+from typing import TYPE_CHECKING
 from functools import partial
 from pathlib import Path
 from threading import Thread
@@ -20,9 +21,9 @@ from .utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
+from .route_window import RouteWindow
 from .route import Route
 from .context import Context
-from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
 
 @singleton
@@ -481,6 +482,7 @@ class UI():
                 if not ship:
                     return
 
+                self._update_item("all", "shipvar", ship.name)
                 self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
                 self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
 
@@ -491,6 +493,7 @@ class UI():
     @catch_exceptions
     def ship_selected(self, *args) -> None:
         """ Sync every ship dropdown to the one that changed, then update cargo and range """
+        Debug.logger.debug(f"ship_selected args: {args}")
         ship_name:str = self.parent.getvar(args[0]) if self.parent and len(args) else ''
         for p in self.plotters.values():
             if hasattr(p, 'shipvar') and p.shipvar.get() != ship_name: p.shipvar.set(ship_name)

@@ -139,7 +139,8 @@ class Plotter(ABC):
 
     def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
         """Create range entry widget."""
-        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0,
+                                            width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
         range_entry.grid(row=row, column=col, padx=5, pady=(15,5), sticky=tk.W)
 
@@ -412,31 +413,42 @@ class LocalPlotter(Plotter):
         plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
         self._plot_switcher(plot_fr, 0, 0)
 
-        route_fr:th.Frame = th.Frame(plot_fr)
-        self._create_source(route_fr, 0, 0)
-
         if Context.router.shiplist == {}:
             Context.ui.show_error(errs["no_ships"])
 
+        route_fr:th.Frame = th.Frame(plot_fr)
+        row:int = 0; col:int = 0
+        self._create_source(route_fr, row, col)
+        row += 1
+        self._create_dest(route_fr, row, col)
+        row += 1
+
         names:list = Context.router.shipnames()
-        self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=names[0] if names else '')
+        params:dict = Context.router.route_params.get('Local', {})
+        init:str = params.get('ship_build', {}).get('ShipName', '')
+        if init == "" and names != []:
+            init = names[0]
+
+        self.shipvar:tk.StringVar = tk.StringVar(route_fr, value=init)
         self.shipvar.trace_add("write", Context.ui.ship_selected)
         self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
         th.Tooltip(self.shipdd, tts["select_ship"])
-        self.shipdd.grid(row=0, column=5, padx=5, pady=5)
+        self.shipdd.grid(row=row, column=col, padx=5, pady=5)
+        col += 1
 
-        self._create_dest(route_fr, 1, 0)
         cargo_entry:th.Spinbox = th.Spinbox(route_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2,
                                             justify=tk.CENTER, name="cargo_entry")
         Context.ui.set_entry(cargo_entry, str(Context.router.cargo))
-        cargo_entry.grid(row=1, column=5, padx=5, pady=5)
+        cargo_entry.grid(row=row, column=col, padx=5, pady=5)
         th.Tooltip(cargo_entry, tts["cargo"])
+        col += 1
 
         reserve:float = Context.router.route_params.get('Local', {}).get('reserve_size', 0)
         self.fuel_res:th.Spinbox = th.Spinbox(route_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
         if reserve != 0: Context.ui.set_entry(self.fuel_res, str(reserve))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
-        self.fuel_res.grid(row=2, column=5, padx=5, pady=5)
+        self.fuel_res.grid(row=row, column=5, padx=5, pady=5, sticky=tk.W)
+
         route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
 
         self._create_buttons(plot_fr, 2, 0)

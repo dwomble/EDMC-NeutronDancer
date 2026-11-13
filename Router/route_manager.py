@@ -437,11 +437,13 @@ class Router():
         with self.local_lock:
             if self.local is not None or not Context.localdata.ready(): return self.local
 
-            # A weekly add-on carries fuel stars found since the last full rebuild
+            # Weekly add-ons carry neutrons and fuel stars found since the last full rebuild
             folder:Path = Path(Context.plugin_dir) / DATA_DIR
-            sc:Index|Combined = Index.load(folder / 'kgbfoam')
-            if (folder / 'kgbfoam_add' / 'meta.json').exists(): sc = Combined(sc, Index.load(folder / 'kgbfoam_add'))
-            self.local = Planner(Index.load(folder / 'neutron'), sc)
+            idx:dict = {}
+            for kind in ('neutron', 'kgbfoam'):
+                idx[kind] = Index.load(folder / kind)
+                if (folder / f'{kind}_add' / 'meta.json').exists(): idx[kind] = Combined(idx[kind], Index.load(folder / f'{kind}_add'))
+            self.local = Planner(idx['neutron'], idx['kgbfoam'])
             return self.local
 
 

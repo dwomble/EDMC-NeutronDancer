@@ -1,8 +1,8 @@
 name: Star Data
 
 # Rebuilds the local routing indexes from Spansh's dumps and publishes them on the star-data-v<index format version> release.
-# Monthly: both indexes in full from systems.json.gz. Weekly: the neutron index from systems_neutron.json.gz,
-# plus a fuel-star add-on from the last month's changes, so clients only download small files between full builds.
+# Monthly: both indexes in full from galaxy.json.gz, which alone has the star distances fuel-stop neutrons need.
+# Weekly: neutron and fuel-star add-ons from the last month's changes, so clients download little between full builds.
 on:
   schedule:
     - cron: '0 6 1 * *'   # full rebuild, 1st of the month
@@ -28,7 +28,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 360
     steps:
     - uses: actions/checkout@v4
       with:
@@ -59,26 +59,26 @@ jobs:
         mkdir -p out
         gh release download "$TAG" -p manifest.json -D out || true
 
+    # The galaxy dump is far bigger than the runner's disk, so it's streamed straight into the build
     - name: Full rebuild
       if: env.MODE == 'full'
-      run: |
-        curl -sSfL -o systems.json.gz "$SPANSH/systems.json.gz"
-        python scripts/local_data.py full systems.json.gz out
-        rm systems.json.gz
+      run: curl -sSfL "$SPANSH/galaxy.json.gz" | python scripts/local_data.py full - out
 
     - name: Weekly update
       if: env.MODE == 'weekly'
       run: |
-        curl -sSfL -o neutron.json.gz "$SPANSH/systems_neutron.json.gz"
-        python scripts/local_data.py neutron neutron.json.gz out
-        curl -sSfL -o month.json.gz "$SPANSH/systems_1month.json.gz"
-        gh release download "$TAG" -p kgbfoam.zip -D base
+        gh release download "$TAG" -p neutron.zip -p kgbfoam.zip -D base
+        unzip -q base/neutron.zip -d base/neutron
         unzip -q base/kgbfoam.zip -d base/kgbfoam
-        python scripts/local_data.py addon month.json.gz out --base base/kgbfoam
+        rm base/*.zip
+        curl -sSfL "$SPANSH/galaxy_1month.json.gz" | python scripts/local_data.py addon - out --base base
 
     - name: Publish
       run: |
         files=$(ls out/*.zip)
         gh release upload "$TAG" $files out/manifest.json --clobber
-        # A full rebuild includes the month's changes, so the previous add-on is obsolete
-        if [ "$MODE" = "full" ]; then gh release delete-asset "$TAG" kgbfoam_add.zip -y || true; fi
+        # A full rebuild includes the month's changes, so the previous add-ons are obsolete
+        if [ "$MODE" = "full" ]; then
+          gh release delete-asset "$TAG" neutron_add.zip -y || true
+          gh release delete-asset "$TAG" kgbfoam_add.zip -y || true
+        fi

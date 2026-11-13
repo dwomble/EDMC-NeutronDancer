@@ -1,4 +1,4 @@
-import gzip, json, math, mmap, sys
+import gzip, json, math, mmap, re, sys
 from array import array
 from bisect import bisect_left, bisect_right
 from pathlib import Path
@@ -7,14 +7,17 @@ CELL:float = 100.0
 SUB:float = 33.34
 LO:tuple = (-45000.0, -6000.0, -25000.0)
 DIM:tuple = (int(90000 / SUB) + 1, int(12000 / SUB) + 1, int(95000 / SUB) + 1)
-KINDS:dict = {'neutron': ('"mainStar":"Neutron Star"',), 'kgbfoam': tuple(f'"mainStar":"{c} (' for c in 'OBAFGKM')}
-TYPES:dict = {'xs': 'f', 'ys': 'f', 'zs': 'f', 'ids': 'Q', 'ukeys': 'q', 'starts': 'q', 'offs': 'Q'}
-VERSION:int = 2
+SCOOP:tuple = tuple(f'{c} (' for c in 'OBAFGKM')
+NEAR_LS:float = 50.0         # a scoopable star this close to a main-star neutron makes it a fuel stop
+SECONDARY_LS:float = 250.0   # furthest a secondary neutron can be from arrival and still be worth the supercruise
+HEAD:re.Pattern = re.compile(r'\s*\{"id64":(\d+),"name":("(?:[^"\\]|\\.)*"),"coords":\{"x":([^,]+),"y":([^,]+),"z":([^}]+)\}')
+TYPES:dict = {'xs': 'f', 'ys': 'f', 'zs': 'f', 'ids': 'Q', 'fuel': 'B', 'ukeys': 'q', 'starts': 'q', 'offs': 'Q'}
+VERSION:int = 3
 CHUNK:int = 1 << 26  # bytes read per call when loading, so other threads get the GIL between reads
 
 class Index:
     """
-    Generate compact, cell-sorted star indexes from Spansh system dumps.
+    Generate compact, cell-sorted star indexes from Spansh galaxy dumps.
     """
 
     @staticmethod
@@ -30,7 +33,7 @@ class Index:
     def __init__(self, arrs:dict, blob:bytes|mmap.mmap) -> None:
         # Built indexes hold arrays; loaded ones hold typed views over the bytes read from disk, which index the same way
         self.xs:array|memoryview = arrs['xs']; self.ys:array|memoryview = arrs['ys']; self.zs:array|memoryview = arrs['zs']
-        self.ids:array|memoryview = arrs['ids']; self.ukeys:array|memoryview = arrs['ukeys']
+        self.ids:array|memoryview = arrs['ids']; self.fuel_stops:array|memoryview = arrs['fuel']; self.ukeys:array|memoryview = arrs['ukeys']
         self.starts:array|memoryview = arrs['starts']; self.offs:array|memoryview = arrs['offs']
         self.blob:bytes|mmap.mmap = blob
 
@@ -44,6 +47,10 @@ class Index:
     def id64(self, i:int) -> int:
         """System address of star i."""
         return self.ids[i]
+
+    def fuel(self, i:int) -> bool:
+        """Whether star i's system also has a scoopable star close enough to refuel on the visit."""
+        return bool(self.fuel_stops[i])
 
     def name(self, i:int) -> str:
         """System name of star i."""
@@ -71,7 +78,7 @@ class Index:
         """Write the arrays and names as raw files plus a small header."""
         folder.mkdir(parents=True, exist_ok=True)
         for k in TYPES:
-            with open(folder / f'{k}.bin', 'wb') as f: f.write(getattr(self, k))
+            with open(folder / f'{k}.bin', 'wb') as f: f.write(getattr(self, 'fuel_stops' if k == 'fuel' else k))
         (folder / 'names.bin').write_bytes(self.blob)
         meta:dict = {'version': VERSION, 'stars': len(self), 'cells': len(self.ukeys), 'byteorder': sys.byteorder}
         (folder / 'meta.json').write_text(json.dumps(meta))
@@ -118,38 +125,63 @@ def occupancy(idx:Index) -> bytearray:
         if bit is not None: seen[bit >> 3] |= 1 << (bit & 7)
     return seen
 
-def build(src:Path, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None) -> dict:
-    """One pass over a gzipped dump, keeping the first star of each kind per sub-cube not already in seen."""
+def _kinds(line:str) -> dict:
+    """The index kinds a galaxy dump line belongs to, each with whether it's a fuel stop."""
+    # Only neutron systems need their bodies parsed; for the rest a string search finds the main star's type
+    if '"subType":"Neutron Star"' not in line:
+        j:int = line.find('"mainStar":true')
+        k:int = line.rfind('"subType":"', 0, j) + 11
+        return {'kgbfoam': False} if j > 0 and k > 10 and line.startswith(SCOOP, k) else {}
+
+    stars:list = [b for b in json.loads(line.strip().rstrip(','))['bodies'] if b.get('type') == 'Star']
+    at = lambda b: b.get('distanceToArrival') or 0.0
+    main:dict = next((b for b in stars if b.get('mainStar')), None) or min(stars, key=at)
+    scoop:bool = main.get('subType', '').startswith(SCOOP)
+    out:dict = {'kgbfoam': False} if scoop else {}
+
+    # A main-star neutron refuels if a scoopable star is close; a secondary one only if arrival is at a scoopable star
+    if main.get('subType') == 'Neutron Star':
+        out['neutron'] = any(at(b) <= NEAR_LS for b in stars if b.get('subType', '').startswith(SCOOP))
+    elif min(at(b) for b in stars if b.get('subType') == 'Neutron Star') <= SECONDARY_LS:
+        out['neutron'] = scoop
+    return out
+
+def build(src, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None, skip:set|None = None) -> dict:
+    """One pass over a gzipped galaxy dump, path or stream, keeping a star per kind per sub-cube not in seen."""
 
     # Collect each kind in arrival order first; sorting by cell needs every star, so it happens after the pass.
     # Names go into one byte blob with an offset per star, since millions of Python strings would cost gigabytes.
-    cols:dict = {k: {'xs': array('f'), 'ys': array('f'), 'zs': array('f'), 'ids': array('Q'), 'keys': array('q'),
+    cols:dict = {k: {'xs': array('f'), 'ys': array('f'), 'zs': array('f'), 'ids': array('Q'), 'fuel': array('B'), 'keys': array('q'),
                      'offs': array('Q', [0]), 'blob': bytearray(),
                      'seen': (seen or {}).get(k) or bytearray(DIM[0] * DIM[1] * DIM[2] // 8 + 1)} for k in kinds}
 
     with gzip.open(src, 'rt', encoding='utf-8') as f:
         for line in f:
-            # Spansh writes one compact system per line, so a substring test skips most rows without parsing JSON
-            kind:str|None = next((k for k in kinds if any(m in line for m in KINDS[k])), None)
-            if kind is None: continue
+            found:dict = {k: v for k, v in _kinds(line).items() if k in kinds}
+            if not found: continue
 
-            # Lines carry the array's trailing comma, which json.loads won't accept
-            r:dict = json.loads(line.strip().rstrip(','))
-            x, y, z = r['coords']['x'], r['coords']['y'], r['coords']['z']
-            c:dict = cols[kind]
+            # The header holds everything the indexes keep, so the rest of a long line is never parsed
+            h:re.Match|None = HEAD.match(line)
+            if not h: continue
+            id64:int = int(h[1])
+            x, y, z = float(h[3]), float(h[4]), float(h[5])
+            if skip and id64 in skip: continue
 
-            # Thin dense regions: one bit per sub-cube records whether this kind already has a star there.
-            # A bit array over a fixed box costs about 330 MB; a set of tens of millions of cube tuples would not fit.
-            # Stars outside the box (bad coordinates, far outliers) are always kept rather than tracked.
-            bit:int|None = _bit(x, y, z)
-            if bit is not None:
-                if c['seen'][bit >> 3] & (1 << (bit & 7)): continue
-                c['seen'][bit >> 3] |= 1 << (bit & 7)
+            for kind, fuel in found.items():
+                c:dict = cols[kind]
 
-            c['xs'].append(x); c['ys'].append(y); c['zs'].append(z); c['ids'].append(r['id64'])
-            c['keys'].append(Index._key(*Index._cell(x, y, z)))
-            c['blob'] += r['name'].encode('utf-8')
-            c['offs'].append(len(c['blob']))
+                # Thin dense regions: one bit per sub-cube records whether this kind already has a star there.
+                # A bit array over a fixed box costs about 330 MB; a set of tens of millions of tuples would not fit.
+                # Stars outside the box (bad coordinates, outliers) are always kept; fuel stops are too useful to drop.
+                bit:int|None = _bit(x, y, z)
+                if bit is not None:
+                    if not fuel and c['seen'][bit >> 3] & (1 << (bit & 7)): continue
+                    c['seen'][bit >> 3] |= 1 << (bit & 7)
+
+                c['xs'].append(x); c['ys'].append(y); c['zs'].append(z); c['ids'].append(id64); c['fuel'].append(fuel)
+                c['keys'].append(Index._key(*Index._cell(x, y, z)))
+                c['blob'] += json.loads(h[2]).encode('utf-8')
+                c['offs'].append(len(c['blob']))
 
     out:dict = {}
     for kind, c in cols.items():
@@ -159,7 +191,7 @@ def build(src:Path, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None)
         # Sort star positions by cell key, then copy every array into that order
         keys:array = c['keys']
         order:list = sorted(range(len(keys)), key=keys.__getitem__)
-        arrs:dict = {'xs': array('f'), 'ys': array('f'), 'zs': array('f'), 'ids': array('Q'), 'ukeys': array('q'),
+        arrs:dict = {'xs': array('f'), 'ys': array('f'), 'zs': array('f'), 'ids': array('Q'), 'fuel': array('B'), 'ukeys': array('q'),
                      'starts': array('q'), 'offs': array('Q', [0])}
         blob:bytearray = bytearray()
 
@@ -167,7 +199,8 @@ def build(src:Path, kinds:tuple = ('neutron', 'kgbfoam'), seen:dict|None = None)
             # Each new cell key records where that cell's run of stars starts, which near() uses to find them
             if not arrs['ukeys'] or arrs['ukeys'][-1] != keys[o]:
                 arrs['ukeys'].append(keys[o]); arrs['starts'].append(n)
-            arrs['xs'].append(c['xs'][o]); arrs['ys'].append(c['ys'][o]); arrs['zs'].append(c['zs'][o]); arrs['ids'].append(c['ids'][o])
+            arrs['xs'].append(c['xs'][o]); arrs['ys'].append(c['ys'][o]); arrs['zs'].append(c['zs'][o])
+            arrs['ids'].append(c['ids'][o]); arrs['fuel'].append(c['fuel'][o])
             blob += c['blob'][c['offs'][o]:c['offs'][o + 1]]
             arrs['offs'].append(len(blob))
 
@@ -195,6 +228,9 @@ class Combined:
 
     def id64(self, i:int) -> int:
         return self.base.id64(i) if i < self.split else self.add.id64(i - self.split)
+
+    def fuel(self, i:int) -> bool:
+        return self.base.fuel(i) if i < self.split else self.add.fuel(i - self.split)
 
     def near(self, p:tuple, rad:float) -> list:
         return self.base.near(p, rad) + [(i + self.split, d) for i, d in self.add.near(p, rad)]

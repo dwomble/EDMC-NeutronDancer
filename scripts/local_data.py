@@ -1,4 +1,4 @@
-"""Build the local routing indexes from Spansh dumps and package them for the star-data release."""
+"""Build the local routing indexes from Spansh galaxy dumps and package them for the star-data release."""
 import argparse, hashlib, json, sys, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,10 +24,10 @@ def package(idx:Index, kind:str, out:Path, manifest:dict) -> None:
 def main() -> None:
     """Run one build mode against a dump, updating out/manifest.json."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('mode', choices=('full', 'neutron', 'addon'))
-    ap.add_argument('dump', type=Path, help='gzipped Spansh systems dump')
+    ap.add_argument('mode', choices=('full', 'addon'))
+    ap.add_argument('dump', help='gzipped Spansh galaxy dump, or - to read it from stdin')
     ap.add_argument('out', type=Path, help='folder for the packaged indexes and manifest.json')
-    ap.add_argument('--base', type=Path, help='unpacked kgbfoam index the add-on extends (addon mode)')
+    ap.add_argument('--base', type=Path, help='folder holding the unpacked neutron and kgbfoam indexes the add-ons extend')
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -35,18 +35,19 @@ def main() -> None:
     manifest:dict = json.loads(path.read_text()) if path.exists() else {}
     manifest.setdefault('files', {})
 
-    # full: both indexes from systems.json.gz, and a fresh base needs no add-on.
-    # neutron: the neutron index alone from the much smaller systems_neutron.json.gz.
-    # addon: fuel stars from a recent delta dump, kept only where the base has none nearby.
+    # full: both indexes from galaxy.json.gz, and a fresh base needs no add-ons.
+    # addon: neutrons and fuel stars from galaxy_1month.json.gz, kept only where the base has none nearby,
+    # plus fuel-stop neutrons the base doesn't already have.
+    dump = sys.stdin.buffer if args.dump == '-' else Path(args.dump)
     if args.mode == 'full':
-        for kind, idx in build(args.dump).items(): package(idx, kind, args.out, manifest)
-        manifest['files'].pop('kgbfoam_add', None)
-    if args.mode == 'neutron':
-        package(build(args.dump, ('neutron',))['neutron'], 'neutron', args.out, manifest)
+        for kind, idx in build(dump).items(): package(idx, kind, args.out, manifest)
+        for kind in ('neutron_add', 'kgbfoam_add'): manifest['files'].pop(kind, None)
     if args.mode == 'addon':
         if not args.base: ap.error('addon mode needs --base')
-        seen:dict = {'kgbfoam': occupancy(Index.load(args.base))}
-        package(build(args.dump, ('kgbfoam',), seen)['kgbfoam'], 'kgbfoam_add', args.out, manifest)
+        base:dict = {k: Index.load(args.base / k) for k in ('neutron', 'kgbfoam')}
+        stops:set = {base['neutron'].id64(i) for i in range(len(base['neutron'])) if base['neutron'].fuel(i)}
+        for kind, idx in build(dump, seen={k: occupancy(v) for k, v in base.items()}, skip=stops).items():
+            package(idx, f'{kind}_add', args.out, manifest)
 
     path.write_text(json.dumps(manifest, indent=2))
 

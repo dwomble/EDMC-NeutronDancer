@@ -30,13 +30,14 @@ class Planner:
     Fewest-jump neutron routes using local star data, guided by a coarse map of neutron density, flown with fuel and scoop stops.
     """
 
-    def __init__(self, neu:Index, sc:Index|Combined) -> None:
-        self.neu:Index = neu
+    def __init__(self, neu:Index|Combined, sc:Index|Combined) -> None:
+        self.neu:Index|Combined = neu
         self.sc:Index|Combined = sc
         self.counts:dict = {}
-        for j, k in enumerate(neu.ukeys):
-            c:tuple = (((k >> 22) - 1024) // COARSE, (((k >> 11) & 2047) - 1024) // COARSE, ((k & 2047) - 1024) // COARSE)
-            self.counts[c] = self.counts.get(c, 0) + neu.starts[j + 1] - neu.starts[j]
+        for idx in (neu.base, neu.add) if isinstance(neu, Combined) else (neu,):
+            for j, k in enumerate(idx.ukeys):
+                c:tuple = (((k >> 22) - 1024) // COARSE, (((k >> 11) & 2047) - 1024) // COARSE, ((k & 2047) - 1024) // COARSE)
+                self.counts[c] = self.counts.get(c, 0) + idx.starts[j + 1] - idx.starts[j]
 
     @staticmethod
     def jumps(dist:float, rng:float, mult:float, boosted:bool) -> int:
@@ -56,6 +57,9 @@ class Planner:
         # Refuel below one full jump, or the reserve if larger; a full jump left can usually reach a scoopable star
         self.low:float = max(ship.max_fuel_per_jump, reserve)
 
+        # Fuel a typical boost burns, for counting the refuel stops still to come
+        self.burn:float = ship.fuel_cost(self.boost * 0.999, ship.tank_size, cargo, True)
+
         # Turn each density cell's neutron count into jumps per Ly at this range.
         # n neutrons spread evenly through a 1000 Ly cube sit about gap = cube root of (volume / n) apart.
         # One boosted jump covers min(gap, boost) at best; any gap beyond boost has to be crossed in plain jumps.
@@ -64,7 +68,16 @@ class Planner:
             gap:float = (1e9 / n) ** (1 / 3)
             self.rates[c] = (1 + max(0.0, gap - self.boost) / self.rng) / max(gap, self.boost)
 
-        # Plan the whole route once; each refuel replans only to a horizon ahead on it, then rejoins it
+        # Planning at full-tank range and at each node's own range each win on different routes, so fly both
+        best:list[Step] = []
+        for pernode in (False, True):
+            self.pernode:bool = pernode
+            steps:list[Step] = self._fly(src, dest, fuel)
+            if not best or (steps[-1].kind == 'fail', len(steps)) < (best[-1].kind == 'fail', len(best)): best = steps
+        return best
+
+    def _fly(self, src:tuple, dest:tuple, fuel:float) -> list[Step]:
+        """Plan the whole route once, then fly it; each refuel replans only to a horizon ahead and rejoins it."""
         self.here:tuple = src
         self.fuel:float = fuel
         self.steps:list[Step] = []
@@ -103,8 +116,14 @@ class Planner:
         self.goal, self.k = self.dest, 0
 
         # The planner is approximate, so only switch when its plan beats carrying on, both counted the same way
-        legs:list = [(here, old[0], False)] + [(p, q, a >= 0) for p, q, a in zip(old, old[1:], ahead)]
-        stay:int = sum(self.jumps(math.dist(p, q), self.rng, self.mult, boosted) for p, q, boosted in legs)
+        stay:int = 0
+        fuel:float = self.fuel
+        p:tuple = here
+        boosted:bool = self._at_neutron(here)
+        for n, q in zip(ahead, old):
+            hops, fuel = self._leg_cost(math.dist(p, q), fuel, boosted, self._stop(n))
+            stay += hops
+            p, boosted = q, n >= 0
         joins:bool = m >= 0 and new[-2] == m
         if self.found - joins >= stay:
             self.path = [-1] + ahead
@@ -169,11 +188,14 @@ class Planner:
 
     def _search(self, w:float, limit:int, dense:bool) -> tuple|None:
         """Weighted A* from start to goal as (path, jumps); None if it expands more than limit nodes."""
-        neu:Index = self.neu
+        neu:Index|Combined = self.neu
         goal:tuple = self.goal
 
-        # g: fewest jumps found to each node; prev: the node it came from, to rebuild the path
+        start_boost:bool = self._at_neutron(self.start)
+
+        # g: fewest jumps found to each node; fuel: what that path leaves there; prev: the node it came from
         g:dict = {-1: 0}
+        fuel:dict = {-1: self.fuel}
         prev:dict = {}
 
         # Queue entries are (priority, distance left, node); distance left breaks ties toward nodes nearer the goal
@@ -191,13 +213,16 @@ class Planner:
             # Over budget means this weight is too careful for the region; _route() retries with a greedier one
             if limit and len(done) > limit: return None
 
-            # Only a jump leaving a neutron is supercharged, so the start's first leg is plain jumps only
+            # Only a jump leaving a neutron is supercharged, so the start's first leg is plain unless it starts at one
             p:tuple = self._node_pos(n)
             here:float = math.dist(p, goal)
-            boosted:bool = n >= 0
+            boosted:bool = n >= 0 or start_boost
+
+            # Range grows as the tank empties, so each node jumps with the fuel its best path leaves there
+            rng:float = self.ship.jump_range(fuel[n], self.cargo) * 0.999 if self.pernode else self.rng
 
             # Start by looking one boosted jump plus one plain jump out, and only at neutrons that get closer
-            rad:float = self.boost + self.rng if boosted else max(self.boost, 2 * self.rng)
+            rad:float = (self.mult + 1) * rng if boosted else max(self.mult * rng, 2 * rng)
             ahead = lambda rr: [(m, dm, left) for m, dm in neu.near(p, rr)
                                 if m not in done and (left := math.dist(neu.pos(m), goal)) < here]
 
@@ -208,25 +233,49 @@ class Planner:
                 cands = ahead(rad)
 
             # Dense regions offer thousands; keep the 40 that cover the most distance per jump
-            cands = heapq.nlargest(40, cands, key=lambda c: (here - c[2]) / self.jumps(c[1], self.rng, self.mult, boosted))
+            cands = heapq.nlargest(40, cands, key=lambda c: (here - c[2]) / self.jumps(c[1], rng, self.mult, boosted))
 
             # Always offer flying straight to the goal, so a route exists even with no neutrons ahead
             cands.append((-2, here, 0.0))
 
             for m, dm, left in cands:
-                cost:int = g[n] + self.jumps(dm, self.rng, self.mult, boosted)
+                hops, after = self._leg_cost(dm, fuel[n], boosted, self._stop(m))
+                cost:int = g[n] + hops
                 if cost >= g.get(m, 1 << 30): continue
-                g[m] = cost
+                g[m], fuel[m] = cost, after
                 prev[m] = n
 
                 # Priority is jumps so far plus w times the estimated jumps still to go; w > 1 searches faster
                 rest:float = 0.0 if m == -2 else self._density_estimate(self._node_pos(m), left) if dense else self._flat_estimate(left)
+
+                # Each refuel stop is a whole extra jump, so count the ones this node's fuel can't cover
+                if self.pernode: rest += max(0.0, rest * self.burn - (after - self.low)) / (self.ship.tank_size - self.low)
                 heapq.heappush(openq, (cost + w * rest, left, m))
 
         if -2 not in prev: return None
         path:list = [-2]
         while path[-1] != -1: path.append(prev[path[-1]])
         return path[::-1], g[-2]
+
+    def _at_neutron(self, p:tuple) -> bool:
+        """Whether p is a neutron's system, like a fuel stop just refuelled at, so it can boost from there."""
+        return any(d < 0.01 for _, d in self.neu.near(p, 0.01))
+
+    def _stop(self, n:int) -> bool:
+        """Whether path node n is a neutron that's also a fuel stop."""
+        return n >= 0 and self.neu.fuel(n)
+
+    def _leg_cost(self, dist:float, fuel:float, boosted:bool, stop:bool) -> tuple:
+        """Jumps and fuel left for a leg; running low refuels, costing a jump unless the leg ends at a stop."""
+        ship, cargo = self.ship, self.cargo
+        if not self.pernode: return self.jumps(dist, self.rng, self.mult, boosted), ship.tank_size
+        rng:float = ship.jump_range(fuel, cargo) * 0.999
+        n:int = self.jumps(dist, rng, self.mult, boosted)
+        first:float = min(dist, self.mult * rng if boosted else rng)
+        fuel -= ship.fuel_cost(first, fuel, cargo, boosted)
+        if n > 1: fuel -= (n - 1) * ship.fuel_cost((dist - first) / (n - 1), fuel, cargo)
+        if fuel >= self.low: return n, fuel
+        return (n if stop and fuel >= 0 else n + 1), ship.tank_size
 
     def _flat_estimate(self, left:float) -> float:
         """Jumps-to-go estimate assuming every jump left is a full boost."""
@@ -270,13 +319,14 @@ class Planner:
         addr:int|None = None if b == -2 else self.neu.id64(b)
 
         # From a neutron: boost straight to the next one, or land short on a scoop star when fuel is tight
-        if a >= 0:
+        if a >= 0 or (a == -1 and self._at_neutron(self.here)):
             boost:float = self.mult * ship.jump_range(self.fuel, self.cargo) * 0.999
             gap:float = math.dist(self.here, goal)
 
-            # Neutrons can't be scooped, so only boost straight in if enough is left to move on from it
-            if gap <= boost and self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True) >= self.low:
-                self._jump_to(goal, name, addr, 'boost', True, False)
+            # Neutrons can't be scooped, so only boost straight in if enough is left to move on, or it's a fuel stop
+            stop:bool = self._stop(b)
+            if gap <= boost and self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True) >= (0 if stop else self.low):
+                self._jump_to(goal, name, addr, 'boost', True, stop)
                 return
 
             # Otherwise boost onto a scoopable star instead: the one nearest the next neutron
@@ -291,7 +341,7 @@ class Planner:
         for i in self._scoop_hops(goal):
             self._jump_to(sc.pos(i), sc.name(i), sc.id64(i), 'plain', False, True)
             if self.refuelled: return
-        self._jump_to(goal, name, addr, 'plain', False, False)
+        self._jump_to(goal, name, addr, 'plain', False, self._stop(b))
 
     def _jump_to(self, q:tuple, name:str, addr:int|None, kind:str, charged:bool, scoopable:bool, force:bool = False) -> None:
         """Jump to q, spending fuel for the current mass, and refuel to full if it's scoopable and low or forced."""

@@ -132,6 +132,9 @@ class Router():
     def add_loadout(self, entry:dict) -> None:
         """ Save ship details on loadout event and maybe update the UI """
         ship:Ship = Ship(entry)
+        if not ship.id:
+            Debug.logger.debug(f"Ship {ship.name} has no id yet, not adding loadout")
+            return
         if ship.base_mass == 0.0:
             Debug.logger.error(f"Ship {ship.name} has no base mass, cannot add loadout")
             return

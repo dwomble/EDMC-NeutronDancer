@@ -29,10 +29,10 @@ class LocalData:
         return json.loads(path.read_text()) if path.exists() else {}
 
     def ready(self) -> bool:
-        """ Whether the local router is enabled and both of its indexes are on disk """
-        folder:Path = Path(Context.plugin_dir) / DATA_DIR
+        """ Whether the local router is enabled and both of its indexes are on disk in the format this version reads """
+        metas:list = [Path(Context.plugin_dir) / DATA_DIR / k / 'meta.json' for k in ('neutron', 'kgbfoam')]
         return bool(config.get_bool(f"{Context.plugin_name}_local_router")) and \
-            all((folder / k / 'meta.json').exists() for k in ('neutron', 'kgbfoam'))
+            all(m.exists() and json.loads(m.read_text()).get('version') == VERSION for m in metas)
 
     def update(self, status:Callable[[str], None]) -> bool:
         """Bring the indexes in line with the release's manifest; True if anything changed."""

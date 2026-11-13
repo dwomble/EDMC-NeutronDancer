@@ -5,7 +5,7 @@ from .context import Context
 class Ship:
     def __init__(self, entry:dict) -> None:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
-        self.id:str = str(entry.get('ShipID', '')).strip()
+        self.id:str = '' if entry.get('ShipID') is None else str(entry['ShipID']).strip()
         self.type:str = entry.get('Ship', '').strip()
         self.ident:str = entry.get('ShipIdent', '').strip()
         self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type or '?'

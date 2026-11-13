@@ -59,10 +59,13 @@ jobs:
         mkdir -p out
         gh release download "$TAG" -p manifest.json -D out || true
 
-    # The galaxy dump is far bigger than the runner's disk, so it's streamed straight into the build
+    # The galaxy dump is far bigger than the runner's disk, so it's streamed straight into the build.
+    # Actions' default bash ignores a failed curl at the head of a pipe, which would publish empty indexes.
     - name: Full rebuild
       if: env.MODE == 'full'
-      run: curl -sSfL "$SPANSH/galaxy.json.gz" | python scripts/local_data.py full - out
+      run: |
+        set -o pipefail
+        curl -sSfL "$SPANSH/galaxy.json.gz" | python scripts/local_data.py full - out
 
     - name: Weekly update
       if: env.MODE == 'weekly'
@@ -71,6 +74,7 @@ jobs:
         unzip -q base/neutron.zip -d base/neutron
         unzip -q base/kgbfoam.zip -d base/kgbfoam
         rm base/*.zip
+        set -o pipefail
         curl -sSfL "$SPANSH/galaxy_1month.json.gz" | python scripts/local_data.py addon - out --base base
 
     - name: Publish

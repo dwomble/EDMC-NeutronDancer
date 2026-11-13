@@ -580,6 +580,14 @@ class TestShipLoadout:
         assert harness.plugin.router.route_params['Neutron']['supercharge_multiplier'] == harness.plugin.router.ship.supercharge_multiplier
         assert harness.plugin.router.route_params['Neutron']['range'] == harness.plugin.router.ship.range
 
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_loadout_without_id_skipped(self, harness:TestHarness) -> None:
+        """ A loadout built before the ship's id is known isn't saved as a ship called "None". """
+        harness.play_sequence('loadout')
+        entry:dict = {**harness.plugin.router.ship.loadout, 'ShipID': None, 'ShipName': 'Nameless'}
+        harness.plugin.router.add_loadout(entry)
+        assert 'None' not in harness.plugin.router.shiplist and 'Nameless' not in harness.plugin.router.shiplist.values()
+
     def test_ship_range_calculation(self, harness:TestHarness) -> None:
         """Test that ship range is calculated."""
         assert harness.plugin.router.ship is not None
@@ -1925,6 +1933,17 @@ class TestLocalRouting:
 
         data.delete()
         assert data.size() == 0 and not (tmp_path / 'backup').exists()
+
+    def test_old_index_not_ready(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:
+        """ Indexes in an older format aren't ready, so the startup check downloads the current ones. """
+        monkeypatch.setattr(harness.plugin, 'plugin_dir', str(tmp_path))
+        for kind, idx in build(_synthetic_dump(tmp_path)).items(): idx.save(tmp_path / 'data' / kind)
+        harness.config.set(f"{harness.plugin.plugin_name}_local_router", True)
+        assert harness.plugin.localdata.ready()
+
+        meta:Path = tmp_path / 'data' / 'neutron' / 'meta.json'
+        meta.write_text(json.dumps({**json.loads(meta.read_text()), 'version': 2}))
+        assert not harness.plugin.localdata.ready()
 
     @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
     def test_local_plot_makes_route(self, harness:TestHarness, tmp_path:Path, monkeypatch) -> None:

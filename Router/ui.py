@@ -494,7 +494,8 @@ class UI():
     def ship_selected(self, *args) -> None:
         """ Sync every ship dropdown to the one that changed, then update cargo and range """
         Debug.logger.debug(f"ship_selected args: {args}")
-        ship_name:str = self.parent.getvar(args[0]) if self.parent and len(args) else ''
+        # Tk can fire the trace from inside a proc, where an unqualified name means a local variable
+        ship_name:str = self.parent.tk.globalgetvar(args[0]) if self.parent and len(args) else ''
         for p in self.plotters.values():
             if hasattr(p, 'shipvar') and p.shipvar.get() != ship_name: p.shipvar.set(ship_name)
         self.menu_callback('ship', ship_name)

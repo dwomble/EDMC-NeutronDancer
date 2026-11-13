@@ -673,7 +673,7 @@ class TestExporting:
         assert res == True
 
         with patch('Router.csv.filedialog.asksaveasfilename', return_value=out):
-            res:bool = harness.plugin.csv.write(harness.plugin.route.hdrs, harness.plugin.route.route)
+            res:bool = harness.plugin.csv.write(harness.plugin.route)
         assert res == True
         assert os.path.exists(out)
         os.remove(out)
@@ -2060,6 +2060,15 @@ class TestUIFunctions:
 
         _respond('get', 200, [{"system": "Shinrarta Dezhra", "name": "Jameson Memorial"}])
         assert ui.query_station_names('Jameson') == ['Shinrarta Dezhra / Jameson Memorial']
+
+    @pytest.mark.parametrize('harness', [('route_init.json', 'ships')], indirect=True)
+    def test_ship_menu_syncs_plotters(self, harness:TestHarness) -> None:
+        """ Picking a ship from a dropdown, as Tk does it, moves the other plotters to that ship. """
+        harness.play_sequence('loadout')
+        cb = harness.plugin.ui.plotters['Galaxy'].shipdd.obj
+        other:int = next(i for i, n in enumerate(cb['values']) if n != cb.get())
+        cb.tk.call('ttk::combobox::SelectEntry', str(cb), other)
+        assert harness.plugin.ui.plotters['Local'].shipvar.get() == cb['values'][other]
 
     def test_switch_ship(self, harness:TestHarness) -> None:
         ui = harness.plugin.ui

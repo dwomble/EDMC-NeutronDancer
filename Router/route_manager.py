@@ -457,6 +457,9 @@ class Router():
         if ship is None:
             self.plot_error(which, params, 'ship_not_found')
             return None
+        if params['reserve_size'] > ship.tank_size - ship.max_fuel_per_jump:
+            self.plot_error(which, params, 'reserve_too_big')
+            return None
 
         planner:Planner|None = self.load_local()
         if planner is None:

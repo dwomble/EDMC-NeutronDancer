@@ -312,6 +312,7 @@ errs:dict = {
     "no_ship": "No ship selected",
     "no_local_data": "Local route data isn't downloaded",
     "ship_not_found": "Ship not found in shipyard",
+    "reserve_too_big": "Fuel reserve leaves no room in the tank for a full jump",
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",
     "invalid_boxel": "Enter valid boxel and start/end numbers",

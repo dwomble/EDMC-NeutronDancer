@@ -14,14 +14,15 @@ class Route:
     """
         Class to store, maintain, and return current route information
     """
-    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1, navroute:dict|None = None) -> None:
+    def __init__(self, hdrs:list = [], route:list = [], offset:int = -1, navroute:dict|None = None, type:str = "Unknown", shipname:str = "") -> None:
         self.hdrs:list = hdrs
         self.route:list = route
         self.jumps:list = []
         self.offset:int = offset
         self.fleetcarrier:bool = False
-        self.fuel_full = False
         self.navroute:dict[str, dict] = navroute or {} # name -> SystemAddress/StarPos/StarClass
+        self.type:str = type
+        self.shipname:str = shipname
 
         self.sc:int|None = None # System column index
         self.nc:int|None = None # System / body column index
@@ -210,13 +211,13 @@ class Route:
 
             cum_profit:str = hfplus(tuple([self.sum_value('Profit'), 'float', '', ' Cr']))
             perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', '', ' Cr/hr']))
-            lines.append(f"{cum_profit} · {perhour}" if perhour != '' else f"{cum_profit}")
+            lines.append(f"{cum_profit} · {perhour}" if perhour != '' else str(cum_profit))
 
         subtype = self.next_stop_value('Body Type')
         Debug.logger.debug(f"Next stop details: {subtype}")
         if subtype:
             dist:str = hfplus(tuple([self.next_stop_value('Distance To Arrival'), 'float', '', ' ls']))
-            lines.append(" · ".join(p for p in [subtype, dist] if p))
+            lines.append(" · ".join(p for p in (subtype, dist) if p))
 
         species = self.next_stop_value('Species')
         Debug.logger.debug(f"Next stop details: {species}")
@@ -230,7 +231,7 @@ class Route:
 
             cum_landmark:str = hfplus(tuple([self.sum_value('Landmark Value'), 'float', '', ' Cr']))
             perhour:str = hfplus(tuple([self.credits_per_hour('Landmark Value'), 'float', '', ' Cr/hr']))
-            lines.append(f"{cum_landmark} · ({perhour})" if perhour != '' else f"{cum_landmark}")
+            lines.append(f"{cum_landmark} · ({perhour})" if perhour != '' else str(cum_landmark))
 
         scanval = self.next_stop_value('Estimated Scan Value')
         mapval = self.next_stop_value('Estimated Mapping Value')
@@ -238,7 +239,7 @@ class Route:
         if not species and (scanval or mapval):
             scan:str = hfplus(tuple([scanval, 'float', '', ' Cr']))
             mapping:str = hfplus(tuple([mapval, 'float', '', ' Cr']))
-            lines.append(" · ".join(f"{n}: {v}" for n, v in [('Scan', scan), ('Mapping', mapping)] if v))
+            lines.append(" · ".join(f"{n}: {v}" for n, v in (('Scan', scan), ('Mapping', mapping)) if v))
 
             from .context import Context
             type:str = 'Scan'
@@ -249,7 +250,7 @@ class Route:
             cum_scan = hfplus(tuple([self.sum_value(f'Estimated {type} Value'), 'float', '', ' Cr']))
             if cum_scan:
                 perhour:str = hfplus(tuple([self.credits_per_hour(f'Estimated {type} Value'), 'float', '', ' Cr/hr']))
-                lines.append(f"{cum_scan} · {perhour}" if perhour != '' else f"{cum_scan}")
+                lines.append(f"{cum_scan} · {perhour}" if perhour != '' else str(cum_scan))
 
         Debug.logger.debug(f"Next stop details: {lines}")
         return "\n".join(lines)
@@ -284,9 +285,9 @@ class Route:
         return self.route[self.offset][self.dr] - self.route[self.offset+refind][self.dr] if refind is not None else None
 
 
-    def refuel(self) -> bool:
-        """ Return whether we need to refuel at this waypoint """
-        if self.fuel_full == True: return False
+    def refuel(self, full:bool = False) -> bool:
+        """ Return whether we need to refuel at this waypoint, given whether the tanks are already full """
+        if full: return False
         ind:int|None = self.colind('Refuel') or self.colind('Restock')
         if ind == None: return False
         return self.route[self.offset][ind] in TRUE
@@ -393,7 +394,7 @@ class Route:
         if self.hdrs == []: return None
 
         if which == '':
-            for h in ['Body Name', 'body', 'System Name', 'system', 'name']:
+            for h in ('Body Name', 'body', 'System Name', 'system', 'name'):
                 if h in self.hdrs:
                     Debug.logger.debug(f"{h} {self.hdrs.index(h)}")
                     return self.hdrs.index(h)
@@ -403,7 +404,7 @@ class Route:
             if w in self.hdrs or w.lower() in self.hdrs:
                 return self.hdrs.index(w)
 
-            if w in HEADER_MAP.keys() and HEADER_MAP[w] in self.hdrs:
+            if w in HEADER_MAP and HEADER_MAP[w] in self.hdrs:
                 return self.hdrs.index(HEADER_MAP[w])
         return None
 
@@ -464,4 +465,4 @@ class Route:
 
 
     def as_dict(self) -> list:
-        return [self.hdrs, self.route, self.offset, self.navroute]
+        return [self.hdrs, self.route, self.offset, self.navroute, self.type, self.shipname]

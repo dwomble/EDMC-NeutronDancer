@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, font
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -29,6 +29,7 @@ PREFS = [
     Pref('bool', 'cooldown_popup', cnf['show_carrier_cooldown'], tk.BooleanVar, nb.Checkbutton),
     Pref('bool', 'copy_on_jump', cnf['copy_on_jump'], tk.BooleanVar, nb.Checkbutton, default=True),
     Pref('bool', 'copy_on_galmap', cnf['copy_on_galmap'], tk.BooleanVar, nb.Checkbutton, default=True),
+    Pref('bool', 'local_router', cnf['local_router'], tk.BooleanVar, nb.Checkbutton, default=False),
     Pref('bool', 'install_prereleases', cnf['install_prereleases'], tk.BooleanVar, nb.Checkbutton, default=False),
     ]
 
@@ -75,7 +76,7 @@ class Prefs:
             match k.pref_type:
                 case 'bool':
                     self.pref_vars[k.name] = tk.BooleanVar(value=config.get(f"{Context.plugin_name}_{k.name}", k.default or False))
-                    nb.Checkbutton(prefsfr, text=k.desc, variable=self.pref_vars[k.name]).grid(row=row,   column=col, padx=10, pady=0, sticky=tk.W)
+                    nb.Checkbutton(prefsfr, text=k.desc, variable=self.pref_vars[k.name]).grid(row=row,   column=col, columnspan=2, padx=10, pady=0, sticky=tk.W)
                 case 'str':
                     self.pref_vars[k.name] = tk.StringVar(value=config.get(f"{Context.plugin_name}_{k.name}", k.default))
                     nb.Label(prefsfr, text=k.desc).grid(row=row, column=col, padx=10, pady=5, sticky=tk.W)
@@ -100,12 +101,22 @@ class Prefs:
 
 
     def save_prefs(self) -> None:
+        was:bool = bool(config.get_bool(f"{Context.plugin_name}_local_router"))
         for k in PREFS:
             var:tk.Variable|None = self.pref_vars.get(k.name)
             config.set(f"{Context.plugin_name}_{k.name}", var.get() if var else getattr(self, k.name))
             setattr(self, k.name, config.get(f"{Context.plugin_name}_{k.name}"))
         Context.overlay.save_prefs()
-        return
+
+        # Turning the local router on fetches its data; turning it off frees the memory and offers to free the disk
+        now:bool = bool(config.get_bool(f"{Context.plugin_name}_local_router"))
+        if now and not was: Context.localdata.check_local_data()
+        if was and not now:
+            Context.router.local = None
+            Context.ui.refresh_route_types()
+            size:int = Context.localdata.size()
+            if size and messagebox.askyesno(cnf['options'], cnf['local_delete'].format(s=size / 1e9), parent=self.plugin_frame):
+                Context.localdata.delete()
 
 
     def _load_prefs(self) -> None:

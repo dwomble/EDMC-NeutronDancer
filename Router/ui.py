@@ -2,8 +2,10 @@ import os
 import tkinter as tk
 from tkinter import ttk, font
 import tkinter.messagebox as confirmDialog
+from typing import TYPE_CHECKING
 from functools import partial
 from pathlib import Path
+from threading import Thread
 import re
 import requests
 import json
@@ -19,10 +21,9 @@ from .utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
 from .ship import Ship
+from .route_window import RouteWindow
 from .route import Route
 from .context import Context
-from .route_manager import SESSION
-from .route_window import RouteWindow
 from .plotters import PLOTTER_SPECS
 
 @singleton
@@ -66,6 +67,8 @@ class UI():
         self.error_lbl.grid(row=10, column=0, columnspan=2, padx=5, sticky=tk.W)
         self.hide_error()
 
+        self.local_lbl:th.Label = th.Label(self.frame, text="", justify=tk.LEFT)
+
         self.router:tk.StringVar = tk.StringVar()
         self.router.set('Galaxy Plotter')  # Set default value
 
@@ -100,8 +103,8 @@ class UI():
             self.show_frame(Context.router.last_plot)
 
         # Wait a while before deciding if we should show the update text
-        parent.after(30000, lambda: self.show_plugin_update())
-        parent.after(15000, lambda: self.show_notice())
+        parent.after(30000, self.show_plugin_update)
+        parent.after(15000, self.show_notice)
 
 
     @catch_exceptions
@@ -208,6 +211,10 @@ class UI():
             case _:
                 self.sub_fr = self.plot_frames[which]
                 self.router.set(Context.router.route_types[which])
+
+                # Load the local indexes while the route is being entered, so the first plot doesn't wait for them
+                if which == 'Local' and Context.router.local is None:
+                    Thread(target=Context.router.load_local, daemon=True, name="Neutron Dancer local index loader").start()
                 self._place_cancel(which)
                 self.plotters[which].refresh_menus()
 
@@ -289,7 +296,6 @@ class UI():
         """ On close save our geometry """
         Context.router.window_geometries['help'] = self.help.winfo_geometry()
         self.help.destroy()
-        return
 
     @catch_exceptions
     def show_menu(self, e, which:str='Neutron') -> str:
@@ -374,7 +380,7 @@ class UI():
         if route.is_neutron() == True:
             image = self.neutron_img
 
-        if route.refuel() == True and not Context.route.fuel_full:
+        if route.refuel(Context.router.ship is not None and Context.router.ship.fuel_full) == True:
             image = self.fuel_img
 
         self.waypoint_btn.configure(text=wp, image=image, compound=tk.LEFT)
@@ -434,7 +440,7 @@ class UI():
         fr2.grid(row=2, column=0, sticky=tk.W)
         row = 0; col = 0
 
-        self.export_route_btn:th.Button = th.Button(fr2, text=btns["export_route"], command=lambda: self._export_route())
+        self.export_route_btn:th.Button = th.Button(fr2, text=btns["export_route"], command=self._export_route)
         self.export_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -443,7 +449,7 @@ class UI():
         self.show_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
-        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=lambda: self.clear_route())
+        self.clear_route_btn:th.Button = th.Button(fr2, text=btns["clear_route"], command=self.clear_route)
         self.clear_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         return route_fr
@@ -476,21 +482,23 @@ class UI():
                 if not ship:
                     return
 
-                self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
-                self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
+                self._update_item("all", "shipvar", ship.name)
+                cargo:int = Context.router.cargo if ship.id == Context.router.ship_id else 0
+                self._update_item("all", "cargo_entry", str(cargo))
+                self._update_item("all", "range_entry", str(ship.get_range(cargo)))
 
                 for p in self.plotters.values():
                     if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
-                return
-
+                Context.router.menu_ship = ship
 
     @catch_exceptions
     def ship_selected(self, *args) -> None:
-        """ Update the galaxy plotter when the ship dropdown changes """
-        galaxy_plotter = self.plotters.get('Galaxy')
-        if not galaxy_plotter or not hasattr(galaxy_plotter, 'shipvar'):
-            return
-        ship_name:str = galaxy_plotter.shipvar.get()
+        """ Sync every ship dropdown to the one that changed, then update cargo and range """
+        Debug.logger.debug(f"ship_selected args: {args}")
+        # Tk can fire the trace from inside a proc, where an unqualified name means a local variable
+        ship_name:str = self.parent.tk.globalgetvar(args[0]) if self.parent and len(args) else ''
+        for p in self.plotters.values():
+            if hasattr(p, 'shipvar') and p.shipvar.get() != ship_name: p.shipvar.set(ship_name)
         self.menu_callback('ship', ship_name)
 
 
@@ -522,11 +530,10 @@ class UI():
             except Exception as e:
                 pass
 
-        # Update galaxy plotter ship dropdown if it exists
-        galaxy_plotter = self.plotters.get('Galaxy')
-        if galaxy_plotter and hasattr(galaxy_plotter, 'shipvar') and hasattr(galaxy_plotter, 'shipdd'):
-            galaxy_plotter.shipvar.set(ship.name)
-            galaxy_plotter.shipdd.set_menu(Context.router.shipnames())
+        for p in self.plotters.values():
+            if not hasattr(p, 'shipvar') or not hasattr(p, 'shipdd'): continue
+            p.shipvar.set(ship.name)
+            p.shipdd.set_menu(Context.router.shipnames())
 
     def update_cargo(self, cargo:int) -> None:
         """ Update the cargo entry when the cargo changes """
@@ -586,6 +593,25 @@ class UI():
         self.plotters['Galaxy'].plot()
 
 
+    def local_status(self, text:str|None) -> None:
+        """ Show local data download progress, or hide it with None """
+        if text is None:
+            self.local_lbl.grid_remove()
+            return
+        self.local_lbl['text'] = lbls['local_download'].format(s=text)
+        self.local_lbl.grid(row=11, column=0, columnspan=2, padx=5, sticky=tk.W)
+
+
+    def refresh_route_types(self) -> None:
+        """ Rebuild every route type menu, since Local only appears while it's enabled and its data is there """
+        types:list = [v for k, v in Context.router.route_types.items() if k != 'Local' or Context.localdata.ready()]
+        current:str = self.router.get()  # set_menu resets the shared selection to the first entry
+        for p in self.plotters.values():
+            if hasattr(p, 'routedd'): p.routedd.set_menu(types)
+        self.router.set(current)
+        if self.sub_fr is self.plot_frames.get('Local') and not Context.localdata.ready(): self.show_frame('Default')
+
+
     def show_error(self, error:str|None = None) -> None:
         """ Set and show the error text """
         if error == None: return
@@ -633,7 +659,7 @@ class UI():
     def query_systems(self, inp:str) -> list:
         """ Function called by Autocompleter """
         try:
-            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
         except:
             return [inp]
@@ -642,7 +668,7 @@ class UI():
     def query_indy(self, inp:str) -> list:
         """ Autocompleter lookup against Indy's own system database """
         try:
-            results:requests.Response = SESSION.get(INDY_SEARCH, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(INDY_SEARCH, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [m['name'] for m in results.json().get('matches', [])]
         except:
@@ -653,7 +679,7 @@ class UI():
         """ Function called by Autocompleter """
         res:list = []
         try:
-            results:requests.Response = SESSION.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_SYSTEMS, params={'q': inp.strip()},
                                                      headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             for sys in json.loads(results.content):
                 if re.match(r"^.+ [A-Za-z]{2}-[A-Za-z] [a-h]\d*-?", sys) and re.sub(r"[\d]+$", "", sys.strip()) not in res:
@@ -667,7 +693,7 @@ class UI():
     def query_station_names(self, inp:str) -> list:
         """ Function called by the Trade Planner's Autocompleter """
         try:
-            results:requests.Response = SESSION.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
+            results:requests.Response = Context.session.get(SPANSH_STATIONS_NAME, params={'q': inp.strip()},
                                                       headers={'User-Agent': Context.plugin_useragent}, timeout=3)
             return [f"{s['system']} / {s['name']}" for s in json.loads(results.content)]
         except:

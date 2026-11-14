@@ -1,0 +1,91 @@
+name: Star Data
+
+# Rebuilds the local routing indexes from Spansh's dumps and publishes them on the star-data-v<index format version> release.
+# Monthly: both indexes in full from systems.json.gz, with fuel stops and secondary neutrons from galaxy.json.gz.
+# Weekly: neutron and fuel-star add-ons from the 1-month dumps, so clients download little between full builds.
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # full rebuild, 1st of the month
+    - cron: '0 6 * * 1'   # weekly update, Mondays
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full or weekly'
+        type: choice
+        options: [weekly, full]
+        default: weekly
+
+permissions:
+  contents: write
+
+concurrency:
+  group: star-data
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SPANSH: https://downloads.spansh.co.uk
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    # The tag follows the index format, so a format change publishes alongside the old data rather than over it
+    - name: Choose mode and release
+      run: |
+        echo "TAG=star-data-v$(python -c 'from Router.local.index import VERSION; print(VERSION)')" >> $GITHUB_ENV
+        mode="${{ inputs.mode }}"
+        if [ "${{ github.event.schedule }}" = "0 6 1 * *" ]; then mode=full; fi
+        echo "MODE=${mode:-weekly}" >> $GITHUB_ENV
+
+    # Never marked latest, and tagged on the first commit: GitHub lists releases by their commit's date, so this one
+    # always sorts last and updaters that take the newest release still find plugin releases first
+    - name: Ensure the release exists
+      run: |
+        gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --latest=false \
+          --target "$(git rev-list --max-parents=0 HEAD | tail -1)" --title "Star data" \
+          --notes "Indexes for Neutron Dancer's local router, rebuilt automatically from Spansh's dumps."
+
+    - name: Fetch the current manifest
+      run: |
+        mkdir -p out
+        gh release download "$TAG" -p manifest.json -D out || true
+
+    # The galaxy dump is far bigger than the runner's disk, so it's streamed straight into the build.
+    # Actions' default bash ignores a failed curl at the head of a pipe, which would publish empty indexes.
+    - name: Full rebuild
+      if: env.MODE == 'full'
+      run: |
+        set -o pipefail
+        curl -sSfL -o systems.json.gz "$SPANSH/systems.json.gz"
+        curl -sSfL "$SPANSH/galaxy.json.gz" | python scripts/local_data.py full out --galaxy - --systems systems.json.gz
+        rm systems.json.gz
+
+    - name: Weekly update
+      if: env.MODE == 'weekly'
+      run: |
+        gh release download "$TAG" -p neutron.zip -p kgbfoam.zip -D base
+        unzip -q base/neutron.zip -d base/neutron
+        unzip -q base/kgbfoam.zip -d base/kgbfoam
+        rm base/*.zip
+        set -o pipefail
+        curl -sSfL -o month.json.gz "$SPANSH/systems_1month.json.gz"
+        curl -sSfL "$SPANSH/galaxy_1month.json.gz" | python scripts/local_data.py addon out --galaxy - --systems month.json.gz --base base
+
+    - name: Publish
+      run: |
+        files=$(ls out/*.zip)
+        gh release upload "$TAG" $files out/manifest.json --clobber
+        # A full rebuild includes the month's changes, so the previous add-ons are obsolete
+        if [ "$MODE" = "full" ]; then
+          gh release delete-asset "$TAG" neutron_add.zip -y || true
+          gh release delete-asset "$TAG" kgbfoam_add.zip -y || true
+        fi

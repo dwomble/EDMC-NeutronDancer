@@ -7,7 +7,6 @@ from .utils.debug import Debug
 from .utils.misc import singleton
 from .constants import DATA_DIR, SPANSH_SYSTEM, SPANSH_TIMEOUT
 from .context import Context
-from .route_manager import SESSION
 
 # Spansh's body subtype for a main star is EDSM-style free text
 _STAR_CLASS_RE:re.Pattern = re.compile(r"^([A-Za-z]+) \(")
@@ -76,7 +75,7 @@ class SpanshData:
 
         for name, id64 in missing.items():
             try:
-                response = SESSION.get(f"{SPANSH_SYSTEM}/{id64}",
+                response = Context.session.get(f"{SPANSH_SYSTEM}/{id64}",
                                         headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 response.raise_for_status()
                 bodies:list = response.json().get('record', {}).get('bodies', [])

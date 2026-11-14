@@ -9,7 +9,7 @@ from config import config, user_agent  # type: ignore
 from monitor import monitor # type: ignore
 import edmc_data # type: ignore
 
-from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, errs, CarrierStates
+from Router.constants import GH_USER, GH_PROJECT, GH_MAIN, NAME, TITLE, DATA_DIR, errs, CarrierStates
 from Router.utils.debug import Debug, catch_exceptions
 from Router.utils.updater import Notices, Updater, read_version_file
 from Router.utils.misc import copy_to_clipboard
@@ -22,6 +22,7 @@ from Router.overlay import Overlay
 from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
+from Router.local.data import LocalData
 import Router.api as api
 
 VERSION:str = "0.0.0-dev" # For the plugin browser
@@ -40,7 +41,11 @@ def plugin_start3(plugin_dir: str) -> str:
     Context.plugin_useragent = f'{user_agent} {NAME}-{VERSION}'
     Context.updater = Updater(str(Context.plugin_dir), GH_USER, GH_PROJECT)
     Context.updater.accept_prerelease = config.get_bool(f"{NAME}_install_prereleases", False)
-    Context.updater.check_for_update(Context.plugin_version)
+
+    Context.localdata = LocalData(Path(Context.plugin_dir) / DATA_DIR, Path(Context.plugin_dir) / 'updates' / 'star-data')
+
+    # The daily check also refreshes the local router's data, once the UI exists to show its progress
+    Context.updater.check_for_update(Context.plugin_version, extra=lambda: Context.ui and Context.localdata.check_local_data())
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
@@ -66,6 +71,9 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
     Context.spansh = SpanshData() # before Router(), which may load a saved route and trigger a fetch
     Context.router = Router()
     Context.ui = UI(parent)
+
+    # A missing or unfinished local data download starts straight away rather than waiting for the daily check
+    if not (Context.localdata.ready() and Context.localdata.installed()): Context.localdata.check_local_data()
     Context.hotkeys = Hotkeys()
     Context.overlay = Overlay()
     if Context.route.route != []:
@@ -80,6 +88,8 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 @catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     if Context.router == None: return
+    if state.get('StarPos'): Context.router.star_pos = tuple(state['StarPos'])
+    if state.get('SystemAddress'): Context.router.address = state['SystemAddress']
 
     match entry['event']:
         case 'Startup' | 'StartUp':
@@ -147,7 +157,7 @@ def make_loadout(state:dict) -> dict:
 
     # Add any missing values that we can
     if loadout:
-        for f in ['UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ]:
+        for f in ('UnladenMass', 'ShipID', 'ShipType', 'HullValue', 'ModulesValue', 'UnladenMass', 'CargoCapacity', 'MaxJumpRange',   'FuelCapacity', ):
             if f not in loadout:
                 loadout[f] = state.get(f)
 
@@ -158,6 +168,9 @@ def make_loadout(state:dict) -> dict:
 
 @catch_exceptions
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
+    if Context.router and Context.router.ship and 'FuelMain' in entry.get('Fuel', {}):
+        Context.router.ship.fuel = entry['Fuel']['FuelMain']
+
     if Context.ui.parent and Context.route.jumps_remaining() and entry.get("GuiFocus") == edmc_data.GuiFocusGalaxyMap:
         copy_to_clipboard(Context.ui.parent, Context.route.next_system())
 

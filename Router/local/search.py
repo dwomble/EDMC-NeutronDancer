@@ -68,20 +68,24 @@ class Planner:
             gap:float = (1e9 / n) ** (1 / 3)
             self.rates[c] = (1 + max(0.0, gap - self.boost) / self.rng) / max(gap, self.boost)
 
-        # Planning at full-tank range and at each node's own range each win on different routes, so fly both
+        # Full-tank range, per-node range, and per-node with extra fuel stops, each flown topping up or not
         best:list[Step] = []
-        for pernode in (False, True):
-            self.pernode:bool = pernode
-            steps:list[Step] = self._fly(src, dest, fuel)
-            if not best or (steps[-1].kind == 'fail', len(steps)) < (best[-1].kind == 'fail', len(best)): best = steps
+        for pernode, stops in ((False, False), (True, False), (True, True)):
+            self.pernode, self.stops, self.fuel = pernode, stops, fuel
+            path:list = self._route(src, dest)
+            for topup in (False, True):
+                self.topup:bool = topup
+                steps:list[Step] = self._fly(src, dest, fuel, path)
+                if not best or (steps[-1].kind == 'fail', len(steps)) < (best[-1].kind == 'fail', len(best)): best = steps
         return best
 
-    def _fly(self, src:tuple, dest:tuple, fuel:float) -> list[Step]:
-        """Plan the whole route once, then fly it; each refuel replans only to a horizon ahead and rejoins it."""
+    def _fly(self, src:tuple, dest:tuple, fuel:float, path:list) -> list[Step]:
+        """Fly the planned path; each refuel replans only to a horizon ahead and rejoins it."""
         self.here:tuple = src
         self.fuel:float = fuel
         self.steps:list[Step] = []
-        self.path:list = self._route(src, dest)
+        self.start, self.goal = src, dest
+        self.path:list = path
         self.k:int = 0
         self.saved:list = []
         self.tried:set = set()
@@ -101,6 +105,9 @@ class Planner:
             if not self.refuelled:
                 self.k += 1
                 continue
+
+            # Refuelling on landing at the leg's end finishes it, or the replan jumps 0 Ly back onto it
+            if self.here == self._node_pos(self.path[self.k + 1]): self.k += 1
             self._replan()
 
         return self.steps
@@ -115,7 +122,7 @@ class Planner:
         new:list = self._route(here, old[-1])
         self.goal, self.k = self.dest, 0
 
-        # The planner is approximate, so only switch when its plan beats carrying on, both counted the same way
+        # Switch when the fresh plan is at least as good as carrying on, both counted the same way
         stay:int = 0
         fuel:float = self.fuel
         p:tuple = here
@@ -125,7 +132,7 @@ class Planner:
             stay += hops
             p, boosted = q, n >= 0
         joins:bool = m >= 0 and new[-2] == m
-        if self.found - joins >= stay:
+        if self.found - joins > stay:
             self.path = [-1] + ahead
             return
 
@@ -232,8 +239,14 @@ class Planner:
                 rad *= 1.5
                 cands = ahead(rad)
 
-            # Dense regions offer thousands; keep the 40 that cover the most distance per jump
-            cands = heapq.nlargest(40, cands, key=lambda c: (here - c[2]) / self.jumps(c[1], rng, self.mult, boosted))
+            # Dense regions offer thousands; keep the 40 covering most distance per jump, plus the boost each gives
+            nxt:float = self.mult * rng
+            rate = lambda c: (here - c[2] + nxt) / (self.jumps(c[1], rng, self.mult, boosted) + 1)
+            best:list = heapq.nlargest(40, cands, key=rate)
+
+            # Fuel stops rarely rank there, yet landing on one when low saves a refuel jump, which per-node plans count
+            if self.stops: best +=heapq.nlargest(10, [c for c in cands if self._stop(c[0]) and c not in best], key=rate)
+            cands = best
 
             # Always offer flying straight to the goal, so a route exists even with no neutrons ahead
             cands.append((-2, here, 0.0))
@@ -317,6 +330,7 @@ class Planner:
         ship, sc, goal = self.ship, self.sc, self._node_pos(b)
         name:str = '<dest>' if b == -2 else self.neu.name(b)
         addr:int|None = None if b == -2 else self.neu.id64(b)
+        stop:bool = self._stop(b)
 
         # From a neutron: boost straight to the next one, or land short on a scoop star when fuel is tight
         if a >= 0 or (a == -1 and self._at_neutron(self.here)):
@@ -324,9 +338,9 @@ class Planner:
             gap:float = math.dist(self.here, goal)
 
             # Neutrons can't be scooped, so only boost straight in if enough is left to move on, or it's a fuel stop
-            stop:bool = self._stop(b)
-            if gap <= boost and self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True) >= (0 if stop else self.low):
-                self._jump_to(goal, name, addr, 'boost', True, stop)
+            left:float = self.fuel - ship.fuel_cost(gap, self.fuel, self.cargo, True)
+            if gap <= boost and left >= (0 if stop else self.low):
+                self._jump_to(goal, name, addr, 'boost', True, stop, stop and self._short(goal, left))
                 return
 
             # Otherwise boost onto a scoopable star instead: the one nearest the next neutron
@@ -341,7 +355,24 @@ class Planner:
         for i in self._scoop_hops(goal):
             self._jump_to(sc.pos(i), sc.name(i), sc.id64(i), 'plain', False, True)
             if self.refuelled: return
-        self._jump_to(goal, name, addr, 'plain', False, self._stop(b))
+        left = self.fuel - ship.fuel_cost(math.dist(self.here, goal), self.fuel, self.cargo)
+        self._jump_to(goal, name, addr, 'plain', False, stop, stop and left >= 0 and self._short(goal, left))
+
+    def _short(self, p:tuple, fuel:float) -> bool:
+        """Whether landing at p with this fuel runs low before the route's next fuel stop."""
+        if not self.topup: return False
+
+        for n in self.path[self.k + 2:]:
+            q:tuple = self._node_pos(n)
+            dist:float = math.dist(p, q)
+
+            # A leg beyond one boost goes via scoopable stars, which refuel on the way
+            if dist > self.mult * self.ship.jump_range(fuel, self.cargo) * 0.999: return False
+            fuel -= self.ship.fuel_cost(dist, fuel, self.cargo, True)
+            if fuel < (0 if self._stop(n) else self.low): return True
+            if self._stop(n): return False
+            p = q
+        return False
 
     def _jump_to(self, q:tuple, name:str, addr:int|None, kind:str, charged:bool, scoopable:bool, force:bool = False) -> None:
         """Jump to q, spending fuel for the current mass, and refuel to full if it's scoopable and low or forced."""

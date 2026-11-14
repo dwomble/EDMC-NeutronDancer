@@ -1889,6 +1889,23 @@ class TestLocalRouting:
         assert steps[-1].name == '<dest>'
         assert [(s.name, s.kind) for s in steps if s.refuel] == [('N1', 'boost')]
 
+    def test_tops_up_before_short(self, harness:TestHarness, tmp_path:Path) -> None:
+        """ A fuel stop tops up when the fuel left won't reach the next one, saving a detour to a scoopable star later. """
+        rows:list = [{'id64': i, 'name': f'N{i}', 'mainStar': 'Neutron Star', 'coords': {'x': 0, 'y': 0, 'z': i * 300}} for i in range(5)]
+        rows[1]['stars'] = [('K (Yellow-Orange) Star', 10.0)]
+        rows.append({'id64': 10, 'name': 'K', 'mainStar': 'K (Yellow-Orange) Star', 'coords': {'x': 20, 'y': 0, 'z': 620}})
+        idx:dict = _synthetic_build(tmp_path, rows)
+
+        # Enough to land on N1 above the refuel threshold, but not on N2
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        hop:float = ship.fuel_cost(300, ship.tank_size, 0, True)
+        steps:list = Planner(idx['neutron'], idx['kgbfoam']).plot(ship, (0.0, 0.0, -10.0), (0.0, 0.0, 1210.0), ship.max_fuel_per_jump + 1.5 * hop)
+
+        assert steps[-1].name == '<dest>'
+        assert [s.name for s in steps if s.refuel] == ['N1']
+        assert 'K' not in [s.name for s in steps]
+
     def test_local_data_installs(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Downloads, checks and unpacks each index in the manifest, skips unchanged ones, drops retired ones, keeps a backup. """
         import hashlib, io, zipfile

@@ -63,7 +63,6 @@ class RouteWindow:
         if self.window == None: return
         Context.router.window_geometries['route'] = self.window.winfo_geometry()
         self.window.destroy()
-        return
 
     def _jump_summary(self, parent:tk.Frame, route:Route) -> None:
         """ Display a summary of the next jump """
@@ -79,7 +78,7 @@ class RouteWindow:
 
     def _speed_summary(self, parent:tk.Frame, route:Route) -> None:
         """ Display a summary of the speed """
-        ttl:ttk.Label = ttk.Label(parent, text=f"{lbls['speed'].title()}", font=BOLD)
+        ttl:ttk.Label = ttk.Label(parent, text=lbls['speed'].title(), font=BOLD)
         ttl.pack(side=tk.LEFT, padx=5)
 
         jph:tuple = tuple([route.jumps_per_hour(), 'int', '-', lbls['jumps_per_hour']])
@@ -90,7 +89,7 @@ class RouteWindow:
 
     def _distance_summary(self, parent:tk.Frame, route:Route) -> None:
         """ Display a summary of the distance """
-        ttl:ttk.Label = ttk.Label(parent, text=f"{lbls['distance'].title()}", font=BOLD)
+        ttl:ttk.Label = ttk.Label(parent, text=lbls['distance'].title(), font=BOLD)
         ttl.pack(side=tk.LEFT, padx=5)
 
         dist:tuple = tuple([route.total_dist() - route.dist_remaining(), 'float', '0', ''])
@@ -119,7 +118,7 @@ class RouteWindow:
         frm.pack(fill=tk.X, padx=5, pady=5)
 
         # Progress
-        ttl:ttk.Label = ttk.Label(frm, text=f"{lbls['progress'].title()}", font=BOLD)
+        ttl:ttk.Label = ttk.Label(frm, text=lbls['progress'].title(), font=BOLD)
         ttl.pack(side=tk.LEFT, padx=5)
 
         pfl:float = route.perc_dist_rem() if route.dr != None else route.perc_jumps_rem()
@@ -168,11 +167,12 @@ class RouteWindow:
 
         # Do some route preprocessing to make sure the data is in a displayable format
         if 'Body' in route.hdrs: # Strip the system name from the body name column
-            for i, row in enumerate(route.route):
+            for row in route.route:
                 row[route.hdrs.index('Body')] = row[route.hdrs.index('Body')].replace(row[route.sc], '')
 
         # Calculate column widths based on header and data lengths, with some padding
         widths:list = [len(w)+4 for w in route.hdrs]
+        Debug.logger.debug(f"RouteWindow._table: Initial widths based on headers: {len(route.hdrs)} {len(route.route)}")
         for r in route.route:
             widths = [max(widths[i], len(str(w))+2) for i, w in enumerate(r)]
 

@@ -7,6 +7,7 @@ NAME="NeutronDancer"
 GH_USER="dwomble"
 GH_PROJECT="EDMC-NeutronDancer"
 GH_MAIN="master"
+LOCAL_TAG:str = "star-data"  # release tag prefix for the local router's indexes, followed by -v<index format version>
 
 # Check for updates at most once per day
 UPDATE_CHECK_INTERVAL:int = (3600 * 24)
@@ -29,6 +30,8 @@ SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; r
 SPANSH_SYSTEM:str = f"{SPANSH_API}/system"  # /{id64} -> full system record, used to resolve a station's system name
 SPANSH_SEARCH_SYSTEMS:str = f"{SPANSH_API}/search/systems"  # richer system search; results include id64, needed by Fleet Carrier
 SPANSH_TIMEOUT:int = 30
+
+LOCAL_ROUTE:str = "local"  # route type plotted from the data folder's indexes instead of a web API
 
 INDY_API:str = "https://neutron.indyhost.org/api"
 INDY_ROUTE:str = f"{INDY_API}/route"
@@ -149,6 +152,9 @@ lbls:dict = {
     "clear_route_yesno": "Are you sure you want to clear the current route?",
     "route_complete": "End of the road!",
     "update_available": "Version {v} will be installed on exit. Click to cancel.",
+    "local_download": "Downloading local route data: {s}",
+    "local_updated": "Local route data updated",
+    "local_failed": "Local route data download failed, see the log",
     "jump": "jump",
     "jumps": "jumps",
     "range": "Ship Range",
@@ -304,6 +310,7 @@ errs:dict = {
     "parse_error": "Error parsing route file",
     "no_ships": "You must have switched ships for the plotter to receive your ship details",
     "no_ship": "No ship selected",
+    "no_local_data": "Local route data isn't downloaded",
     "ship_not_found": "Ship not found in shipyard",
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",
@@ -327,7 +334,9 @@ cnf:dict = {
     "routes_directory": "Default Route File Directory",
     "copy_on_jump": "Copy next waypoint system to clipboard after an FSD jump",
     "copy_on_galmap": "Copy next waypoint system to clipboard after opening galaxy map",
-    "install_prereleases": "Install pre-release versions of Neutron Dancer"
+    "install_prereleases": "Install pre-release versions of Neutron Dancer",
+    "local_router": "Enable Neutron Dancer, the local router (downloads about 1.1 GB of data)",
+    "local_delete": "Delete the local route data ({s:.1f} GB)?"
 }
 
 ovr:dict = {

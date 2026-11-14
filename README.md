@@ -15,21 +15,25 @@ Neutron Dancer makes neutron jumping easier by letting you plot any of a variety
 ## Key Features
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
-- **Spansh Neutron Plotter**, **IndyHost Neutron Plotter**, **Road to Riches**, **Expressway to Exomastery**, **Trade Planner**, **Tourist Route**, and **Fleet Carrier Route** planners are also supported and a simple Boxel Surveyor.
-- Click the next destination button to copy it straight into your paste buffer.
+- Wide range of plotters:
+  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route
+  - **Indestinate**: IndyHost Neutron Plotter
+  - **Local**: Fully Local Neutron Plotter, Boxel Surveyor
+- Automatic insertion of the next system to the paste buffer on system arrival, opening galaxy map, both or neither.
+- Button to copy system name into your paste buffer.
 - Remembers your route, progress, ships, loadouts, and destinations across sessions.
 - Refuel locations and Neutron stars are highlighted.
-- Star name auto-completion.
-- CSV import supports almost any route file, for any route type above or otherwise.
+- System name auto-completion.
+- CSV import supports almost any route file or route type.
 - Route export makes it easy to save a route for later reuse.
-- Fleet carrier support includes jump countdown and cooldown tracking and cooldown notifications.
+- Fleet carrier support includes jump countdown and cooldown tracking and notifications.
 - Tracks and reports statistics including jumps and distance per hour.
 - Support for:
   - [Modern Overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for in game display of routes and countdown timers.
   - Chat commands (`!nd next`, `!nd previous`, `!nd copy`)
   - [Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) for next waypoint, previous waypoint, and copy to clipboard operations.
 - Fully EDMC theme compliant.
-- API for integration with other plugins.
+- API for integration with other plugins such as [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin).
 
 ## Installation
 
@@ -49,65 +53,20 @@ Neutron Dancer supports direct route creation for:
 
 1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
-1. Indestinated's (IndyHost) Neutron Plotter
+1. Indestinate's (IndyHost) Neutron Plotter
+1. Local Neutron Plotter
 1. Road to Riches
 1. Expressway to Exomastery
 1. Trade Planner
 1. Tourist Route
 1. Fleet Carrier Route
-1. Boxel Surveyor (experimental)
+1. Boxel Surveyor
 
-It also supports CSV file import for any of the above, or any other Spansh route export.
+To plot a route select the route type from the dropdown menu, enter the required details and click `Calculate`.
 
-### Galaxy Plotting
-
-To use the Galaxy Plotter, also known as the *exact plotter*, enter your source and destination systems, select the ship and set any other options and choose `Calculate`. The Galaxy Plotter options are explained in the help window as well as at [Spansh](https://spansh.co.uk/exact-plotter).
-
-![Galaxy Plotter](https://github.com/user-attachments/assets/106097f3-c72f-4add-88c1-56d4e01a463f)
-
-When you complete a route Neutron Dancer saves the source, destination, and ship details for easy entry. These are available from a right click menu to simplify entry.
-
-**Note:** In order to perform a galaxy plot the Neutron Dancer needs the full loadout of the ship you intend to use. For Neutron Dancer to know this information you must have switched to this ship to plot a route for it.
-
-### Neutron Plotting
-
-This works like the Galaxy plotter, is simpler and produces less efficient routes, but supports multi-hop routes.
-
-![Neutron Plotter](https://github.com/user-attachments/assets/c87533f8-6880-4f83-86a3-ca7cd9f2b3d9)
-
-### Indestinated's (IndyHost) Neutron Plotter
-
-An alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Blazingly fast, with White Dwarf support, but database can be less up to date.
-
-![Indeztinated's Neutron Plotter](https://github.com/user-attachments/assets/2c1273e2-c6d0-44e8-98aa-cedb5185db6c)
-
-### Road to Riches and Expressway to Exomastery
-
-**Road to Riches** and **Expressway to Exomastery** (Exobiology) work the same way.
+Input fields have mouseover tooltips with details of their meaning and many have right-click context menus to autofill details. The `?` button links to a detailed [help](./assets/help.md) file.
 
 ![Expressway to Exomastery](https://github.com/user-attachments/assets/a577dce7-f8dd-4557-b479-ed68c02ccf00)
-
-### Trade Planner
-
-Trade routes are fully available.
-
-![Trade Planner](https://github.com/user-attachments/assets/d99e0ae4-bbc9-444b-859a-6997fdf8a604)
-
-### Tourist Route
-
-Tourist routes are also supported.
-
-![Touriste Route](https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3)
-
-### Fleet Carrier Router
-
-This is the final supported Spansh route type.
-
-![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
-
-### Boxel Surveyor
-
-This is a different type of router that generates a list of systems within a boxel.
 
 ### Following the Route
 

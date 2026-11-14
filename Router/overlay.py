@@ -114,7 +114,8 @@ class Overlay():
 
         self.update_frame('Default', message)
 
-        if Context.route.refuel() and not Context.route.fuel_full:
+        full:bool = Context.router.ship is not None and Context.router.ship.fuel_full
+        if Context.route.refuel(full):
             self.display_alert(ovr["refuel"])
             return
 
@@ -122,7 +123,7 @@ class Overlay():
             Context.overlay.display_alert(ovr["neutron"])
             return
 
-        if Context.route.refuel() and Context.route.fuel_full and not Context.route.is_neutron():
+        if Context.route.refuel(full) and full and not Context.route.is_neutron():
             self.clear_frame("Alert")
 
 
@@ -255,7 +256,7 @@ class Overlay():
                 args['fill'] = '#00000000'
                 args['w'] = c.get('width', 100)
                 args['h'] = c.get('height', 12)
-                if fr.visible == True and fr.enabled == True:
+                if fr.visible == fr.enabled == True:
                     overlay.send_shape(**args)
                 self.msgs[frame][args['shapeid']] = args
 
@@ -266,7 +267,7 @@ class Overlay():
                 argsb['fill'] = c.get('colour', fr.text_colour)
                 argsb['w'] = int(c.get('progressbar', 0) * c.get('width', 100) / 100)
                 argsb['h'] = c.get('height', 12)
-                if fr.visible == True and fr.enabled == True:
+                if fr.visible == fr.enabled == True:
                     overlay.send_shape(**argsb)
                 self.msgs[frame][argsb['shapeid']] = argsb
                 y += 20
@@ -276,7 +277,7 @@ class Overlay():
             args['text'] = c.get('text', '')
             args['color'] = c.get('colour', fr.text_colour)
             args['size'] = c.get('size', 'normal')
-            if fr.visible == True and fr.enabled == True:
+            if fr.visible == fr.enabled == True:
                 overlay.send_message(**args)
             self.msgs[frame][args['msgid']] = args
             y += 25 if args['size'] == 'large' else 20
@@ -394,7 +395,7 @@ class Overlay():
         ovrprefs:nb.Frame = nb.Frame(parent)
         ovrprefs.columnconfigure(6, weight=1)
         ovrprefs.rowconfigure(60, weight=1)
-        ovrprefs.grid()
+        ovrprefs.grid(sticky=tk.NW)
 
         props = font.Font(name="TkDefaultFont", exists=True).actual()
         props["weight"] = "bold"

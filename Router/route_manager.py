@@ -1,11 +1,11 @@
 import json
+import math
 import re
-import requests
 from requests import Response
 from pathlib import Path
 from time import time, sleep
 from datetime import UTC, datetime, timedelta
-from threading import Thread
+from threading import Lock, Thread
 
 from config import config # type: ignore
 from timeout_session import new_session # type: ignore
@@ -13,19 +13,20 @@ from timeout_session import new_session # type: ignore
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, INDY_ROUTE, TRUE
+from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE
 from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
+from .local.index import Index
+from .local.search import Planner, Cancelled
+from .local.index import Combined
 from . import api
 
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
                   'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '',
                   'window_geometries' : {}}
-
-SESSION:requests.Session = new_session(SPANSH_TIMEOUT) # shared, per PLUGINS.md
 
 @singleton
 class Router():
@@ -37,6 +38,8 @@ class Router():
 
         # Current location data and settings
         self.system:str = ""
+        self.star_pos:tuple|None = None # current system's coordinates, from EDMC's journal state
+        self.address:int|None = None # current system's id64, from EDMC's journal state
         self.src:str = ''
         self.dest:str = ''
 
@@ -44,6 +47,13 @@ class Router():
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
+        self.menu_ship:Ship|None = None # The ship currently selected in the UI, which may not be the current ship
+
+        # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
+        self.local:Planner|None = None
+        self.local_lock:Lock = Lock() # a preload and a plot can both try to load the indexes
+        self.plot_lock:Lock = Lock() # the planner holds one plot's state, so plots take turns
+        self.plots:int = 0
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -80,7 +90,7 @@ class Router():
 
     def shipnames(self) -> list:
         """ Return a list of shipnames """
-        names:list = list(self.shiplist.values())
+        names:list = list(dict.fromkeys(self.shiplist.values()))
         names.reverse()
         return names
 
@@ -97,6 +107,9 @@ class Router():
         Called on a ship swap event to update our current ship information
         On a ship swap we don't get the full loadout so we have to rely on our shipyard and hope we've seen this ship before
         """
+        # Keep the outgoing ship's fuel level for plotting from it later
+        if self.ship: self._save_ship(self.ship)
+
         ship = self.load_ship(ship_id)
         if not ship or not ship.id or ship.base_mass == 0.0:
             Debug.logger.info(f"ShipID {ship_id} not found (or corrupt) in shipyard")
@@ -122,9 +135,13 @@ class Router():
     def add_loadout(self, entry:dict) -> None:
         """ Save ship details on loadout event and maybe update the UI """
         ship:Ship = Ship(entry)
+        if not ship.id:
+            Debug.logger.debug(f"Ship {ship.name} has no id yet, not adding loadout")
+            return
         if ship.base_mass == 0.0:
             Debug.logger.error(f"Ship {ship.name} has no base mass, cannot add loadout")
             return
+        if self.ship and ship.id == self.ship.id: ship.fuel = self.ship.fuel
         self._save_ship(ship)
 
         # If we always get a swap_ship() when switching this will be redundant.
@@ -136,7 +153,7 @@ class Router():
     def jumped(self, system:str, entry:dict) -> None:
         """ Called after a jump in order to update the route, the UI etc."""
 
-        Context.route.fuel_full = False # We just jumped so we can't be full anymore
+        if self.ship and 'FuelLevel' in entry: self.ship.fuel = entry['FuelLevel']
         if Context.route.route == [] or Context.route.fleetcarrier == True: return
         Context.route.record_jump(entry.get('StarSystem', system), entry.get('JumpDist', 0))
 
@@ -172,12 +189,12 @@ class Router():
 
                 Context.overlay.display_carrier(entry.get('CarrierType', ''), end, self.carrier_dest)
                 rem:timedelta = end - datetime.now(tz=end.tzinfo)
-                Context.ui.frame.after((rem.seconds + 2) * 1000, lambda: self.jump_complete())
+                Context.ui.frame.after((rem.seconds + 2) * 1000, self.jump_complete)
 
             case 'CarrierJumpCancelled' if self.carrier_id == entry.get('CarrierID', ''):
                 self.carrier_state = CarrierStates.Cooldown
                 Context.overlay.display_carrier('Cooldown', 60)
-                Context.ui.frame.after(60000, lambda: self.cooldown_complete())
+                Context.ui.frame.after(60000, self.cooldown_complete)
                 api.emit_event(carrier=True, clear=True)
 
             case 'CarrierLocation' if self.carrier_state == CarrierStates.Jumping and self.carrier_id == entry.get('CarrierID', ''):
@@ -198,7 +215,7 @@ class Router():
                     return
 
                 self.carrier_state = CarrierStates.Cooldown
-                Context.ui.frame.after(delta.microseconds, lambda: self.cooldown_complete())
+                Context.ui.frame.after(delta.microseconds, self.cooldown_complete)
                 Context.overlay.display_carrier('Cooldown', delta.seconds)
 
             case 'CarrierLocation' if self.carrier_id == entry.get('CarrierID', ''):
@@ -213,14 +230,10 @@ class Router():
 
     @catch_exceptions
     def fuel_event(self, state:dict) -> None:
-        """ Set fuel_full to true or false """
-
-        fuel:float = -1
+        """ Read the refuelled fuel level from Status.json, which may not have reached dashboard_entry yet """
+        if self.ship is None: return
         with open(Path(config.get_str("journaldir") / "Status.json"), 'r') as file:
-            status:dict = json.load(file)
-            fuel = status.get('Fuel', {}).get('FuelMain', 0.0)
-
-        Context.route.fuel_full = (fuel >= float(state.get('FuelCapacity', 0.0)))
+            self.ship.fuel = json.load(file).get('Fuel', {}).get('FuelMain', 0.0)
 
         # Update the UI as we may need to hide the refuel notification
         if Context.route.jumps_remaining() > 0:
@@ -237,7 +250,7 @@ class Router():
             Context.route.update_route(0, self.carrier_location)
             Context.ui.update_progress()
         self.carrier_state = CarrierStates.Cooldown
-        Context.ui.frame.after(300000, lambda: self.cooldown_complete())
+        Context.ui.frame.after(300000, self.cooldown_complete)
         Context.overlay.display_carrier('Cooldown', 300)
 
 
@@ -259,23 +272,23 @@ class Router():
         self.history = list(dict.fromkeys(self.history))[:10] # Keep only last 10 unique entries
 
 
-    def plot_route(self, which:str, params:dict) -> bool:
+    def plot_route(self, type:str, params:dict) -> bool:
         """ Initiate Spansh route plotting """
 
-        spec = PLOTTER_SPECS.get(which)
+        spec = PLOTTER_SPECS.get(type)
         if spec is None:
-            Debug.logger.error(f"Unknown route type {which}")
+            Debug.logger.error(f"Unknown route type {type}")
             return False
 
         self.src = params[spec.src_key]
         self.dest = params.get(spec.dest_key, '')
-        self.route_params[which] = params
+        self.route_params[type] = params
 
-        self.last_plot = which
+        self.last_plot = type
         self._store_history()
 
-        Debug.logger.info(f"Plotting route {which} {spec.url} {params}")
-        Thread(target=self._plotter, args=(which, spec.url, params), daemon=True,
+        Debug.logger.info(f"Plotting route {type} {spec.url} {params}")
+        Thread(target=self._plotter, args=(type, spec.url, params), daemon=True,
                name="Neutron Dancer route plotting worker").start()
         return True
 
@@ -325,31 +338,35 @@ class Router():
                 })
         return rows
 
-    def _plotter(self, which:str, url:str, params:dict) -> None:
+    def _plotter(self, type:str, url:str, params:dict) -> None:
         """ Async function to run the Spansh query """
 
         self.cancel_plot = False
         try:
             if url == INDY_ROUTE:
-                resp:Response = SESSION.get(url, params=params, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+                resp:Response = Context.session.get(url, params=params, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
                 data:dict = resp.json() if resp.status_code == 200 else {}
                 if self.cancel_plot: return
                 if not data.get('found'):
-                    self.plot_error(which, params, data.get('error') or resp)
+                    self.plot_error(type, params, data.get('error') or resp)
                     return
 
                 hops:list = data.get('hops', [])
                 res:list = [{'system': h['name'], 'distance_jumped': h['jumpDist'], 'distance_left': h['remainingDist'],
                              'jumps': h['plainJumps'], 'neutron_star': i + 1 < len(hops) and hops[i + 1]['boosted']}
                             for i, h in enumerate(hops)]
+            elif url == LOCAL_ROUTE:
+                local:list|None = self._local_result(type, params)
+                if local is None: return
+                res = local
             else:
-                spansh:list|None = self._spansh_result(which, url, params)
+                spansh:list|None = self._spansh_result(type, url, params)
                 if spansh is None: return
                 res = spansh
 
             if res == []:
-                Debug.logger.info(f"No results for {which}, {params}")
-                self.plot_error(which, params, None)
+                Debug.logger.info(f"No results for {type}, {params}")
+                self.plot_error(type, params, None)
                 return
 
             cols:list = []; hdrs:list = []; h:str
@@ -361,7 +378,7 @@ class Router():
                         cols.append(k)
 
             rte:list = []
-            for i, waypoint in enumerate(res):
+            for waypoint in res:
                 r:list = []
                 for c in cols:
                     if re.match(r"^(\d+)$", str(waypoint.get(c, ''))):
@@ -388,7 +405,7 @@ class Router():
                     'StarClass': 'N' if neutron else 'M' if scoopable else '',
                 }
 
-            Context.route = Route(hdrs, rte, navroute=navroute)
+            Context.route = Route(hdrs, rte, navroute=navroute, type=type, shipname=self.menu_ship.name if self.menu_ship else "")
             Context.route.offset = 0
 
             if Context.route.fleetcarrier and self.carrier_location != '':
@@ -401,17 +418,91 @@ class Router():
             self.save()
 
             # Signal API users that a route has been plotted
-            api.emit_event(which == "FleetCarrier")
+            api.emit_event(type == "FleetCarrier")
 
         except Exception as e:
-            Debug.logger.error(f"Failed to plot route {which}, {params}\nexception info:", exc_info=e)
-            self.plot_error(which, params, None)
+            Debug.logger.error(f"Failed to plot route {type}, {params}\nexception info:", exc_info=e)
+            self.plot_error(type, params, None)
+
+
+    def _coords(self, name:str) -> tuple|None:
+        """ Spansh's exact name, coordinates and id64 for a system, or None if it isn't found """
+        if name.casefold() == self.system.casefold() and self.star_pos: return self.system, self.star_pos, self.address
+        resp:Response = Context.session.get(SPANSH_SEARCH_SYSTEMS, params={'q': name}, headers={'User-Agent': Context.plugin_useragent},
+                                    timeout=SPANSH_TIMEOUT)
+        hits:list = resp.json().get('results', []) if resp.status_code == 200 else []
+        hit:dict|None = next((h for h in hits if h.get('name', '').casefold() == name.casefold()), None)
+        return (hit['name'], (hit['x'], hit['y'], hit['z']), hit.get('id64')) if hit else None
+
+
+    @catch_exceptions
+    def load_local(self) -> Planner|None:
+        """ Load the local indexes once, whether for a preload or a plot; None if they aren't available """
+        with self.local_lock:
+            if self.local is not None or not Context.localdata.ready(): return self.local
+
+            # Weekly add-ons carry neutrons and fuel stars found since the last full rebuild
+            folder:Path = Path(Context.plugin_dir) / DATA_DIR
+            idx:dict = {}
+            for kind in ('neutron', 'kgbfoam'):
+                idx[kind] = Index.load(folder / kind)
+                if (folder / f'{kind}_add' / 'meta.json').exists(): idx[kind] = Combined(idx[kind], Index.load(folder / f'{kind}_add'))
+            self.local = Planner(idx['neutron'], idx['kgbfoam'])
+            return self.local
+
+
+    def _local_result(self, which:str, params:dict) -> list|None:
+        """ Plot from the local indexes with the selected ship, as Spansh-style rows; None once an error is shown """
+        ship:Ship|None = self.load_ship(params.get('ship', ''))
+        if ship is None:
+            self.plot_error(which, params, 'ship_not_found')
+            return None
+
+        planner:Planner|None = self.load_local()
+        if planner is None:
+            self.plot_error(which, params, 'no_local_data')
+            return None
+
+        src:tuple|None = self._coords(params['from'])
+        dest:tuple|None = self._coords(params['to'])
+        if src is None or dest is None:
+            self.plot_error(which, params, 'no_system_id')
+            return None
+        if self.cancel_plot: return None
+
+        # A new plot clears cancel_plot, so the count is what stops one still running from before
+        self.plots += 1
+        mine:int = self.plots
+        try:
+            with self.plot_lock:
+                steps:list = planner.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'],
+                                          lambda: self.cancel_plot or self.plots != mine)
+        except Cancelled:
+            return None
+        if steps and steps[-1].kind == 'fail':
+            self.plot_error(which, params, f"Local route stopped after {len(steps) - 1} jumps: {steps[-1].name}")
+            return None
+
+        # Spansh flags a neutron on the system you boost from, which is the one before each boosted jump.
+        # x, y, z and id64 give each star's StarPos and SystemAddress to API users, as Spansh's own rows do.
+        x, y, z = src[1]
+        rows:list = [{'system': src[0], 'distance_jumped': 0, 'jumps': 0, 'distance_left': round(math.dist(src[1], dest[1]), 2),
+                      'neutron_star': bool(steps) and steps[0].kind == 'boost', 'is_scoopable': False, 'must_refuel': False,
+                      'fuel_in_tank': round(params['fuel'], 2), 'x': x, 'y': y, 'z': z, 'id64': src[2]}]
+        for i, s in enumerate(steps):
+            x, y, z = s.pos
+            rows.append({'system': dest[0] if s.name == '<dest>' else s.name, 'distance_jumped': round(s.dist, 2), 'jumps': 1,
+                         'distance_left': round(math.dist(s.pos, dest[1]), 2),
+                         'neutron_star': i + 1 < len(steps) and steps[i + 1].kind == 'boost',
+                         'is_scoopable': s.scoop, 'must_refuel': s.refuel, 'fuel_in_tank': round(s.fuel, 2), 'x': x, 'y': y, 'z': z,
+                         'id64': dest[2] if s.name == '<dest>' else s.id64})
+        return rows
 
 
     def _spansh_result(self, which:str, url:str, params:dict) -> list|None:
         """ Submit a Spansh job, poll it and flatten the result; None on failure or cancel """
         limit:int = int(params.get('max_time', 20))
-        results:Response = SESSION.post(url, data=params,
+        results:Response = Context.session.post(url, data=params,
                                          headers={'User-Agent': Context.plugin_useragent,
                                                   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
                                                   timeout=SPANSH_TIMEOUT)
@@ -428,7 +519,7 @@ class Router():
             job:str = response["job"]
 
             results_url:str = f"{SPANSH_RESULTS}/{job}"
-            route_response = SESSION.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+            route_response = Context.session.get(results_url, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
             if route_response.status_code != 202:
                 Debug.logger.debug(f"Spansh route response not ready, status code: {route_response.status_code}, tries: {tries}")
                 break
@@ -463,7 +554,7 @@ class Router():
             err = errs["no_response"]
         if isinstance(response, str):
             err = errs.get(response, response)
-        if isinstance(response, Response) and response.status_code in [400, 500]:
+        if isinstance(response, Response) and response.status_code in (400, 500):
             err = str(response.status_code)
             if response.content and "error" in json.loads(response.content).keys():
                 Debug.logger.info(f"Server response: {response.json()}")
@@ -471,7 +562,6 @@ class Router():
 
         Context.ui.show_frame(Context.router.last_plot) # Return to the plot gui
         Context.ui.show_error(err)
-        return
 
     def clear_route(self) -> None:
         """ Clear the current route """
@@ -493,7 +583,7 @@ class Router():
                 Context.ui.show_error(errs['no_filename'] if not Context.csv else Context.csv.error)
                 return False
 
-            Context.route = Route(Context.csv.headers, Context.csv.route)
+            Context.route = Route(Context.csv.headers, Context.csv.route, navroute=Context.csv.navroute)
             self.src = Context.route.source()
             self.dest = Context.route.destination()
 
@@ -512,7 +602,7 @@ class Router():
     def export_route(self) -> bool:
         """ Save a route to a CSV file """
         try:
-            if Context.csv == None or Context.csv.write(Context.route.hdrs, Context.route.route) == False:
+            if Context.csv == None or Context.csv.write(Context.route) == False:
                 Debug.logger.error(f"Failed to save route")
                 Context.ui.show_error(errs['no_filename'])
                 return False
@@ -530,7 +620,7 @@ class Router():
             for key, url  in {"fsd": f"{GH_MODULES}/standard/frame_shift_drive.json",
                               "gfsb": f"{GH_MODULES}/internal/guardian_fsd_booster.json",
                               "ft": f"{GH_MODULES}/standard/fuel_tank.json"}.items():
-                r:Response = SESSION.get(url, headers={'User-Agent': Context.plugin_useragent}, timeout=10)
+                r:Response = Context.session.get(url, headers={'User-Agent': Context.plugin_useragent}, timeout=10)
                 if r.status_code != 200:
                     Debug.logger.info(f"Could not download FSD data (status code {r.status_code}): {r.text}")
                     return
@@ -608,6 +698,7 @@ class Router():
     @catch_exceptions
     def save(self) -> None:
         """ Save state to file """
+        if self.ship: self._save_ship(self.ship)
 
         dir:Path = Path(Context.plugin_dir) / DATA_DIR
         dir.mkdir(parents=True, exist_ok=True)
@@ -623,6 +714,7 @@ class Router():
         save['carrier_state'] = self.carrier_state.name # Need to convert to
         save['self.carrier_departure'] = self.carrier_departure.isoformat() if self.carrier_departure else None
         save['ship'] = self.ship.as_dict() if self.ship else {}
+        save['menu_ship'] = self.menu_ship.as_dict() if self.menu_ship else {}
         if Context.route != None:
             save['route'] = Context.route.as_dict()
         return save
@@ -639,9 +731,12 @@ class Router():
         r = data.get('route', ([], [], -1, {}))
         (hdrs, route, offset) = r[0:3]
         navroute:dict = r[3] if len(r) > 3 else {}
-        Context.route = Route(hdrs, route, offset, navroute)
+        type:str = r[4] if len(r) > 4 else "Unknown"
+        shipname:str = r[5] if len(r) > 5 else ""
+        Context.route = Route(hdrs, route, offset, navroute, type, shipname)
 
         self.ship = Ship(data.get('ship', {}))
+        self.menu_ship = Ship(data['menu_ship']) if data.get('menu_ship') else None
         ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}
 
         # Migrate

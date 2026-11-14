@@ -14,7 +14,7 @@ class Hotkeys:
         # Only initialize if it's the first time
         if not hotkeys: return
 
-        for cmd in ["next", "previous", "copy"]:
+        for cmd in ("next", "previous", "copy"):
             if not hotkeys.register_action(
                 hotkeys.Action(id=f"{Context.plugin_name}-{cmd}",
                             label=cmd,

@@ -5,7 +5,7 @@ from .context import Context
 class Ship:
     def __init__(self, entry:dict) -> None:
         """ Ship details. Used to store ship loadout and calculate attributes for route plotting. """
-        self.id:str = str(entry.get('ShipID', '')).strip()
+        self.id:str = '' if entry.get('ShipID') is None else str(entry['ShipID']).strip()
         self.type:str = entry.get('Ship', '').strip()
         self.ident:str = entry.get('ShipIdent', '').strip()
         self.name:str = entry.get('ShipName', '').strip() or self.ident or self.type or '?'
@@ -22,6 +22,9 @@ class Ship:
         self.supercharge_multiplier:int = 4
         self.injection_multiplier:int = 2
 
+        # Last known fuel across all main tanks, saved with the ship since only the current ship's is live
+        self.fuel:float|None = entry.get('FuelLevel')
+
         # The journal loadout entry
         self.loadout:dict = {}
 
@@ -37,7 +40,7 @@ class Ship:
             Debug.logger.error(f"Modules not loaded, cannot initialize ship.")
             return
 
-        self.loadout = entry
+        self.loadout = {k: v for k, v in entry.items() if k != 'FuelLevel'}
 
         # Create Standard Loadout Exchange Format (SLEF)
         self.slef:list = [{
@@ -94,12 +97,34 @@ class Ship:
     def get_range(self, cargo:int = 0) -> float:
         """ Return the range of this ship with a given quantity of cargo """
         try:
-            return round((self.optimal_mass / (self.base_mass + self.tank_size + cargo)) * \
-                                (self.max_fuel_per_jump / self.fuel_multiplier) ** \
-                                (1 / self.fuel_power) + \
-                                self.range_boost, 2)
+            return round(self.jump_range(self.tank_size, cargo), 2)
         except Exception:
             return 32.0
+
+
+    def jump_range(self, fuel:float, cargo:float = 0) -> float:
+        """ Longest unboosted jump with this much fuel and cargo aboard """
+        mass:float = self.base_mass + fuel + cargo
+        return self.optimal_mass / mass * (self.max_fuel_per_jump / self.fuel_multiplier) ** (1 / self.fuel_power) + self.range_boost
+
+
+    def fuel_cost(self, dist:float, fuel:float, cargo:float = 0, charged:bool = False) -> float:
+        """ Fuel used by one jump, or infinity if it's out of reach """
+        reach:float = dist / self.supercharge_multiplier if charged else dist
+        top:float = self.jump_range(fuel, cargo)
+        if reach > top: return float('inf')
+
+        # A Guardian booster's fixed range shrinks the distance the fuel equation sees
+        scale:float = 1 - self.range_boost / top if self.range_boost else 1.0
+        mass:float = self.base_mass + fuel + cargo
+        used:float = min(self.max_fuel_per_jump, self.fuel_multiplier * (reach * mass * scale / self.optimal_mass) ** self.fuel_power)
+        return used if used <= fuel else float('inf')
+
+
+    @property
+    def fuel_full(self) -> bool:
+        """ Whether the main tanks, including any additional fuel tanks, are full """
+        return self.fuel is not None and self.fuel >= self.tank_size
 
 
     def __repr__(self) -> str:
@@ -109,4 +134,4 @@ class Ship:
         return self.__repr__()
 
     def as_dict(self) -> dict:
-        return self.loadout
+        return self.loadout if self.fuel is None else {**self.loadout, 'FuelLevel': self.fuel}

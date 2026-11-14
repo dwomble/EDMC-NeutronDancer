@@ -10,7 +10,7 @@ from .constants import HEADERS, ROUTE_DIR, errs
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 from .context import Context
-
+from .route import Route
 @singleton
 class CSV:
     """
@@ -23,7 +23,7 @@ class CSV:
         self.headers:list
         self.route:list
         self.error:str = ""
-
+        self.navroute:dict = {}
 
     def choose_file(self) -> str:
         ftypes:list = [
@@ -62,13 +62,15 @@ class CSV:
                     return False
 
                 fields:list = list(route_reader.fieldnames)
+                hasnavroute:bool = 'SystemAddress' in fields and 'StarClass' in fields
                 hdrs:list = []
                 hdrs = [h for h in fields if h in HEADERS]
 
                 # Append any remaining fields
                 for f in fields:
-                    if f not in HEADERS:
-                        hdrs.append(f)
+                    if f in ("SystemAddress", "x", "y", "z", "StarClass") or f in HEADERS:
+                        continue
+                    hdrs.append(f)
 
                 if hdrs == [] or "System Name" not in hdrs:
                     self.error = errs["invalid_file"]
@@ -76,12 +78,13 @@ class CSV:
                     return False
 
                 route:list = []
+                navroute:dict = {}
                 for row in route_reader:
                     r:list = []
                     if row in (None, "", []): continue
                     for col in hdrs:
                         if col not in row: continue
-                        if col in ["body_name", "body_subtype"]:
+                        if col in ("body_name", "body_subtype"):
                             r.append(ast.literal_eval(row[col]))
                             continue
                         if re.match(r"^(\d+)$", str(row[col])):
@@ -93,11 +96,21 @@ class CSV:
                         r.append(row[col])
                     route.append(r)
 
-                #self.fleetcarrier = True if "Fuel Used" in hdrs else False
-                #self.roadtoriches = True if "Estimated Scan Value" in hdrs else False
+                    if hasnavroute:
+                        navroute[row["System Name"]] = {
+                            'SystemAddress': row['SystemAddress'],
+                            'StarPos': None,
+                            'StarClass': row['StarClass']
+                        }
+                        if 'x' in row and 'y' in row and 'z' in row:
+                            navroute[row["System Name"]]['StarPos'] = (row['x'], row['y'], row['z'])
+
+
                 self.headers = hdrs
                 self.route = route
-                Debug.logger.debug(f"Successfully imported route with {len(route)} rows and headers: {hdrs}")
+                self.navroute = navroute
+
+                Debug.logger.debug(f"Successfully imported route with {len(route)} rows and headers: {hdrs} {navroute}")
                 return True
         except Exception as e:
             self.error = errs["invalid_file"]
@@ -105,17 +118,17 @@ class CSV:
             return False
 
 
-    def write(self, headers:list, route:list) -> bool:
+    def write(self, route:Route) -> bool:
         """ Export the route as a csv """
 
-        if route == [] or headers == []:
+        if not route or route.hdrs == []:
             self.error = errs["no_route"]
             Debug.logger.debug(f"No route")
             return False
 
-        route_start:str = route[0][0]
-        route_end:str = route[-1][0]
-        route_name:str = f"{route_start} to {route_end}"
+        type:str = route.type +" " if hasattr(route, "type") else ""
+        ship:str = f" ({route.shipname})" if hasattr(route, "shipname") and route.shipname != "" else ""
+        route_name:str = f"{type}{route.source()} to {route.destination()}{ship}"
         ftypes:list = [('CSV files', '*.csv')]
         dir:Path = Path(config.get_str(f"{Context.plugin_name}_routes_directory", Path(Context.plugin_dir) / ROUTE_DIR))
         dir.mkdir(parents=True, exist_ok=True)
@@ -126,10 +139,34 @@ class CSV:
             Debug.logger.debug(f"No filename selected")
             return False
 
+        hdrs:list = route.hdrs.copy()
+        rows:list = []
+
+        if route.navroute:
+            sp:bool = False
+            for row in route.route:
+                row.append(route.navroute[row[route.sc]]['SystemAddress'])
+                if 'StarPos' in route.navroute[row[route.sc]]:
+                    sp = True
+                    row.append(route.navroute[row[route.sc]]['StarPos'][0])
+                    row.append(route.navroute[row[route.sc]]['StarPos'][1])
+                    row.append(route.navroute[row[route.sc]]['StarPos'][2])
+                row.append(route.navroute[row[route.sc]]['StarClass'])
+                rows.append(row)
+            hdrs.append('SystemAddress')
+            if sp:
+                hdrs.append('x')
+                hdrs.append('y')
+                hdrs.append('z')
+            hdrs.append('StarClass')
+
+        if not rows:
+            rows = route.route.copy()
+
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(headers)
-            for row in route:
+            writer.writerow(hdrs)
+            for row in rows:
                 writer.writerow(row)
         return True
 

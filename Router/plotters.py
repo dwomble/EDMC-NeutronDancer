@@ -13,7 +13,7 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, FLEET_CARRIER_STATS
+from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
 from .context import Context
 from .route import Route
 from .ship import Ship
@@ -97,7 +97,7 @@ class Plotter(ABC):
             th.Tooltip(rb, tts['remove_hop'])
             rb.grid(row=row, column=col+4, padx=2, pady=2)
 
-        if add_cmd is None and remove_cmd is None: # blank space to maintain alignment
+        if add_cmd is remove_cmd is None: # blank space to maintain alignment
             sp:th.Frame = th.Frame(parent, width=spwidth, height=1)
             sp.grid_propagate(False)
             sp.grid(row=row, column=col+4, padx=2, pady=2)
@@ -107,6 +107,8 @@ class Plotter(ABC):
     def _sys_menu(self, field:str) -> dict:
         """ Current system (source only), carrier location, then recent history """
         systems:list = [Context.router.system if field == 'src' else '', Context.router.carrier_location, *Context.router.history]
+        if lbls["source_system"] in systems: systems.remove(lbls["source_system"])
+        if lbls["dest_system"] in systems: systems.remove(lbls["dest_system"])
         return {s: [Context.ui.menu_callback, field] for s in dict.fromkeys(systems) if s}
 
     def refresh_menus(self) -> None:
@@ -135,13 +137,15 @@ class Plotter(ABC):
                 lb.selection_set(i)
         lb.grid(row=row, column=col, rowspan=int(len(options) / 2)+1, padx=5, pady=5)
 
-    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
+    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> th.Spinbox:
         """Create range entry widget."""
-        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0, width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
+        range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0,
+                                            width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
         range_entry.set_text(str(range_val), False)
         range_entry.grid(row=row, column=col, padx=5, pady=(15,5), sticky=tk.W)
 
         th.Tooltip(range_entry, tts["range"])
+        return range_entry
 
     def _create_multiplier(self, parent:th.Frame, row:int, value:int) -> None:
         """ Supercharge multiplier radio buttons """
@@ -207,20 +211,22 @@ class Plotter(ABC):
 
         @catch_exceptions
         def on_combo_change(e):
-            which:str = next((k for k, v in routers.items() if v == routedd.get()), '')
+            which:str = next((k for k, v in routers.items() if v == self.routedd.get()), '')
             Context.ui.show_frame(which)
 
         sfr:th.Frame = th.Frame(fr, width=Context.ui.frwidth)
 
         th.Label(sfr, text=lbls['route'], justify=tk.LEFT).grid(row=0, column=0, padx=5, pady=5)
 
-        routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=list(routers.values()), width=25)
-        routedd.bind("<<ComboboxSelected>>", on_combo_change)
-        th.Tooltip(routedd, tts["route_type"])
-        routedd.grid(row=0, column=1, padx=5, pady=5)
+        # Local only appears while the local router is enabled and its data is downloaded
+        types:list = [v for k, v in routers.items() if k != 'Local' or Context.localdata.ready()]
+        self.routedd:th.ComboBox = th.ComboBox(sfr, Context.ui.router, values=types, width=25)
+        self.routedd.bind("<<ComboboxSelected>>", on_combo_change)
+        th.Tooltip(self.routedd, tts["route_type"])
+        self.routedd.grid(row=0, column=1, padx=5, pady=5)
 
         #r3:th.Button = th.Button(sfr, image=Context.ui.help_img, cursor="hand2", command=lambda: Context.ui._show_help())
-        r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=lambda: Context.ui._show_help())
+        r3:th.Button = th.Button(sfr, image=Context.ui.help_img, command=Context.ui._show_help)
         th.Tooltip(r3, tts['help'])
         r3.grid(row=0, column=2, padx=5, pady=5)
 
@@ -241,7 +247,7 @@ class Plotter(ABC):
         btn_frame:th.Frame = self.btn_frame
 
         row = 0; col = 0
-        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=lambda: Context.ui.import_route())
+        self.import_route_btn:th.Button = th.Button(btn_frame, text=btns["import_route"], command=Context.ui.import_route)
         self.import_route_btn.grid(row=row, column=col, padx=5, sticky=tk.W)
 
         col += 1
@@ -400,6 +406,95 @@ class IndyPlotter(Plotter):
         Context.ui._show_busy_gui(True)
 
 
+class LocalPlotter(Plotter):
+    """Plotter for offline neutron routes from the data folder's indexes."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the local plotter frame: range, tank and fuel all come from the selected ship."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        self._plot_switcher(plot_fr, 0, 0)
+
+        if Context.router.shiplist == {}:
+            Context.ui.show_error(errs["no_ships"])
+
+        route_fr:th.Frame = th.Frame(plot_fr)
+        row:int = 0; col:int = 0
+        self._create_source(route_fr, row, col)
+        row += 1
+        self._create_dest(route_fr, row, col)
+        row += 1
+
+        names:list = Context.router.shipnames()
+        params:dict = Context.router.route_params.get('Local', {})
+        init:str = params.get('ship_build', {}).get('ShipName', '')
+        if init == "" and names != []:
+            init = names[0]
+        if Context.router.menu_ship:
+            init = Context.router.menu_ship.name
+
+        self.shipvar:tk.StringVar = tk.StringVar(route_fr, value=init)
+        self.shipvar.trace_add("write", Context.ui.ship_selected)
+        self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
+        th.Tooltip(self.shipdd, tts["select_ship"])
+        self.shipdd.grid(row=row, column=col, padx=5, pady=5)
+        col += 1
+
+        cargo_entry:th.Spinbox = th.Spinbox(route_fr, placeholder=lbls['cargo'], from_=0, to=1500, increment=2, width=WIDTH3-2,
+                                            justify=tk.CENTER, name="cargo_entry")
+        Context.ui.set_entry(cargo_entry, str(Context.router.cargo))
+        cargo_entry.grid(row=row, column=col, padx=5, pady=5)
+        th.Tooltip(cargo_entry, tts["cargo"])
+        col += 1
+
+        reserve:float = Context.router.route_params.get('Local', {}).get('reserve_size', 0)
+        self.fuel_res:th.Spinbox = th.Spinbox(route_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
+        if reserve != 0: Context.ui.set_entry(self.fuel_res, str(reserve))
+        th.Tooltip(self.fuel_res, tts["fuel_reserve"])
+        self.fuel_res.grid(row=row, column=5, padx=5, pady=5, sticky=tk.W)
+
+        route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
+
+        self._create_buttons(plot_fr, 2, 0)
+        self.frame = plot_fr
+        return plot_fr
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Perform local neutron route plotting."""
+        if not self.frame or not self.src_ac or not self.dest_ac: return
+
+        Context.ui.hide_error()
+        ship_id:str = Context.router.shipid(self.shipvar.get())
+        if ship_id == '':
+            Context.ui.show_frame('Local')
+            Context.ui.show_error(errs['no_ship'])
+            return
+        ship:Ship|None = Context.router.load_ship(ship_id)
+        if not ship:
+            Context.ui.show_frame('Local')
+            Context.ui.show_error(errs['ship_not_found'])
+            return
+
+        cargo:str = self.frame.nametowidget("cargo_entry").get().strip()
+        reserve:str = self.fuel_res.get().strip()
+        params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac), 'ship': ship_id,
+                       'cargo': int(cargo) if re.match(r"^\d+$", cargo) else 0,
+                       'reserve_size': float(reserve) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
+
+        # The ship you're in only has its live fuel where you are now; another ship's saved fuel is where it's parked
+        known:bool = ship.id != Context.router.ship_id or params['from'].casefold() == Context.router.system.casefold()
+        params['fuel'] = min(ship.fuel, ship.tank_size) if known and ship.fuel is not None else ship.tank_size
+
+        for ac, v in ((self.src_ac, params['from']), (self.dest_ac, params['to'])):
+            if not v: ac.set_error_style()
+        if not params['from'] or not params['to']: return
+
+        # Busy first, so it's drawn before the worker starts loading or searching; its label needs the systems now
+        Context.router.src, Context.router.dest = params['from'], params['to']
+        Context.ui._show_busy_gui(True)
+        Context.router.plot_route('Local', params)
+
+
 class GalaxyPlotter(Plotter):
     """Plotter for galaxy-wide routes."""
 
@@ -432,6 +527,8 @@ class GalaxyPlotter(Plotter):
         init:str = params.get('ship_build', {}).get('ShipName', '')
         if init == "" and names != []:
             init = names[0]
+        if Context.router.menu_ship:
+            init = Context.router.menu_ship.name
 
         self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipvar.trace_add("write", Context.ui.ship_selected)
@@ -582,7 +679,8 @@ class RichesPlotter(Plotter):
 
         # Row 3: range and radius
         row += 1; col = 0
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        range:th.Spinbox = self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        range.grid(pady=5)
 
         col += 1
         max_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_distance'], from_=0, to=500_000, increment=100, width=WIDTH3, justify=tk.CENTER, name="max_distance_entry")
@@ -595,7 +693,7 @@ class RichesPlotter(Plotter):
                                              name="radius_entry")
         Context.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
-        radius_entry.grid(row=row, column=col, padx=5, pady=5)
+        radius_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")
@@ -778,9 +876,9 @@ class TradePlotter(Plotter):
         # /api/trade/route call will error out on a bad system/station combo regardless.
         params["system"], _, params["station"] = station.partition(" / ")
 
-        for entry_name, param_name in [("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
+        for entry_name, param_name in (("starting_capital_entry", "starting_capital"), ("max_cargo_entry", "max_cargo"),
                                         ("max_hops_entry", "max_hops"), ("max_hop_distance_entry", "max_hop_distance"),
-                                        ("max_distance_entry", "max_system_distance")]:
+                                        ("max_distance_entry", "max_system_distance")):
             entry = self.frame.nametowidget(entry_name)
             value:str = entry.get().strip()
             if not re.match(r"^\d+(\.\d+)?$", value):
@@ -1126,6 +1224,9 @@ class BoxelPlotter(Plotter):
 
 
 PLOTTER_SPECS:dict = {
+    'Local': PlotterSpec(
+        label='Neutron Dancer', plotter_class=LocalPlotter, url=LOCAL_ROUTE
+    ),
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
         src_key='source', dest_key='destination',
@@ -1135,7 +1236,7 @@ PLOTTER_SPECS:dict = {
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
     ),
     'Indy': PlotterSpec(
-        label='Indestinated\'s Neutron Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
+        label='Indestinate\'s Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

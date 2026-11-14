@@ -2,6 +2,7 @@
 
 There are several route plotting options.
 
+1. Neutron Dancer
 1. Galaxy Plotter
 1. Neutron Plotter
 1. Road to Riches
@@ -12,6 +13,12 @@ There are several route plotting options.
 1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
+
+## Neutron Dancer
+
+An entirely local route plotter. Provides similar route performance to the Galaxy plotter but is extremely fast.
+
+**Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter
 
@@ -72,11 +79,11 @@ This is the simple Spansh neutron route plotter that supports multiple waypoints
 
 - Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
 
-## Indestinated's (IndyHost) Neutron Plotter
+## Indestinate's (IndyHost) Neutron Plotter
 
-This is an alternative Neutron Plotter written by **Indestinated** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Its key advantages are speed and White Dwarf boost support. Disadvantages are that it doesn't offer efficiency configuration and is only point to point.
+This is an alternative Neutron Plotter written by **Indestinate** and hosted at [https://neutron.indyhost.org/](https://https://neutron.indyhost.org/). Its key advantages are speed and White Dwarf boost support. Disadvantages are that it doesn't offer efficiency configuration and is only point to point.
 
-![Indestinated's Neutron Plotter](https://github.com/user-attachments/assets/80e2a9ad-350d-4c89-b8e2-5792264114a4)
+![Indestinate's Neutron Plotter](https://github.com/user-attachments/assets/80e2a9ad-350d-4c89-b8e2-5792264114a4)
 
 - *Neutron boosts* indicates if Neutron boosts should be used.
 
@@ -85,6 +92,16 @@ This is an alternative Neutron Plotter written by **Indestinated** and hosted at
 - *Supercharge Multiplier* is the effect of Neutron or White Dwarf boosting. For Neutron stars the range incresae is 6x or 4x depending on whether the ship has a MkII FSD. For White Dwarfs the multiplier is 3x or 2x. This will also be pre-filled for your current ship.
 
 **Note**: This router uses a copy of the Spansh data. Due to update lag some stars accessible vis Spansh may not be in this router.
+
+## Local Neutron Plotter
+
+This is an entirely new, local plotter that uses Spansh data dumps to plot routes.
+
+**Pros**: It's very fast, produces good routes, handles refueling, and is not dependent on any external servers or services.
+**Cons**: It downloads about 2G of data and significantly increases EDMC's memory footprint.
+
+Due to the resource usage it can be enabled/disabled in the preferences.
+
 
 ## Road to Riches and Expressway to Exomastery
 

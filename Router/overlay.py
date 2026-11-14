@@ -395,7 +395,7 @@ class Overlay():
         ovrprefs:nb.Frame = nb.Frame(parent)
         ovrprefs.columnconfigure(6, weight=1)
         ovrprefs.rowconfigure(60, weight=1)
-        ovrprefs.grid()
+        ovrprefs.grid(sticky=tk.NW)
 
         props = font.Font(name="TkDefaultFont", exists=True).actual()
         props["weight"] = "bold"

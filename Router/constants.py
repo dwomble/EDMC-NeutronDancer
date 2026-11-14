@@ -335,8 +335,8 @@ cnf:dict = {
     "copy_on_jump": "Copy next waypoint system to clipboard after an FSD jump",
     "copy_on_galmap": "Copy next waypoint system to clipboard after opening galaxy map",
     "install_prereleases": "Install pre-release versions of Neutron Dancer",
-    "local_router": "Enable the local neutron router (downloads about 1.1 GB of route data)",
-    "local_delete": "Delete the downloaded local route data ({s:.1f} GB)?"
+    "local_router": "Enable Neutron Dancer, the local router (downloads about 1.1 GB of data)",
+    "local_delete": "Delete the local route data ({s:.1f} GB)?"
 }
 
 ovr:dict = {

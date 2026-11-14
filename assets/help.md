@@ -2,6 +2,7 @@
 
 There are several route plotting options.
 
+1. Neutron Dancer
 1. Galaxy Plotter
 1. Neutron Plotter
 1. Road to Riches
@@ -12,6 +13,12 @@ There are several route plotting options.
 1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
+
+## Neutron Dancer
+
+An entirely local route plotter. Provides similar route performance to the Galaxy plotter but is extremely fast.
+
+**Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter
 

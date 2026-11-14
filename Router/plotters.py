@@ -137,7 +137,7 @@ class Plotter(ABC):
                 lb.selection_set(i)
         lb.grid(row=row, column=col, rowspan=int(len(options) / 2)+1, padx=5, pady=5)
 
-    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> None:
+    def _create_range(self, parent:th.Frame, row:int, col:int, range_val:str = "32.0", width:int=9) -> th.Spinbox:
         """Create range entry widget."""
         range_entry:th.Spinbox = th.Spinbox(parent, placeholder=lbls['range'], from_=5.0, to=120.0, increment=5.0,
                                             width=width-2, menu=Context.ui._ship_dict(), justify=tk.CENTER, name="range_entry")
@@ -145,6 +145,7 @@ class Plotter(ABC):
         range_entry.grid(row=row, column=col, padx=5, pady=(15,5), sticky=tk.W)
 
         th.Tooltip(range_entry, tts["range"])
+        return range_entry
 
     def _create_multiplier(self, parent:th.Frame, row:int, value:int) -> None:
         """ Supercharge multiplier radio buttons """
@@ -678,7 +679,8 @@ class RichesPlotter(Plotter):
 
         # Row 3: range and radius
         row += 1; col = 0
-        self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        range:th.Spinbox = self._create_range(plot_fr, row, col, str(params.get('range', "32.0")), 11)
+        range.grid(pady=5)
 
         col += 1
         max_distance_entry:th.Spinbox = th.Spinbox(plot_fr, lbls['max_distance'], from_=0, to=500_000, increment=100, width=WIDTH3, justify=tk.CENTER, name="max_distance_entry")
@@ -691,7 +693,7 @@ class RichesPlotter(Plotter):
                                              name="radius_entry")
         Context.ui.set_entry(radius_entry, str(params.get('radius', 25)))
         th.Tooltip(radius_entry, tts["radius"])
-        radius_entry.grid(row=row, column=col, padx=5, pady=5)
+        radius_entry.grid(row=row, column=col, padx=5, pady=5, sticky=tk.W)
 
         col += 1
         #max_results_entry:th.Placeholder = th.Placeholder(plot_fr, lbls['max_results'], width=WIDTH3, justify=tk.CENTER, name="max_results_entry")

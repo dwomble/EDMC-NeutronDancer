@@ -403,8 +403,6 @@ class Router():
                     'StarClass': 'N' if neutron else 'M' if scoopable else '',
                 }
 
-
-
             Context.route = Route(hdrs, rte, navroute=navroute, type=type, shipname=self.menu_ship.name if self.menu_ship else "")
             Context.route.offset = 0
 

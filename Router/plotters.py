@@ -1223,7 +1223,7 @@ class BoxelPlotter(Plotter):
 
 PLOTTER_SPECS:dict = {
     'Local': PlotterSpec(
-        label='Navl\'s Neutron Plotter', plotter_class=LocalPlotter, url=LOCAL_ROUTE
+        label='Neutron Dancer', plotter_class=LocalPlotter, url=LOCAL_ROUTE
     ),
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,

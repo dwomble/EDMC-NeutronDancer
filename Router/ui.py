@@ -483,12 +483,13 @@ class UI():
                     return
 
                 self._update_item("all", "shipvar", ship.name)
-                self._update_item("all", "cargo_entry", str(Context.router.cargo if ship.id == Context.router.ship_id else 0))
-                self._update_item("all", "range_entry", str(ship.get_range(Context.router.cargo)))
+                cargo:int = Context.router.cargo if ship.id == Context.router.ship_id else 0
+                self._update_item("all", "cargo_entry", str(cargo))
+                self._update_item("all", "range_entry", str(ship.get_range(cargo)))
 
                 for p in self.plotters.values():
                     if hasattr(p, 'multiplier'): p.multiplier.set(ship.supercharge_multiplier)
-
+                Context.router.menu_ship = ship
 
     @catch_exceptions
     def ship_selected(self, *args) -> None:

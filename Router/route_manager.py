@@ -47,6 +47,7 @@ class Router():
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
+        self.menu_ship:Ship|None = None # The ship currently selected in the UI, which may not be the current ship
 
         # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
         self.local:Planner|None = None
@@ -404,7 +405,7 @@ class Router():
 
 
 
-            Context.route = Route(hdrs, rte, navroute=navroute, type=type, shipname=self.ship.name if self.ship else "")
+            Context.route = Route(hdrs, rte, navroute=navroute, type=type, shipname=self.menu_ship.name if self.menu_ship else "")
             Context.route.offset = 0
 
             if Context.route.fleetcarrier and self.carrier_location != '':
@@ -705,6 +706,7 @@ class Router():
         save['carrier_state'] = self.carrier_state.name # Need to convert to
         save['self.carrier_departure'] = self.carrier_departure.isoformat() if self.carrier_departure else None
         save['ship'] = self.ship.as_dict() if self.ship else {}
+        save['menu_ship'] = self.menu_ship.as_dict() if self.menu_ship else {}
         if Context.route != None:
             save['route'] = Context.route.as_dict()
         return save
@@ -726,6 +728,7 @@ class Router():
         Context.route = Route(hdrs, route, offset, navroute, type, shipname)
 
         self.ship = Ship(data.get('ship', {}))
+        self.menu_ship = Ship(data.get('menu_ship', {}))
         ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}
 
         # Migrate

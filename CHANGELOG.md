@@ -6,7 +6,12 @@
 
 * An entirely new, local plotter that uses Spansh data dumps to plot routes
 
-## Bug Fixes
+### Changes
+
+* Remember which ship you're plotting for over restarts and between plot types
+* Route type and ship name are included in suggested route save filename
+
+### Bug Fixes
 
 * Stopped duplicate entries and placeholders from appearing in dropdown menus
 

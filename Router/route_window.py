@@ -172,6 +172,7 @@ class RouteWindow:
 
         # Calculate column widths based on header and data lengths, with some padding
         widths:list = [len(w)+4 for w in route.hdrs]
+        Debug.logger.debug(f"RouteWindow._table: Initial widths based on headers: {len(route.hdrs)} {len(route.route)}")
         for r in route.route:
             widths = [max(widths[i], len(str(w))+2) for i, w in enumerate(r)]
 

@@ -428,6 +428,8 @@ class LocalPlotter(Plotter):
         init:str = params.get('ship_build', {}).get('ShipName', '')
         if init == "" and names != []:
             init = names[0]
+        if Context.router.menu_ship:
+            init = Context.router.menu_ship.name
 
         self.shipvar:tk.StringVar = tk.StringVar(route_fr, value=init)
         self.shipvar.trace_add("write", Context.ui.ship_selected)
@@ -524,6 +526,8 @@ class GalaxyPlotter(Plotter):
         init:str = params.get('ship_build', {}).get('ShipName', '')
         if init == "" and names != []:
             init = names[0]
+        if Context.router.menu_ship:
+            init = Context.router.menu_ship.name
 
         self.shipvar:tk.StringVar = tk.StringVar(plot_fr, value=init)
         self.shipvar.trace_add("write", Context.ui.ship_selected)
@@ -1218,6 +1222,9 @@ class BoxelPlotter(Plotter):
 
 
 PLOTTER_SPECS:dict = {
+    'Local': PlotterSpec(
+        label='Navl\'s Neutron Plotter', plotter_class=LocalPlotter, url=LOCAL_ROUTE
+    ),
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
         src_key='source', dest_key='destination',
@@ -1228,9 +1235,6 @@ PLOTTER_SPECS:dict = {
     ),
     'Indy': PlotterSpec(
         label='Indestinate\'s Plotter', plotter_class=IndyPlotter, url=INDY_ROUTE, src_key='start', dest_key='dest'
-    ),
-    'Local': PlotterSpec(
-        label='Local Neutron Plotter', plotter_class=LocalPlotter, url=LOCAL_ROUTE
     ),
     'RtoR': PlotterSpec(
         label='Road to Riches', plotter_class=RichesPlotter, url=SPANSH_RICHES_ROUTE,

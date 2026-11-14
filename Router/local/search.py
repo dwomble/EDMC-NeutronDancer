@@ -1,6 +1,7 @@
-import heapq, math
+import heapq, math, time
 from dataclasses import dataclass
 from operator import itemgetter
+from typing import Callable
 
 from ..ship import Ship
 from .index import Index, Combined
@@ -9,6 +10,7 @@ COARSE:int = 10      # 100 Ly cells per density-map cell edge
 STEP:float = 250.0   # sampling step along the line to the destination
 WEIGHTS:tuple = (1.15, 1.3, 1.6, 2.0)
 HORIZON:float = 2500.0  # how far ahead a replan from a fuel star reaches before rejoining the route
+NAP_EVERY:float = 0.02  # seconds of planning between naps that hand the GIL to the UI thread
 
 @dataclass
 class Step:
@@ -24,6 +26,9 @@ class Step:
 
 class Stuck(Exception):
     """The route cannot continue from here."""
+
+class Cancelled(Exception):
+    """The plot was cancelled."""
 
 class Planner:
     """
@@ -45,10 +50,13 @@ class Planner:
         if not boosted: return math.ceil(dist / rng)
         return 1 + math.ceil(max(0.0, dist - mult * rng) / rng)
 
-    def plot(self, ship:Ship, src:tuple, dest:tuple, fuel:float, cargo:float = 0, reserve:float = 0) -> list[Step]:
+    def plot(self, ship:Ship, src:tuple, dest:tuple, fuel:float, cargo:float = 0, reserve:float = 0,
+             stop:Callable[[], bool]|None = None) -> list[Step]:
         """Real jumps from src to dest for this ship and starting fuel, refuelling on scoopable stars."""
         # Settings for this plot, shared by the searches, their estimates and the jumps
         self.ship, self.cargo, self.dest = ship, cargo, dest
+        self.stop:Callable[[], bool] = stop or (lambda: False)
+        self.nap:float = time.monotonic() + NAP_EVERY
         self.rng:float = ship.jump_range(ship.tank_size, cargo)  # full-tank range: the heaviest, so always reachable
         self.plain:float = self.rng * 0.999  # 0.999 keeps a jump exactly at the limit from failing on rounding
         self.mult:float = ship.supercharge_multiplier
@@ -91,6 +99,7 @@ class Planner:
         self.tried:set = set()
 
         while self.k < len(self.path) - 1:
+            self._pause()
             # Each leg's starting state is saved so a failure can rewind to it
             self.saved.append((len(self.steps), self.here, self.fuel, self.start, self.path, self.k))
             self.refuelled:bool = False
@@ -211,6 +220,7 @@ class Planner:
 
         while openq:
             _, _, n = heapq.heappop(openq)
+            self._pause()
 
             # A node can be queued several times as better costs are found; only its first pop counts
             if n in done: continue
@@ -269,6 +279,15 @@ class Planner:
         path:list = [-2]
         while path[-1] != -1: path.append(prev[path[-1]])
         return path[::-1], g[-2]
+
+    def _pause(self) -> None:
+        """Stop if the plot was cancelled, and every so often nap so the UI thread can take the GIL."""
+        if self.stop(): raise Cancelled()
+        if time.monotonic() < self.nap: return
+
+        # Each Tk call releases the GIL and must win it back, so with no naps one UI update can wait hundreds of ms
+        time.sleep(0.002)
+        self.nap = time.monotonic() + NAP_EVERY
 
     def _at_neutron(self, p:tuple) -> bool:
         """Whether p is a neutron's system, like a fuel stop just refuelled at, so it can boost from there."""
@@ -399,6 +418,7 @@ class Planner:
         # The cap stops a hopeless gap from searching the whole arm; Stuck reports it instead
         while openq and len(done) < 5000:
             _, left, i = heapq.heappop(openq)
+            self._pause()
             if i in done: continue
             done.add(i)
 

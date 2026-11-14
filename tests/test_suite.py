@@ -35,7 +35,7 @@ from Router.route import Route
 from Router.ship import Ship
 from Router.plotters import PLOTTER_SPECS, _boxel_coords, _boxel_exists, _boxel_prefix
 from Router.local.index import Index, build, galaxy_extras, VERSION
-from Router.local.search import Planner
+from Router.local.search import Planner, Cancelled
 from Router.local.index import Combined
 from Router.local.data import LocalData, URL
 
@@ -1905,6 +1905,14 @@ class TestLocalRouting:
         assert steps[-1].name == '<dest>'
         assert [s.name for s in steps if s.refuel] == ['N1']
         assert 'K' not in [s.name for s in steps]
+
+    def test_cancel_stops_plot(self, harness:TestHarness, tmp_path:Path) -> None:
+        """ A cancelled plot stops instead of running on hidden. """
+        idx:dict = _synthetic_build(tmp_path)
+        harness.play_sequence('loadout')
+        ship:Ship = harness.plugin.router.ship
+        with pytest.raises(Cancelled):
+            Planner(idx['neutron'], idx['kgbfoam']).plot(ship, (0.0, 0.0, 0.0), (0.0, 0.0, 3000.0), ship.tank_size, stop=lambda: True)
 
     def test_local_data_installs(self, harness:TestHarness, tmp_path:Path) -> None:
         """ Downloads, checks and unpacks each index in the manifest, skips unchanged ones, drops retired ones, keeps a backup. """

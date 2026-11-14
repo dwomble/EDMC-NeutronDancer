@@ -19,7 +19,7 @@ from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
 from .local.index import Index
-from .local.search import Planner
+from .local.search import Planner, Cancelled
 from .local.index import Combined
 from . import api
 
@@ -52,6 +52,8 @@ class Router():
         # Local routing planner over the neutron and kgbfoam indexes, loaded on first use since they're large
         self.local:Planner|None = None
         self.local_lock:Lock = Lock() # a preload and a plot can both try to load the indexes
+        self.plot_lock:Lock = Lock() # the planner holds one plot's state, so plots take turns
+        self.plots:int = 0
 
         # Record of used ships and shipyard
         self.shiplist:dict = {}
@@ -468,7 +470,15 @@ class Router():
             return None
         if self.cancel_plot: return None
 
-        steps:list = planner.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'])
+        # A new plot clears cancel_plot, so the count is what stops one still running from before
+        self.plots += 1
+        mine:int = self.plots
+        try:
+            with self.plot_lock:
+                steps:list = planner.plot(ship, src[1], dest[1], params['fuel'], params['cargo'], params['reserve_size'],
+                                          lambda: self.cancel_plot or self.plots != mine)
+        except Cancelled:
+            return None
         if steps and steps[-1].kind == 'fail':
             self.plot_error(which, params, f"Local route stopped after {len(steps) - 1} jumps: {steps[-1].name}")
             return None

@@ -18,6 +18,8 @@ You can switch between them with the **Route** dropdown at the top of the plotte
 
 An entirely local route plotter. Provides similar route performance to the Galaxy plotter but is extremely fast.
 
+![Neutron Dancer](https://github.com/user-attachments/assets/fa25daa2-755e-495a-b8ea-80cd33d17dae)
+
 **Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter

@@ -726,7 +726,7 @@ class Router():
         Context.route = Route(hdrs, route, offset, navroute, type, shipname)
 
         self.ship = Ship(data.get('ship', {}))
-        self.menu_ship = Ship(data.get('menu_ship', {}))
+        self.menu_ship = Ship(data['menu_ship']) if data.get('menu_ship') else None
         ships = {k: Ship(data) for k, data in data.get('ships', {}).items()}
 
         # Migrate

@@ -16,7 +16,8 @@ from config import config # type: ignore
 
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
-from .utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
+from .utils.misc import singleton, hfplus, str_truncate, copy_to_clipboard
+from .utils.popup import PopupNotice
 from .utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs

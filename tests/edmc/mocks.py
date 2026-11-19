@@ -1,6 +1,7 @@
 import json
 import importlib
 import sys
+import tkinter as tk
 import types as _types
 import semantic_version
 import logging
@@ -117,13 +118,18 @@ class MockTheme:
         if hasattr(self, '_initialized'): return
         self._initialized = True
     def register(self, widget) -> None:  # noqa: CCR001, C901
-        pass
+        # Mirrors real theme.py's own type check -- e.g. tk.Toplevel is NOT a tk.Widget
+        # subclass (it's BaseWidget+Wm, not BaseWidget+Widget), so calling this on a
+        # Toplevel always raises in the real app; the mock needs to catch that too.
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
     def register_alternate(self, pair, gridopts) -> None:
         pass
     def button_bind(self, widget, command, image) -> None:
         pass
     def update(self, widget) -> None:
-        pass
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
     def apply(self, root) -> None:
         pass
 
@@ -172,6 +178,28 @@ for name, val in MockEDLogs.__dict__.items():
 _monitor.monitor = MockEDLogs # type: ignore
 sys.modules['monitor'] = _monitor
 
+# Mock EDMC's outfitting.py
+_OUTFITTING_RATING_MAP = {'1': 'E', '2': 'D', '3': 'C', '4': 'B', '5': 'A'}
+
+def _mock_outfitting_lookup(module, ship_map, entitled=False):
+    if not module.get('name'):
+        raise ValueError(f"Module with ID {module.get('id')} is missing a 'name' field")
+    parts = module['name'].lower().split('_')
+    size = next((p[4:] for p in parts if p.startswith('size')), '')
+    rating_num = next((p[5:] for p in parts if p.startswith('class')), '')
+    return {
+        'id': module.get('id'),
+        'symbol': module['name'],
+        'category': parts[0] if parts else '',
+        'name': module['name'],
+        'class': size,
+        'rating': _OUTFITTING_RATING_MAP.get(rating_num, ''),
+    }
+
+_outfitting = _types.ModuleType('outfitting')
+_outfitting.lookup = _mock_outfitting_lookup # type: ignore
+sys.modules['outfitting'] = _outfitting
+
 _plug = _types.ModuleType('Plugin')
 class MockPlugin:
     def __init__(self) -> None:
@@ -187,7 +215,7 @@ sys.modules['plug'] = _plug
 _l10n = _types.ModuleType('l10n')
 _l10n.FALLBACK = 'en' # type: ignore
 _l10n.LANGUAGE_ID = 'language' # type: ignore
-_l10n.LOCALISATION_DIR = 'L10n' # type: ignore
+_l10n.LOCALISATION_DIR = '../L10n' # type: ignore
 _translations = _types.ModuleType('Translations')
 class MockTranslations:
     FALLBACK = 'en'
@@ -209,6 +237,7 @@ class MockTranslations:
         }
         return {'language': language_names.get(lang, lang)}
     @staticmethod
+
     def available() -> set[str]:
         return set('en')
     @staticmethod
@@ -284,6 +313,12 @@ class Mockedmcoverlay:
                 print("send_shape called with no positional arguments")
                 return
             self.shapes[args[0]] = [*args, kw]
+
+        def send_raw(self, msg, **kw):
+            if not isinstance(msg, dict) or 'id' not in msg:
+                print("send_raw called without a dict containing 'id'")
+                return
+            self.shapes[msg['id']] = [msg, kw]
 
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():

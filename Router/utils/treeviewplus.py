@@ -11,6 +11,7 @@ from .dateutil.parser import parse
 PAT_HUMAN_READABLE_NUM_OR_PERC:Pattern = compile(r"^(\d*\.?\d*)([KkMmBbTt%]?)$")
 
 class TreeviewPlus(ttk.Treeview):
+    """ Like a normal Treeview but with sortable columns and a callback for when an item is clicked. """
     def __init__(self, parent:tk.Frame, callback = None, datetime_format = None, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)
         self.callback = callback

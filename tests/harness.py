@@ -85,6 +85,11 @@ class TestHarness:
     __test__ = False
     _instance = None
 
+    # A tk.Canvas widget (e.g. utils.th.ScrollableFrame) hangs on .update() if it's created in
+    # any tk.Tk() root other than the FIRST one this process ever made. One root, kept alive for the
+    # whole process fixes this.
+    _shared_root:tk.Tk|None = None
+
     # Lookup pools seen so far; resets unload their modules, so they're kept here until stop_lookups()
     _lookup_pools:list = []
 
@@ -131,23 +136,26 @@ class TestHarness:
             self._original_threading_excepthook = threading.excepthook
         threading.excepthook = self._capture_thread_exception
 
-        # Create Tk root for headless mode. Retry a couple of times since rapid, repeated
-        # Tk() creation can transiently fail to locate tk.tcl (seen with MSIX-packaged Pythons).
-        if not hasattr(self, '_initialized'):
-            last_exc:Exception|None = None
-            for attempt in range(3):
-                try:
-                    self.root:tk.Tk = tk.Tk()
-                    self.parent:tk.Frame = tk.Frame(self.root)
-                    self.root.withdraw()
-                    last_exc = None
-                    break
-                except Exception as e:
-                    last_exc = e
-                    logging.warning(f"Failed to create Tk root (attempt {attempt + 1}/3): {e}")
-                    sleep(0.2)
-            if last_exc is not None:
-                raise RuntimeError("Failed to create Tk root after 3 attempts") from last_exc
+        # Create Tk root for headless mode -- reuse the one shared root for the whole process
+        try:
+            if not hasattr(self, '_initialized'):
+                if TestHarness._shared_root is None:
+                    # Tk() can transiently fail to locate tk.tcl (seen with MSIX-packaged Pythons)
+                    for attempt in range(3):
+                        try:
+                            TestHarness._shared_root = tk.Tk()
+                            break
+                        except tk.TclError as e:
+                            logging.warning(f"Failed to create Tk root (attempt {attempt + 1}/3): {e}")
+                            sleep(0.2)
+                    else:
+                        raise RuntimeError("Failed to create Tk root after 3 attempts")
+                    TestHarness._shared_root.withdraw()
+                    atexit.register(TestHarness._destroy_shared_root)
+                self.root:tk.Tk = TestHarness._shared_root
+                self.parent:tk.Frame = tk.Frame(self.root)
+        except Exception as e:
+            logging.error(f"Failed to create Tk root: {e}")
 
         if hasattr(self, 'root') and not hasattr(self, '_tk_scheduler'):
             self._tk_scheduler = HarnessTkScheduler(self.root)
@@ -203,16 +211,28 @@ class TestHarness:
                 pass
             del instance.clipboard
 
+        # Clear the shared root's children, not the root; windows opened on it otherwise pile up
         if hasattr(instance, 'root'):
-            try:
-                instance.root.destroy()
-            except Exception:
-                pass
+            for widget in instance.root.winfo_children():
+                try:
+                    widget.destroy()
+                except Exception:
+                    pass
 
         if hasattr(instance, '_original_threading_excepthook'):
             threading.excepthook = instance._original_threading_excepthook
 
         cls._instance = None
+
+    @classmethod
+    def _destroy_shared_root(cls) -> None:
+        """ Process-exit cleanup for the one Tk root shared across the whole test run. """
+        if cls._shared_root is not None:
+            try:
+                cls._shared_root.destroy()
+            except Exception:
+                pass
+            cls._shared_root = None
 
     def set_requests_mode(self, live_requests:bool) -> None:
         """ Set whether the harness should use live HTTPS requests or mocked responses. """
@@ -364,7 +384,7 @@ class TestHarness:
                                 try:
                                     event[k1] = eval("f'" + v1 + "'")
                                 except Exception as e:
-                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e}")
+                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e} {line}")
                             if isinstance(event[k1], str) and event[k1].isnumeric():
                                 event[k1] = int(event[k1])
                         lines.append(event)
@@ -394,7 +414,7 @@ class TestHarness:
 
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
-            event['timestamp'] = datetime.now(timezone.utc).isoformat()
+            event['timestamp'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Do the opposite of what EDMC does with a startup event. i.e. update monitor fron the faux event rather than create a faux event from the monitor state.
         if event['event'] == 'Startup':
@@ -565,7 +585,7 @@ class TestHarness:
             except tk.TclError:
                 return
 
-            pending = self._tk_scheduler.pending_count(timeout_s) if hasattr(self, '_tk_scheduler') else 0
+            pending =self._tk_scheduler.pending_count(timeout_s) if hasattr(self, '_tk_scheduler') else 0
             if pending == 0 and callbacks_ran == 0:
                 return
             if monotonic() >= end_time:

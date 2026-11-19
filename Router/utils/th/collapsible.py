@@ -1,4 +1,4 @@
-""" Expanded and collapsed views of a plugin with default hide/show (and optional move) buttons. """
+""" Expanded and collapsed views of a plugin with default hide/show (and optional up/down) buttons. """
 import tkinter as tk
 from tkinter import ttk
 from pathlib import Path

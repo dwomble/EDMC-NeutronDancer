@@ -4,16 +4,17 @@ import re
 from requests import Response
 from pathlib import Path
 from time import time, sleep
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from threading import Lock, Thread
 
 from config import config # type: ignore
-from timeout_session import new_session # type: ignore
 
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE
+from .constants import (HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE,
+                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS,
+                        INDY_ROUTE, LOCAL_ROUTE, TRUE, CarrierStates, errs)
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -36,14 +37,14 @@ class Router():
 
     def __init__(self, test:bool = False) -> None:
 
-        # Current location data and settings
+        # Location data and settings
         self.system:str = ""
         self.star_pos:tuple|None = None # current system's coordinates, from EDMC's journal state
         self.address:int|None = None # current system's id64, from EDMC's journal state
         self.src:str = ''
         self.dest:str = ''
 
-        # Current ship data
+        # Ship data
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
@@ -89,7 +90,7 @@ class Router():
             Context.route.update_route(0, self.carrier_location)
 
     def shipnames(self) -> list:
-        """ Return a list of shipnames """
+        """ Return the names of known ships """
         names:list = list(dict.fromkeys(self.shiplist.values()))
         names.reverse()
         return names
@@ -255,7 +256,7 @@ class Router():
 
 
     def cooldown_complete(self) -> None:
-        """ Show an informational messagebox indicating a carrier cooldown has completed. """
+        """ Show an informational messagebox indicating a carrier cooldown has completed """
         self.carrier_state = CarrierStates.Idle
         self.carrier_departure = None
         Context.ui.cooldown_complete()

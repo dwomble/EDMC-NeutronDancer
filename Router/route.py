@@ -5,10 +5,6 @@ from config import config # type: ignore
 from .utils.debug import Debug
 from .utils.misc import hfplus
 from .constants import HEADER_MAP, PROGRESS_DEFAULT, tts, lbls, errs, TRUE
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .context import Context
 
 class Route:
     """

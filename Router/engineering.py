@@ -44,22 +44,30 @@ class Catalogue:
         """Names of the engineers in a region, or everywhere for an empty region."""
         return [e['name'] for e in self.engineers if not region or e['region'] == region]
 
-    @classmethod
-    def load(cls, fetch:bool = True) -> 'Catalogue|None':
-        """Spansh's catalogue, cached in the data folder and refreshed daily if fetching; None if it can't be had."""
-        file:Path = Path(Context.plugin_dir) / DATA_DIR / 'engineering.json'
+    @staticmethod
+    def path() -> Path:
+        """Where the catalogue is cached."""
+        return Path(Context.plugin_dir) / DATA_DIR / 'engineering.json'
+
+    @staticmethod
+    def fetch() -> None:
+        """Download Spansh's catalogue if there's none cached or it's more than a week old."""
+        file:Path = Catalogue.path()
+        if file.exists() and file.stat().st_mtime > time.time() - 7 * 86400: return
         try:
-            if fetch and (not file.exists() or file.stat().st_mtime < time.time() - 86400):
-                resp = Context.session.get(SPANSH_ENGINEER_BLUEPRINTS, headers={'User-Agent': Context.plugin_useragent},
-                                           timeout=SPANSH_TIMEOUT)
-                resp.raise_for_status()
-                file.parent.mkdir(parents=True, exist_ok=True)
-                file.write_text(resp.text)
+            resp = Context.session.get(SPANSH_ENGINEER_BLUEPRINTS, headers={'User-Agent': Context.plugin_useragent}, timeout=SPANSH_TIMEOUT)
+            resp.raise_for_status()
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_text(resp.text)
+            Debug.logger.info("Downloaded the engineering catalogue")
         except Exception as e:
             Debug.logger.error("Couldn't fetch the engineering catalogue, exception info:", exc_info=e)
 
-        if not file.exists(): return None
-        return cls(json.loads(file.read_text())['values'])
+    @classmethod
+    def load(cls) -> 'Catalogue|None':
+        """The cached catalogue, or None if it hasn't been downloaded."""
+        file:Path = cls.path()
+        return cls(json.loads(file.read_text())['values']) if file.exists() else None
 
     def modules(self, ship:Ship) -> list:
         """The ship's engineerable modules with the blueprint, grade and effect each has now."""

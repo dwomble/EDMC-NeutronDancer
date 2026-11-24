@@ -43,7 +43,7 @@ class Updater():
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
       gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
-    Call check_for_update(version, extra) at plugin startup. It's asynchronous.
+    Call check_for_update(version, extra) at plugin startup. It's asynchronous, and waits `delay` seconds first.
       'extra' is an optional callable run on the same schedule, e.g. to refresh data files.
     Set accept_prerelease to True to also offer pre-release versions.
     Call install(preserve) to install the update when you choose (commonly on shutdown).
@@ -58,6 +58,7 @@ class Updater():
         if self.gh_release_info == '':
             self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
         self.accept_prerelease:bool = False # Should pre-release versions be accepted?
+        self.delay:float = 5.0 # Seconds to wait before checking, so the plugin's UI exists by then
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -171,7 +172,8 @@ class Updater():
 
 
     def _check_update(self, version:Version|str, extra:Callable|None = None) -> None:
-        """ Compare the current version file with github version, then run any extra check """
+        """ After a short wait, compare the current version file with github version, then run any extra check """
+        time.sleep(self.delay)
         if extra: Thread(target=extra, name=f"{self.gh_project} extra update check", daemon=True).start()
         if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
             Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")

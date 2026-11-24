@@ -119,6 +119,7 @@ class TestUpdater:
         """ The extra (data) check runs on the update schedule even where a git checkout skips the plugin update. """
         (tmp_path / ".git").mkdir()
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer-ExtraTest")
+        updater.delay = 0
         extra = Mock()
         with patch.object(updater, 'get_release') as release:
             updater.check_for_update("1.0.0", interval=-1, extra=extra)

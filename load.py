@@ -23,6 +23,7 @@ from Router.hotkeys import Hotkeys
 from Router.prefs import Prefs
 from Router.spansh_data import SpanshData
 from Router.local.data import LocalData
+from Router.engineering import Catalogue
 import Router.api as api
 
 VERSION:str = "0.0.0-dev" # For the plugin browser
@@ -44,8 +45,7 @@ def plugin_start3(plugin_dir: str) -> str:
 
     Context.localdata = LocalData(Path(Context.plugin_dir) / DATA_DIR, Path(Context.plugin_dir) / 'updates' / 'star-data')
 
-    # The daily check also refreshes the local router's data, once the UI exists to show its progress
-    Context.updater.check_for_update(Context.plugin_version, extra=lambda: Context.ui and Context.localdata.check_local_data())
+    Context.updater.check_for_update(Context.plugin_version, extra=refresh_data)
 
     Context.notices = Notices(GH_USER, GH_PROJECT, GH_MAIN)
     Context.notices.check_for_notices()
@@ -84,6 +84,11 @@ def plugin_app(parent:tk.Widget) -> tk.Frame:
 
     parent.after(1000, Context.overlay.update_overlays)
     return Context.ui.frame
+
+def refresh_data() -> None:
+    """ Refresh downloaded data on the update check's schedule, which starts once the UI exists to show progress """
+    if Context.ui: Context.localdata.check_local_data()
+    Catalogue.fetch()
 
 @catch_exceptions
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:

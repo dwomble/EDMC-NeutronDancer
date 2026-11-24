@@ -549,7 +549,7 @@ class EngineerPlotter(Plotter):
     def _summary(self) -> None:
         """Show how many modules the chosen ship's plan still has to engineer."""
         ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
-        cat:Catalogue|None = Catalogue.load(False)
+        cat:Catalogue|None = Catalogue.load()
         n:int = len(cat.request(ship, Context.router.plans.get(ship.id, []))) if ship and cat else 0
         self.summary['text'] = lbls['plan_count'].format(n=n) if n else ''
 
@@ -561,6 +561,7 @@ class EngineerPlotter(Plotter):
         if ship is None: return
 
         def fetch() -> None:
+            Catalogue.fetch()
             cat:Catalogue|None = Catalogue.load()
             Context.ui.frame.after(0, lambda: self._open(cat, ship))
         Thread(target=fetch, daemon=True, name="Neutron Dancer engineering catalogue").start()
@@ -582,7 +583,7 @@ class EngineerPlotter(Plotter):
         if not src: self.src_ac.set_error_style()
         if ship is None or not src: return
 
-        cat:Catalogue|None = Catalogue.load(False)
+        cat:Catalogue|None = Catalogue.load()
         if cat is None:
             Context.ui.show_error(errs['no_catalogue'])
             return

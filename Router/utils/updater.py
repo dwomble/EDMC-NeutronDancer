@@ -16,7 +16,8 @@ from .debug import Debug
 # Check for updates at most once per day
 CHECK_INTERVAL:int = (3600 * 24)
 _NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
-TIMEOUT=10
+TIMEOUT=10 # Request timeout
+DELAY=5.0  # delay before checking for updates
 
 def _headers(gh_project:str) -> dict:
     """ Blends into EDMC's own UA, per PLUGINS.md. """
@@ -58,7 +59,6 @@ class Updater():
         if self.gh_release_info == '':
             self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
         self.accept_prerelease:bool = False # Should pre-release versions be accepted?
-        self.delay:float = 5.0 # Seconds to wait before checking, so the plugin's UI exists by then
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -173,7 +173,7 @@ class Updater():
 
     def _check_update(self, version:Version|str, extra:Callable|None = None) -> None:
         """ After a short wait, compare the current version file with github version, then run any extra check """
-        time.sleep(self.delay)
+        time.sleep(DELAY)
         if extra: Thread(target=extra, name=f"{self.gh_project} extra update check", daemon=True).start()
         if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
             Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")

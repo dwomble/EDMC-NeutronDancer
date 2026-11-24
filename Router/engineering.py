@@ -1,4 +1,9 @@
-"""Spansh's engineering catalogue, a ship's current engineering, and the window for planning what to change."""
+"""
+Support classes for the Spansh engineering router.
+
+Spansh's engineering catalogue, a ship's current engineering
+The popup window for planning the ship's engineering changes.
+"""
 import json, time
 import tkinter as tk
 from tkinter import ttk
@@ -7,12 +12,13 @@ from typing import Callable
 
 from config import config  # type: ignore
 
-from .constants import BOLD, DATA_DIR, NAME, SPANSH_ENGINEER_BLUEPRINTS, SPANSH_TIMEOUT, lbls, btns
-from .context import Context
-from .ship import Ship
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 from .utils.treeviewplus import TreeviewPlus
+
+from .constants import BOLD, DATA_DIR, NAME, SPANSH_ENGINEER_BLUEPRINTS, SPANSH_TIMEOUT, lbls, btns
+from .context import Context
+from .ship import Ship
 
 NONE:str = '—'
 GROUPS:tuple = ('hardpoint', 'utility', 'core', 'optional')  # outfitting's order, as lbls keys

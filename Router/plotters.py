@@ -1,4 +1,3 @@
-
 """
 Plotter classes for different route plotting strategies.
 

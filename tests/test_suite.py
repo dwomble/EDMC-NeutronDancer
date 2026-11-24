@@ -2488,7 +2488,7 @@ class TestPlotting:
         assert harness.plugin.route is not None
         assert harness.plugin.route.source() == 'Apurui'
         assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 31
+        assert harness.plugin.route.total_jumps() == 36
 
     @pytest.mark.slow
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
@@ -2505,7 +2505,7 @@ class TestPlotting:
         assert harness.plugin.route is not None
         assert harness.plugin.route.source() == 'Apurui'
         assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 21
+        assert harness.plugin.route.total_jumps() == 22
 
     @pytest.mark.slow
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:

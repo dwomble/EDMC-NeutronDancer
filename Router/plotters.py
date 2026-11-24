@@ -13,7 +13,9 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ENGINEER_ROUTE, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
+from .constants import (lbls, btns, tts, errs, SPANSH_ENGINEER_ROUTE, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE,
+                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS,
+                        INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS)
 from .context import Context
 from .route import Route
 from .ship import Ship
@@ -1344,9 +1346,6 @@ PLOTTER_SPECS:dict = {
         src_key='source', dest_key='destination',
         options=['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
     ),
-    'Engineer': PlotterSpec(
-        label='Engineer Plotter', plotter_class=EngineerPlotter, url=SPANSH_ENGINEER_ROUTE, src_key='source'
-    ),
     'Neutron': PlotterSpec(
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE
     ),
@@ -1375,6 +1374,10 @@ PLOTTER_SPECS:dict = {
         label='Fleet Carrier Router', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
         src_key='source', dest_key='destination'
     ),
+    'Engineer': PlotterSpec(
+        label='Engineer Plotter', plotter_class=EngineerPlotter, url=SPANSH_ENGINEER_ROUTE, src_key='source'
+    ),
+
     'Boxel': PlotterSpec(
         label='Boxel Surveyor', plotter_class=BoxelPlotter, url=SPANSH_SYSTEMS, src_key='boxel'
     ),

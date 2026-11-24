@@ -4,7 +4,7 @@
 
 ### New Features
 
-* An entirely new, local plotter (Neutron Dancer) that uses Spansh data to plot routes locally
+* An entirely new, local plotter (Neutron Dancer) that uses cached Spansh data to plot routes
 * Added the new Spansh Engineer router
 
 ### Changes

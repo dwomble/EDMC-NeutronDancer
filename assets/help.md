@@ -10,6 +10,7 @@ There are several route plotting options.
 1. Trade Planner
 1. Tourist Route
 1. Fleet Carrier Route
+1. Engineer Plotter
 1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
@@ -153,6 +154,10 @@ The **Fleet Carrier Route** plotter plans a stop-by-stop journey for your carrie
 Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, and will notify you when the jump cooldown is finished.
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
+
+## Engineer Router
+
+The Spansh **Engineer Plotter** plots an efficient route to engineer your ship. This plotter uses a popup window to create the engineering plan.
 
 ## Boxel Surveyor
 

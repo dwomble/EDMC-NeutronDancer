@@ -510,6 +510,13 @@ class EngineerPlotter(Plotter):
         route_fr:th.Frame = th.Frame(plot_fr)
         self._create_source(route_fr, 0, 0)
 
+        self.regions:dict = {lbls['all_regions']: '', lbls['bubble']: 'bubble', lbls['colonia']: 'colonia'}
+        self.regionvar:tk.StringVar = tk.StringVar(route_fr)
+        region_dd:th.ComboBox = th.ComboBox(route_fr, self.regionvar, values=list(self.regions), width=WIDTH2)
+        th.Tooltip(region_dd, tts["region"])
+        region_dd.grid(row=0, column=4, padx=5, pady=5, sticky=tk.W)
+        self.regionvar.set(next((k for k, v in self.regions.items() if v == params.get('region', '')), lbls['all_regions']))
+
         names:list = Context.router.shipnames()
         self.shipvar:tk.StringVar = tk.StringVar(route_fr)
         self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
@@ -519,21 +526,15 @@ class EngineerPlotter(Plotter):
         self.shipvar.trace_add("write", Context.ui.ship_selected)
         self.shipvar.trace_add("write", lambda *_: self._summary())
 
-        self.regions:dict = {lbls['all_regions']: '', lbls['bubble']: 'bubble', lbls['colonia']: 'colonia'}
-        self.regionvar:tk.StringVar = tk.StringVar(route_fr)
-        region_dd:th.ComboBox = th.ComboBox(route_fr, self.regionvar, values=list(self.regions), width=WIDTH2)
-        th.Tooltip(region_dd, tts["region"])
-        region_dd.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-        self.regionvar.set(next((k for k, v in self.regions.items() if v == params.get('region', '')), lbls['all_regions']))
+        edit:th.Button = th.Button(route_fr, text=btns["edit_plan"], command=self.edit)
+        th.Tooltip(edit, tts["edit_plan"])
+        edit.grid(row=1, column=1, padx=5, sticky=tk.W)
 
         self.summary:th.Label = th.Label(route_fr, text='')
         self.summary.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
         route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
 
-        self._create_buttons(plot_fr, 2, 0)
-        edit:th.Button = th.Button(self.btn_frame, text=btns["edit_plan"], command=self.edit)
-        th.Tooltip(edit, tts["edit_plan"])
-        edit.grid(row=0, column=2, padx=5, sticky=tk.W)
+        self._create_buttons(route_fr, 2, 0)
 
         self.frame = plot_fr
         self._summary()

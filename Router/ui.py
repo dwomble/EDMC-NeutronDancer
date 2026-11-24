@@ -495,7 +495,7 @@ class UI():
     @catch_exceptions
     def ship_selected(self, *args) -> None:
         """ Sync every ship dropdown to the one that changed, then update cargo and range """
-        Debug.logger.debug(f"ship_selected args: {args}")
+
         # Tk can fire the trace from inside a proc, where an unqualified name means a local variable
         ship_name:str = self.parent.tk.globalgetvar(args[0]) if self.parent and len(args) else ''
         for p in self.plotters.values():

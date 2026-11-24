@@ -20,7 +20,7 @@ from .constants import BOLD, DATA_DIR, NAME, SPANSH_ENGINEER_BLUEPRINTS, SPANSH_
 from .context import Context
 from .ship import Ship
 
-NONE:str = '—'
+NONE:str = ''
 GROUPS:tuple = ('hardpoint', 'utility', 'core', 'optional')  # outfitting's order, as lbls keys
 
 class Catalogue:
@@ -73,6 +73,9 @@ class Catalogue:
     def load(cls) -> 'Catalogue|None':
         """The cached catalogue, or None if it hasn't been downloaded."""
         file:Path = cls.path()
+        if not file.exists():
+            Debug.logger.warning("Engineering catalogue not found at %s", file)
+            cls.fetch()
         return cls(json.loads(file.read_text())['values']) if file.exists() else None
 
     def modules(self, ship:Ship) -> list:

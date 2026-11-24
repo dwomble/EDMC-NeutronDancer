@@ -12,7 +12,6 @@ from typing import Callable
 
 from config import config  # type: ignore
 
-from .utils import th
 from .utils.debug import Debug, catch_exceptions
 from .utils.treeviewplus import TreeviewPlus
 
@@ -92,13 +91,17 @@ class Catalogue:
                          'effect': self.key(kind, 'effects', eng.get('ExperimentalEffect'))})
         return rows
 
-    def request(self, ship:Ship, plan:list) -> list:
-        """Spansh's blueprint entries for the plan's changes from the ship's current engineering."""
+    def offered(self, kind:str, allowed:set) -> bool:
+        """Whether any of the allowed engineers apply blueprints to the module type."""
+        return any(n in allowed for b in self.mods[kind]['blueprints'].values() for e in b['grades'].values() for n in e)
+
+    def request(self, ship:Ship, plan:list, allowed:set) -> list:
+        """Spansh's blueprint entries for the plan's changes that the allowed engineers can make."""
         now:dict = {r['slot']: r for r in self.modules(ship)}
         out:list = []
         for p in plan:
             c:dict|None = now.get(p['slot'])
-            if c is None or c['item'] != p['item'] or not p['blueprint']: continue
+            if c is None or c['item'] != p['item'] or not p['blueprint'] or not self.offered(c['kind'], allowed): continue
 
             # A new blueprint clears the old effect, so it has to be applied again
             done:bool = c['blueprint'] == p['blueprint'] and c['grade'] >= p['grade']
@@ -115,11 +118,13 @@ class Catalogue:
 class PlanWindow:
     """A sortable list of the ship's engineerable modules, with a form below it for the selected module's plan."""
 
-    def __init__(self, root:tk.Misc, cat:Catalogue, ship:Ship, done:Callable[[], None]) -> None:
+    def __init__(self, root:tk.Misc, cat:Catalogue, ship:Ship, allowed:set, done:Callable[[], None]) -> None:
         self.cat:Catalogue = cat
+        self.allowed:set = allowed
         self.ship:Ship = ship
         self.done:Callable[[], None] = done
-        self.mods:dict = {m['slot']: m for m in sorted(cat.modules(ship), key=lambda m: m['group'])}
+        mods:list = sorted(cat.modules(ship), key=lambda m: m['group'])
+        self.mods:dict = {m['slot']: m for m in mods if cat.offered(m['kind'], allowed)}
 
         # Each module's planned (blueprint, grade, effect): its saved plan if still fitted, else what it has
         saved:dict = {p['slot']: p for p in Context.router.plans.get(ship.id, [])}
@@ -137,7 +142,7 @@ class PlanWindow:
         if geometry: self.window.geometry(geometry)
         scale:float = config.get_int('ui_scale') / 100.0
 
-        outer:tk.Frame = tk.Frame(self.window)
+        outer:ttk.Frame = ttk.Frame(self.window)
         outer.pack(fill=tk.BOTH, expand=True)
         list_fr:tk.Frame = tk.Frame(outer)
         list_fr.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -160,24 +165,26 @@ class PlanWindow:
         # TreeviewPlus only reports clicks on value columns; Tk's event also covers keyboard selection
         self.tree.bind('<<TreeviewSelect>>', self._selected)
 
-        form:th.Frame = th.Frame(outer)
+        form:ttk.Frame = ttk.Frame(outer)
         form.pack(fill=tk.X, padx=5, pady=5)
-        th.Separator(form).grid(row=0, column=0, columnspan=3, sticky=tk.EW, pady=(0, 10))
-        self.name:th.Label = th.Label(form, text=lbls['choose_module'], font=BOLD)
-        self.name.grid(row=1, column=0, columnspan=3, padx=5, sticky=tk.W)
-        for col, h in enumerate(('blueprint', 'grade', 'effect')):
-            th.Label(form, text=lbls[h]).grid(row=2, column=col, padx=5, pady=(5, 0), sticky=tk.W)
+        ttk.Separator(form).grid(row=0, column=0, columnspan=4, sticky=tk.EW, pady=(0, 10))
+        self.name:ttk.Label = ttk.Label(form, text=lbls['choose_module'], font=BOLD)
+        self.name.grid(row=1, column=0, columnspan=4, padx=5, sticky=tk.W)
+        for col, h in enumerate(('blueprint', 'grade', 'effect', 'engineers')):
+            ttk.Label(form, text=lbls[h]).grid(row=2, column=col, padx=5, pady=(5, 0), sticky=tk.W)
 
         self.bp, self.grade, self.effect = tk.StringVar(form), tk.IntVar(form, 1), tk.StringVar(form)
-        self.bpdd:th.ComboBox = th.ComboBox(form, self.bp, values=[NONE], width=30)
-        self.gscale:th.Scale = th.Scale(form, variable=self.grade, from_=1, to=5, resolution=1, orient=tk.HORIZONTAL, state=tk.DISABLED)
-        self.fxdd:th.ComboBox = th.ComboBox(form, self.effect, values=[NONE], width=26)
+        self.bpdd:ttk.Combobox = ttk.Combobox(form, textvariable=self.bp, values=[NONE], state='readonly', width=30)
+        self.gscale:tk.Scale = tk.Scale(form, variable=self.grade, from_=1, to=5, resolution=1, orient=tk.HORIZONTAL, state=tk.DISABLED)
+        self.fxdd:ttk.Combobox = ttk.Combobox(form, textvariable=self.effect, values=[NONE], state='readonly', width=26)
         for col, dd in enumerate((self.bpdd, self.gscale, self.fxdd)): dd.grid(row=3, column=col, padx=5, pady=2, sticky=tk.SW)
-        form.grid_columnconfigure(2, weight=1)
+        self.who:ttk.Label = ttk.Label(form, text='', justify=tk.LEFT, wraplength=int(260 * scale))
+        self.who.grid(row=3, column=3, padx=5, pady=2, sticky=tk.NW)
+        form.grid_columnconfigure(3, weight=1)
 
         # Done sits apart from the form, since each change applies as it's made
-        th.Separator(form).grid(row=4, column=0, columnspan=3, sticky=tk.EW, pady=(15, 5))
-        th.Button(form, text=btns['save_plan'], command=self.close).grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky=tk.E)
+        ttk.Separator(form).grid(row=4, column=0, columnspan=4, sticky=tk.EW, pady=(15, 5))
+        ttk.Button(form, text=btns['save_plan'], command=self.close).grid(row=5, column=0, columnspan=4, padx=5, pady=5, sticky=tk.E)
 
         self.bp.trace_add('write', self._bp_changed)
         self.grade.trace_add('write', self._edited)
@@ -198,9 +205,16 @@ class PlanWindow:
         return (lbls[GROUPS[m['group']]], self.cat.mods[m['kind']]['name'], *self._cells(m['kind'], *now), *planned)
 
 
+    def _who(self, names:list) -> list:
+        """Which of the named engineers can be visited."""
+        return [n for n in names if n in self.allowed]
+
+
     def _grades(self, kind:str, key:str|None) -> list:
-        """The grades a blueprint comes in, lowest first, spanned by the slider; no blueprint disables it."""
-        grades:list = sorted(map(int, self.cat.mods[kind]['blueprints'][key]['grades'])) if key else []
+        """The blueprint's grades on offer plus any already planned, lowest first, spanned by the slider."""
+        bp, grade, _ = self.plan[self.slot] if self.slot else (None, 0, None)
+        offered:dict = self.cat.mods[kind]['blueprints'][key]['grades'] if key else {}
+        grades:list = sorted({int(g) for g, e in offered.items() if self._who(e)} | ({grade} if key == bp and grade else set()))
         if grades: self.gscale.configure(from_=grades[0], to=grades[-1], state=tk.NORMAL)
         else: self.gscale.configure(state=tk.DISABLED)
         return grades
@@ -214,19 +228,33 @@ class PlanWindow:
         self.slot = sel[0]
         kind:str = self.mods[self.slot]['kind']
         bp, grade, effect = self.plan[self.slot]
-        self.bps = {self.cat.name(kind, 'blueprints', k): k for k in [None, *self.cat.mods[kind]['blueprints']]}
-        self.fx = {self.cat.name(kind, 'effects', k): k for k in [None, *self.cat.mods[kind]['effects']]}
+        mod:dict = self.cat.mods[kind]
 
-        # The menus' own resets would otherwise write a half-loaded plan back
+        # Only what the region's engineers offer, though the plan's own choices stay listed
+        bps:list = [k for k, b in mod['blueprints'].items() if k == bp or any(map(self._who, b['grades'].values()))]
+        fx:list = [k for k, f in mod['effects'].items() if k == effect or self._who(f['engineers'])]
+        self.bps = {self.cat.name(kind, 'blueprints', k): k for k in [None, *bps]}
+        self.fx = {self.cat.name(kind, 'effects', k): k for k in [None, *fx]}
+
+        # Each variable's trace would otherwise write a half-loaded plan back
         self.loading = True
         self.name['text'] = self.cat.mods[kind]['name']
-        self.bpdd.set_menu(list(self.bps))
-        self.fxdd.set_menu(list(self.fx))
+        self.bpdd.configure(values=list(self.bps))
+        self.fxdd.configure(values=list(self.fx))
         grades:list = self._grades(kind, bp)
         self.bp.set(self.cat.name(kind, 'blueprints', bp))
         self.grade.set(grade if bp else grades[-1] if grades else 1)
         self.effect.set(self.cat.name(kind, 'effects', effect))
         self.loading = False
+        self._engineers()
+
+
+    def _engineers(self) -> None:
+        """List who offers the selected module's planned blueprint grade, and so its experimentals too."""
+        if self.slot is None: return
+        bp, grade, _ = self.plan[self.slot]
+        offered:list = self.cat.mods[self.mods[self.slot]['kind']]['blueprints'][bp]['grades'].get(str(grade), []) if bp else []
+        self.who['text'] = ', '.join(self._who(offered)) or (NONE if bp else '')
 
 
     @catch_exceptions
@@ -248,13 +276,15 @@ class PlanWindow:
         grade:int = self.grade.get() if key else 0
         self.plan[self.slot] = (key, grade, self.fx.get(self.effect.get()) if key else None)
         self.tree.item(self.slot, values=self._values(self.slot))
+        self._engineers()
 
 
     @catch_exceptions
     def close(self) -> None:
-        """Save the plan for the ship, then close."""
-        Context.router.plans[self.ship.id] = [{'slot': s, 'item': self.mods[s]['item'], 'blueprint': bp, 'grade': g, 'effect': fx}
-                                              for s, (bp, g, fx) in self.plan.items()]
+        """Save the plan for the ship, keeping plans for modules hidden by the region, then close."""
+        hidden:list = [p for p in Context.router.plans.get(self.ship.id, []) if p['slot'] not in self.mods]
+        Context.router.plans[self.ship.id] = hidden + [{'slot': s, 'item': self.mods[s]['item'], 'blueprint': bp, 'grade': g, 'effect': fx}
+                                                       for s, (bp, g, fx) in self.plan.items()]
         Context.router.window_geometries['plan'] = self.window.winfo_geometry()
         Context.router.save()
         self.window.destroy()

@@ -552,7 +552,7 @@ class EngineerPlotter(Plotter):
         """Show how many modules the chosen ship's plan still has to engineer."""
         ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
         cat:Catalogue|None = Catalogue.load()
-        n:int = len(cat.request(ship, Context.router.plans.get(ship.id, []))) if ship and cat else 0
+        n:int = len(cat.request(ship, Context.router.plans.get(ship.id, []), set(self._allowed(cat)))) if ship and cat else 0
         self.summary['text'] = lbls['plan_count'].format(n=n) if n else ''
 
     @catch_exceptions
@@ -573,7 +573,16 @@ class EngineerPlotter(Plotter):
         if cat is None:
             Context.ui.show_error(errs['no_catalogue'])
             return
-        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, self._summary)
+        allowed:list = self._allowed(cat)
+        if not allowed:
+            Context.ui.show_error(errs['no_engineers'])
+            return
+        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, set(allowed), self._summary)
+
+    def _allowed(self, cat:Catalogue) -> list:
+        """Unlocked engineers in the chosen region, or all its engineers before the journal reports progress."""
+        known:dict = Context.router.engineers
+        return [n for n in cat.region(self.regions.get(self.regionvar.get(), '')) if not known or known.get(n) == 'Unlocked']
 
     @catch_exceptions
     def plot(self) -> None:
@@ -589,20 +598,18 @@ class EngineerPlotter(Plotter):
         if cat is None:
             Context.ui.show_error(errs['no_catalogue'])
             return
-        blueprints:list = cat.request(ship, Context.router.plans.get(ship.id, []))
+        allowed:list = self._allowed(cat)
+        if not allowed:
+            Context.ui.show_error(errs['no_engineers'])
+            return
+        blueprints:list = cat.request(ship, Context.router.plans.get(ship.id, []), set(allowed))
         if not blueprints:
             Context.ui.show_error(errs['no_plan'])
             return
 
-        # Without the journal's engineer progress yet, any engineer in the region will do
         region:str = self.regions.get(self.regionvar.get(), '')
         params:dict = {'source': src, 'ship': ship.id, 'region': region, 'blueprints': blueprints}
-        known:dict = Context.router.engineers
-        allowed:list = [n for n in cat.region(region) if not known or known.get(n) == 'Unlocked']
-        if not allowed:
-            Context.ui.show_error(errs['no_engineers'])
-            return
-        if known or region: params['engineers'] = allowed
+        if Context.router.engineers or region: params['engineers'] = allowed
 
         Context.router.src = src
         Context.ui._show_busy_gui(True)

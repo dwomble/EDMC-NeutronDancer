@@ -237,6 +237,7 @@ lbls:dict = {
     "blueprint": "Blueprint",
     "grade": "Grade",
     "effect": "Experimental",
+    "engineers": "Engineers",
     "all_regions": "All regions",
     "bubble": "Bubble",
     "colonia": "Colonia"

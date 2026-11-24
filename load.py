@@ -107,6 +107,8 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.add_loadout(entry)
+        case 'EngineerProgress':
+            Context.router.engineer_progress(entry)
         case 'Music' if entry.get('MusicTrack', '') == 'GalaxyMap' and Context.ui.parent and Context.route.jumps_remaining():
             copy_to_clipboard(Context.ui.parent, Context.route.next_system())
         case 'ShipyardSwap':

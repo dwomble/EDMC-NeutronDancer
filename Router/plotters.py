@@ -13,10 +13,12 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
+from .constants import lbls, btns, tts, errs, SPANSH_ENGINEER_ROUTE, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
 from .context import Context
 from .route import Route
 from .ship import Ship
+from .engineering import Catalogue, PlanWindow
+from threading import Thread
 
 WIDTH3:int = 9
 WIDTH2:int = 14
@@ -493,6 +495,115 @@ class LocalPlotter(Plotter):
         Context.router.src, Context.router.dest = params['from'], params['to']
         Context.ui._show_busy_gui(True)
         Context.router.plot_route('Local', params)
+
+
+class EngineerPlotter(Plotter):
+    """Plotter for Spansh's engineer route: which unlocked engineers to visit, and in what order, for a ship's plan."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the engineer plotter frame: source, ship and region here, the plan itself in its own window."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        self._plot_switcher(plot_fr, 0, 0)
+        params:dict = Context.router.route_params.get('Engineer', {})
+
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0)
+
+        names:list = Context.router.shipnames()
+        self.shipvar:tk.StringVar = tk.StringVar(route_fr)
+        self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
+        th.Tooltip(self.shipdd, tts["select_ship"])
+        self.shipdd.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.shipvar.set(Context.router.menu_ship.name if Context.router.menu_ship else names[0] if names else '')
+        self.shipvar.trace_add("write", Context.ui.ship_selected)
+        self.shipvar.trace_add("write", lambda *_: self._summary())
+
+        self.regions:dict = {lbls['all_regions']: '', lbls['bubble']: 'bubble', lbls['colonia']: 'colonia'}
+        self.regionvar:tk.StringVar = tk.StringVar(route_fr)
+        region_dd:th.ComboBox = th.ComboBox(route_fr, self.regionvar, values=list(self.regions), width=WIDTH2)
+        th.Tooltip(region_dd, tts["region"])
+        region_dd.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        self.regionvar.set(next((k for k, v in self.regions.items() if v == params.get('region', '')), lbls['all_regions']))
+
+        self.summary:th.Label = th.Label(route_fr, text='')
+        self.summary.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+        route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
+
+        self._create_buttons(plot_fr, 2, 0)
+        edit:th.Button = th.Button(self.btn_frame, text=btns["edit_plan"], command=self.edit)
+        th.Tooltip(edit, tts["edit_plan"])
+        edit.grid(row=0, column=2, padx=5, sticky=tk.W)
+
+        self.frame = plot_fr
+        self._summary()
+        return plot_fr
+
+    def _ship(self) -> Ship|None:
+        """The ship chosen in the menu, showing why if there isn't one."""
+        ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
+        if ship is None:
+            Context.ui.show_frame('Engineer')
+            Context.ui.show_error(errs['no_ship'])
+        return ship
+
+    def _summary(self) -> None:
+        """Show how many modules the chosen ship's plan still has to engineer."""
+        ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
+        cat:Catalogue|None = Catalogue.load(False)
+        n:int = len(cat.request(ship, Context.router.plans.get(ship.id, []))) if ship and cat else 0
+        self.summary['text'] = lbls['plan_count'].format(n=n) if n else ''
+
+    @catch_exceptions
+    def edit(self) -> None:
+        """Open the plan window, once the catalogue is fetched off the UI thread."""
+        Context.ui.hide_error()
+        ship:Ship|None = self._ship()
+        if ship is None: return
+
+        def fetch() -> None:
+            cat:Catalogue|None = Catalogue.load()
+            Context.ui.frame.after(0, lambda: self._open(cat, ship))
+        Thread(target=fetch, daemon=True, name="Neutron Dancer engineering catalogue").start()
+
+    def _open(self, cat:Catalogue|None, ship:Ship) -> None:
+        """Open the plan window for the ship, or say why not."""
+        if cat is None:
+            Context.ui.show_error(errs['no_catalogue'])
+            return
+        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, self._summary)
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Ask Spansh which engineers to visit for the plan, limited to unlocked ones in the region."""
+        if not self.frame or not self.src_ac: return
+        Context.ui.hide_error()
+        ship:Ship|None = self._ship()
+        src:str = self._row_value(self.src_ac)
+        if not src: self.src_ac.set_error_style()
+        if ship is None or not src: return
+
+        cat:Catalogue|None = Catalogue.load(False)
+        if cat is None:
+            Context.ui.show_error(errs['no_catalogue'])
+            return
+        blueprints:list = cat.request(ship, Context.router.plans.get(ship.id, []))
+        if not blueprints:
+            Context.ui.show_error(errs['no_plan'])
+            return
+
+        # Without the journal's engineer progress yet, any engineer in the region will do
+        region:str = self.regions.get(self.regionvar.get(), '')
+        params:dict = {'source': src, 'ship': ship.id, 'region': region, 'blueprints': blueprints}
+        known:dict = Context.router.engineers
+        allowed:list = [n for n in cat.region(region) if not known or known.get(n) == 'Unlocked']
+        if not allowed:
+            Context.ui.show_error(errs['no_engineers'])
+            return
+        if known or region: params['engineers'] = allowed
+
+        Context.router.src = src
+        Context.ui._show_busy_gui(True)
+        Context.router.plot_route('Engineer', params)
 
 
 class GalaxyPlotter(Plotter):
@@ -1231,6 +1342,9 @@ PLOTTER_SPECS:dict = {
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
         src_key='source', dest_key='destination',
         options=['is_supercharged', 'use_supercharge', 'use_injections', 'exclude_secondary', 'refuel_every_scoopable']
+    ),
+    'Engineer': PlotterSpec(
+        label='Engineer Plotter', plotter_class=EngineerPlotter, url=SPANSH_ENGINEER_ROUTE, src_key='source'
     ),
     'Neutron': PlotterSpec(
         label='Neutron Plotter', plotter_class=NeutronPlotter, url=SPANSH_ROUTE

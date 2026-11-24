@@ -24,6 +24,8 @@ SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
 SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
 SPANSH_FLEETCARRIER_ROUTE:str = f"{SPANSH_API}/fleetcarrier/route"
+SPANSH_ENGINEER_ROUTE:str = f"{SPANSH_API}/engineer/route"
+SPANSH_ENGINEER_BLUEPRINTS:str = f"{SPANSH_API}/engineer/blueprints"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
@@ -62,10 +64,11 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
                     "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
                     "has_icy_ring": "Icy Ring", "is_system_pristine": "Pristine", "must_restock": "Restock Tritium",
+                    "engineer": "Engineer", "engineering": "Engineering",
                     }
 
 # Headers that we accept
-HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
+HEADERS:list = ["System Name", "Station Name", "Engineer", "Engineering", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
                 "Body", "Body Type", "Is Terra", "Species", "Value", "Commodity", "Amount",
                 "Profit", "Total Profit", "Cumulative Profit", "Dist To Arrival", "Est Scan Value",
                 "Est Mapping Value", "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining",
@@ -74,6 +77,8 @@ HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints"
 # Formatting info for each header
 HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Station Name": ["str", ""],
+                    "Engineer": ["str", ""],
+                    "Engineering": ["str", ""],
                     "Commodity": ["str", ""],
                     "Amount": ["int", "", " t"],
                     "Profit": ["float", "", " Cr"],
@@ -217,7 +222,24 @@ lbls:dict = {
     "router": "Router",
     "boxel_name": "Boxel",
     "start_num": "Start",
-    "end_num": "End"
+    "end_num": "End",
+    "plan_title": "Engineering plan for {ship}",
+    "plan_count": "{n} to engineer",
+    "module": "Module",
+    "type": "Type",
+    "current": "Current",
+    "planned": "Planned",
+    "choose_module": "Select a module to plan its engineering",
+    "hardpoint": "Hardpoint",
+    "utility": "Utility",
+    "core": "Core",
+    "optional": "Optional",
+    "blueprint": "Blueprint",
+    "grade": "Grade",
+    "effect": "Experimental",
+    "all_regions": "All regions",
+    "bubble": "Bubble",
+    "colonia": "Colonia"
 }
 
 # Tooltips
@@ -277,7 +299,9 @@ tts:dict = {
     "none": "None",
     "boxel_name": "Boxel name including its mass-code letter, right click for menu",
     "start_num": "First sequence number to survey",
-    "end_num": "Last sequence number to survey"
+    "end_num": "Last sequence number to survey",
+    "edit_plan": "Choose the blueprint, grade and experimental effect for each module",
+    "region": "Only visit engineers in this region"
 }
 
 # Button names
@@ -293,6 +317,8 @@ btns:dict = {
     "export_route": "Export for TCE",
     "clear_route": "Clear",
     "show_route": "Show",
+    "edit_plan": "Edit plan…",
+    "save_plan": "Done",
     "export_route": "Export"
 }
 
@@ -316,7 +342,10 @@ errs:dict = {
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",
     "invalid_boxel": "Enter valid boxel and start/end numbers",
-    "boxel_impossible": "Invalid mass code"
+    "boxel_impossible": "Invalid mass code",
+    "no_catalogue": "Couldn't get the engineering blueprints from Spansh",
+    "no_plan": "Nothing to engineer: choose some blueprints in the plan first",
+    "no_engineers": "No unlocked engineers in that region"
 }
 
 cnf:dict = {

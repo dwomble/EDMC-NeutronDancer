@@ -5,11 +5,13 @@
 ### New Features
 
 * An entirely new, local plotter (Neutron Dancer) that uses Spansh data to plot routes locally
+* Added the new Spansh Engineer router
 
 ### Changes
 
 * Remember which ship you're plotting for over restarts and between plot types
 * Route type and ship name are included in suggested route save filename
+* Fuel reserve is validated against fuel capacity
 
 ### Bug Fixes
 

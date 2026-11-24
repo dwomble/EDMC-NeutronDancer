@@ -2706,6 +2706,26 @@ class TestPlotting:
         assert "System Name" in harness.plugin.route.hdrs
         assert len(harness.plugin.route.route) > 0
 
+    @pytest.mark.slow
+    def test_plot_engineer_route(self, harness:TestHarness) -> None:
+        """ A live Engineer plot for two blueprints and an effect, limited to two nearby engineers. """
+
+
+        res:bool = harness.plugin.router.plot_route('Engineer',
+                                            {'source': 'Sol', 'engineers': ['Marco Qwent', 'Felicity Farseer'],
+                                            'blueprints': [{'item': 'int_powerplant_size4_class5', 'blueprint': 'powerplant_boosted',
+                                                            'grade': 3},
+                                                           {'item': 'int_hyperdrive_size5_class5', 'blueprint': 'fsd_longrange', 'grade': 5,
+                                                            'effect': 'special_fsd_heavy'}]})
+        assert res == True
+        _wait_plot(harness)
+
+        route = harness.plugin.route
+        assert harness.plugin.router.src == 'Sol'
+        assert "Engineer" in route.hdrs and "Engineering" in route.hdrs
+        assert [r[route.colind('Engineer')] for r in route.route] == ['', 'Marco Qwent', 'Felicity Farseer']
+        assert 'Mass Manager' in route.route[-1][route.colind('Engineering')]
+
 
 class TestEventSequences:
     """Test complex multi-step event scenarios."""

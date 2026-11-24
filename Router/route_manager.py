@@ -13,8 +13,8 @@ from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
 from .constants import (HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE,
-                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS,
-                        INDY_ROUTE, LOCAL_ROUTE, TRUE, CarrierStates, errs)
+                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_ENGINEER_ROUTE, SPANSH_TIMEOUT,
+                        SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE, CarrierStates, errs)
 from .context import Context
 from .ship import Ship
 from .route import Route
@@ -27,7 +27,7 @@ from . import api
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
                   'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '',
-                  'window_geometries' : {}}
+                  'window_geometries' : {}, 'engineers': {}, 'plans': {}}
 
 @singleton
 class Router():
@@ -76,6 +76,10 @@ class Router():
         self.carrier_departure:datetime|None = None
 
         self.window_geometries:dict = {}
+
+        # Engineer name to journal progress ("Unlocked" etc), and each ship's engineering plan by ship id
+        self.engineers:dict = {}
+        self.plans:dict = {}
 
         self._load()
 
@@ -149,6 +153,12 @@ class Router():
         if not ship.id or ship.id == self.ship_id:
             return
         self.swap_ship(ship.id)
+
+
+    def engineer_progress(self, entry:dict) -> None:
+        """ Note each engineer's progress, from the full list at login or a single change """
+        for e in entry.get('Engineers', [entry]):
+            if 'Engineer' in e: self.engineers[e['Engineer']] = e.get('Progress', '')
 
 
     def jumped(self, system:str, entry:dict) -> None:
@@ -360,8 +370,18 @@ class Router():
                 local:list|None = self._local_result(type, params)
                 if local is None: return
                 res = local
+            elif url == SPANSH_ENGINEER_ROUTE:
+                body:dict = {k: params[k] for k in ('source', 'blueprints', 'engineers') if k in params}
+                posted:Response = Context.session.post(url, json=body, timeout=SPANSH_TIMEOUT,
+                                                       headers={'User-Agent': Context.plugin_useragent})
+                spansh:list|None = self._spansh_result(type, url, params, posted)
+                if spansh is None: return
+                res = spansh
             else:
-                spansh:list|None = self._spansh_result(type, url, params)
+                posted = Context.session.post(url, data=params, timeout=SPANSH_TIMEOUT,
+                                              headers={'User-Agent': Context.plugin_useragent,
+                                                       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+                spansh = self._spansh_result(type, url, params, posted)
                 if spansh is None: return
                 res = spansh
 
@@ -503,14 +523,9 @@ class Router():
         return rows
 
 
-    def _spansh_result(self, which:str, url:str, params:dict) -> list|None:
-        """ Submit a Spansh job, poll it and flatten the result; None on failure or cancel """
+    def _spansh_result(self, which:str, url:str, params:dict, results:Response) -> list|None:
+        """ Poll the Spansh job a route request queued, then flatten its result; None on failure or cancel """
         limit:int = int(params.get('max_time', 20))
-        results:Response = Context.session.post(url, data=params,
-                                         headers={'User-Agent': Context.plugin_useragent,
-                                                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-                                                  timeout=SPANSH_TIMEOUT)
-
         if results.status_code != 202:
             self.plot_error(which, params, results)
             return None
@@ -541,11 +556,18 @@ class Router():
             return self._flatten_bodies_result(raw_result)
         if url == SPANSH_TRADE_ROUTE:
             return self._flatten_trade_result(raw_result)
+        if url == SPANSH_ENGINEER_ROUTE:
+            return [{'system': j['system'], 'engineer': j.get('engineer', ''),
+                     'engineering': '; '.join([f"{b['module_name']}: {b['name']} G{b['grade']}" for b in j.get('blueprints', [])] +
+                                              [f"{e['module_name']}: {e['name']}" for e in j.get('effects', [])]),
+                     'distance': j.get('distance', 0), 'x': j.get('x'), 'y': j.get('y'), 'z': j.get('z'), 'id64': j.get('id64')}
+                    for j in raw_result.get('jumps', [])]
         if url == SPANSH_FLEETCARRIER_ROUTE:
             # distance == 0 marks bookkeeping rows -- the initial source, and each
             # requested stop's leg-restart duplicate -- not real jumps. Every other row,
             # including every intermediate hop of a long single-leg route, is a real jump.
             return [j for j in raw_result.get('jumps', []) if j.get('distance', 0) != 0]
+
         return raw_result.get('jumps', raw_result.get('system_jumps', []))
 
     @catch_exceptions

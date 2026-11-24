@@ -292,7 +292,7 @@ class Button(Base):
         # Windows' native ttk theme adds its own chrome outside what reqwidth/reqheight report
         if target_w is not None: target_w += 8
         if target_h is not None: target_h += 8
-        Debug.logger.debug(f"Button size: {target_w} {btn.winfo_reqwidth()} by {target_h} {btn.winfo_reqheight()} ")
+
         object.__setattr__(self, '_ipad_x', max(0, (target_w - btn.winfo_reqwidth()) // 2) if target_w is not None else 0)
         object.__setattr__(self, '_ipad_y', max(0, (target_h - btn.winfo_reqheight()) // 2) if target_h is not None else 0)
         return btn

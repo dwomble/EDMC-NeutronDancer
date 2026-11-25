@@ -154,6 +154,8 @@ The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) f
 
 Also thank you to Indestinate for his superfast [Neutron Plotter](https://neutron.indyhost.org/).
 
+Thank you to [Coriolis](https://coriolis.io) for its [game data](https://github.com/Brighter-Applications/coriolis-data) (originally [EDCD's](https://github.com/EDCD/coriolis-data)), which Neutron Dancer uses for FSD jump range calculations and engineering material costs. Elite Dangerous game data is © Frontier Developments plc.
+
 This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.
 
 ## Suggestions

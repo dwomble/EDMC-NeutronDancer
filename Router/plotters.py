@@ -18,7 +18,7 @@ from .constants import (lbls, btns, tts, errs, SPANSH_ENGINEER_ROUTE, SPANSH_ROU
 from .context import Context
 from .route import Route
 from .ship import Ship
-from .engineering import Catalogue, PlanWindow
+from .engineering import Catalogue, PlanWindow, short
 from threading import Thread
 
 WIDTH3:int = 9
@@ -524,7 +524,7 @@ class EngineerPlotter(Plotter):
         self.shipdd.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.shipvar.set(Context.router.menu_ship.name if Context.router.menu_ship else names[0] if names else '')
         self.shipvar.trace_add("write", Context.ui.ship_selected)
-        self.shipvar.trace_add("write", lambda *_: self._summary())
+        self.shipvar.trace_add("write", lambda *_: self.update_summary())
 
         edit:th.Button = th.Button(route_fr, text=btns["edit_plan"], command=self.edit)
         th.Tooltip(edit, tts["edit_plan"])
@@ -537,7 +537,7 @@ class EngineerPlotter(Plotter):
         self._create_buttons(route_fr, 2, 0)
 
         self.frame = plot_fr
-        self._summary()
+        self.update_summary()
         return plot_fr
 
     def _ship(self) -> Ship|None:
@@ -548,12 +548,20 @@ class EngineerPlotter(Plotter):
             Context.ui.show_error(errs['no_ship'])
         return ship
 
-    def _summary(self) -> None:
-        """Show how many modules the chosen ship's plan still has to engineer."""
+    def update_summary(self) -> None:
+        """Show how many modules the chosen ship's plan still has to engineer, and whether you have the materials."""
         ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
         cat:Catalogue|None = Catalogue.load()
-        n:int = len(cat.request(ship, Context.router.plans.get(ship.id, []), set(self._allowed(cat)))) if ship and cat else 0
-        self.summary['text'] = lbls['plan_count'].format(n=n) if n else ''
+        if not ship or not cat:
+            self.summary['text'] = ''
+            return
+
+        plan:list = Context.router.plans.get(ship.id, [])
+        allowed:set = set(self._allowed(cat))
+        n:int = len(cat.request(ship, plan, allowed))
+        need, unknown = cat.total(ship, plan, allowed)
+        status:str = lbls['plan_short'] if short(need) else '' if unknown else lbls['plan_ready']
+        self.summary['text'] = lbls['plan_count'].format(n=n) + status if n else ''
 
     @catch_exceptions
     def edit(self) -> None:
@@ -577,7 +585,7 @@ class EngineerPlotter(Plotter):
         if not allowed:
             Context.ui.show_error(errs['no_engineers'])
             return
-        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, set(allowed), self._summary)
+        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, set(allowed), self.update_summary)
 
     def _allowed(self, cat:Catalogue) -> list:
         """Unlocked engineers in the chosen region, or all its engineers before the journal reports progress."""

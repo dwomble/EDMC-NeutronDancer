@@ -26,6 +26,7 @@ SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
 SPANSH_FLEETCARRIER_ROUTE:str = f"{SPANSH_API}/fleetcarrier/route"
 SPANSH_ENGINEER_ROUTE:str = f"{SPANSH_API}/engineer/route"
 SPANSH_ENGINEER_BLUEPRINTS:str = f"{SPANSH_API}/engineer/blueprints"
+CORIOLIS_DATA:str = "https://raw.githubusercontent.com/Brighter-Applications/coriolis-data/master/modifications"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
@@ -115,6 +116,45 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
 # Different ways a file might store true/false
 TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
+
+# Cached file: (url, days before it's fetched again); Coriolis's costs rarely change
+SOURCES:dict = {'engineering.json': (SPANSH_ENGINEER_BLUEPRINTS, 7), 'coriolis_blueprints.json': (f"{CORIOLIS_DATA}/blueprints.json", 30),
+                'coriolis_specials.json': (f"{CORIOLIS_DATA}/specials.json", 30)}
+
+# Display names for Coriolis's blueprint modifiers
+EFFECTS:dict = {'ammo': 'Ammo Maximum', 'angle': 'Scan Angle', 'boot': 'Boot Time', 'brokenregen': 'Broken Regen Rate',
+                'burst': 'Burst', 'burstrof': 'Burst Rate of Fire', 'cargo': 'Cargo Capacity', 'clip': 'Ammo Clip Size',
+                'damage': 'Damage', 'distdraw': 'Distributor Draw', 'duration': 'Duration', 'eff': 'Efficiency',
+                'engcap': 'Engines Capacity', 'engrate': 'Engines Recharge', 'explres': 'Explosive Resistance',
+                'facinglimit': 'Facing Limit', 'falloff': 'Damage Falloff', 'fallofffromrange': 'Falloff From Range',
+                'hullboost': 'Hull Boost', 'hullreinforcement': 'Hull Reinforcement', 'integrity': 'Integrity', 'jitter': 'Jitter',
+                'kinres': 'Kinetic Resistance', 'mass': 'Mass', 'optmass': 'Optimal Mass', 'optmul': 'Optimal Multiplier',
+                'pgen': 'Power Capacity', 'piercing': 'Armour Piercing', 'power': 'Power Draw', 'proberadius': 'Probe Radius',
+                'protection': 'Damage Protection', 'range': 'Range', 'ranget': 'Maximum Range', 'rate': 'Rate',
+                'reload': 'Reload Time', 'rof': 'Rate of Fire', 'scantime': 'Scan Time', 'shieldboost': 'Shield Boost',
+                'shieldreinforcement': 'Shield Reinforcement', 'shotspeed': 'Shot Speed', 'spinup': 'Spin-up Time',
+                'syscap': 'Systems Capacity', 'sysrate': 'Systems Recharge', 'thermload': 'Thermal Load',
+                'thermres': 'Thermal Resistance', 'wepcap': 'Weapons Capacity', 'weprate': 'Weapons Recharge'}
+
+# Coriolis material names whose journal names differ by more than case and spacing
+MATERIALS:dict = {'Aberrant Shield Pattern Analysis': 'shieldpatternanalysis',
+                  'Abnormal Compact Emissions Data': 'compactemissionsdata', 'Adaptive Encryptors Capture': 'adaptiveencryptors',
+                  'Adaptive Encyptors Capture': 'adaptiveencryptors', 'Anomalous Bulk Scan Data': 'bulkscandata',
+                  'Anomalous FSD Telemetry': 'fsdtelemetry', 'Atypical Disrupted Wake Echoes': 'disruptedwakeechoes',
+                  'Atypical Encryption Archives': 'encryptionarchives', 'Classified Scan Databanks': 'scandatabanks',
+                  'Classified Scan Fragment': 'classifiedscandata', 'Core Dynamics Composites': 'fedcorecomposites',
+                  'Cracked Industrial Firmware': 'industrialfirmware', 'Datamined Wake Exceptions': 'dataminedwake',
+                  'Distorted Shield Cycle Recordings': 'shieldcyclerecordings', 'Divergent Scan Data': 'encodedscandata',
+                  'Eccentric Hyperspace Trajectories': 'hyperspacetrajectories',
+                  'Exceptional Scrambled Emission Data': 'scrambledemissiondata', 'Flawed Focus Crystals': 'uncutfocuscrystals',
+                  'Inconsistent Shield Soak Analysis': 'shieldsoakanalysis', 'Irregular Emission Data': 'archivedemissiondata',
+                  'Modified Consumer Firmware': 'consumerfirmware', 'Modified Embedded Firmware': 'embeddedfirmware',
+                  'Open Symmetric Keys': 'symmetrickeys', 'Peculiar Shield Frequency Data': 'shieldfrequencydata',
+                  'Proprietary Composites': 'fedproprietarycomposites', 'Security Firmware Patch': 'securityfirmware',
+                  'Specialised Legacy Firmware': 'legacyfirmware', 'Strange Wake Solutions': 'wakesolutions',
+                  'Tagged Encryption Codes': 'encryptioncodes', 'Unexpected Emission Data': 'emissiondata',
+                  'Unidentified Scan Archives': 'scanarchives', 'Untypical Shield Scans': 'shielddensityreports',
+                  'Unusual Encrypted Files': 'encryptedfiles'}
 
 # Overlay progress display default
 PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
@@ -229,7 +269,6 @@ lbls:dict = {
     "type": "Type",
     "current": "Current",
     "planned": "Planned",
-    "choose_module": "Select a module to plan its engineering",
     "hardpoint": "Hardpoint",
     "utility": "Utility",
     "core": "Core",
@@ -238,6 +277,17 @@ lbls:dict = {
     "grade": "Grade",
     "effect": "Experimental",
     "engineers": "Engineers",
+    "pre_engineered": "Pre-engineered",
+    "materials": "Materials",
+    "cost_unknown": "Cost unknown",
+    "have": "have {n}",
+    "full_plan": "Full Plan",
+    "effects": "Blueprint Effects",
+    "description": "Experimental Description",
+    "bp_and_fx": "Blueprint and Experimental",
+    "unknown_count": "+ {n} with unknown costs",
+    "plan_short": ", short of materials",
+    "plan_ready": ", materials ready",
     "all_regions": "All regions",
     "bubble": "Bubble",
     "colonia": "Colonia"

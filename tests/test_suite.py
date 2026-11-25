@@ -115,11 +115,11 @@ class TestUpdater:
         yield
         mock_requests.live_requests(previous)
 
-    def test_extra_check_in_git_checkout(self, tmp_path) -> None:
+    def test_extra_check_in_git_checkout(self, tmp_path, monkeypatch) -> None:
         """ The extra (data) check runs on the update schedule even where a git checkout skips the plugin update. """
         (tmp_path / ".git").mkdir()
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer-ExtraTest")
-        updater.delay = 0
+        monkeypatch.setattr(sys.modules[Updater.__module__], 'DELAY', 0)
         extra = Mock()
         with patch.object(updater, 'get_release') as release:
             updater.check_for_update("1.0.0", interval=-1, extra=extra)

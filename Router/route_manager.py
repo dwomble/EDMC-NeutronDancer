@@ -19,6 +19,7 @@ from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
+from .engineering import trim
 from .local.index import Index
 from .local.search import Planner, Cancelled
 from .local.index import Combined
@@ -79,6 +80,7 @@ class Router():
 
         # Engineer name to journal progress ("Unlocked" etc), and each ship's engineering plan by ship id
         self.engineers:dict = {}
+        self.materials:dict = {} # Journal material name to count held, from EDMC's state
         self.plans:dict = {}
 
         self._load()
@@ -557,11 +559,16 @@ class Router():
         if url == SPANSH_TRADE_ROUTE:
             return self._flatten_trade_result(raw_result)
         if url == SPANSH_ENGINEER_ROUTE:
-            return [{'system': j['system'], 'engineer': j.get('engineer', ''),
-                     'engineering': '; '.join([f"{b['module_name']}: {b['name']} G{b['grade']}" for b in j.get('blueprints', [])] +
-                                              [f"{e['module_name']}: {e['name']}" for e in j.get('effects', [])]),
-                     'distance': j.get('distance', 0), 'x': j.get('x'), 'y': j.get('y'), 'z': j.get('z'), 'id64': j.get('id64')}
-                    for j in raw_result.get('jumps', [])]
+            rows:list = []
+            for j in raw_result.get('jumps', []):
+                mods:dict = {}
+                for b in j.get('blueprints', []):
+                    mods.setdefault(b['module_name'], []).append(f"G{b['grade']} {trim(b['module_name'], b['name'])}")
+                for e in j.get('effects', []): mods.setdefault(e['module_name'], []).append(trim(e['module_name'], e['name']))
+                rows.append({'system': j['system'], 'engineer': j.get('engineer', ''),
+                             'engineering': '; '.join(f"{m}: {' + '.join(v)}" for m, v in mods.items()),
+                             'distance': j.get('distance', 0), 'x': j.get('x'), 'y': j.get('y'), 'z': j.get('z'), 'id64': j.get('id64')})
+            return rows
         if url == SPANSH_FLEETCARRIER_ROUTE:
             # distance == 0 marks bookkeeping rows -- the initial source, and each
             # requested stop's leg-restart duplicate -- not real jumps. Every other row,

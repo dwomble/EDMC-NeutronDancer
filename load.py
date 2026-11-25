@@ -95,6 +95,10 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
     if Context.router == None: return
     if state.get('StarPos'): Context.router.star_pos = tuple(state['StarPos'])
     if state.get('SystemAddress'): Context.router.address = state['SystemAddress']
+    materials:dict = {k: v for c in ('Raw', 'Manufactured', 'Encoded') for k, v in state.get(c, {}).items()}
+    if materials != Context.router.materials:
+        Context.router.materials = materials
+        Context.ui.plotters['Engineer'].update_summary()
 
     match entry['event']:
         case 'Startup' | 'StartUp':
@@ -112,6 +116,7 @@ def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, s
             Context.router.carrier_event(entry)
         case 'Loadout':
             Context.router.add_loadout(entry)
+            Context.ui.plotters['Engineer'].update_summary()
         case 'EngineerProgress':
             Context.router.engineer_progress(entry)
         case 'Music' if entry.get('MusicTrack', '') == 'GalaxyMap' and Context.ui.parent and Context.route.jumps_remaining():

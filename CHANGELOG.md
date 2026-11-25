@@ -4,7 +4,7 @@
 
 ### New Features
 
-* An entirely new, local plotter (Neutron Dancer) that uses cached Spansh galaxy data to plot routes (must be enabled in preferences)
+* An entirely new, local plotter (Safety Dancer) that uses cached Spansh galaxy data to plot routes (must be enabled in preferences)
 * Added support for the new *Beam* Galaxy Plotter routing algorithm
 * Added the new Spansh Engineer router. Implementation includes a per-ship plan stored across restarts; material cost and effects; and  unlocked engineers
 

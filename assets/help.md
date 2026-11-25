@@ -2,9 +2,11 @@
 
 There are several route plotting options.
 
+1. Safety Dancer
 1. Neutron Dancer
 1. Galaxy Plotter
 1. Neutron Plotter
+1. Indestinate's Plotter
 1. Road to Riches
 1. Expressway to Exomastery (Exobiology)
 1. Trade Planner
@@ -15,11 +17,14 @@ There are several route plotting options.
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
-## Neutron Dancer
+## Safety Dancer
 
-An entirely local route plotter. Routes are generally better than Neutron Plotter but not quite as good as the Galaxy plotter. It is very fast and doesn't depend on accessing outside services.
+An entirely local route plotter. Routes are generally better than the Neutron Plotters but not quite as good as the Galaxy plotter.
 
-**Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
+**Pros**: It's very fast, produces good routes, handles refueling, and is robust (safe) since it's not dependent on any external servers or services.
+**Cons**: It downloads about 1.1G of data and significantly increases EDMC's memory footprint.
+
+**Note**: This router uses a local copy of data files so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter
 
@@ -96,15 +101,6 @@ This is an alternative Neutron Plotter written by **Indestinate** and hosted at 
 
 **Note**: This router uses a copy of the Spansh data. Due to update lag some stars accessible vis Spansh may not be in this router.
 
-## Local Neutron Plotter
-
-This is an entirely new, local plotter that uses Spansh data dumps to plot routes.
-
-**Pros**: It's very fast, produces good routes, handles refueling, and is not dependent on any external servers or services.
-**Cons**: It downloads about 2G of data and significantly increases EDMC's memory footprint.
-
-Due to the resource usage it can be enabled/disabled in the preferences.
-
 
 ## Road to Riches and Expressway to Exomastery
 
@@ -159,7 +155,9 @@ Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, 
 
 ## Engineer Router
 
-The Spansh **Engineer Plotter** plots an efficient route to engineer your ship. This plotter uses a popup window to create the engineering plan.
+The Spansh **Engineer Plotter** plots an efficient route to engineer your ship. This plotter uses a popup window to create an engineering plan which is then used to create the route.
+
+The plan is per-ship and stored across restarts. It includes material costs and effects, takes into account which engineers you have unlocked, and shows which engineers can do the work and total material cost.
 
 ## Boxel Surveyor
 
@@ -239,14 +237,29 @@ If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys
 - Almost every component has a tooltip to provide further information or hints on use.
 - Many components have a right-click context menu with shortcuts.
 
+### Linux Clipboard
+
+This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
+
+If you have problems with waypoints not being put into the clipboard you can override all of this by setting an environment variable `EDMC_CLIPBOARD_CLI` to the command you wish to use before running EDMC. e.g.
+
+```shell
+export EDMC_CLIPBOARD_CLI="/usr/local/random/xsel --clipboard --input"
+/usr/bin/python EDMarketConnector.py
+```
+
+Note, if you're running Flatpak and still having problems even with the environment variable set, check that EDMC is allowed to run the command you're referencing and allowed to follow any symlinks.
+
+## Integrations
+
+Integrates with the [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin) plugin so that routes are displayed in it.
+
 ## Credits
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
-This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
+Also thank you to Indestinate for his superfast [Neutron Plotter](https://neutron.indyhost.org/).
 
-## Suggestions
+Thank you to [Coriolis](https://coriolis.io) for its [game data](https://github.com/Brighter-Applications/coriolis-data) (originally [EDCD's](https://github.com/EDCD/coriolis-data)), which Neutron Dancer uses for FSD jump range calculations and engineering material costs. Elite Dangerous game data is © Frontier Developments plc.
 
-Let me know if you have any [suggestions](https://github.com/dwomble/EDMC-NeutronDancer/issues).
-
-Fly dangerous! o7
+This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.

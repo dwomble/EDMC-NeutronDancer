@@ -16,7 +16,7 @@ Neutron Dancer makes neutron jumping easier by letting you plot any of a variety
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
 - Wide range of plotters:
-  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route
+  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route, Engineering Router
   - **Indestinate**: IndyHost Neutron Plotter
   - **Local**: Fully Local Neutron Plotter, Boxel Surveyor
 - Automatic insertion of the next system to the paste buffer on system arrival, opening galaxy map, both or neither.

@@ -26,8 +26,9 @@ An entirely local route plotter. Routes are generally better than the Neutron Pl
 **Pros**: It's very fast, produces good routes, handles refueling, and is robust (safe) since it's not dependent on any external servers or services.
 **Cons**: It downloads about 1.1G of data and significantly increases EDMC's memory footprint.
 
-**Note**: This router uses a local copy of data files so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
+![Neutron Dancer](https://github.com/user-attachments/assets/fa25daa2-755e-495a-b8ea-80cd33d17dae)
 
+**Note**: This router uses a local copy of data files so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter
 

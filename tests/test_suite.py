@@ -2522,7 +2522,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "optimistic",
+            "algorithm": "beam",
             "fuel_reserve": 4,
             "is_supercharged": 0,
             "use_supercharge": 1,
@@ -2562,7 +2562,7 @@ class TestPlotting:
         assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
 
         # This route seems to vary based on current conditions
-        assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
+        assert harness.plugin.route.total_jumps() in [16], f"Jumps {harness.plugin.route.total_jumps()}"
 
     @pytest.mark.slow
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
@@ -2577,7 +2577,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "optimistic",
+            "algorithm": "beam",
             "fuel_reserve": 12,
             "is_supercharged": 0,
             "use_supercharge": 1,

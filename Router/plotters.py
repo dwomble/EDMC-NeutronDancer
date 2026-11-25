@@ -673,8 +673,9 @@ class GalaxyPlotter(Plotter):
 
         # Row 4: algorithm and fuel reserve
         row += 1; col = 0
-        algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
-        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
+        # Spansh takes the names lowercased with underscores, which is how they're saved
+        algorithms:list = ['Beam', 'Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
+        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'beam').replace('_', ' ').title())
         algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=WIDTH2)
         th.Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
@@ -728,7 +729,7 @@ class GalaxyPlotter(Plotter):
         params:dict = {
             'cargo':int(gal_fr.nametowidget("cargo_entry").get().strip()) if re.match(r"^\d+$", gal_fr.nametowidget("cargo_entry").get().strip()) else 0,
             'max_time': 60,
-            'algorithm': self.algorithm.get(),
+            'algorithm': self.algorithm.get().lower().replace(' ', '_'),
             'reserve_size':int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if options.selection_includes(self.options.index('is_supercharged')) else 0,
             'use_supercharge': 1 if options.selection_includes(self.options.index('use_supercharge')) else 0,

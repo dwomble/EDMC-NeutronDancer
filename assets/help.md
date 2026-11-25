@@ -17,7 +17,7 @@ You can switch between them with the **Route** dropdown at the top of the plotte
 
 ## Neutron Dancer
 
-An entirely local route plotter. Provides similar route performance to the Galaxy plotter but is extremely fast.
+An entirely local route plotter. Routes are generally better than Neutron Plotter but not quite as good as the Galaxy plotter. It is very fast and doesn't depend on accessing outside services.
 
 **Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
@@ -30,6 +30,8 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 ### Routing Algorithm
 
 There are several algorithms available. Different algorithms may work faster, find better routes, or in some cases be unable to find a route.
+
+1. *Beam* performs multiple searches simultaneously and keeps the most promising. It usually finds the best routes and is the quickest to plot.
 
 1. *Fuel* Prioritises saving fuel, will not scoop fuel or supercharge. Will make the smallest jumps possible in order to preserve fuel as much as possible.
 

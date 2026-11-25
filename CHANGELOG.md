@@ -4,18 +4,21 @@
 
 ### New Features
 
-* An entirely new, local plotter (Neutron Dancer) that uses cached Spansh galaxy data to plot routes
+* An entirely new, local plotter (Neutron Dancer) that uses cached Spansh galaxy data to plot routes (must be enabled in preferences)
+* Added support for the new *Beam* Galaxy Plotter routing algorithm
 * Added the new Spansh Engineer router. Implementation includes a per-ship plan stored across restarts; material cost and effects; and  unlocked engineers
 
 ### Changes
 
 * Remember which ship you're plotting for over restarts and between plot types
 * Route type and ship name are included in suggested route save filename
-* Fuel reserve is validated against fuel capacity
+* Fuel reserve is validated against ship fuel capacity
+* Improved CSV loading and saving to better identify and handle various route types
 
 ### Bug Fixes
 
 * Stopped duplicate entries and placeholders from appearing in dropdown menus
+* Fixed a route cancelation timing bug
 
 ## v3.0.0 2026-11-09
 

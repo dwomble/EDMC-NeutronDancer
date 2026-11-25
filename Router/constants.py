@@ -318,7 +318,7 @@ tts:dict = {
     "galaxy_options": "Galaxy plotter options (see help page for details)",
     "cargo": "Tonnes of cargo carried",
     "calc_time": "How long to spend calculating route",
-    "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
+    "select_algorithm": "Select routing algorithm, see help window (? icon) or spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
     "radius": "Search radius in light years, right click for menu",
     "max_results": "Maximum number of systems to include in the route",

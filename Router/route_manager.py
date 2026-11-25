@@ -4,20 +4,22 @@ import re
 from requests import Response
 from pathlib import Path
 from time import time, sleep
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from threading import Lock, Thread
 
 from config import config # type: ignore
-from timeout_session import new_session # type: ignore
 
 from .utils.debug import Debug, catch_exceptions
 from .utils.misc import singleton
 
-from .constants import errs, CarrierStates, HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_TIMEOUT, SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE
+from .constants import (HEADERS, HEADER_MAP, DATA_DIR, SHIP_DIR, GH_MODULES, SPANSH_RESULTS, SPANSH_RICHES_ROUTE,
+                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_ENGINEER_ROUTE, SPANSH_TIMEOUT,
+                        SPANSH_SEARCH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, TRUE, CarrierStates, errs)
 from .context import Context
 from .ship import Ship
 from .route import Route
 from .plotters import PLOTTER_SPECS
+from .engineering import trim
 from .local.index import Index
 from .local.search import Planner, Cancelled
 from .local.index import Combined
@@ -26,7 +28,7 @@ from . import api
 SAVE_VARS:dict = {'system': '', 'src': '', 'dest': '', 'last_plot': 'Galaxy', 'route_params': {},
                   'ship_id': '', 'cargo': 0, 'shiplist': {}, 'history': [], 'carrier_id': '',
                   'carrier_state': CarrierStates.Idle, 'carrier_location': '', 'carrier_destination': '',
-                  'window_geometries' : {}}
+                  'window_geometries' : {}, 'engineers': {}, 'plans': {}}
 
 @singleton
 class Router():
@@ -36,14 +38,14 @@ class Router():
 
     def __init__(self, test:bool = False) -> None:
 
-        # Current location data and settings
+        # Location data and settings
         self.system:str = ""
         self.star_pos:tuple|None = None # current system's coordinates, from EDMC's journal state
         self.address:int|None = None # current system's id64, from EDMC's journal state
         self.src:str = ''
         self.dest:str = ''
 
-        # Current ship data
+        # Ship data
         self.ship_id:str = ""
         self.cargo:int = 0
         self.ship:Ship|None = None
@@ -76,6 +78,11 @@ class Router():
 
         self.window_geometries:dict = {}
 
+        # Engineer name to journal progress ("Unlocked" etc), and each ship's engineering plan by ship id
+        self.engineers:dict = {}
+        self.materials:dict = {} # Journal material name to count held, from EDMC's state
+        self.plans:dict = {}
+
         self._load()
 
         if Context.route.route == []:
@@ -89,7 +96,7 @@ class Router():
             Context.route.update_route(0, self.carrier_location)
 
     def shipnames(self) -> list:
-        """ Return a list of shipnames """
+        """ Return the names of known ships """
         names:list = list(dict.fromkeys(self.shiplist.values()))
         names.reverse()
         return names
@@ -148,6 +155,12 @@ class Router():
         if not ship.id or ship.id == self.ship_id:
             return
         self.swap_ship(ship.id)
+
+
+    def engineer_progress(self, entry:dict) -> None:
+        """ Note each engineer's progress, from the full list at login or a single change """
+        for e in entry.get('Engineers', [entry]):
+            if 'Engineer' in e: self.engineers[e['Engineer']] = e.get('Progress', '')
 
 
     def jumped(self, system:str, entry:dict) -> None:
@@ -255,7 +268,7 @@ class Router():
 
 
     def cooldown_complete(self) -> None:
-        """ Show an informational messagebox indicating a carrier cooldown has completed. """
+        """ Show an informational messagebox indicating a carrier cooldown has completed """
         self.carrier_state = CarrierStates.Idle
         self.carrier_departure = None
         Context.ui.cooldown_complete()
@@ -359,8 +372,18 @@ class Router():
                 local:list|None = self._local_result(type, params)
                 if local is None: return
                 res = local
+            elif url == SPANSH_ENGINEER_ROUTE:
+                body:dict = {k: params[k] for k in ('source', 'blueprints', 'engineers') if k in params}
+                posted:Response = Context.session.post(url, json=body, timeout=SPANSH_TIMEOUT,
+                                                       headers={'User-Agent': Context.plugin_useragent})
+                spansh:list|None = self._spansh_result(type, url, params, posted)
+                if spansh is None: return
+                res = spansh
             else:
-                spansh:list|None = self._spansh_result(type, url, params)
+                posted = Context.session.post(url, data=params, timeout=SPANSH_TIMEOUT,
+                                              headers={'User-Agent': Context.plugin_useragent,
+                                                       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+                spansh = self._spansh_result(type, url, params, posted)
                 if spansh is None: return
                 res = spansh
 
@@ -457,6 +480,9 @@ class Router():
         if ship is None:
             self.plot_error(which, params, 'ship_not_found')
             return None
+        if params['reserve_size'] > ship.tank_size - ship.max_fuel_per_jump:
+            self.plot_error(which, params, 'reserve_too_big')
+            return None
 
         planner:Planner|None = self.load_local()
         if planner is None:
@@ -499,14 +525,9 @@ class Router():
         return rows
 
 
-    def _spansh_result(self, which:str, url:str, params:dict) -> list|None:
-        """ Submit a Spansh job, poll it and flatten the result; None on failure or cancel """
+    def _spansh_result(self, which:str, url:str, params:dict, results:Response) -> list|None:
+        """ Poll the Spansh job a route request queued, then flatten its result; None on failure or cancel """
         limit:int = int(params.get('max_time', 20))
-        results:Response = Context.session.post(url, data=params,
-                                         headers={'User-Agent': Context.plugin_useragent,
-                                                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-                                                  timeout=SPANSH_TIMEOUT)
-
         if results.status_code != 202:
             self.plot_error(which, params, results)
             return None
@@ -537,11 +558,23 @@ class Router():
             return self._flatten_bodies_result(raw_result)
         if url == SPANSH_TRADE_ROUTE:
             return self._flatten_trade_result(raw_result)
+        if url == SPANSH_ENGINEER_ROUTE:
+            rows:list = []
+            for j in raw_result.get('jumps', []):
+                mods:dict = {}
+                for b in j.get('blueprints', []):
+                    mods.setdefault(b['module_name'], []).append(f"G{b['grade']} {trim(b['module_name'], b['name'])}")
+                for e in j.get('effects', []): mods.setdefault(e['module_name'], []).append(trim(e['module_name'], e['name']))
+                rows.append({'system': j['system'], 'engineer': j.get('engineer', ''),
+                             'engineering': '; '.join(f"{m}: {' + '.join(v)}" for m, v in mods.items()),
+                             'distance': j.get('distance', 0), 'x': j.get('x'), 'y': j.get('y'), 'z': j.get('z'), 'id64': j.get('id64')})
+            return rows
         if url == SPANSH_FLEETCARRIER_ROUTE:
             # distance == 0 marks bookkeeping rows -- the initial source, and each
             # requested stop's leg-restart duplicate -- not real jumps. Every other row,
             # including every intermediate hop of a long single-leg route, is a real jump.
             return [j for j in raw_result.get('jumps', []) if j.get('distance', 0) != 0]
+
         return raw_result.get('jumps', raw_result.get('system_jumps', []))
 
     @catch_exceptions

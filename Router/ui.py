@@ -16,7 +16,8 @@ from config import config # type: ignore
 
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
-from .utils.misc import singleton, hfplus, str_truncate, PopupNotice, copy_to_clipboard
+from .utils.misc import singleton, hfplus, str_truncate, copy_to_clipboard
+from .utils.popup import PopupNotice
 from .utils.tkrichtext import RichScrolledText
 
 from .constants import NAME, SPANSH_SYSTEMS, INDY_SEARCH, SPANSH_STATIONS_NAME, SPANSH_SEARCH_SYSTEMS, ASSET_DIR, FONT, BOLD, lbls, btns, tts, errs
@@ -494,7 +495,7 @@ class UI():
     @catch_exceptions
     def ship_selected(self, *args) -> None:
         """ Sync every ship dropdown to the one that changed, then update cargo and range """
-        Debug.logger.debug(f"ship_selected args: {args}")
+
         # Tk can fire the trace from inside a proc, where an unqualified name means a local variable
         ship_name:str = self.parent.tk.globalgetvar(args[0]) if self.parent and len(args) else ''
         for p in self.plotters.values():

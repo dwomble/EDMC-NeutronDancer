@@ -24,6 +24,9 @@ SPANSH_EXOBIOLOGY_ROUTE:str = f"{SPANSH_API}/exobiology/route"
 SPANSH_TRADE_ROUTE:str = f"{SPANSH_API}/trade/route"
 SPANSH_TOURIST_ROUTE:str = f"{SPANSH_API}/tourist/route"
 SPANSH_FLEETCARRIER_ROUTE:str = f"{SPANSH_API}/fleetcarrier/route"
+SPANSH_ENGINEER_ROUTE:str = f"{SPANSH_API}/engineer/route"
+SPANSH_ENGINEER_BLUEPRINTS:str = f"{SPANSH_API}/engineer/blueprints"
+CORIOLIS_DATA:str = "https://raw.githubusercontent.com/Brighter-Applications/coriolis-data/master/modifications"
 SPANSH_RESULTS:str = f"{SPANSH_API}/results"
 SPANSH_SYSTEMS:str = f"{SPANSH_API}/systems"
 SPANSH_STATIONS_NAME:str = f"{SPANSH_API}/stations"  # station name typeahead; results include system_id64
@@ -62,10 +65,11 @@ HEADER_MAP:dict = {"system": "System Name", "name": "System Name",
                     "station": "Station Name", "commodity": "Commodity", "amount": "Amount",
                     "profit": "Profit", "total_profit": "Total Profit", "cumulative_profit": "Cumulative Profit",
                     "has_icy_ring": "Icy Ring", "is_system_pristine": "Pristine", "must_restock": "Restock Tritium",
+                    "engineer": "Engineer", "engineering": "Engineering",
                     }
 
 # Headers that we accept
-HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
+HEADERS:list = ["System Name", "Station Name", "Engineer", "Engineering", "Jumps", "Jumps Rem", "Waypoints", "Waypoints Rem", "Neutron",
                 "Body", "Body Type", "Is Terra", "Species", "Value", "Commodity", "Amount",
                 "Profit", "Total Profit", "Cumulative Profit", "Dist To Arrival", "Est Scan Value",
                 "Est Mapping Value", "Distance", "Distance Jumped", "Distance Rem", "Distance Remaining",
@@ -74,6 +78,8 @@ HEADERS:list = ["System Name", "Station Name", "Jumps", "Jumps Rem", "Waypoints"
 # Formatting info for each header
 HEADER_TYPES:dict = {"System Name": ["str", ""],
                     "Station Name": ["str", ""],
+                    "Engineer": ["str", ""],
+                    "Engineering": ["str", ""],
                     "Commodity": ["str", ""],
                     "Amount": ["int", "", " t"],
                     "Profit": ["float", "", " Cr"],
@@ -110,6 +116,45 @@ HEADER_TYPES:dict = {"System Name": ["str", ""],
 # Different ways a file might store true/false
 TRUE:list = [True, "True", "true", "YES", "Yes", "yes", 1, "1"]
 FALSE:list = [False, "False", "false", "NO", "No", "no", 0, "0"]
+
+# Cached file: (url, days before it's fetched again); Coriolis's costs rarely change
+SOURCES:dict = {'engineering.json': (SPANSH_ENGINEER_BLUEPRINTS, 7), 'coriolis_blueprints.json': (f"{CORIOLIS_DATA}/blueprints.json", 30),
+                'coriolis_specials.json': (f"{CORIOLIS_DATA}/specials.json", 30)}
+
+# Display names for Coriolis's blueprint modifiers
+EFFECTS:dict = {'ammo': 'Ammo Maximum', 'angle': 'Scan Angle', 'boot': 'Boot Time', 'brokenregen': 'Broken Regen Rate',
+                'burst': 'Burst', 'burstrof': 'Burst Rate of Fire', 'cargo': 'Cargo Capacity', 'clip': 'Ammo Clip Size',
+                'damage': 'Damage', 'distdraw': 'Distributor Draw', 'duration': 'Duration', 'eff': 'Efficiency',
+                'engcap': 'Engines Capacity', 'engrate': 'Engines Recharge', 'explres': 'Explosive Resistance',
+                'facinglimit': 'Facing Limit', 'falloff': 'Damage Falloff', 'fallofffromrange': 'Falloff From Range',
+                'hullboost': 'Hull Boost', 'hullreinforcement': 'Hull Reinforcement', 'integrity': 'Integrity', 'jitter': 'Jitter',
+                'kinres': 'Kinetic Resistance', 'mass': 'Mass', 'optmass': 'Optimal Mass', 'optmul': 'Optimal Multiplier',
+                'pgen': 'Power Capacity', 'piercing': 'Armour Piercing', 'power': 'Power Draw', 'proberadius': 'Probe Radius',
+                'protection': 'Damage Protection', 'range': 'Range', 'ranget': 'Maximum Range', 'rate': 'Rate',
+                'reload': 'Reload Time', 'rof': 'Rate of Fire', 'scantime': 'Scan Time', 'shieldboost': 'Shield Boost',
+                'shieldreinforcement': 'Shield Reinforcement', 'shotspeed': 'Shot Speed', 'spinup': 'Spin-up Time',
+                'syscap': 'Systems Capacity', 'sysrate': 'Systems Recharge', 'thermload': 'Thermal Load',
+                'thermres': 'Thermal Resistance', 'wepcap': 'Weapons Capacity', 'weprate': 'Weapons Recharge'}
+
+# Coriolis material names whose journal names differ by more than case and spacing
+MATERIALS:dict = {'Aberrant Shield Pattern Analysis': 'shieldpatternanalysis',
+                  'Abnormal Compact Emissions Data': 'compactemissionsdata', 'Adaptive Encryptors Capture': 'adaptiveencryptors',
+                  'Adaptive Encyptors Capture': 'adaptiveencryptors', 'Anomalous Bulk Scan Data': 'bulkscandata',
+                  'Anomalous FSD Telemetry': 'fsdtelemetry', 'Atypical Disrupted Wake Echoes': 'disruptedwakeechoes',
+                  'Atypical Encryption Archives': 'encryptionarchives', 'Classified Scan Databanks': 'scandatabanks',
+                  'Classified Scan Fragment': 'classifiedscandata', 'Core Dynamics Composites': 'fedcorecomposites',
+                  'Cracked Industrial Firmware': 'industrialfirmware', 'Datamined Wake Exceptions': 'dataminedwake',
+                  'Distorted Shield Cycle Recordings': 'shieldcyclerecordings', 'Divergent Scan Data': 'encodedscandata',
+                  'Eccentric Hyperspace Trajectories': 'hyperspacetrajectories',
+                  'Exceptional Scrambled Emission Data': 'scrambledemissiondata', 'Flawed Focus Crystals': 'uncutfocuscrystals',
+                  'Inconsistent Shield Soak Analysis': 'shieldsoakanalysis', 'Irregular Emission Data': 'archivedemissiondata',
+                  'Modified Consumer Firmware': 'consumerfirmware', 'Modified Embedded Firmware': 'embeddedfirmware',
+                  'Open Symmetric Keys': 'symmetrickeys', 'Peculiar Shield Frequency Data': 'shieldfrequencydata',
+                  'Proprietary Composites': 'fedproprietarycomposites', 'Security Firmware Patch': 'securityfirmware',
+                  'Specialised Legacy Firmware': 'legacyfirmware', 'Strange Wake Solutions': 'wakesolutions',
+                  'Tagged Encryption Codes': 'encryptioncodes', 'Unexpected Emission Data': 'emissiondata',
+                  'Unidentified Scan Archives': 'scanarchives', 'Untypical Shield Scans': 'shielddensityreports',
+                  'Unusual Encrypted Files': 'encryptedfiles'}
 
 # Overlay progress display default
 PROGRESS_DEFAULT = "{st} refuel in {rj} jumps\n{jc} / {jt} jumps, {dc} / {dt} ly, {dr} ly remaining\n{jh} jumps/hr, {dh} ly/hr"
@@ -217,7 +262,35 @@ lbls:dict = {
     "router": "Router",
     "boxel_name": "Boxel",
     "start_num": "Start",
-    "end_num": "End"
+    "end_num": "End",
+    "plan_title": "Engineering plan for {ship}",
+    "plan_count": "{n} to engineer",
+    "module": "Module",
+    "type": "Type",
+    "current": "Current",
+    "planned": "Planned",
+    "hardpoint": "Hardpoint",
+    "utility": "Utility",
+    "core": "Core",
+    "optional": "Optional",
+    "blueprint": "Blueprint",
+    "grade": "Grade",
+    "effect": "Experimental",
+    "engineers": "Engineers",
+    "pre_engineered": "Pre-engineered",
+    "materials": "Materials",
+    "cost_unknown": "Cost unknown",
+    "have": "have {n}",
+    "full_plan": "Full Plan",
+    "effects": "Blueprint Effects",
+    "description": "Experimental Description",
+    "bp_and_fx": "Blueprint and Experimental",
+    "unknown_count": "+ {n} with unknown costs",
+    "plan_short": ", short of materials",
+    "plan_ready": ", materials ready",
+    "all_regions": "All regions",
+    "bubble": "Bubble",
+    "colonia": "Colonia"
 }
 
 # Tooltips
@@ -245,7 +318,7 @@ tts:dict = {
     "galaxy_options": "Galaxy plotter options (see help page for details)",
     "cargo": "Tonnes of cargo carried",
     "calc_time": "How long to spend calculating route",
-    "select_algorithm": "Select routing algorithm, see spansh.co.uk for details",
+    "select_algorithm": "Select routing algorithm, see help window (? icon) or spansh.co.uk for details",
     "fuel_reserve": "Amount of fuel (in Tonnes) to keep in reserve before refueling",
     "radius": "Search radius in light years, right click for menu",
     "max_results": "Maximum number of systems to include in the route",
@@ -277,7 +350,9 @@ tts:dict = {
     "none": "None",
     "boxel_name": "Boxel name including its mass-code letter, right click for menu",
     "start_num": "First sequence number to survey",
-    "end_num": "Last sequence number to survey"
+    "end_num": "Last sequence number to survey",
+    "edit_plan": "Choose the blueprint, grade and experimental effect for each module",
+    "region": "Only visit engineers in this region"
 }
 
 # Button names
@@ -293,6 +368,8 @@ btns:dict = {
     "export_route": "Export for TCE",
     "clear_route": "Clear",
     "show_route": "Show",
+    "edit_plan": "Edit plan…",
+    "save_plan": "Done",
     "export_route": "Export"
 }
 
@@ -312,10 +389,14 @@ errs:dict = {
     "no_ship": "No ship selected",
     "no_local_data": "Local route data isn't downloaded",
     "ship_not_found": "Ship not found in shipyard",
+    "reserve_too_big": "Fuel reserve leaves no room in the tank for a full jump",
     "no_system_id": "Could not resolve that system, please try again",
     "format_error": "Error formatting progress display",
     "invalid_boxel": "Enter valid boxel and start/end numbers",
-    "boxel_impossible": "Invalid mass code"
+    "boxel_impossible": "Invalid mass code",
+    "no_catalogue": "Couldn't get the engineering blueprints from Spansh",
+    "no_plan": "Nothing to engineer: choose some blueprints in the plan first",
+    "no_engineers": "No unlocked engineers in that region"
 }
 
 cnf:dict = {

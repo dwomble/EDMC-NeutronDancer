@@ -1,26 +1,34 @@
 # Guide to Navl's Neutron Dancer [v{version}](https://github.com/dwomble/EDMC-NeutronDancer/)
 
-There are several route plotting options.
+There are numerous route plotting options.
 
-1. Neutron Dancer
+1. Safety Dancer
 1. Galaxy Plotter
 1. Neutron Plotter
+1. Indestinate's Plotter
 1. Road to Riches
 1. Expressway to Exomastery (Exobiology)
 1. Trade Planner
 1. Tourist Route
-1. Fleet Carrier Route
+1. Fleet Carrier Router
+1. Engineer Plotter
 1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
-## Neutron Dancer
 
-An entirely local route plotter. Provides similar route performance to the Galaxy plotter but is extremely fast.
+## Safety Dancer
+
+An entirely local route plotter. Routes are generally better than the Neutron Plotters but not quite as good as the Galaxy plotter.
+
+![Safety Dancer](https://github.com/user-attachments/assets/b75d228f-329b-4412-9b77-2993044921f0)
+
+**Pros**: It's very fast, produces good routes, handles refueling, and is robust (safe) since it's not dependent on any external servers or services.
+**Cons**: It downloads about 1.1G of data and significantly increases EDMC's memory footprint.
 
 ![Neutron Dancer](https://github.com/user-attachments/assets/fa25daa2-755e-495a-b8ea-80cd33d17dae)
 
-**Note**: This router uses a local copy of data files which take up about 1G of disk space so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
+**Note**: This router uses a local copy of data files so it must be enabled in the preferences. Once enabled it will be available as soon as the files have finished downloading.
 
 ## Galaxy Plotter
 
@@ -31,6 +39,8 @@ This works the same as the Neutron Plotter but Neutron Dancer must have seen the
 ### Routing Algorithm
 
 There are several algorithms available. Different algorithms may work faster, find better routes, or in some cases be unable to find a route.
+
+1. *Beam* performs multiple searches simultaneously and keeps the most promising. It usually finds the best routes and is the quickest to plot.
 
 1. *Fuel* Prioritises saving fuel, will not scoop fuel or supercharge. Will make the smallest jumps possible in order to preserve fuel as much as possible.
 
@@ -69,6 +79,7 @@ If you don't select *exclude secondary stars* it's presumed you'll select this o
 
 1. Due to the complexity of the galaxy plotter and the calculations involved a route plotted in Neutron Dancer may vary *slightly* from one created through the web interface.
 
+
 ## Neutron Plotter
 
 This is the simple Spansh neutron route plotter that supports multiple waypoints. Enter your source and destination systems, ship range, routing efficiency, and neutron jump multiplier. A recently used list of ships and systems is available from a right click menu to simplify entry.
@@ -80,6 +91,7 @@ This is the simple Spansh neutron route plotter that supports multiple waypoints
 - *Supercharge Multiplier* is the effect of Neutron boosting. For ships with the MkII FSD it is 6x for others 4x. This will also be pre-filled for your current ship.
 
 - Click the **+** beside the source system to force the route through specific systems along the way. Each added system gets its own **-** (remove) and **+** (add another below).
+
 
 ## Indestinate's (IndyHost) Neutron Plotter
 
@@ -95,15 +107,6 @@ This is an alternative Neutron Plotter written by **Indestinate** and hosted at 
 
 **Note**: This router uses a copy of the Spansh data. Due to update lag some stars accessible vis Spansh may not be in this router.
 
-## Local Neutron Plotter
-
-This is an entirely new, local plotter that uses Spansh data dumps to plot routes.
-
-**Pros**: It's very fast, produces good routes, handles refueling, and is not dependent on any external servers or services.
-**Cons**: It downloads about 2G of data and significantly increases EDMC's memory footprint.
-
-Due to the resource usage it can be enabled/disabled in the preferences.
-
 
 ## Road to Riches and Expressway to Exomastery
 
@@ -118,15 +121,16 @@ Common options:
 
 They differ only in what they're actually looking for:
 
-- **Road to Riches** looks for any valuable body along the way. *Use Mapping Value* ranks bodies by their DSS (Detailed Surface Scanner) mapping value rather than their FSS (Full Spectrum Scanner) scan value — select this if you intend to map every body rather than just scan it.
+- Road to Riches looks for any valuable body along the way. *Use Mapping Value* ranks bodies by their DSS (Detailed Surface Scanner) mapping value rather than their FSS (Full Spectrum Scanner) scan value — select this if you intend to map every body rather than just scan it.
 
-- **Expressway to Exomastery** looks for systems with valuable biological (exobiology) signals instead of body scan value. The *Minimum Landmark (Species) Value* slider filters out finds below that threshold, in millions of credits — raise it to skip low-value species and focus only on the most lucrative signals.
+- Expressway to Exomastery looks for systems with valuable biological (exobiology) signals instead of body scan value. The *Minimum Landmark (Species) Value* slider filters out finds below that threshold, in millions of credits — raise it to skip low-value species and focus only on the most lucrative signals.
 
 Both avoid populated systems, so they don't work well close to the bubble — increase your search radius if a route can't be found.
 
 ### Tips
 
 - Road To Riches — You should decide if you want to DSS (Detailed Surface Scanner which requires you to travel to the body in system and surface map) or simply FSS (Full Spectrum Scanner from the system jump in point). FSS is faster for each system but will pay substantially less credits.
+
 
 ## Trade Planner
 
@@ -142,11 +146,13 @@ Options:
 - *Unique* Only visit each station once
 - *Permit* Allow systems that require a permit
 
+
 ## Tourist Route
 
 Enter a source system and add stops with the **+** beside it — each stop gets its own **-** (remove) and **+** (insert another below), just like the Neutron Plotter's via-points. Optionally set a **Final Destination** to end the tour somewhere other than back at the source. Set your ship's jump range and click **Calculate**.
 
 ![Tourist Route](https://github.com/user-attachments/assets/1d1953fa-2030-4dad-8439-8c752f1979c3)
+
 
 ## Fleet Carrier Router
 
@@ -156,11 +162,26 @@ Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, 
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
 
+
+## Engineer Plotter
+
+The Spansh **Engineer Plotter** plots an efficient route to engineer your ship. This plotter uses a popup window to create an engineering plan which is then used to create the route.
+
+![Engineer Plotter](https://github.com/user-attachments/assets/5916e2c0-cc09-4a41-a1b3-dd2c99666102)
+
+The plan is per-ship and stored across restarts. It includes material costs and effects, takes into account which engineers you have unlocked, and shows which engineers can do the work and total material cost.
+
+![Plan Popup](https://github.com/user-attachments/assets/3159ebd0-0b2c-4d5f-8e79-86d94e46a6ce)
+
+
 ## Boxel Surveyor
 
 This is a different type of router intended for surveying boxels. Enter a boxel including the masscode, a start number and an end and Neutron Dancer will generate a sequence of systems as a route.
 
-Note: It will validate the boxel entry but cannot validate the systems because they haven't been discovered yet.
+![Boxel Surveyor](https://github.com/user-attachments/assets/d06b4e83-ddd5-4d6c-a8c4-fe4a1d0020ee)
+
+**Note**: It will validate the boxel entry but cannot validate the systems because they may not have been discovered yet.
+
 
 ## Importing Routes
 
@@ -168,9 +189,11 @@ Click **Import** and select a comma separated file such as that exported by the 
 
 Neutron Dancer is very flexible about CSV formats. It requires a column called "System Name" or "system" and will accept any other columns provided. If there are columns for remaining distance or number of jumps it will use those to calculate those values.
 
+
 ## Exporting Routes
 
 Click **Export** and choose or enter a file to save the route in. Including the source, destination and ship name in the filename will help when later importing a route.
+
 
 ## Following Routes
 
@@ -187,6 +210,7 @@ The **Show** button will bring up a window showing the details of the plotted ro
 The **Export** button will allow you to save the route as a CSV.
 
 If you close EDMC, the plugin will save your progress. The next time you run EDMC, it will continue from where you left off.
+
 
 ## Overlays
 
@@ -217,6 +241,7 @@ The *Default* frame can optionally display a progress bar and a customizable for
 
 This customizable format only applies to Neutron/Galaxy-type routes (and refuel-aware CSV imports). For Trade, Road to Riches/Exobiology, Tourist, and Fleet Carrier routes — which have no refuel/neutron concept — the *Default* frame instead shows the same per-route detail as the waypoint tooltip (station/commodity/profit, body/scan value, and so on).
 
+
 ## Chat Commands
 
 This enables management of Neutron Dancer without tabbing out of the game. Bring up a game chat window and type in `!nd` and a command. Supported commands are:
@@ -225,23 +250,43 @@ This enables management of Neutron Dancer without tabbing out of the game. Bring
 - `previous` (or just `prev`) – move to the previous waypoint
 - `copy` – re-insert the next waypoint into the past buffer
 
+
 ## Hotkeys
 
 If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys) plugin you can define hotkeys for the `next`, `previous`, and `copy` commands.
+
 
 ## Interface Tips
 
 - Almost every component has a tooltip to provide further information or hints on use.
 - Many components have a right-click context menu with shortcuts.
 
+
+## Linux Clipboard
+
+This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
+
+If you have problems with waypoints not being put into the clipboard you can override all of this by setting an environment variable `EDMC_CLIPBOARD_CLI` to the command you wish to use before running EDMC. e.g.
+
+```shell
+export EDMC_CLIPBOARD_CLI="/usr/local/random/xsel --clipboard --input"
+/usr/bin/python EDMarketConnector.py
+```
+
+Note, if you're running Flatpak and still having problems even with the environment variable set, check that EDMC is allowed to run the command you're referencing and allowed to follow any symlinks.
+
+
+## Integrations
+
+Integrates with the [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin) plugin so that routes are displayed in it.
+
+
 ## Credits
 
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
-This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42 and [Norohind's fork](https://github.com/norohind/EDMC_SpanshRouter).
+Also thank you to Indestinate for his superfast [Neutron Plotter](https://neutron.indyhost.org/).
 
-## Suggestions
+Thank you to [Coriolis](https://coriolis.io) for its [game data](https://github.com/Brighter-Applications/coriolis-data) (originally [EDCD's](https://github.com/EDCD/coriolis-data)), which Neutron Dancer uses for FSD jump range calculations and engineering material costs. Elite Dangerous game data is © Frontier Developments plc.
 
-Let me know if you have any [suggestions](https://github.com/dwomble/EDMC-NeutronDancer/issues).
-
-Fly dangerous! o7
+This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.

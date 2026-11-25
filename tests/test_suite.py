@@ -115,10 +115,11 @@ class TestUpdater:
         yield
         mock_requests.live_requests(previous)
 
-    def test_extra_check_in_git_checkout(self, tmp_path) -> None:
+    def test_extra_check_in_git_checkout(self, tmp_path, monkeypatch) -> None:
         """ The extra (data) check runs on the update schedule even where a git checkout skips the plugin update. """
         (tmp_path / ".git").mkdir()
         updater = Updater(str(tmp_path), "dwomble", "EDMC-NeutronDancer-ExtraTest")
+        monkeypatch.setattr(sys.modules[Updater.__module__], 'DELAY', 0)
         extra = Mock()
         with patch.object(updater, 'get_release') as release:
             updater.check_for_update("1.0.0", interval=-1, extra=extra)
@@ -2488,7 +2489,7 @@ class TestPlotting:
         assert harness.plugin.route is not None
         assert harness.plugin.route.source() == 'Apurui'
         assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 31
+        assert harness.plugin.route.total_jumps() == 36
 
     @pytest.mark.slow
     def test_plot_neutron_route_caspian(self, harness:TestHarness) -> None:
@@ -2505,7 +2506,7 @@ class TestPlotting:
         assert harness.plugin.route is not None
         assert harness.plugin.route.source() == 'Apurui'
         assert harness.plugin.route.destination() == 'Bleae Thua NI-B b27-5'
-        assert harness.plugin.route.total_jumps() == 21
+        assert harness.plugin.route.total_jumps() == 22
 
     @pytest.mark.slow
     def test_plot_galaxy_route(self, harness:TestHarness) -> None:
@@ -2521,7 +2522,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "optimistic",
+            "algorithm": "beam",
             "fuel_reserve": 4,
             "is_supercharged": 0,
             "use_supercharge": 1,
@@ -2561,7 +2562,7 @@ class TestPlotting:
         assert harness.plugin.router.dest == 'Bleae Thua NI-B b27-5'
 
         # This route seems to vary based on current conditions
-        assert harness.plugin.route.total_jumps() in [18, 21, 28], f"Jumps {harness.plugin.route.total_jumps()}"
+        assert harness.plugin.route.total_jumps() in [16], f"Jumps {harness.plugin.route.total_jumps()}"
 
     @pytest.mark.slow
     def test_plot_galaxy_route_caspian(self, harness:TestHarness) -> None:
@@ -2576,7 +2577,7 @@ class TestPlotting:
         galaxy_params:dict = {
             "cargo": 0,
             "max_time": 60,
-            "algorithm": "optimistic",
+            "algorithm": "beam",
             "fuel_reserve": 12,
             "is_supercharged": 0,
             "use_supercharge": 1,
@@ -2705,6 +2706,26 @@ class TestPlotting:
         assert harness.plugin.router.src == 'Sol'
         assert "System Name" in harness.plugin.route.hdrs
         assert len(harness.plugin.route.route) > 0
+
+    @pytest.mark.slow
+    def test_plot_engineer_route(self, harness:TestHarness) -> None:
+        """ A live Engineer plot for two blueprints and an effect, limited to two nearby engineers. """
+
+
+        res:bool = harness.plugin.router.plot_route('Engineer',
+                                            {'source': 'Sol', 'engineers': ['Marco Qwent', 'Felicity Farseer'],
+                                            'blueprints': [{'item': 'int_powerplant_size4_class5', 'blueprint': 'powerplant_boosted',
+                                                            'grade': 3},
+                                                           {'item': 'int_hyperdrive_size5_class5', 'blueprint': 'fsd_longrange', 'grade': 5,
+                                                            'effect': 'special_fsd_heavy'}]})
+        assert res == True
+        _wait_plot(harness)
+
+        route = harness.plugin.route
+        assert harness.plugin.router.src == 'Sol'
+        assert "Engineer" in route.hdrs and "Engineering" in route.hdrs
+        assert [r[route.colind('Engineer')] for r in route.route] == ['', 'Marco Qwent', 'Felicity Farseer']
+        assert 'Mass Manager' in route.route[-1][route.colind('Engineering')]
 
 
 class TestEventSequences:

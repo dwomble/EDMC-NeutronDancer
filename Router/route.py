@@ -5,10 +5,6 @@ from config import config # type: ignore
 from .utils.debug import Debug
 from .utils.misc import hfplus
 from .constants import HEADER_MAP, PROGRESS_DEFAULT, tts, lbls, errs, TRUE
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .context import Context
 
 class Route:
     """
@@ -34,6 +30,13 @@ class Route:
 
         # Detect if this route appears to be a fleet carrier loadout (tritium column)
         self.fleetcarrier = any('tritium' in h.lower() for h in hdrs)
+
+        # Imports carry no type, so recognise it from distinctive columns, ours or Spansh's
+        cols:set = {h.lower() for h in hdrs}
+        marks:tuple = (('Engineer', {'engineer', 'engineering'}), ('Trade', {'commodity'}), ('Exobiology', {'species', 'landmark value'}),
+                       ('RtoR', {'body', 'body name', 'est scan value', 'estimated scan value'}),
+                       ('Neutron', {'neutron', 'neutron star', 'refuel', 'fuel left', 'fuel used'}))
+        if self.type == 'Unknown': self.type = 'FleetCarrier' if self.fleetcarrier else next((t for t, m in marks if cols & m), 'Unknown')
 
         self.jc = self.colind('Jumps')
         self.dc = self.colind('Distance')
@@ -212,6 +215,11 @@ class Route:
             cum_profit:str = hfplus(tuple([self.sum_value('Profit'), 'float', '', ' Cr']))
             perhour:str = hfplus(tuple([self.credits_per_hour('Profit'), 'float', '', ' Cr/hr']))
             lines.append(f"{cum_profit} · {perhour}" if perhour != '' else str(cum_profit))
+
+        engineer = self.next_stop_value('Engineer')
+        if engineer:
+            lines.append(str(engineer))
+            lines.extend(str(self.next_stop_value('Engineering') or '').split('; '))
 
         subtype = self.next_stop_value('Body Type')
         Debug.logger.debug(f"Next stop details: {subtype}")

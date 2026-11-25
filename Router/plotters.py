@@ -1,4 +1,3 @@
-
 """
 Plotter classes for different route plotting strategies.
 
@@ -13,10 +12,14 @@ import tkinter as tk
 from .utils import th
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import lbls, btns, tts, errs, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE, SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS, INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS
+from .constants import (lbls, btns, tts, errs, SPANSH_ENGINEER_ROUTE, SPANSH_ROUTE, SPANSH_GALAXY_ROUTE, SPANSH_RICHES_ROUTE,
+                        SPANSH_EXOBIOLOGY_ROUTE, SPANSH_TRADE_ROUTE, SPANSH_TOURIST_ROUTE, SPANSH_FLEETCARRIER_ROUTE, SPANSH_SYSTEMS,
+                        INDY_ROUTE, LOCAL_ROUTE, FLEET_CARRIER_STATS)
 from .context import Context
 from .route import Route
 from .ship import Ship
+from .engineering import Catalogue, PlanWindow, short
+from threading import Thread
 
 WIDTH3:int = 9
 WIDTH2:int = 14
@@ -446,7 +449,7 @@ class LocalPlotter(Plotter):
         th.Tooltip(cargo_entry, tts["cargo"])
         col += 1
 
-        reserve:float = Context.router.route_params.get('Local', {}).get('reserve_size', 0)
+        reserve:int = round(Context.router.route_params.get('Local', {}).get('reserve_size', 0), 0)
         self.fuel_res:th.Spinbox = th.Spinbox(route_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
         if reserve != 0: Context.ui.set_entry(self.fuel_res, str(reserve))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
@@ -479,7 +482,7 @@ class LocalPlotter(Plotter):
         reserve:str = self.fuel_res.get().strip()
         params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac), 'ship': ship_id,
                        'cargo': int(cargo) if re.match(r"^\d+$", cargo) else 0,
-                       'reserve_size': float(reserve) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
+                       'reserve_size': int(round(float(reserve), 0)) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
 
         # The ship you're in only has its live fuel where you are now; another ship's saved fuel is where it's parked
         known:bool = ship.id != Context.router.ship_id or params['from'].casefold() == Context.router.system.casefold()
@@ -493,6 +496,132 @@ class LocalPlotter(Plotter):
         Context.router.src, Context.router.dest = params['from'], params['to']
         Context.ui._show_busy_gui(True)
         Context.router.plot_route('Local', params)
+
+
+class EngineerPlotter(Plotter):
+    """Plotter for Spansh's engineer route: which unlocked engineers to visit, and in what order, for a ship's plan."""
+
+    def create_frame(self, parent:th.Frame) -> th.Frame:
+        """Create the engineer plotter frame: source, ship and region here, the plan itself in its own window."""
+        plot_fr:th.Frame = th.Frame(parent, width=Context.ui.frwidth)
+        self._plot_switcher(plot_fr, 0, 0)
+        params:dict = Context.router.route_params.get('Engineer', {})
+
+        route_fr:th.Frame = th.Frame(plot_fr)
+        self._create_source(route_fr, 0, 0)
+
+        self.regions:dict = {lbls['all_regions']: '', lbls['bubble']: 'bubble', lbls['colonia']: 'colonia'}
+        self.regionvar:tk.StringVar = tk.StringVar(route_fr)
+        region_dd:th.ComboBox = th.ComboBox(route_fr, self.regionvar, values=list(self.regions), width=WIDTH2)
+        th.Tooltip(region_dd, tts["region"])
+        region_dd.grid(row=0, column=4, padx=5, pady=5, sticky=tk.W)
+        self.regionvar.set(next((k for k, v in self.regions.items() if v == params.get('region', '')), lbls['all_regions']))
+
+        names:list = Context.router.shipnames()
+        self.shipvar:tk.StringVar = tk.StringVar(route_fr)
+        self.shipdd:th.ComboBox = th.ComboBox(route_fr, self.shipvar, values=names, width=WIDTH2)
+        th.Tooltip(self.shipdd, tts["select_ship"])
+        self.shipdd.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.shipvar.set(Context.router.menu_ship.name if Context.router.menu_ship else names[0] if names else '')
+        self.shipvar.trace_add("write", Context.ui.ship_selected)
+        self.shipvar.trace_add("write", lambda *_: self.update_summary())
+
+        edit:th.Button = th.Button(route_fr, text=btns["edit_plan"], command=self.edit)
+        th.Tooltip(edit, tts["edit_plan"])
+        edit.grid(row=1, column=1, padx=5, sticky=tk.W)
+
+        self.summary:th.Label = th.Label(route_fr, text='')
+        self.summary.grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+        route_fr.grid(row=1, column=0, columnspan=4, sticky=tk.W)
+
+        self._create_buttons(route_fr, 2, 0)
+
+        self.frame = plot_fr
+        self.update_summary()
+        return plot_fr
+
+    def _ship(self) -> Ship|None:
+        """The ship chosen in the menu, showing why if there isn't one."""
+        ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
+        if ship is None:
+            Context.ui.show_frame('Engineer')
+            Context.ui.show_error(errs['no_ship'])
+        return ship
+
+    def update_summary(self) -> None:
+        """Show how many modules the chosen ship's plan still has to engineer, and whether you have the materials."""
+        ship:Ship|None = Context.router.load_ship(Context.router.shipid(self.shipvar.get()))
+        cat:Catalogue|None = Catalogue.load()
+        if not ship or not cat:
+            self.summary['text'] = ''
+            return
+
+        plan:list = Context.router.plans.get(ship.id, [])
+        allowed:set = set(self._allowed(cat))
+        n:int = len(cat.request(ship, plan, allowed))
+        need, unknown = cat.total(ship, plan, allowed)
+        status:str = lbls['plan_short'] if short(need) else '' if unknown else lbls['plan_ready']
+        self.summary['text'] = lbls['plan_count'].format(n=n) + status if n else ''
+
+    @catch_exceptions
+    def edit(self) -> None:
+        """Open the plan window, once the catalogue is fetched off the UI thread."""
+        Context.ui.hide_error()
+        ship:Ship|None = self._ship()
+        if ship is None: return
+
+        def fetch() -> None:
+            Catalogue.fetch()
+            cat:Catalogue|None = Catalogue.load()
+            Context.ui.frame.after(0, lambda: self._open(cat, ship))
+        Thread(target=fetch, daemon=True, name="Neutron Dancer engineering catalogue").start()
+
+    def _open(self, cat:Catalogue|None, ship:Ship) -> None:
+        """Open the plan window for the ship, or say why not."""
+        if cat is None:
+            Context.ui.show_error(errs['no_catalogue'])
+            return
+        allowed:list = self._allowed(cat)
+        if not allowed:
+            Context.ui.show_error(errs['no_engineers'])
+            return
+        PlanWindow(Context.ui.frame.winfo_toplevel(), cat, ship, set(allowed), self.update_summary)
+
+    def _allowed(self, cat:Catalogue) -> list:
+        """Unlocked engineers in the chosen region, or all its engineers before the journal reports progress."""
+        known:dict = Context.router.engineers
+        return [n for n in cat.region(self.regions.get(self.regionvar.get(), '')) if not known or known.get(n) == 'Unlocked']
+
+    @catch_exceptions
+    def plot(self) -> None:
+        """Ask Spansh which engineers to visit for the plan, limited to unlocked ones in the region."""
+        if not self.frame or not self.src_ac: return
+        Context.ui.hide_error()
+        ship:Ship|None = self._ship()
+        src:str = self._row_value(self.src_ac)
+        if not src: self.src_ac.set_error_style()
+        if ship is None or not src: return
+
+        cat:Catalogue|None = Catalogue.load()
+        if cat is None:
+            Context.ui.show_error(errs['no_catalogue'])
+            return
+        allowed:list = self._allowed(cat)
+        if not allowed:
+            Context.ui.show_error(errs['no_engineers'])
+            return
+        blueprints:list = cat.request(ship, Context.router.plans.get(ship.id, []), set(allowed))
+        if not blueprints:
+            Context.ui.show_error(errs['no_plan'])
+            return
+
+        region:str = self.regions.get(self.regionvar.get(), '')
+        params:dict = {'source': src, 'ship': ship.id, 'region': region, 'blueprints': blueprints}
+        if Context.router.engineers or region: params['engineers'] = allowed
+
+        Context.router.src = src
+        Context.ui._show_busy_gui(True)
+        Context.router.plot_route('Engineer', params)
 
 
 class GalaxyPlotter(Plotter):
@@ -544,8 +673,9 @@ class GalaxyPlotter(Plotter):
 
         # Row 4: algorithm and fuel reserve
         row += 1; col = 0
-        algorithms:list = ['Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
-        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'Optimistic'))
+        # Spansh takes the names lowercased with underscores, which is how they're saved
+        algorithms:list = ['Beam', 'Fuel', 'Fuel Jumps', 'Guided', 'Optimistic', 'Pessimistic']
+        self.algorithm:tk.StringVar = tk.StringVar(plot_fr, value=params.get('algorithm', 'beam').replace('_', ' ').title())
         algodd:th.ComboBox = th.ComboBox(plot_fr, self.algorithm, values=algorithms, width=WIDTH2)
         th.Tooltip(algodd, tts["select_algorithm"])
         algodd.grid(row=row, column=col, padx=5, pady=5)
@@ -599,8 +729,8 @@ class GalaxyPlotter(Plotter):
         params:dict = {
             'cargo':int(gal_fr.nametowidget("cargo_entry").get().strip()) if re.match(r"^\d+$", gal_fr.nametowidget("cargo_entry").get().strip()) else 0,
             'max_time': 60,
-            'algorithm': self.algorithm.get(),
-            'reserve_size':int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
+            'algorithm': self.algorithm.get().lower().replace(' ', '_'),
+            'reserve_size':int(round(float(self.fuel_res.get().strip()), 0)) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if options.selection_includes(self.options.index('is_supercharged')) else 0,
             'use_supercharge': 1 if options.selection_includes(self.options.index('use_supercharge')) else 0,
             'use_injections': 1 if options.selection_includes(self.options.index('use_injections')) else 0,
@@ -1225,7 +1355,7 @@ class BoxelPlotter(Plotter):
 
 PLOTTER_SPECS:dict = {
     'Local': PlotterSpec(
-        label='Neutron Dancer', plotter_class=LocalPlotter, url=LOCAL_ROUTE
+        label='Safety Dancer', plotter_class=LocalPlotter, url=LOCAL_ROUTE
     ),
     'Galaxy': PlotterSpec(
         label='Galaxy Plotter', plotter_class=GalaxyPlotter, url=SPANSH_GALAXY_ROUTE,
@@ -1260,6 +1390,10 @@ PLOTTER_SPECS:dict = {
         label='Fleet Carrier Router', plotter_class=FleetCarrierPlotter, url=SPANSH_FLEETCARRIER_ROUTE,
         src_key='source', dest_key='destination'
     ),
+    'Engineer': PlotterSpec(
+        label='Engineer Plotter', plotter_class=EngineerPlotter, url=SPANSH_ENGINEER_ROUTE, src_key='source'
+    ),
+
     'Boxel': PlotterSpec(
         label='Boxel Surveyor', plotter_class=BoxelPlotter, url=SPANSH_SYSTEMS, src_key='boxel'
     ),

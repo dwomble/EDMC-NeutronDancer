@@ -16,7 +16,7 @@ Neutron Dancer makes neutron jumping easier by letting you plot any of a variety
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
 - Wide range of plotters:
-  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route
+  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route, Engineering Router
   - **Indestinate**: IndyHost Neutron Plotter
   - **Local**: Fully Local Neutron Plotter, Boxel Surveyor
 - Automatic insertion of the next system to the paste buffer on system arrival, opening galaxy map, both or neither.
@@ -53,7 +53,7 @@ Neutron Dancer supports direct route creation for:
 
 1. The sophisticated Spansh Galaxy Plotter
 1. The simpler Spansh Neutron Plotter
-1. Indestinate's (IndyHost) Neutron Plotter
+1. Indestinate's ([IndyHost](https://neutron.indyhost.org/)) Neutron Plotter
 1. Local Neutron Plotter
 1. Road to Riches
 1. Expressway to Exomastery
@@ -131,7 +131,7 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 It also saves ship details and source and destination systems for easy entry.
 
-### Linux Clipboard
+## Linux Clipboard
 
 This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
 
@@ -153,6 +153,8 @@ Integrates with the [Route Scoop](https://gitlab.com/inutt/edmc-jump-fuel-plugin
 The biggest thank you must go to [CMDR Spansh](https://www.patreon.com/spansh) for the amazing [Spansh Route Planners](https://spansh.co.uk/plotter).
 
 Also thank you to Indestinate for his superfast [Neutron Plotter](https://neutron.indyhost.org/).
+
+Thank you to [Coriolis](https://coriolis.io) for its [game data](https://github.com/Brighter-Applications/coriolis-data) (originally [EDCD's](https://github.com/EDCD/coriolis-data)), which Neutron Dancer uses for FSD jump range calculations and engineering material costs. Elite Dangerous game data is © Frontier Developments plc.
 
 This code is based on the original [Spansh router](https://github.com/CMDR-Kiel42/EDMC_SpanshRouter) by CMDR Kiel42, [RadarCZ's](https://github.com/RadarCZ/EDMC_SpanshRouter), and [Norohind's](https://github.com/norohind/EDMC_SpanshRouter) forks.
 

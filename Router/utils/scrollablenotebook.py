@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) Muhammet Emin TURGUT 2020
-# For license see LICENSE
+# GPL v3 License
 from tkinter import * # type: ignore
 from tkinter import ttk
 
 class ScrollableNotebook(ttk.Frame):
+    """ A ttk Notebook with scrollable tabs."""
     def __init__(self,parent,wheelscroll=False,tabmenu=False,*args,**kwargs):
         ttk.Frame.__init__(self, parent, *args)
         self.xLocation = 0

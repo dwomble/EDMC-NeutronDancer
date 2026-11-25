@@ -4,26 +4,31 @@
 
 ### New Features
 
-* An entirely new, local plotter (Neutron Dancer) that uses Spansh data to plot routes locally
+* An entirely new, local plotter (Safety Dancer) that uses cached Spansh galaxy data to plot routes (must be enabled in preferences)
+* Added support for the new *Beam* Galaxy Plotter routing algorithm
+* Added the new Spansh Engineer router. Implementation includes a per-ship plan stored across restarts; material cost and effects; and  unlocked engineers
 
 ### Changes
 
 * Remember which ship you're plotting for over restarts and between plot types
 * Route type and ship name are included in suggested route save filename
+* Fuel reserve is validated against ship fuel capacity
+* Improved CSV loading and saving to better identify and handle various route types
 
 ### Bug Fixes
 
 * Stopped duplicate entries and placeholders from appearing in dropdown menus
+* Fixed a route cancelation timing bug
 
 ## v3.0.0 2026-11-09
 
 ### New Features
 
 * Added Indestinate's IndyHost Neutron Plotter
-* Copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux (thanks dmarcuse)
-* Options to enable/disable copying to clipboard on FSD Jump and/or on Galaxy Map (thanks dmarcuse)
+* Copying of next jump to clipboard after FSD Jump to workaround delayed updates on Linux (thanks [dmarcuse](https://github.com/dmarcuse))
+* Options to enable/disable copying to clipboard on FSD Jump and/or on Galaxy Map (thanks [dmarcuse](https://github.com/dmarcuse))
 * Option to automatically install pre-release versions (disabled by default)
-* Plugin reordering from th library
+* Plugin reordering from `th` library
 
 ### Changes
 

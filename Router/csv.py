@@ -64,19 +64,20 @@ class CSV:
                 fields:list = list(route_reader.fieldnames)
                 hasnavroute:bool = 'SystemAddress' in fields and 'StarClass' in fields
                 hdrs:list = []
-                hdrs = [h for h in fields if h in HEADERS]
+                hdrs = [h for h in fields if h in HEADERS]             # Known headers
 
                 # Append any remaining fields
                 for f in fields:
-                    if f in ("SystemAddress", "x", "y", "z", "StarClass") or f in HEADERS:
-                        continue
-                    hdrs.append(f)
+                    if f not in ("SystemAddress", "x", "y", "z", "StarClass") and f not in HEADERS:
+                        hdrs.append(f)
 
+                # Need at least the "System Name" header
                 if hdrs == [] or "System Name" not in hdrs:
                     self.error = errs["invalid_file"]
                     Debug.logger.error(f"File {filename} is of unsupported format")
                     return False
 
+                # Now build the route
                 route:list = []
                 navroute:dict = {}
                 for row in route_reader:
@@ -97,14 +98,12 @@ class CSV:
                     route.append(r)
 
                     if hasnavroute:
+                        pos:tuple = (row.get('x'), row.get('y'), row.get('z'))
                         navroute[row["System Name"]] = {
-                            'SystemAddress': row['SystemAddress'],
-                            'StarPos': None,
+                            'SystemAddress': int(row['SystemAddress']) if row['SystemAddress'] else None,
+                            'StarPos': tuple(map(float, pos)) if all(pos) else None,
                             'StarClass': row['StarClass']
                         }
-                        if 'x' in row and 'y' in row and 'z' in row:
-                            navroute[row["System Name"]]['StarPos'] = (row['x'], row['y'], row['z'])
-
 
                 self.headers = hdrs
                 self.route = route
@@ -112,6 +111,7 @@ class CSV:
 
                 Debug.logger.debug(f"Successfully imported route with {len(route)} rows and headers: {hdrs} {navroute}")
                 return True
+
         except Exception as e:
             self.error = errs["invalid_file"]
             Debug.logger.error(f"Failed to read file {filename}, exception info:", exc_info=e)
@@ -142,23 +142,13 @@ class CSV:
         hdrs:list = route.hdrs.copy()
         rows:list = []
 
+        # Copies, as the route's rows are live; positions only when every stop has one
         if route.navroute:
-            sp:bool = False
-            for row in route.route:
-                row.append(route.navroute[row[route.sc]]['SystemAddress'])
-                if 'StarPos' in route.navroute[row[route.sc]]:
-                    sp = True
-                    row.append(route.navroute[row[route.sc]]['StarPos'][0])
-                    row.append(route.navroute[row[route.sc]]['StarPos'][1])
-                    row.append(route.navroute[row[route.sc]]['StarPos'][2])
-                row.append(route.navroute[row[route.sc]]['StarClass'])
-                rows.append(row)
-            hdrs.append('SystemAddress')
-            if sp:
-                hdrs.append('x')
-                hdrs.append('y')
-                hdrs.append('z')
-            hdrs.append('StarClass')
+            nav:list = [route.navroute.get(r[route.sc], {}) for r in route.route]
+            sp:bool = all(n.get('StarPos') for n in nav)
+            rows = [r + [n.get('SystemAddress', '')] + (list(n['StarPos']) if sp else []) + [n.get('StarClass', '')]
+                    for r, n in zip(route.route, nav)]
+            hdrs += ['SystemAddress'] + (['x', 'y', 'z'] if sp else []) + ['StarClass']
 
         if not rows:
             rows = route.route.copy()

@@ -16,7 +16,8 @@ from .debug import Debug
 # Check for updates at most once per day
 CHECK_INTERVAL:int = (3600 * 24)
 _NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
-TIMEOUT=10
+TIMEOUT=10 # Request timeout
+DELAY=5.0  # delay before checking for updates
 
 def _headers(gh_project:str) -> dict:
     """ Blends into EDMC's own UA, per PLUGINS.md. """
@@ -39,18 +40,24 @@ class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Create the object with parameters plugin_dir, gh_owner, gh_project.
+    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
-    Call check_for_update(version) at plugin startup. It's asynchronous.
+      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
+    Call check_for_update(version, extra) at plugin startup. It's asynchronous, and waits `delay` seconds first.
+      'extra' is an optional callable run on the same schedule, e.g. to refresh data files.
+    Set accept_prerelease to True to also offer pre-release versions.
     Call install(preserve) to install the update when you choose (commonly on shutdown).
-      preserve is a list of directories that shouldn't be deleted.
+      'preserve' is a list of directories that shouldn't be deleted.
     """
 
-    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str, gh_release_info:str = '') -> None:
         self.plugin_dir:str = plugin_dir
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
+        self.gh_release_info:str = gh_release_info
+        if self.gh_release_info == '':
+            self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
         self.accept_prerelease:bool = False # Should pre-release versions be accepted?
 
         self.update_available:bool = False # Is there an update available?
@@ -78,7 +85,7 @@ class Updater():
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
             r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
-            Debug.logger.debug(str(r))
+            Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
             Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
@@ -122,9 +129,8 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
-            if self.accept_prerelease:
-                url = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases"
+            # /latest never returns a pre-release, so list them all instead
+            url:str = self.gh_release_info.removesuffix('/latest') if self.accept_prerelease else self.gh_release_info
             Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
             r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
@@ -134,27 +140,27 @@ class Updater():
             self.install_update = False
             return False
 
-        release_data:dict|list = json.loads(r.content)
-        if isinstance(release_data, list):
-            # Take the newest release whose tag is a version, skipping data releases such as star-data
-            release_data = dict(next((r for r in release_data if re.match(r'v?\d', r.get('tag_name', ''))), {'draft': True}))
-        if release_data['draft'] == True or (release_data['prerelease'] == True and not self.accept_prerelease):
+        version_data:dict|list = json.loads(r.content)
+        if isinstance(version_data, list):
+            # Newest release whose tag is a version, skipping data releases such as star-data
+            version_data = dict(next((v for v in version_data if re.match(r'v?\d', v.get('tag_name', ''))), {'draft': True}))
+        if version_data['draft'] == True or (version_data['prerelease'] == True and not self.accept_prerelease):
             Debug.logger.info("Latest server version is draft or pre-release, ignoring")
             return False
 
-        assets:list = release_data.get('assets', [])
+        assets:list = version_data.get('assets', [])
         if assets == []:
             Debug.logger.info("No assets")
             return False
 
         try:
-            self.update_version = Version.coerce(release_data.get('tag_name', '0.0.0').replace('v', ''))
+            self.update_version = Version.coerce(version_data.get('tag_name', '0.0.0').replace('v', ''))
         except Exception as e:
             Debug.logger.info(f"Bad version data {e}")
             return False
 
         # Get the changelog and replace all breaklines with simple ones
-        releasenotes:str = release_data.get('body', '')
+        releasenotes:str = version_data.get('body', '')
         self.releasenotes = "\n".join(releasenotes.splitlines())
 
         self.download_url = assets[0].get('browser_download_url', "")
@@ -166,7 +172,8 @@ class Updater():
 
 
     def _check_update(self, version:Version|str, extra:Callable|None = None) -> None:
-        """ Compare the current version file with github version, then run any extra check """
+        """ After a short wait, compare the current version file with github version, then run any extra check """
+        time.sleep(DELAY)
         if extra: Thread(target=extra, name=f"{self.gh_project} extra update check", daemon=True).start()
         if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
             Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")
@@ -189,7 +196,7 @@ class Updater():
 
 
     def check_for_update(self, version:Version|str, interval:int = CHECK_INTERVAL, extra:Callable|None = None) -> None:
-        """ Start an update check thread; extra runs on the same schedule, even in a git checkout, e.g. for data files """
+        """ Start an update check thread; extra runs on the same schedule, even in a git checkout. """
         last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
         if last >= int(time.time()) - interval:
             return
@@ -200,12 +207,12 @@ class Updater():
 
 class Notices():
     """
-    Fetches NOTICES.md from the repo's default branch, tracking
-    which "## N" notice heading the user has dismissed.
+    Fetches NOTICES.md from the repo's default branch, tracking which "## N" notice heading the user has dismissed.
 
-    Call check_for_notices() at startup -- async and throttled
-    like Updater.check_for_update(). pending_notice holds the
-    current one to show; call dismiss_notice() once seen. """
+    Call check_for_notices() at startup (it's async and throttled).
+    pending_notice holds the current one to show
+    call dismiss_notice() once seen.
+    """
     def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'main') -> None:
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project

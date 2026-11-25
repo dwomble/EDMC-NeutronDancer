@@ -14,7 +14,7 @@ from .context import Context
 
 LEFT_ALIGN:list = ['System Name', 'System', 'Body Type', 'Station Name', 'Station Type', 'Station Class', 'Station Faction',
                    'Station State', 'Station Government', 'Station Economy', 'Station Secondary Economy', 'Commodity',
-                   'Species']
+                   'Species', 'Engineer', 'Engineering']
 
 @singleton
 class RouteWindow:

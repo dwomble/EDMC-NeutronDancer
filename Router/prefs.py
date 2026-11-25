@@ -12,7 +12,7 @@ from config import config # type: ignore
 from .utils.misc import singleton
 from .utils.debug import Debug, catch_exceptions
 
-from .constants import ROUTE_DIR, PROGRESS_DEFAULT, cnf
+from .constants import ROUTE_DIR, GH_PROJECT, cnf
 from .context import Context
 
 @dataclass
@@ -117,6 +117,12 @@ class Prefs:
             size:int = Context.localdata.size()
             if size and messagebox.askyesno(cnf['options'], cnf['local_delete'].format(s=size / 1e9), parent=self.plugin_frame):
                 Context.localdata.delete()
+
+        # If they turned on prerelease updates, for a check for updates now
+        if not Context.updater.accept_prerelease and config.get_bool(f"{Context.plugin_name}_install_prereleases"):
+            Context.updater.accept_prerelease = True
+            config.delete(f"{GH_PROJECT}_last_update_check")
+            Context.updater.check_for_update(Context.plugin_version)
 
 
     def _load_prefs(self) -> None:

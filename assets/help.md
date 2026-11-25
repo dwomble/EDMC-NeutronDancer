@@ -2,24 +2,25 @@
 
 There are several route plotting options.
 
-1. Safety Dancer
-1. Neutron Dancer
-1. Galaxy Plotter
-1. Neutron Plotter
-1. Indestinate's Plotter
-1. Road to Riches
-1. Expressway to Exomastery (Exobiology)
-1. Trade Planner
-1. Tourist Route
-1. Fleet Carrier Route
-1. Engineer Plotter
-1. Boxel Surveyor
+1. [Safety Dancer](#safety-dancer)
+1. [Galaxy Plotter](#galaxy-plotter)
+1. [Neutron Plotter](#neutron-plotter)
+1. [Indestinate's Plotter](#indestinates-indyhost-neutron-plotter)
+1. [Road to Riches](#road-to-riches-and-expressway-to-exomastery)
+1. [Expressway to Exomastery (Exobiology)](#road-to-riches-and-expressway-to-exomastery)
+1. [Trade Planner](#trade-planner)
+1. [Tourist Route](#tourist-route)
+1. [Fleet Carrier Router](#fleet-carrier-router)
+1. [Engineer Plotter](#engineer-plotter)
+1. [Boxel Surveyor](#boxel-surveyor)
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 
 ## Safety Dancer
 
 An entirely local route plotter. Routes are generally better than the Neutron Plotters but not quite as good as the Galaxy plotter.
+
+![Safety Dancer](https://github.com/user-attachments/assets/b75d228f-329b-4412-9b77-2993044921f0)
 
 **Pros**: It's very fast, produces good routes, handles refueling, and is robust (safe) since it's not dependent on any external servers or services.
 **Cons**: It downloads about 1.1G of data and significantly increases EDMC's memory footprint.
@@ -153,17 +154,23 @@ Once plotted, Neutron Dancer follows a carrier route just like a Neutron route, 
 
 ![Fleet Carrier Router](https://github.com/user-attachments/assets/9f9c507b-9ec3-42f0-8674-76030343220a)
 
-## Engineer Router
+## Engineer Plotter
 
 The Spansh **Engineer Plotter** plots an efficient route to engineer your ship. This plotter uses a popup window to create an engineering plan which is then used to create the route.
 
+![Engineer Plotter](https://github.com/user-attachments/assets/5916e2c0-cc09-4a41-a1b3-dd2c99666102)
+
 The plan is per-ship and stored across restarts. It includes material costs and effects, takes into account which engineers you have unlocked, and shows which engineers can do the work and total material cost.
+
+![Plan Popup](https://github.com/user-attachments/assets/3159ebd0-0b2c-4d5f-8e79-86d94e46a6ce)
 
 ## Boxel Surveyor
 
 This is a different type of router intended for surveying boxels. Enter a boxel including the masscode, a start number and an end and Neutron Dancer will generate a sequence of systems as a route.
 
-Note: It will validate the boxel entry but cannot validate the systems because they haven't been discovered yet.
+![Boxel Surveyor](https://github.com/user-attachments/assets/d06b4e83-ddd5-4d6c-a8c4-fe4a1d0020ee)
+
+**Note**: It will validate the boxel entry but cannot validate the systems because they may not have been discovered yet.
 
 ## Importing Routes
 

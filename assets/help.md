@@ -2,17 +2,17 @@
 
 There are several route plotting options.
 
-1. [Safety Dancer](#safety-dancer)
-1. [Galaxy Plotter](#galaxy-plotter)
-1. [Neutron Plotter](#neutron-plotter)
-1. [Indestinate's Plotter](#indestinates-indyhost-neutron-plotter)
-1. [Road to Riches](#road-to-riches-and-expressway-to-exomastery)
-1. [Expressway to Exomastery (Exobiology)](#road-to-riches-and-expressway-to-exomastery)
-1. [Trade Planner](#trade-planner)
-1. [Tourist Route](#tourist-route)
-1. [Fleet Carrier Router](#fleet-carrier-router)
-1. [Engineer Plotter](#engineer-plotter)
-1. [Boxel Surveyor](#boxel-surveyor)
+1. Safety Dancer
+1. Galaxy Plotter
+1. Neutron Plotter
+1. Indestinate's Plotter
+1. Road to Riches
+1. Expressway to Exomastery (Exobiology)
+1. Trade Planner
+1. Tourist Route
+1. Fleet Carrier Router
+1. Engineer Plotter
+1. Boxel Surveyor
 
 You can switch between them with the **Route** dropdown at the top of the plotter frame.
 

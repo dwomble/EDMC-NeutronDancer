@@ -237,7 +237,7 @@ If you install the [EDMC Hotkeys](https://github.com/SweetJonnySauce/EDMCHotkeys
 - Almost every component has a tooltip to provide further information or hints on use.
 - Many components have a right-click context menu with shortcuts.
 
-### Linux Clipboard
+## Linux Clipboard
 
 This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
 

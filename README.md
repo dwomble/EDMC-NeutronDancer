@@ -131,7 +131,7 @@ If you close EDMC, the plugin will save your progress. The next time you run EDM
 
 It also saves ship details and source and destination systems for easy entry.
 
-### Linux Clipboard
+## Linux Clipboard
 
 This is notoriously variable and problematic. Neutron Dancer tries to find `wl-copy`, `xsel` and `xclip` based on the current session. If it doesn't find anything appropriate it runs _all_ of them that exist. If it can't find any of them it falls back to using the Tk native method.
 

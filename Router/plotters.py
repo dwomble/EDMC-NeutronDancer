@@ -449,7 +449,7 @@ class LocalPlotter(Plotter):
         th.Tooltip(cargo_entry, tts["cargo"])
         col += 1
 
-        reserve:float = Context.router.route_params.get('Local', {}).get('reserve_size', 0)
+        reserve:int = round(Context.router.route_params.get('Local', {}).get('reserve_size', 0), 0)
         self.fuel_res:th.Spinbox = th.Spinbox(route_fr, lbls['fuel_reserve'], width=WIDTH3-2, from_=0, to=64, justify=tk.CENTER)
         if reserve != 0: Context.ui.set_entry(self.fuel_res, str(reserve))
         th.Tooltip(self.fuel_res, tts["fuel_reserve"])
@@ -482,7 +482,7 @@ class LocalPlotter(Plotter):
         reserve:str = self.fuel_res.get().strip()
         params:dict = {'from': self._row_value(self.src_ac), 'to': self._row_value(self.dest_ac), 'ship': ship_id,
                        'cargo': int(cargo) if re.match(r"^\d+$", cargo) else 0,
-                       'reserve_size': float(reserve) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
+                       'reserve_size': int(round(float(reserve), 0)) if re.match(r"^\d+(\.\d+)?$", reserve) else 0}
 
         # The ship you're in only has its live fuel where you are now; another ship's saved fuel is where it's parked
         known:bool = ship.id != Context.router.ship_id or params['from'].casefold() == Context.router.system.casefold()
@@ -730,7 +730,7 @@ class GalaxyPlotter(Plotter):
             'cargo':int(gal_fr.nametowidget("cargo_entry").get().strip()) if re.match(r"^\d+$", gal_fr.nametowidget("cargo_entry").get().strip()) else 0,
             'max_time': 60,
             'algorithm': self.algorithm.get().lower().replace(' ', '_'),
-            'reserve_size':int(self.fuel_res.get().strip()) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
+            'reserve_size':int(round(float(self.fuel_res.get().strip()), 0)) if re.match(r"^\d+(\.\d+)?$", self.fuel_res.get().strip()) else 0,
             'is_supercharged': 1 if options.selection_includes(self.options.index('is_supercharged')) else 0,
             'use_supercharge': 1 if options.selection_includes(self.options.index('use_supercharge')) else 0,
             'use_injections': 1 if options.selection_includes(self.options.index('use_injections')) else 0,

@@ -8,7 +8,7 @@
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-NeutronDancer)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-NeutronDancer/total.svg)](https://github.com/dwomble/EDMC-NeutronDancer/releases/latest)
 
-Neutron Dancer makes neutron jumping easier by letting you plot any of a variety of [Spansh](https://www.spansh.co.uk/plotter) (and some non-Spansh) routes, including the Galaxy route, directly within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
+Neutron Dancer makes neutron jumping easier by letting you plot any of a variety of [Spansh](https://www.spansh.co.uk/plotter) (and some non-Spansh) routes, including the Galaxy route, directly from within [EDMC](https://github.com/EDCD/EDMarketConnector); tracking progress along the route; and copying the next waypoint into your clipboard with a single click. It also directly supports most of the other Spansh routes and can work for almost any route by importing a CSV of the jumps.
 
 ![Route View](https://github.com/user-attachments/assets/fafd8ae6-4fc1-49e2-9afd-707c7a394984)
 
@@ -16,7 +16,7 @@ Neutron Dancer makes neutron jumping easier by letting you plot any of a variety
 
 - Use Spansh's sophisticated **Galaxy Plotter** directly from EDMC *without having to manually export, copy and paste ship builds*.
 - Wide range of plotters:
-  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, and Fleet Carrier Route, Engineering Router
+  - **Spansh**: Galaxy Plotter, Neutron Plotter, Road to Riches, Expressway to Exomastery, Trade Planner, Tourist Route, Fleet Carrier Route, and Engineering Router
   - **Indestinate**: IndyHost Neutron Plotter
   - **Local**: Fully Local Neutron Plotter, Boxel Surveyor
 - Automatic insertion of the next system to the paste buffer on system arrival, opening galaxy map, both or neither.
